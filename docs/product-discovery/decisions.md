@@ -28,12 +28,19 @@ systems are all unselected and out of scope for discovery.
 
 **Inbox · Collections · Search · Profile**
 
-*Rationale.* The backend's "no separate inbox" rule (`AGENTS.md`, decision 19g)
-is an API-shape argument: it prevents two ways of asking the database the same
-question. It is not a claim that users should hunt for unsaved items in a list
-where they happen to sit at row one. `product.md` uses "Inbox" throughout its own
-language — *"An inbox with unsorted items is a valid, successful state"* and
-development-order step 1, *"Share → Save → Inbox"*.
+*Rationale.* **[Confirmed] The four destinations are unchanged.** `product.md` uses
+"Inbox" throughout its own language — *"An inbox with unsorted items is a valid,
+successful state"* and development-order step 1, *"Share → Save → Inbox"*.
+
+> **[Confirmed] Rationale updated by
+> [D26](#d26--inbox-is-a-recent-saved-history-across-collections).** This entry
+> originally argued that the backend's "no separate inbox" rule (`AGENTS.md`,
+> decision 19g) is an API-shape argument and therefore not a reason to withhold an
+> Inbox tab. That argument is superseded by a stronger one: the Inbox is a distinct
+> destination with its own responsibility, not a view over the `unsorted`
+> collection. **[Doc]** The backend still exposes no separate inbox endpoint, which
+> is why D26 records a *planned* backend requirement rather than an available
+> capability.
 
 *Cost.* One extra tab versus a three-tab variant that has no Inbox.
 
@@ -57,9 +64,16 @@ A user collection may not use a reserved system name, but identity is still the 
 never the display string.
 
 *Consequence.* **The Unsorted collection ID is server data, not a client constant.**
-The Inbox screen cannot be constructed without a prior `GET /collections` call. That
-call is also needed by Collections, the file sheet, and the delete dialog, so it is
-the app's root data dependency.
+It must be resolved by a prior `GET /collections` call before any screen can show
+Unsorted. That call is also needed by Collections, the file sheet, and the delete
+dialog, so it remains the app's root data dependency.
+
+> **[Confirmed] Scope of this rule, updated by
+> [D26](#d26--inbox-is-a-recent-saved-history-across-collections).** The Inbox no
+> longer depends on the Unsorted ID, because it no longer renders the `unsorted`
+> collection. **[Confirmed] Resolution by `system_key` is unchanged everywhere
+> Unsorted still appears as a collection** — the Collections list, the file sheet,
+> and the delete dialog.
 
 *See:* ux-discovery §2.1
 
@@ -67,12 +81,24 @@ the app's root data dependency.
 
 ### D3 — Inbox and Unsorted collection contents share one screen
 
-*Rationale.* **[Doc]** `product.md`: the inbox "is that collection seen through the
-same lens as any other." Both are served by `GET /collections/{id}/saved-items`
-with identical response shapes. Separate implementations would guarantee drift in
-enrichment states, pagination, and empty handling.
+> **[Confirmed] SUPERSEDED by
+> [D26](#d26--inbox-is-a-recent-saved-history-across-collections).** The Inbox is
+> no longer an alias for the `unsorted` collection, so it no longer shows the same
+> thing and no longer shares a screen with it. This entry is retained for history
+> and must not be implemented.
+>
+> **[Confirmed] The underlying API fact survives.** Unsorted collection contents are
+> still served by `GET /collections/{id}/saved-items`. That is now a **Collections**
+> concern (S9), not an Inbox one.
 
-*Consequence.* One screen parameterised by collection ID and name.
+*Original rationale, retained:* **[Doc]** `product.md`: the inbox "is that
+collection seen through the same lens as any other." Both are served by
+`GET /collections/{id}/saved-items` with identical response shapes.
+
+*Original consequence, retained as history:* One screen parameterised by collection
+ID and name. **[Confirmed]** What survives is narrower: a single parameterised
+collection-contents screen still serves *every* collection, including Unsorted,
+and must not drift between them — see ux-discovery §4.1.
 
 *See:* ux-discovery §4
 
@@ -190,17 +216,31 @@ problem.
 
 ---
 
-### D9 — No aggregate saved-items view in v1
+### D9 — No endpoint lists every saved item at once
 
-Rediscovery uses Inbox, Collections, and Search only.
+> **[Confirmed] Scope updated by
+> [D26](#d26--inbox-is-a-recent-saved-history-across-collections).** A
+> cross-collection listing *is* now required — for the Inbox. This entry is retained
+> in the corrected form below rather than deleted.
 
-*Rationale.* **[Doc]** Decision 19g: there is deliberately no endpoint listing every
-saved item at once. **[Confirmed]** No backend change is requested merely to remove
-a search limitation during discovery.
+**[Doc] Still true.** Decision 19g: there is deliberately no backend endpoint
+listing every saved item at once, and none exists today.
+
+**[Confirmed] What this now means.** The absence of an aggregate endpoint remains a
+backend fact, but it is no longer the reason the product has no cross-collection
+view. **[Confirmed] The Inbox's cross-collection listing is recorded as a planned
+backend requirement** — see [D26](#d26--inbox-is-a-recent-saved-history-across-collections)
+and [§5.1](#51-recently-saved-items-across-collections-inbox). **[Confirmed] Nothing
+in that requirement may be treated as implemented or available.**
+
+**[Confirmed] Unchanged from the original decision.** Rediscovery uses Inbox,
+Collections, and Search only; there is no separate "browse everything" destination.
+**[Doc]** No backend change is requested merely to remove a search limitation during
+discovery.
 
 *Assessment recorded.* Search is **sufficient for v1** with bounded limits — see
 [§2.5](#25-recommendation--search-framing-and-truncation-disclosure) and
-[§5.1](#51-aggregate-all-saved-items-view).
+[§5.1](#51-recently-saved-items-across-collections-inbox).
 
 *See:* ux-discovery §10
 
@@ -293,7 +333,7 @@ tracks exactly one thing:
 **[Confirmed] The pending queue is not an aggregate saved-items view.** It shows
 URLs the backend has **not** confirmed. Saved items are served only from the
 backend. The queue must not become a client-side substitute for an "all saved
-items" endpoint — see [§5.1](#51-aggregate-all-saved-items-view).
+items" endpoint - see [§5.1](#51-recently-saved-items-across-collections-inbox).
 
 *See:* ux-discovery §7.1
 
@@ -777,6 +817,122 @@ infrastructure capacity justifies it. **[Confirmed] This is not a v1 commitment.
 
 ---
 
+### D25 — Inbox input: a URL field with Paste and Save URL
+
+**[Confirmed] The Inbox screen carries a visible URL input.** This resolves the
+placement question previously recorded as **Q5**.
+
+| Element | Rule |
+| --- | --- |
+| **URL input** | **[Confirmed]** A URL text field is **visible directly on the Inbox screen** — not hidden behind an action, sheet, or menu. |
+| **Paste** | **[Confirmed]** A separate **Paste** button reads a URL from the clipboard and places it into the input. |
+| **Save URL** | **[Confirmed]** A separate **Save URL** button submits **the URL currently in the input**. |
+| **Pasting is not saving** | **[Confirmed]** **Pasting alone does not save the URL.** It only fills the field. |
+| **Inspect and edit** | **[Confirmed]** The user can inspect or edit the URL before saving it. |
+
+*Rationale.* This input is the in-app fallback and the recovery path for the OS
+share sheet ([D5](#d5--share-sheet-primary-in-app-paste-fallback)). Making it
+visible on the Inbox keeps intake first-class rather than two actions away.
+Separating **Paste** from **Save URL** keeps two distinct decisions distinct:
+putting a URL into a field is not the same act as committing it to the queue. The
+edit-before-save step is what lets a user correct a bad share before it becomes a
+pending entry.
+
+*Scope limits — this decision fixes the interaction shape only.*
+
+- **[Confirmed] It does not decide** clipboard behaviour beyond placing a URL in the
+  field, validation timing, success timing, or error handling. None of those is
+  decided here.
+- **[Confirmed] The input is a route into the same durable pending queue** used by
+  the share sheet ([D13](#d13--pending-local-urls-and-backend-saved-items-are-distinct-states-of-ownership)).
+  It is not a second storage path, and it does not bypass the queue.
+- **[Open] When, and whether, the input validates a URL before submission is not
+  decided.** See **Q13**. [§2.9](#29-recommendation--client-mirrors-server-url-validation)
+  remains a **[Rec]**.
+
+*Relationship to [D6](#d6--a-shared-url-is-preserved-through-authentication).*
+Unchanged. A URL placed in this input and not yet submitted is **not** a saved item,
+and is covered by the same durable queue, the same seven-day retention
+([D7](#d7--pending-urls-seven-day-retention-queued-duplicates-silent)), and the same
+rules on never being silently discarded.
+
+*See:* ux-discovery §3 Journey A.1, §7.13
+
+---
+
+### D26 — Inbox is a recent-saved history across collections
+
+**[Confirmed] The Inbox is not the `unsorted` collection.** It is a separate
+destination with its own responsibility.
+
+| Rule | Detail |
+| --- | --- |
+| **What the Inbox shows** | **[Confirmed]** A bounded history of **recently saved items across collections**. |
+| **What it is for** | **[Confirmed]** Helping the user **verify that a URL was saved** and **understand which collection the item currently belongs to**. |
+| **What it is not** | **[Confirmed]** Not an alias for the `unsorted` collection. **[Confirmed]** Not a "browse everything" view — it is *recent*-saved history. |
+| **Collections** | **[Confirmed]** Unchanged. Collections remains the **collection browser**: it lists collections, and a collection is opened to browse the items inside it. |
+
+*Consequence — this supersedes [D3](#d3--inbox-and-unsorted-collection-contents-share-one-screen)
+and narrows [D9](#d9--no-endpoint-lists-every-saved-item-at-once).* The Inbox and
+the Unsorted collection no longer share a screen because they no longer show the
+same thing. **[Confirmed] `system_key === "unsorted"` continues to govern
+identification of Unsorted everywhere it still appears as a collection** —
+Collections list, file sheet, delete dialog — per
+[D2](#d2--unsorted-is-resolved-by-system_key-never-by-name).
+
+#### What a save confirmation may and may not say
+
+**[Confirmed] A save confirmation confirms only that the saved item was created.**
+It must not imply any of the following:
+
+- **[Confirmed]** that **enrichment has completed**;
+- **[Confirmed]** that **metadata is guaranteed to exist**;
+- **[Confirmed]** that **automatic organization has completed**;
+- **[Confirmed]** that the item **will definitely be moved to a particular collection**.
+
+#### Asynchronous background processing
+
+**[Confirmed]** Enrichment and automatic organization are asynchronous. Work may
+still be queued, may be in progress, or may fail.
+
+**[Confirmed] The UX must not depend on a per-item notification announcing
+automatic organization.** **[Doc]** The backend exposes no event for that
+transition, so there is nothing reliable to announce — announcing one would be a
+claim the client cannot support.
+
+**[Confirmed] Refreshing the Inbox shows the latest data available from the
+backend.** It must not imply that a refresh guarantees worker completion, and it
+must not be presented as proving *why* an item changed location.
+
+**[Open]** A general, non-per-item explanation of automatic organization may be
+considered separately. **[Confirmed] No specific notification, surface, or wording
+is decided here**, and none may be invented.
+
+#### Backend dependency — planned, not implemented
+
+**[Open] The Inbox requires a backend capability that does not exist today.** This
+is a recorded product requirement, **not** an available endpoint.
+
+**[Confirmed]** The product-level requirement, and nothing beyond it:
+
+> The Inbox needs a **bounded list of recently saved items across collections**,
+> including **each item's current collection** and **its relevant enrichment
+> status**, based on the **latest data available from the backend**.
+
+**[Confirmed] No endpoint path, request schema, response schema, pagination
+contract, ordering, or backend behaviour is specified or implied by this decision.**
+Any concrete contract must be designed in the backend repository, which remains
+authoritative for backend behavior. See
+[§5.1](#51-recently-saved-items-across-collections-inbox).
+
+*Prototype note.* A wireframe may use mock data shaped like the response such an
+endpoint would return. **[Confirmed] Mock data in a prototype is a design technique
+and is not evidence that the endpoint exists.**
+
+*See:* ux-discovery §1.5, §2, §4 (S7), §6
+
+---
+
 ## 2. Provisional recommendations
 
 **Awaiting approval.** These are proposals produced by the discovery analysis.
@@ -894,19 +1050,27 @@ no autocomplete, and no suggestion. The caps are not surfaced anywhere in the AP
 
 ### 2.6 Recommendation — reconciliation rather than announcement for automatic organization
 
+> **[Confirmed] Direction settled by
+> [D26](#d26--inbox-is-a-recent-saved-history-across-collections).** The UX does
+> not depend on a per-item notification announcing automatic organization, because
+> no backend event reports that transition. **[Confirmed]** The specific
+> presentation recommendations below remain **[Rec]** pending approval.
+
 **[Doc]** A background step may move an item out of Unsorted into a platform-named
 collection, **only if it is still in Unsorted** (decision 13a). The client is not
 notified.
 
 **Recommendation.**
-- Never animate or dismiss an item that leaves between refreshes.
+- Never animate or dismiss an item that changes collection between refreshes.
 - Never claim *"moved to YouTube"* — the transition is unobservable.
-- Reconcile plainly: the item is simply no longer in the Inbox.
+- Reconcile plainly: the item is still listed, and its current collection is shown.
 - Never frame a system-created collection as user-created.
 
-**[Open]** `product.md` says organization is *"automatic, not invisible"*, which
-suggests some acknowledgement is intended — but **no endpoint reports organization
-events**, so there is nothing to surface today.
+**[Open]** `product.md` says organization is *"automatic, not invisible"*. A
+general, non-per-item explanation of automatic organization may be considered
+separately. **[Confirmed] No specific notification, surface, or wording is decided
+here**, and none may be invented — see
+[D26](#d26--inbox-is-a-recent-saved-history-across-collections).
 
 *See:* ux-discovery §9 (R1)
 
@@ -1028,14 +1192,15 @@ Undecided. Each materially affects product or architecture.
 | Q2 | **What is the pending-URL queue capacity, and how is overflow shown?** | A hard drop silently reintroduces data loss. **Recommendation:** generous soft cap with visible overflow. The number is a product call. |
 | Q3 | **On a permanent validation failure (`VALIDATION_ERROR`, `INVALID_URL`), discard the entry or retain it for correction?** | **[Confirmed]** This is *not* the queue's primary failure scenario ([D15](#d15---save-failures-are-categorized-by-verified-errorcode-values-v12-resolved)), but it still needs an answer. Discard loses a share the user made deliberately; retain needs a UI for editing a queue entry. |
 | Q4 | **Should automatic retry be introduced after Flutter development progresses?** | **RESOLVED for v1** as the provisional manual-retry policy ([D23](#d23---manual-retry-is-the-v1-default-policy-provisional)). **Reopened as a future review**, not settled: whether to introduce it, under which conditions, and with what safeguards is undecided. |
-| Q5 | **Where does the paste field live** — always visible on the Inbox, or behind an action? | Affects the Inbox's primary action and whether intake feels first-class. |
+| Q5 | ~~**Where does the paste field live** — always visible on the Inbox, or behind an action?~~ | **RESOLVED.** **[Confirmed]** The URL input is **visible directly on the Inbox screen**, with separate **Paste** and **Save URL** actions, and the URL can be inspected or edited before saving. **[Confirmed] Pasting alone does not save.** See [D25](#d25--inbox-input-a-url-field-with-paste-and-save-url). The remaining sub-question — validation timing — is preserved separately as **Q13**. |
 | Q6 | **Should Google sign-in lead the welcome screen?** | **[Doc]** Social finalization mints a session; manual finalization does not and needs a separate login. Google reaches a session in far fewer steps, which bears directly on risk R3. |
 | Q7 | **Send `X-Platform` / `X-Device-Name` now, despite deferring device management?** | **[Doc]** These headers populate `GET /auth/sessions`. Sending them now costs nothing and avoids a retrofit; not sending them is fine if deferral is genuine. |
 | Q8 | **Should search result ordering be surfaced to users?** | **[Doc]** Results are best-match first with recency only as a tie-break. Users may expect newest-first and be surprised. |
-| Q9 | **Should automatic organization be acknowledged in the UI at all?** | **[Doc]** *"automatic, not invisible"* — but no endpoint reports organization events, so there is nothing to surface. |
+| Q9 | ~~**Should automatic organization be acknowledged in the UI at all?**~~ | **RESOLVED for v1.** **[Confirmed]** The UX must **not** depend on a per-item notification announcing automatic organization; the client cannot announce a specific event because the backend exposes none. **[Confirmed]** Refreshing the Inbox shows the latest data available and must not imply it guarantees worker completion or proves why an item changed collection. **[Open]** A general, non-per-item explanation of automatic organization may be considered separately — no specific notification, surface, or wording is decided. See [D26](#d26--inbox-is-a-recent-saved-history-across-collections). |
 | Q10 | **What makes two pending URLs "equivalent" for [D19](#d19--local-pending-url-deduplication-overwrite-and-preserve-position)?** | **[Open]** Not defined, and **no backend rule exists to reuse**: `domain` derivation is not a URL-identity rule; canonical URLs are reported but **not persisted and not applied**; `saved_items` has no `url_hash`. **[Confirmed]** Do not implement normalization until decided. An aggressive rule would merge genuinely different pages; a strict rule merely fails to coalesce. |
 | Q11 | **Is the user told anything when a share coalesces?** | **[Confirmed]** No warning or confirmation dialog — the refresh is silent by decision. Whether a subtle acknowledgement is worth adding is undecided. **Recommendation:** stay silent; the queue should feel stable, not eventful. |
 | Q12 | **Is there a manual language override in Profile?** | Device locale is the **proposed** default per [D20](#d20--flutter-owns-localization-of-user-facing-ui-text). **[Open]** A user-facing language switch is not confirmed, and v1 scope is `en` + `id`. |
+| Q13 | **When, and whether, does the Inbox URL input validate before submission?** | Created by [D25](#d25--inbox-input-a-url-field-with-paste-and-save-url): with a visible editable field and an explicit **Save URL** action, *when* validation happens determines what the user sees before and after submitting. **[Rec]** Mirror the server's rule client-side ([§2.9](#29-recommendation--client-mirrors-server-url-validation)). **[Open]** If validation is client-side, whether an invalid URL blocks submission or is submitted and answered by the server is undecided; the server's codes for this are [D15](#d15---save-failures-are-categorized-by-verified-errorcode-values-v12-resolved) group D (`VALIDATION_ERROR`, `INVALID_URL`). **[Open]** Related and also undecided: because the field is editable, the submitted value may differ from what was pasted or shared, and how that interacts with the [D19](#d19--local-pending-url-deduplication-overwrite-and-preserve-position) coalescing rule is not specified. |
 
 ---
 
@@ -1068,15 +1233,39 @@ Feasibility to confirm before implementation. **[Not decisions.]**
 **[Confirmed] Not requested now.** Recorded so the gap is visible and not
 rediscovered as a surprise. None of these is a blocker for v1.
 
-### 5.1 Aggregate "all saved items" view
+### 5.1 Recently saved items across collections (Inbox)
 
-**[Doc]** `AGENTS.md` decision 19g removes the standalone listing deliberately:
-*"Two ways to ask the same question would be two answers to keep in step, and the
-standalone one was also the poorer answer."*
+> **[Confirmed] This entry now records a planned requirement, not a deferral.** The
+> Inbox's cross-collection listing was previously recorded here as *deferred*.
 
-**[Confirmed]** Deferred. Consequence for v1: a user who has forgotten both the
-collection and any searchable token has no way to reach an item. The UI must not
-pretend otherwise — see [§2.5](#25-recommendation--search-framing-and-truncation-disclosure).
+**[Doc] The backend gap is unchanged.** `AGENTS.md` decision 19g removes the
+standalone listing deliberately: *"Two ways to ask the same question would be two
+answers to keep in step, and the standalone one was also the poorer answer."*
+**[Doc] No endpoint that lists recently saved items across collections exists
+today.**
+
+**[Confirmed] The product now requires one.** See
+[D26](#d26--inbox-is-a-recent-saved-history-across-collections). The requirement is
+stated **only at product level**:
+
+> The Inbox needs a **bounded list of recently saved items across collections**,
+> including **each item's current collection** and **its relevant enrichment
+> status**, based on the **latest data available from the backend**.
+
+**[Confirmed] No endpoint path, request schema, response schema, pagination
+contract, ordering, or backend behaviour is specified or implied.** None of this is
+implemented or available. The backend repository remains authoritative for any
+contract that is later designed.
+
+**[Confirmed] What stays deferred.** A full "browse every saved item" view is still
+not in v1. The requirement above is for a **bounded recent-saved history**, which is
+not the same thing. A user who has forgotten both the collection and any
+searchable token still has no way to reach an old item; the UI must not pretend
+otherwise — see [§2.5](#25-recommendation--search-framing-and-truncation-disclosure).
+
+**[Confirmed] Not an aggregate view.** The pending-URL queue remains a separate
+concern and is **not** a substitute for this — see
+[D13](#d13--pending-local-urls-and-backend-saved-items-are-distinct-states-of-ownership).
 
 ---
 
@@ -1102,7 +1291,7 @@ Recorded for completeness. None is a v1 blocker.
 | **Bulk operations** | None on saved items. Batch move exists only inside collection deletion (decision 19d). | Not designed. |
 | **Bulk enrichment** | Explicitly one item at a time (`product.md`). | Retry is per item ([D8](#d8--enrichment-states-are-represented-accurately-with-retry-on-pending-and-failed)). |
 | **Reminder / return loop** | Development-order step 4; unimplemented. | "Come back later" has no product surface in v1. |
-| **Notification of organization** | No endpoint reports it. | Reconcile rather than announce ([§2.6](#26-recommendation--reconciliation-rather-than-announcement-for-automatic-organization)). |
+| **Notification of organization** | No endpoint reports it. | Reconcile rather than announce ([§2.6](#26-recommendation--reconciliation-rather-than-announcement-for-automatic-organization)). **[Confirmed]** The UX must not depend on such a notification ([D26](#d26--inbox-is-a-recent-saved-history-across-collections)). |
 | **Idempotent saves** | No idempotency key, request identifier, or unique `url` constraint. | **At-least-once semantics only.** Documented as an unresolved risk, not solved ([D16](#d16---uncertain-save-outcomes-and-their-verified-boundary), V11). |
 | **Bulk saved-item save** | No bulk endpoint exists; v1 retries one URL at a time via `POST /saved-items` ([D24](#d24--manual-retry-uses-the-existing-single-item-save-endpoint)). | **Not needed in v1.** May be reconsidered on usage or capacity evidence. |
 | **Recovery of expired pending URLs** | Client-side only; the server has never seen them. | Do not promise recovery the app cannot deliver. |

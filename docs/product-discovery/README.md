@@ -42,10 +42,22 @@ original source. The default collection is **Unsorted**, where every save lands.
 
 ### Scope for v1
 
-In scope: authentication, saving a URL, the Inbox (the Unsorted collection),
-saved-item detail and deletion, collections, search, and metadata enrichment.
+In scope: authentication, saving a URL, the Inbox, saved-item detail and deletion,
+collections, search, and metadata enrichment.
 
-Explicitly out of scope for v1: any aggregate "all saved items" view, device and
+**[Confirmed] The Inbox is a bounded history of recently saved items across
+collections.** It helps the user verify that a URL was saved and see which
+collection the item currently belongs to. **[Confirmed] Collections remains the
+collection browser.** **[Confirmed] The Inbox is not an alias for the `unsorted`
+collection.** See [`decisions.md` D26](./decisions.md).
+
+**[Open] The Inbox needs a backend listing that does not exist yet.** This is a
+recorded product requirement, not an available capability. **[Confirmed]** No
+endpoint, request or response schema, pagination contract, or ordering is
+specified or implied by these documents, and the backend repository remains
+authoritative for any contract that is later designed.
+
+Explicitly out of scope for v1: a full "browse every saved item" view, device and
 session management, a separate mobile-web experience, a complete offline mode, a
 separate offline navigation destination, and any feature not already supported by
 the backend.
@@ -66,7 +78,7 @@ enrichment finished.
 This is a client-side concern with a seven-day retention policy. It is **not** an
 offline mode, **not** an aggregate saved-items view, and **not** a fifth
 navigation destination. The exact rules live in
-[§7](./ux-discovery.md) and [§1](./decisions.md); this paragraph
+[§7 Pending URLs](./ux-discovery.md#7-pending-urls--ownership-lifecycle-and-errors) and [§1](./decisions.md#1-confirmed-decisions); this paragraph
 is orientation only.
 
 **Retry (provisional).** Manual retry is the v1 default: when a URL needs to be
@@ -93,7 +105,7 @@ duplicate *saved* items are allowed.
 and Indonesian (`id`), using ARB resources and generated accessors. Backend
 `error.code` values select localized messages; backend `error.message` text is
 never shown. Saved item titles and descriptions stay in whatever language the
-source page used. Full rules are in [§12](./ux-discovery.md) and decisions.md D20–D22.
+source page used. Full rules are in [§12 Localization](./ux-discovery.md#12-localization-and-localized-error-messaging) and decisions.md D20–D22.
 
 ## For coding agents working in this repository
 
@@ -132,6 +144,9 @@ directly. The primary references are:
   successful `200` with empty arrays.
 - **Serialize refresh-token requests.** A concurrent double-refresh revokes the
   session server-side.
+- **The Inbox's data source does not exist yet.** Do not assume an endpoint that
+  lists recently saved items across collections, and do not design against an
+  invented contract. See [§1 D26](./decisions.md#d26--inbox-is-a-recent-saved-history-across-collections).
 - **Nothing here is an approved architecture decision.** Navigation libraries,
   state management, API clients, and design systems are all still open.
 
