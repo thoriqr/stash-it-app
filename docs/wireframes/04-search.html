@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 — Search — Stash It wireframes</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-vp="portrait" data-ann="off">
+
+<div class="toolbar">
+  <div class="toolbar__group">
+    <span class="toolbar__label">Viewport</span>
+    <button class="btn" data-vp-set="fluid"     aria-pressed="false">Fluid</button>
+    <button class="btn" data-vp-set="narrow"    aria-pressed="false">Narrow 320</button>
+    <button class="btn" data-vp-set="portrait"  aria-pressed="true">Portrait 390</button>
+    <button class="btn" data-vp-set="landscape" aria-pressed="false">Landscape 844</button>
+    <button class="btn" data-vp-set="tablet"    aria-pressed="false">Tablet 834</button>
+    <button class="btn" data-vp-set="desktop"   aria-pressed="false">Desktop 1180</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="toolbar__group">
+    <span class="toolbar__label">Preset: <span id="vp-readout">portrait</span></span>
+    <button class="btn btn--ghost" data-ann-toggle aria-pressed="false">Annotations: OFF</button>
+    <a class="btn" href="index.html">&larr; Index</a>
+  </div>
+</div>
+
+<div class="page" style="max-width:none;padding-bottom:20px">
+  <h1 style="font-size:21px;margin:14px 0 4px">04 — Search</h1>
+  <p class="lede" style="margin-bottom:18px">
+    One query searches saved items and collections together and returns both groups. Search answers
+    <em>"where is the thing I saved?"</em> — it is not a browsing tool. Inbox and Collections carry browsing.
+  </p>
+  <p style="margin:0 0 20px"><span class="mockbar">Mock data</span></p>
+</div>
+
+<div class="stage">
+
+  <div class="screenwrap">
+    <div class="screenwrap__caption">A — Search state family</div>
+    <div class="strip">
+
+      <!-- A1 initial -->
+      <div class="strip__cell">
+        <div class="strip__label">A1 — Initial</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Search</div></div>
+          <div class="body">
+            <div style="padding:10px 12px;border-bottom:1px solid var(--rule)">
+              <input class="urlform__field" type="text" placeholder="Search saved items and collections" readonly>
+            </div>
+            <div class="content">
+              <div class="empty" style="margin-top:24px">
+                <div class="empty__title">Find something you saved</div>
+                Search matches item titles, domains, URLs, and collection names.
+              </div>
+              <div class="note">
+                No autocomplete, no suggestions, no recent searches — <strong>none of these exist in the
+                API</strong>.
+              </div>
+            </div>
+          </div>
+          <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item tabbar__item--search" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <!-- A2 query entered -->
+      <div class="strip__cell">
+        <div class="strip__label">A2 — Query entered</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Search</div></div>
+          <div class="body">
+            <div style="padding:10px 12px;border-bottom:1px solid var(--rule);display:flex;gap:8px;align-items:center">
+              <input class="urlform__field" type="text" readonly value="camera">
+              <button class="btn btn--sm">Clear</button>
+            </div>
+            <div class="content">
+              <div class="note">Query must be <strong>2–128 characters</strong> after trimming. Case is ignored throughout.</div>
+              <div class="empty" style="margin-top:8px">
+                <div class="empty__title">Searching…</div>
+              </div>
+            </div>
+          </div>
+          <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item tabbar__item--search" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <!-- A3 results -->
+      <div class="strip__cell">
+        <div class="strip__label">A3 — Results (items + collections)</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Search</div></div>
+          <div class="body">
+            <div style="padding:10px 12px;border-bottom:1px solid var(--rule);display:flex;gap:8px;align-items:center">
+              <input class="urlform__field" type="text" readonly value="camera">
+              <button class="btn btn--sm">Clear</button>
+            </div>
+
+            <div class="sec sec--first">Collections · 2</div>
+            <div class="row" style="padding-top:8px;padding-bottom:8px">
+              <div class="row__main"><div class="row__title">Camera Gear</div>
+                <div class="row__url">collection</div></div>
+            </div>
+            <div class="row" style="padding-top:8px;padding-bottom:8px">
+              <div class="row__main"><div class="row__title">Compact Camera Buying Guide</div>
+                <div class="row__url">collection</div></div>
+            </div>
+
+            <div class="sec">Saved items · 3</div>
+            <div class="row">
+              <div class="row__thumb">image</div>
+              <div class="row__main">
+                <div class="row__title">Understanding sensor sizes in mirrorless bodies</div>
+                <div class="row__url">photo.example.com/sensor-sizes</div>
+                <div class="row__meta"><span class="chip chip--solid">Camera Gear</span></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row__thumb">image</div>
+              <div class="row__main">
+                <div class="row__title">A field review of the 35mm prime</div>
+                <div class="row__url">reviews.example.net/35mm-prime</div>
+                <div class="row__meta"><span class="chip">Wishlist</span></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row__thumb row__thumb--empty">—</div>
+              <div class="row__main">
+                <div class="row__title row__title--fallback">https://archive.example.net/camera/raw</div>
+                <div class="row__url">archive.example.net</div>
+                <div class="row__meta"><span class="chip">Unsorted</span><span class="state state--pending"><i class="state__dot"></i>Reading page…</span></div>
+              </div>
+            </div>
+          </div>
+          <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item tabbar__item--search" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <!-- A4 truncated -->
+      <div class="strip__cell">
+        <div class="strip__label">A4 — Capped results</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Search</div></div>
+          <div class="body">
+            <div style="padding:10px 12px;border-bottom:1px solid var(--rule);display:flex;gap:8px;align-items:center">
+              <input class="urlform__field" type="text" readonly value="example">
+              <button class="btn btn--sm">Clear</button>
+            </div>
+            <div class="note" style="margin:10px 12px;border-left-color:var(--ink)">
+              <strong>Showing the 20 closest matches.</strong> There are more — search returns at most 20 items
+              and 5 collections, and there is no way to page or refine further.
+            </div>
+            <div class="row">
+              <div class="row__thumb">image</div>
+              <div class="row__main"><div class="row__title">Result one</div><div class="row__url">example.com/1</div></div>
+            </div>
+            <div class="row">
+              <div class="row__thumb">image</div>
+              <div class="row__main"><div class="row__title">Result two</div><div class="row__url">example.com/2</div></div>
+            </div>
+            <div class="row">
+              <div class="row__thumb">image</div>
+              <div class="row__main"><div class="row__title">Result three</div><div class="row__url">example.com/3</div></div>
+            </div>
+            <div style="padding:12px;font-size:11px;color:var(--gray)">[ capped — no "load more" is possible ]</div>
+          </div>
+          <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item tabbar__item--search" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <!-- A5 no results -->
+      <div class="strip__cell">
+        <div class="strip__label">A5 — No results (success, not error)</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Search</div></div>
+          <div class="body">
+            <div style="padding:10px 12px;border-bottom:1px solid var(--rule);display:flex;gap:8px;align-items:center">
+              <input class="urlform__field" type="text" readonly value="woodworking">
+              <button class="btn btn--sm">Clear</button>
+            </div>
+            <div class="content">
+              <div class="empty" style="margin-top:20px">
+                <div class="empty__title">No matches for "woodworking"</div>
+                An item you saved may still match by domain or URL rather than title, and results are
+                capped — so try a different word, or browse Collections.
+              </div>
+              <div class="note note--strong">
+                This is a <strong>successful response with empty arrays</strong>, not an error.
+                <strong>Never assert that nothing was ever saved.</strong>
+              </div>
+            </div>
+          </div>
+          <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item tabbar__item--search" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <!-- A6 rate limited -->
+      <div class="strip__cell">
+        <div class="strip__label">A6 — Rate limited</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Search</div></div>
+          <div class="body">
+            <div style="padding:10px 12px;border-bottom:1px solid var(--rule);display:flex;gap:8px;align-items:center">
+              <input class="urlform__field" type="text" readonly value="camera" disabled>
+              <span class="countdown">[ 00:23 ]</span>
+            </div>
+            <div class="content">
+              <div class="empty" style="margin-top:16px">
+                <div class="empty__title">Too many searches</div>
+                Try again in a moment. Searching is limited to 30 requests per minute.
+              </div>
+            </div>
+          </div>
+          <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item tabbar__item--search" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+    </div>
+
+    <aside class="ann">
+      <div class="ann__title">A — Search</div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text"><strong>One query, one endpoint, two groups.</strong> Items and collections are returned together by <code>GET /search?q=</code>. <span class="ann__ref">ux §1.7</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text">Matched fields are item <strong><code>title</code>, <code>domain</code>, <code>url</code></strong> and collection <strong><code>name</code></strong>. Nothing else — not platform, not identifiers, not dates. <span class="ann__ref">ux §1.7</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Zero results is a successful <code>200</code>, not an error</strong>, and must never be rendered as one. <span class="ann__ref">README, ux §B.5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text>Zero-result copy must <strong>not assert the item was never saved</strong>. Three independent reasons can hide a match: the field is <code>title</code>-less while still <code>pending</code>; results were capped; or the collection exceeded the 5-collection cap. <span class="ann__ref">ux §B.7, R13</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text><strong>Disclose truncation</strong> — "Showing the 20 closest matches." Presenting a capped list as exhaustive makes the product look like it lost the item. <span class="ann__ref">decisions §2.5, R8</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text">Caps are <strong>20 items default / 50 max</strong> and <strong>5 collections</strong>, unpaged. There is <strong>no</strong> <code>total</code>, <code>has_more</code>, autocomplete, suggestion, or filter — so none is drawn. <span class="ann__ref">ux §1.7, §B.6</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text">Search is rate limited to <strong>30 requests/minute/user</strong>, and cost grows with the account's own row count (measured 483 ms at 50,000 items). <span class="ann__ref">ux §B.4</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text><strong>Whether result ordering should be surfaced to users is undecided.</strong> Results are best-match first with recency only as a tie-break, which may surprise users expecting newest-first. <span class="ann__ref">decisions §3 Q8</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Rec</span><span class="ann__text>Grouping order (collections above items), the Clear affordance and the query field placement are proposals. <span class="ann__ref">—</span></span></div>
+    </aside>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

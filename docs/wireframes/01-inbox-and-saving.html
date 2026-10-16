@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 — Inbox &amp; saving URLs — Stash It wireframes</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-vp="portrait" data-ann="off">
+
+<div class="toolbar">
+  <div class="toolbar__group">
+    <span class="toolbar__label">Viewport</span>
+    <button class="btn" data-vp-set="fluid"     aria-pressed="false">Fluid</button>
+    <button class="btn" data-vp-set="narrow"    aria-pressed="false">Narrow 320</button>
+    <button class="btn" data-vp-set="portrait"  aria-pressed="true">Portrait 390</button>
+    <button class="btn" data-vp-set="landscape" aria-pressed="false">Landscape 844</button>
+    <button class="btn" data-vp-set="tablet"    aria-pressed="false">Tablet 834</button>
+    <button class="btn" data-vp-set="desktop"   aria-pressed="false">Desktop 1180</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="toolbar__group">
+    <span class="toolbar__label">Preset: <span id="vp-readout">portrait</span></span>
+    <button class="btn btn--sm" data-open="sheet-pending">Pending sheet</button>
+    <button class="btn btn--ghost" data-ann-toggle aria-pressed="false">Annotations: OFF</button>
+    <a class="btn" href="index.html">&larr; Index</a>
+  </div>
+</div>
+
+<div class="page" style="max-width:none;padding-bottom:20px">
+  <h1 style="font-size:21px;margin:14px 0 4px">01 — Inbox &amp; saving URLs</h1>
+  <p class="lede" style="margin-bottom:18px">
+    S7 Inbox and S15 pending local URLs. The Inbox is a bounded history of <strong>recently saved
+    items across collections</strong>, showing each item's current collection. It is <strong>not</strong> the
+    <code>unsorted</code> collection. The pending-URL queue is a separate, local-only concern and is
+    <strong>not</strong> the saved-items history.
+  </p>
+  <p style="margin:0 0 20px"><span class="mockbar">Mock data — the Inbox listing API does not exist</span></p>
+</div>
+
+<div class="stage">
+
+  <!-- ================= A. APP SHELL / NAVIGATION ======================= -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">A — Application shell: four destinations, active state</div>
+    <div class="strip">
+      <div class="strip__cell">
+        <div class="strip__label">Inbox active</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Inbox</div></div>
+          <div class="body"><div class="content"><div class="empty" style="margin-top:20px">
+            <div class="empty__title">Screen body</div>Recently saved items across collections
+          </div></div></div>
+          <nav class="tabbar">
+            <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+            <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+            <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+            <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+          </nav>
+        </div>
+      </div>
+      <div class="strip__cell">
+        <div class="strip__label">Collections active</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Collections</div></div>
+          <div class="body"><div class="content"><div class="empty" style="margin-top:20px">
+            <div class="empty__title">Screen body</div>Collection browser
+          </div></div></div>
+          <nav class="tabbar">
+            <div class="tabbar__item tabbar__item--inbox"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+            <div class="tabbar__item tabbar__item--cols" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+            <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+            <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+          </nav>
+        </div>
+      </div>
+      <div class="strip__cell">
+        <div class="strip__label">Search active</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Search</div></div>
+          <div class="body"><div class="content"><div class="empty" style="margin-top:20px">
+            <div class="empty__title">Screen body</div>Find a thing you saved
+          </div></div></div>
+          <nav class="tabbar">
+            <div class="tabbar__item tabbar__item--inbox"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+            <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+            <div class="tabbar__item tabbar__item--search" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+            <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+          </nav>
+        </div>
+      </div>
+      <div class="strip__cell">
+        <div class="strip__label">Profile active</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Profile</div></div>
+          <div class="body"><div class="content"><div class="empty" style="margin-top:20px">
+            <div class="empty__title">Screen body</div>Account
+          </div></div></div>
+          <nav class="tabbar">
+            <div class="tabbar__item tabbar__item--inbox"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+            <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+            <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+            <div class="tabbar__item tabbar__item--profile" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+          </nav>
+        </div>
+      </div>
+    </div>
+    <aside class="ann">
+      <div class="ann__title">A — Application shell</div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Four destinations: <strong>Inbox · Collections · Search · Profile</strong>. No fifth tab. <span class="ann__ref">D1</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">The pending-URL queue must <strong>not</strong> become a fifth navigation destination. It is a section inside the Inbox. <span class="ann__ref">D18, ux §4 (S15)</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text">Tab order, tab labels and glyph shapes are <strong>not</strong> decided anywhere in the discovery documents. These are proposals for review only. <span class="ann__ref">decisions.md §6 — design system not decided</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Rec</span><span class="ann__text">Active state is expressed by weight + outline + a background change. Purely a proposal; a real implementation might use colour, which is out of scope for this artifact. <span class="ann__ref">decisions.md §6</span></span></div>
+    </aside>
+  </div>
+
+  <!-- ================= B. INBOX STATES ================================ -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">B — Inbox: empty, initial loading, and populated across collections</div>
+    <div class="strip">
+
+      <!-- Empty -->
+      <div class="strip__cell">
+        <div class="strip__label">B1 — Empty Inbox</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Inbox</div></div>
+          <div class="urlform">
+            <label class="urlform__label" for="u-empty">Save a URL</label>
+            <input class="urlform__field" id="u-empty" type="text" placeholder="https://" readonly>
+            <div class="urlform__actions">
+              <button class="btn-ux">Paste</button>
+              <button class="btn-ux btn-ux--primary" disabled>Save URL</button>
+            </div>
+          </div>
+          <div class="body">
+            <div class="content">
+              <div class="empty">
+                <div class="empty__title">Nothing saved yet</div>
+                Paste a link above, or share one into the app from any browser.
+              </div>
+            </div>
+          </div>
+          <nav class="tabbar">
+            <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+            <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+            <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+            <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div class="strip__cell">
+        <div class="strip__label">B2 — Initial loading</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Inbox</div></div>
+          <div class="urlform">
+            <label class="urlform__label">Save a URL</label>
+            <input class="urlform__field" type="text" placeholder="https://" readonly>
+            <div class="urlform__actions">
+              <button class="btn-ux">Paste</button>
+              <button class="btn-ux btn-ux--primary" disabled>Save URL</button>
+            </div>
+          </div>
+          <div class="body">
+            <div class="skelrow"><div class="skelrow__thumb skel"></div><div class="skelrow__lines">
+              <div class="skel" style="width:70%"></div><div class="skel" style="width:45%"></div></div></div>
+            <div class="skelrow"><div class="skelrow__thumb skel"></div><div class="skelrow__lines">
+              <div class="skel" style="width:62%"></div><div class="skel" style="width:50%"></div></div></div>
+            <div class="skelrow"><div class="skelrow__thumb skel"></div><div class="skelrow__lines">
+              <div class="skel" style="width:78%"></div><div class="skel" style="width:40%"></div></div></div>
+          </div>
+          <nav class="tabbar">
+            <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+            <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+            <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+            <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Populated -->
+      <div class="strip__cell">
+        <div class="strip__label">B3 — Populated, items from several collections</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar">
+            <div class="appbar__title">Inbox</div>
+            <div class="appbar__action">Recent</div>
+          </div>
+          <div class="urlform">
+            <label class="urlform__label">Save a URL</label>
+            <input class="urlform__field" type="text" placeholder="https://" readonly>
+            <div class="urlform__actions">
+              <button class="btn-ux">Paste</button>
+              <button class="btn-ux btn-ux--primary" disabled>Save URL</button>
+            </div>
+          </div>
+          <div class="body">
+            <div class="row">
+              <div class="row__thumb">image</div>
+              <div class="row__main">
+                <div class="row__title">Understanding CRDTs: why eventual consistency is not a compromise</div>
+                <div class="row__url">example.com/articles/crdts-explained</div>
+                <div class="row__meta">
+                  <span class="chip chip--solid">Camera Gear</span>
+                  <span class="state state--completed"><i class="state__dot"></i>Details read</span>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row__thumb">image</div>
+              <div class="row__main">
+                <div class="row__title">A thread about incremental static regeneration</div>
+                <div class="row__url">social.example.org/@someone/isr-tradeoffs</div>
+                <div class="row__meta">
+                  <span class="chip">Unsorted</span>
+                  <span class="state state--pending"><i class="state__dot"></i>Reading page…</span>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row__thumb row__thumb--empty">no image</div>
+              <div class="row__main">
+                <div class="row__title row__title--fallback">https://archive.example.net/specs/build-notes</div>
+                <div class="row__url">archive.example.net</div>
+                <div class="row__meta">
+                  <span class="chip">Reading List</span>
+                  <span class="state state--completed"><i class="state__dot"></i>Saved — page had no details</span>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row__thumb">image</div>
+              <div class="row__main">
+                <div class="row__title">Full-Text Search in Postgres, part three</div>
+                <div class="row__url">engineering.example.dev/pgsearch-3</div>
+                <div class="row__meta">
+                  <span class="chip chip--strong">Wishlist</span>
+                  <span class="state state--failed"><i class="state__dot"></i>Couldn't read this page</span>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row__thumb">image</div>
+              <div class="row__main">
+                <div class="row__title">Designing a rate limiter that fails closed</div>
+                <div class="row__url">engineering.example.dev/rate-limits</div>
+                <div class="row__meta">
+                  <span class="chip">Camera Gear</span>
+                  <span class="state state--pending"><i class="state__dot"></i>Reading page…</span>
+                </div>
+              </div>
+            </div>
+            <div style="padding:12px 12px 4px;font-size:11px;color:var(--gray)">[ end of recent history — bounded list ]</div>
+          </div>
+          <nav class="tabbar">
+            <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+            <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+            <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+            <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+          </nav>
+        </div>
+      </div>
+
+    </div>
+    <aside class="ann">
+      <div class="ann__title">B — Inbox states</div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Inbox shows <strong>recently saved items across collections</strong>, each with its <strong>current collection</strong>. It is not the <code>unsorted</code> collection. <span class="ann__ref">D26 (supersedes D3)</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text"><strong>The listing API does not exist.</strong> Every item above is fabricated mock data representing what such a response would carry. No endpoint, schema, pagination or ordering is implied. <span class="ann__ref">D26, ux §B.1, decisions §5.1</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">The URL input is <strong>visible directly on the Inbox</strong>, with separate <strong>Paste</strong> and <strong>Save URL</strong> buttons. Paste fills the field; it does not save. <span class="ann__ref">D25</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Empty Inbox shows "Nothing saved yet" <em>plus the input</em>, which is on the screen by definition. <span class="ann__ref">ux §5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Initial loading uses <strong>neutral skeleton rows with no spinner text</strong>. <span class="ann__ref">ux §5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text">Row composition, chip position and the "Recent" affordance are proposals. What is <em>confirmed</em> is that a row must carry: fallback title, domain, enrichment state, and current collection. <span class="ann__ref">ux §2.1, §C.2</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text">"How many recent items?" and "ordered how?" are <strong>not decided</strong>. The bounded end-marker is a placeholder, not a rule. <span class="ann__ref">D26</span></span></div>
+    </aside>
+  </div>
+
+  <!-- ================= C. SAVE FLOW VARIANTS ========================== -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">C — Save flow: input → in flight → confirmed</div>
+
+    <div class="toolbar__group" style="justify-content:center;margin-bottom:8px">
+      <span class="toolbar__label">Show state</span>
+      <button class="btn" data-variant-set="save" data-variant-val="filled"  aria-pressed="true">1 · Input filled</button>
+      <button class="btn" data-variant-set="save" data-variant-val="flight"  aria-pressed="false">2 · In flight</button>
+      <button class="btn" data-variant-set="save" data-variant-val="saved"  aria-pressed="false">3 · Confirmed</button>
+    </div>
+
+    <div data-variant-group="save" data-current="filled">
+      <div class="strip">
+        <div class="strip__cell" data-variant="filled">
+          <div class="strip__label">C1 — Paste filled the field (nothing saved yet)</div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+            <div class="appbar"><div class="appbar__title">Inbox</div></div>
+            <div class="urlform">
+              <label class="urlform__label" for="u-filled">Save a URL</label>
+              <input class="urlform__field" id="u-filled" type="text" readonly value="https://example.com/a-long-article-about-distributed-systems?ref=share">
+              <div class="urlform__actions">
+                <button class="btn-ux">Paste</button>
+                <button class="btn-ux btn-ux--primary">Save URL</button>
+              </div>
+              <div class="urlform__hint">Check or edit the link before saving.</div>
+            </div>
+            <div class="body"><div class="content">
+              <div class="empty" style="margin-top:8px">
+                <div class="empty__title">Nothing saved yet</div>
+                Nothing has been saved from this field.
+              </div>
+            </div></div>
+            <nav class="tabbar">
+              <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+              <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+              <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+              <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+            </nav>
+          </div>
+        </div>
+
+        <div class="strip__cell" data-variant="flight">
+          <div class="strip__label">C2 — Save in flight</div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+            <div class="appbar"><div class="appbar__title">Inbox</div></div>
+            <div class="urlform">
+              <label class="urlform__label">Save a URL</label>
+              <input class="urlform__field" type="text" readonly value="https://example.com/a-long-article-about-distributed-systems?ref=share">
+              <div class="urlform__actions">
+                <button class="btn-ux" disabled>Paste</button>
+                <button class="btn-ux btn-ux--primary" disabled>Saving…</button>
+              </div>
+              <div class="urlform__hint">Saving. Do not confirm success yet.</div>
+            </div>
+            <div class="body"><div class="content">
+              <div class="empty" style="margin-top:8px">
+                <div class="empty__title">Nothing saved yet</div>
+                Waiting for the server to confirm.
+              </div>
+            </div></div>
+            <nav class="tabbar">
+              <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+              <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+              <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+              <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+            </nav>
+          </div>
+        </div>
+
+        <div class="strip__cell is-hidden" data-variant="saved">
+          <div class="strip__label">C3 — Confirmed (201 received)</div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+            <div class="appbar"><div class="appbar__title">Inbox</div></div>
+            <div class="urlform">
+              <label class="urlform__label">Save a URL</label>
+              <input class="urlform__field" type="text" placeholder="https://" readonly>
+              <div class="urlform__actions">
+                <button class="btn-ux">Paste</button>
+                <button class="btn-ux btn-ux--primary" disabled>Save URL</button>
+              </div>
+            </div>
+            <div class="body"><div class="content" style="padding-top:10px">
+              <div class="saved-toast">
+                <div class="saved-toast__title">Saved</div>
+                <div class="saved-toast__body">https://example.com/a-long-article-about-distributed-systems?ref=share</div>
+              </div>
+              <div class="note">
+                Confirmations <strong>confirm the item was created</strong> only. They say nothing about
+                enrichment, metadata, or where the item will end up.
+              </div>
+              <div class="row" style="padding-left:0;padding-right:0;border-top:1px solid var(--rule-soft)">
+                <div class="row__thumb">—</div>
+                <div class="row__main">
+                  <div class="row__title row__title--fallback">https://example.com/a-long-article-about-distributed-systems?ref=share</div>
+                  <div class="row__url">example.com</div>
+                  <div class="row__meta">
+                    <span class="chip">Unsorted</span>
+                    <span class="state state--pending"><i class="state__dot"></i>Reading page…</span>
+                  </div>
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--gray);margin-top:8px">
+                Optimistic row: the create response already carries id, url, collection_id and
+                enrichment_status, so an honest optimistic row is supported.
+              </div>
+            </div></div>
+            <nav class="tabbar">
+              <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+              <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+              <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+              <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="ann">
+      <div class="ann__title">C — Save flow</div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Paste fills the input; it does not save.</strong> <strong>Save URL</strong> submits the URL currently in the field. The user can inspect or edit before saving. <span class="ann__ref">D25</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">A populated field is <strong>not</strong> a pending entry and <strong>not</strong> a saved item. Nothing is queued until <strong>Save URL</strong> is pressed. <span class="ann__ref">ux §5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Do not use success messaging until the save has actually succeeded.</strong> Nothing in C2 claims success. <span class="ann__ref">ux §5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">The confirmation states <strong>"Saved"</strong> and shows the URL — and must <strong>not</strong> imply that enrichment completed, that metadata is guaranteed, that automatic organization completed, or that the item will be moved anywhere. <span class="ann__ref">D26, ux §A.6</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text"><strong>Validation timing is undecided (Q13).</strong> No invalid-URL state is drawn. Whether the input validates before submission, and whether an invalid URL blocks submission or is sent and answered by the server, is open. <span class="ann__ref">decisions §3 Q13</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text"><strong>Clipboard behaviour beyond "fills the field" is undecided.</strong> No empty-clipboard or non-URL clipboard state is drawn. <span class="ann__ref">decisions §3 Q13</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Rec</span><span class="ann__text>Field position, hint copy and the optimistic row treatment are proposals. <span class="ann__ref">decisions §2.2</span></span></div>
+    </aside>
+  </div>
+
+  <!-- ================= D. PENDING URL STATE MATRIX ==================== -->
+  <div class="page" style="max-width:none;padding:6px 0 0">
+    <h2 style="font-size:16px;margin:18px 0 6px">D — Pending local URLs: the full state family, side by side</h2>
+    <p style="font-size:12.5px;color:var(--gray-d);margin:0 0 4px">
+      Every pending state the discovery documents specify. Note the load-bearing distinction:
+      <strong>A–F are <em>known not saved</em></strong>; <strong>G–H are <em>uncertain</em></strong> —
+      only the uncertain pair may avoid claiming the item is unsaved, and only they offer "check your Inbox".
+    </p>
+  </div>
+
+  <div class="screenwrap">
+    <div class="screenwrap__caption">D1–D3 — never submitted, and known-rejected</div>
+    <div class="strip">
+
+      <!-- D1 awaiting auth -->
+      <div class="strip__cell">
+        <div class="strip__label">D1 · awaiting_auth</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Inbox</div></div>
+          <div class="body">
+            <div class="content">
+              <div class="sec sec--first">Pending links · 2</div>
+              <div class="pending">
+                <div class="pending__head">
+                  <span class="pending__count">2 waiting</span>
+                  <button class="pending__toggle" data-open="sheet-pending">View</button>
+                </div>
+                <div class="pending__row">
+                  <div class="pending__url">https://example.org/never-submitted</div>
+                  <div class="pending__why">Waiting for you to sign in. This link was shared before you were signed in — it is safe and will be sent once you are.</div>
+                  <div class="pending__acts">
+                    <a class="linkbtn" href="05-auth-and-profile.html">Sign in</a>
+                  </div>
+                </div>
+                <div class="pending__row">
+                  <div class="pending__url">https://example.net/also-never-submitted</div>
+                  <div class="pending__why">Waiting for you to sign in.</div>
+                </div>
+              </div>
+              <div class="note">Reading the queue never triggers a save. <strong>This is not a retry</strong> — it is the first submission.</div>
+            </div>
+          </div>
+          <nav class="tabbar">
+            <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+            <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+            <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+            <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+          </nav>
+        </div>
+      </div>
+
+      <!-- D2 rejected: auth -->
+      <div class="strip__cell">
+        <div class="strip__label">D2 · rejected — auth required</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Inbox</div></div>
+          <div class="body">
+            <div class="content">
+              <div class="sec sec--first">Pending links · 1</div>
+              <div class="pending">
+                <div class="pending__head">
+                  <span class="pending__count">1 waiting</span>
+                  <button class="pending__toggle">View</button>
+                </div>
+                <div class="pending__row">
+                  <div class="pending__url">https://example.com/session-expired-link</div>
+                  <div class="pending__why"><strong>Sign in again to save this link.</strong> It was not saved.</div>
+                  <div class="pending__acts">
+                    <a class="linkbtn" href="05-auth-and-profile.html">Sign in</a>
+                    <button class="linkbtn linkbtn--quiet">Retry</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <nav class="tabbar">
+            <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+            <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+            <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+            <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+          </nav>
+        </div>
+      </div>
+
+      <!-- D3 rejected: 429 -->
+      <div class="strip__cell">
+        <div class="strip__label">D3 · rejected — budget exhausted (429)</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Inbox</div></div>
+          <div class="body">
+            <div class="content">
+              <div class="sec sec--first">Pending links · 1</div>
+              <div class="pending">
+                <div class="pending__head">
+                  <span class="pending__count">1 waiting</span>
+                  <button class="pending__toggle">View</button>
+                </div>
+                <div class="pending__row">
+                  <div class="pending__url">https://example.com/over-the-limit</div>
+                  <div class="pending__why">You're saving too quickly. Try again in:</div>
+                  <div class="pending__acts">
+                    <span class="countdown">[ 04:12 ]</span>
+                  </div>
+                  <div style="font-size:10.5px;color:var(--gray)">
+                    Countdown comes from the <code>Retry-After</code> header. The action is
+                    <strong>disabled</strong> until it elapses — and then it waits for you.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <nav class="tabbar">
+            <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+            <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+            <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+            <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+          </nav>
+        </div>
+      </div>
+    </div>
+    <aside class="ann">
+      <div class="ann__title">D — Pending local URLs (S15)</div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Pending UI is <strong>a count and a list of URLs, nothing more</strong>. No local metadata, previews, titles or thumbnails. <span class="ann__ref">D18</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>D1 is not a retry.</strong> A URL shared before sign-in is a <em>first submission</em>; it is never discarded and is sent once a session exists. <span class="ann__ref">D6, D23 scenario A</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Reading the queue never submits anything.</strong> <span class="ann__ref">ux §7.3</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Auth failures keep the entry and <strong>offer a path back to sign-in</strong>. <span class="ann__ref">ux §5, D15 group A</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">429 carries <code>Retry-After</code>: show a countdown, disable the action, suspend the queue until it elapses. Elapsing the window does <strong>not</strong> resume submissions. <span class="ann__ref">ux §7.7 group B, §7.10</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text">Exact countdown duration, wording and placement are placeholders. Save budget is 60 per 10 minutes per user. <span class="ann__ref">[Doc] backend</span></span></div>
+    </aside>
+  </div>
+
+  <div class="screenwrap">
+    <div class="screenwrap__caption">D4–D6 — 503, offline, and the uncertain outcome</div>
+    <div class="strip">
+
+      <!-- D4 503 -->
+      <div class="strip__cell">
+        <div class="strip__label">D4 · rejected — server unavailable (503)</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ no connection indicator slot ]</span></div>
+          <div class="appbar"><div class="appbar__title">Inbox</div></div>
+          <div class="body">
+            <div class="content">
+              <div class="sec sec--first">Pending links · 1</div>
+              <div class="pending">
+                <div class="pending__head">
+                  <span class="pending__count">1 waiting</span>
+                  <button class="pending__toggle">View</button>
+                </div>
+                <div class="pending__row">
+                  <div class="pending__url">https://example.com/server-refused</div>
+                  <div class="pending__why">We couldn't save this link just now. It's still queued — try again shortly.</div>
+                  <div class="pending__acts">
+                    <button class="linkbtn">Retry</button>
+                    <span class="countdown countdown--absent">no countdown</span>
+                  </div>
+                  <div style="font-size:10.5px;color:var(--gray)">
+                    A 503 carries <strong>no</strong> <code>Retry-After</code>. There is no known recovery
+                    time, so <strong>no countdown may be fabricated</strong>.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <nav class="tabbar">
+            <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+            <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+            <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+            <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+          </nav>
+        </div>
+      </div>
+
+      <!-- D5 offline -->
+      <div class="strip__cell">
+        <div class="strip__label">D5 · offline (transport, no error.code)</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ offline ]</span></div>
+          <div class="appbar"><div class="appbar__title">Inbox</div></div>
+          <div class="body">
+            <div class="content">
+              <div class="sec sec--first">Pending links · 1</div>
+              <div class="pending">
+                <div class="pending__head">
+                  <span class="pending__count">1 waiting</span>
+                  <button class="pending__toggle">View</button>
+                </div>
+                <div class="pending__row">
+                  <div class="pending__url">https://example.com/saved-in-the-tunnel</div>
+                  <div class="pending__why pending__why--uncertain">You appear to be offline. We couldn't confirm this save — check your Inbox when you're back online.</div>
+                  <div class="pending__acts">
+                    <button class="linkbtn">Retry</button>
+                    <button class="linkbtn linkbtn--quiet">Check your Inbox</button>
+                  </div>
+                </div>
+              </div>
+              <div class="note">Offline is <strong>not</strong> the same as 503, and it is <strong>not</strong> safe-by-default: the row may already exist on the server.</div>
+            </div>
+          </div>
+          <nav class="tabbar">
+            <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+            <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+            <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+            <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+          </nav>
+        </div>
+      </div>
+
+      <!-- D6 uncertain -->
+      <div class="strip__cell">
+        <div class="strip__label">D6 · uncertain (no response at all)</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Inbox</div></div>
+          <div class="body">
+            <div class="content">
+              <div class="sec sec--first">Pending links · 1</div>
+              <div class="pending" style="border-color:var(--ink);border-style:solid">
+                <div class="pending__head">
+                  <span class="pending__count">1 waiting</span>
+                  <button class="pending__toggle">View</button>
+                </div>
+                <div class="pending__row">
+                  <div class="pending__url">https://example.com/maybe-saved</div>
+                  <div class="pending__why pending__why--uncertain"><strong>We couldn't confirm this save.</strong> It may or may not have gone through — check your Inbox before trying again.</div>
+                  <div class="pending__acts">
+                    <button class="linkbtn">Retry anyway</button>
+                    <button class="linkbtn linkbtn--quiet">Check your Inbox</button>
+                  </div>
+                </div>
+              </div>
+              <div class="note note--strong">
+                This is the one case that <strong>may not claim the item is unsaved</strong>. The backend
+                has no idempotency key, so a retry here can produce a duplicate saved item — an accepted,
+                documented trade-off, not safe retry behaviour.
+              </div>
+            </div>
+          </div>
+          <nav class="tabbar">
+            <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+            <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+            <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+            <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+          </nav>
+        </div>
+      </div>
+    </div>
+    <aside class="ann">
+      <div class="ann__title">D — Pending local URLs (continued)</div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>503, offline and uncertain are three distinct states</strong> and must not be merged into one generic error. <span class="ann__ref">decisions §2.11, ux §5.1</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>A 503 must never show a fabricated countdown.</strong> <code>Retry-After</code> is deliberately absent. <span class="ann__ref">D8, ux §5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Offline carries <strong>no <code>error.code</code></strong> — there is no response. The typed/queued URL is retained. <span class="ann__ref">D22, ux §5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Only the uncertain pair (G–H) may avoid claiming the item is unsaved</strong>, and only they offer a "check your Inbox" pointer. A–F are known rejections. <span class="ann__ref">D15, D16</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Manual retry is the v1 default.</strong> No automatic retry, no retry loops. Resubmission is user-initiated. <span class="ann__ref">D23, D24</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text><strong>Expiry notification form (Q1), queue capacity (Q2), and discard-vs-retain on a permanent validation failure (Q3)</strong> are undecided. No expiry-warning or overflow screen is drawn — designing them would require a capacity number and a notification form that do not exist yet. <span class="ann__ref">decisions §3</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text>Provenance labelling (shared vs pasted) is a <strong>recommendation</strong>, not a decision; not shown. <span class="ann__ref">ux §7.13</span></span></div>
+    </aside>
+  </div>
+
+  <!-- ================= E. EMPTY INBOX + PENDING ======================= -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">E — Empty Inbox with pending URLs: the indicator takes precedence</div>
+    <div class="screen">
+      <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+      <div class="appbar"><div class="appbar__title">Inbox</div></div>
+      <div class="urlform">
+        <label class="urlform__label">Save a URL</label>
+        <input class="urlform__field" type="text" placeholder="https://" readonly>
+        <div class="urlform__actions">
+          <button class="btn-ux">Paste</button>
+          <button class="btn-ux btn-ux--primary" disabled>Save URL</button>
+        </div>
+      </div>
+      <div class="body">
+        <div class="content">
+          <div class="sec sec--first">Pending links · 3</div>
+          <div class="pending">
+            <div class="pending__head">
+              <span class="pending__count">3 links waiting to be saved</span>
+              <button class="pending__toggle">Hide</button>
+            </div>
+            <div class="pending__row">
+              <div class="pending__url">https://example.org/first</div>
+              <div class="pending__why">Waiting for you to sign in.</div>
+            </div>
+            <div class="pending__row">
+              <div class="pending__url">https://example.org/second</div>
+              <div class="pending__why">Waiting for you to sign in.</div>
+            </div>
+            <div class="pending__row">
+              <div class="pending__url">https://example.org/third</div>
+              <div class="pending__why">Waiting for you to sign in.</div>
+            </div>
+          </div>
+          <div class="note">
+            The saved-items history is empty, but the pending queue is not. These are different things and
+            are labelled differently.
+          </div>
+        </div>
+      </div>
+      <nav class="tabbar">
+        <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+        <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+        <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+        <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+      </nav>
+    </div>
+    <aside class="ann">
+      <div class="ann__title">E — Pending indicator precedence</div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">When pending URLs exist, <strong>the pending indicator takes precedence over the empty Inbox message</strong>. <span class="ann__ref">ux §5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">The indication is <strong>visible but unobtrusive</strong> — a count and a list, nothing more. <span class="ann__ref">D18</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>The queue is not the saved-items history.</strong> It lists URLs the backend has not confirmed saving. Saved items come only from the backend. <span class="ann__ref">D13, ux §7.1</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">If the queue is empty, <strong>no pending UI is shown at all</strong>. <span class="ann__ref">D18, ux §7.3</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Rec</span><span class="ann__text>Collapsed/expanded presentation, and placing the section above the history rather than below, are proposals for review. <span class="ann__ref">—</span></span></div>
+    </aside>
+  </div>
+
+  <!-- ================= F. OVERLAYS ==================================== -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">F — Pending list presented as a sheet (still inside the Inbox)</div>
+    <div class="screen" style="--vp-w:390px;--vp-h:844px;--content-max:390px">
+      <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+      <div class="appbar"><div class="appbar__title">Inbox</div></div>
+      <div class="body">
+        <div class="content">
+          <div class="sec sec--first">Pending links · 3</div>
+          <div class="pending">
+            <div class="pending__head">
+              <span class="pending__count">3 links waiting</span>
+              <button class="pending__toggle" data-open="sheet-pending">View</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <nav class="tabbar">
+        <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+        <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+        <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+        <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+      </nav>
+
+      <div class="sheetwrap sheetwrap--bottom is-hidden" id="sheet-pending">
+        <div class="sheetwrap__scrim" data-scrim></div>
+        <div class="sheet" role="dialog" aria-label="Pending links">
+          <div class="sheet__head"><span>Pending links · 3</span>
+            <button class="btn btn--sm" data-close="all">Close</button></div>
+          <div class="sheet__body">
+            <div class="pending__row" style="border:0;padding-left:0;padding-right:0">
+              <div class="pending__url">https://example.org/first</div>
+              <div class="pending__why">Waiting for you to sign in. Not submitted yet.</div>
+              <div class="pending__acts"><a class="linkbtn" href="05-auth-and-profile.html">Sign in</a></div>
+            </div>
+            <div class="pending__row" style="border:0;padding-left:0;padding-right:0">
+              <div class="pending__url">https://example.net/server-refused</div>
+              <div class="pending__why">Couldn't save this link just now. It's still queued — try again shortly.</div>
+              <div class="pending__acts"><button class="linkbtn">Retry</button><span class="countdown countdown--absent">no countdown</span></div>
+            </div>
+            <div class="pending__row" style="border:0;padding-left:0;padding-right:0">
+              <div class="pending__url">https://example.com/maybe-saved</div>
+              <div class="pending__why pending__why--uncertain"><strong>We couldn't confirm this save.</strong> It may or may not have gone through — check your Inbox before trying again.</div>
+              <div class="pending__acts"><button class="linkbtn">Retry anyway</button><button class="linkbtn linkbtn--quiet">Check your Inbox</button></div>
+            </div>
+            <div class="note" style="margin-bottom:0">
+              Links are kept for <strong>seven days</strong>. Expired links are never removed silently —
+              you are told first.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="ann">
+      <div class="ann__title">F — Pending list sheet</div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">The pending list is reached <strong>without becoming a fifth destination</strong>. A sheet is one option; an inline section (E) is the other. Both are shown so the choice can be reviewed. <span class="ann__ref">D18, ux §4</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Seven-day retention applies <strong>only to the local pending queue</strong> — not to saved items, which never expire. <span class="ann__ref">D7</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Expired pending URLs are <strong>never silently discarded</strong>; the user is notified first. <span class="ann__ref">D14</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text>Inline section vs sheet is <strong>not decided</strong>. Both are drawn as labelled alternatives. <span class="ann__ref">decisions §3 Q1/Q2</span></span></div>
+    </aside>
+  </div>
+
+<!-- ================= G. WIDE-SCREEN ARRANGEMENT =================== -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">G — Wide-screen arrangement: history beside supporting information</div>
+    <p style="font-size:12.5px;color:var(--gray-d);max-width:660px;margin:0 0 4px;text-align:center">
+      This screen renders at <strong>full preset width</strong>, not zoomed, so wide layouts can be judged
+      honestly. At <strong>Tablet</strong> and <strong>Desktop</strong> the pending queue moves into a side
+      panel; the information hierarchy is unchanged.
+    </p>
+    <div class="screen">
+      <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+      <div class="appbar">
+        <div class="appbar__title">Inbox</div>
+        <div class="appbar__action">Recent</div>
+      </div>
+      <div class="urlform">
+        <label class="urlform__label">Save a URL</label>
+        <input class="urlform__field" type="text" placeholder="https://" readonly>
+        <div class="urlform__actions">
+          <button class="btn-ux">Paste</button>
+          <button class="btn-ux btn-ux--primary" disabled>Save URL</button>
+        </div>
+      </div>
+      <div class="body">
+        <div class="content">
+          <div class="split">
+            <div>
+              <div class="sec sec--first">Recent saved items</div>
+              <div class="row" style="padding-left:0;padding-right:0">
+                <div class="row__thumb">image</div>
+                <div class="row__main">
+                  <div class="row__title">Understanding CRDTs: why eventual consistency is not a compromise</div>
+                  <div class="row__url">example.com/articles/crdts-explained</div>
+                  <div class="row__meta">
+                    <span class="chip chip--solid">Camera Gear</span>
+                    <span class="state state--completed"><i class="state__dot"></i>Details read</span>
+                  </div>
+                </div>
+              </div>
+              <div class="row" style="padding-left:0;padding-right:0">
+                <div class="row__thumb">image</div>
+                <div class="row__main">
+                  <div class="row__title">A thread about incremental static regeneration</div>
+                  <div class="row__url">social.example.org/@someone/isr-tradeoffs</div>
+                  <div class="row__meta">
+                    <span class="chip">Unsorted</span>
+                    <span class="state state--pending"><i class="state__dot"></i>Reading page…</span>
+                  </div>
+                </div>
+              </div>
+              <div class="row" style="padding-left:0;padding-right:0">
+                <div class="row__thumb">image</div>
+                <div class="row__main">
+                  <div class="row__title">Full-Text Search in Postgres, part three</div>
+                  <div class="row__url">engineering.example.dev/pgsearch-3</div>
+                  <div class="row__meta">
+                    <span class="chip chip--strong">Wishlist</span>
+                    <span class="state state--failed"><i class="state__dot"></i>Couldn't read this page</span>
+                  </div>
+                </div>
+              </div>
+              <div style="padding:10px 0 0;font-size:11px;color:var(--gray)">[ end of recent history ]</div>
+            </div>
+            <aside class="split__aside">
+              <div class="sec sec--first">Pending links · 1</div>
+              <div class="pending">
+                <div class="pending__head"><span class="pending__count">1 waiting</span></div>
+                <div class="pending__row">
+                  <div class="pending__url">https://example.org/not-saved-yet</div>
+                  <div class="pending__why">Waiting for you to sign in.</div>
+                  <div class="pending__acts"><a class="linkbtn" href="05-auth-and-profile.html">Sign in</a></div>
+                </div>
+              </div>
+              <div class="note" style="margin-top:10px">
+                A side panel is a <strong>structural proposal</strong>, not a decided layout. The pending
+                queue remains a <strong>section within the Inbox</strong> at every width — never a fifth
+                navigation destination.
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+      <nav class="tabbar">
+        <div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div>
+        <div class="tabbar__item tabbar__item--cols"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div>
+        <div class="tabbar__item tabbar__item--search"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div>
+        <div class="tabbar__item tabbar__item--profile"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div>
+      </nav>
+    </div>
+    <aside class="ann">
+      <div class="ann__title">G — Wide-screen arrangement</div>
+      <div class="ann__row"><span class="ann__tag">Rec</span><span class="ann__text">A side-by-side arrangement is <strong>proposed</strong>, to be judged at Tablet and Desktop. The requirement it must satisfy: <strong>main content and supporting information side by side without changing the core information hierarchy.</strong> <span class="ann__ref">review brief</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Whatever the arrangement, the pending queue is <strong>still a section within the Inbox</strong> — not a navigation destination — and is <strong>still not the saved-items history</strong>. <span class="ann__ref">D18, D13</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text>Whether a wide-screen arrangement is wanted at all is <strong>not decided</strong>, and no Mac strategy is implied by it. <span class="ann__ref">README — platform note</span></span></div>
+    </aside>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

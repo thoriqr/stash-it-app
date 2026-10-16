@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 — Authentication &amp; profile — Stash It wireframes</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-vp="portrait" data-ann="off">
+
+<div class="toolbar">
+  <div class="toolbar__group">
+    <span class="toolbar__label">Viewport</span>
+    <button class="btn" data-vp-set="fluid"     aria-pressed="false">Fluid</button>
+    <button class="btn" data-vp-set="narrow"    aria-pressed="false">Narrow 320</button>
+    <button class="btn" data-vp-set="portrait"  aria-pressed="true">Portrait 390</button>
+    <button class="btn" data-vp-set="landscape" aria-pressed="false">Landscape 844</button>
+    <button class="btn" data-vp-set="tablet"    aria-pressed="false">Tablet 834</button>
+    <button class="btn" data-vp-set="desktop"   aria-pressed="false">Desktop 1180</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="toolbar__group">
+    <span class="toolbar__label">Preset: <span id="vp-readout">portrait</span></span>
+    <button class="btn btn--ghost" data-ann-toggle aria-pressed="false">Annotations: OFF</button>
+    <a class="btn" href="index.html">&larr; Index</a>
+  </div>
+</div>
+
+<div class="page" style="max-width:none;padding-bottom:20px">
+  <h1 style="font-size:21px;margin:14px 0 4px">05 — Authentication &amp; profile</h1>
+  <p class="lede" style="margin-bottom:18px">
+    <strong>Structural fidelity only.</strong> Authentication is genuinely multi-step — including waiting on an
+    emailed PIN — and must not be compressed into an assumed single-step login. State <em>families</em> are
+    shown; exhaustive error permutations live in the discovery documents, not here.
+  </p>
+  <p style="margin:0 0 20px"><span class="mockbar">Mock data — no real authentication exists in this artifact</span></p>
+</div>
+
+<div class="stage">
+
+  <!-- ============ A. MANUAL REGISTRATION CHAIN ====================== -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">A — Manual registration: eight steps, four screens</div>
+    <div class="strip">
+
+      <div class="strip__cell">
+        <div class="strip__label">A0 · S1 Welcome / sign in</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="body">
+            <div class="content" style="padding-top:34px">
+              <div style="height:52px;border:1px dashed var(--gray-l);display:flex;align-items:center;justify-content:center;font:400 10px/1 var(--mono);color:var(--gray-m);margin-bottom:18px">no logo is designed</div>
+              <h2 style="font-size:19px;margin:0 0 4px">Stash It</h2>
+              <p style="font-size:12.5px;color:var(--gray-d);margin:0 0 22px">A place for things you find on the internet.</p>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <button class="btn-ux btn-ux--primary" style="width:100%">Continue with Google</button>
+                <button class="btn-ux" style="width:100%">Sign in with email</button>
+                <button class="btn-ux" style="width:100%">Create an account</button>
+              </div>
+              <div class="note" style="margin-top:20px">
+                Social sign-in reaches a session in far fewer steps than manual registration.
+                <strong>Whether Google leads this screen is undecided</strong> — both orderings are shown as
+                alternatives.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">A1 · S2 Register (email)</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Create account</div></div>
+          <div class="body"><div class="content" style="padding-top:16px">
+            <div class="sec sec--first">Step 1 of 8</div>
+            <div style="border:1px solid var(--rule);height:4px;margin:0 0 14px"><div style="width:12%;height:4px;background:var(--ink)"></div></div>
+            <label class="urlform__label">Email address</label>
+            <input class="urlform__field" type="text" readonly value="reader@example.com">
+            <button class="btn-ux btn-ux--primary" style="width:100%;margin-top:12px">Send me a PIN</button>
+            <div class="note">Sending a PIN starts the email round-trip. This is the slowest part of the first save.</div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">A2 · S3 Verify PIN (polling)</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Verify</div></div>
+          <div class="body"><div class="content" style="padding-top:16px">
+            <div class="sec sec--first">Step 3 of 8</div>
+            <div style="border:1px solid var(--rule);height:4px;margin:0 0 14px"><div style="width:38%;height:4px;background:var(--ink)"></div></div>
+            <p style="font-size:12.5px;margin:0 0 10px">Enter the 6-digit PIN sent to <strong>reader@example.com</strong>.</p>
+            <div style="display:flex;gap:6px;margin-bottom:12px">
+              <div class="skel" style="width:34px;height:44px"></div><div class="skel" style="width:34px;height:44px"></div>
+              <div class="skel" style="width:34px;height:44px"></div><div class="skel" style="width:34px;height:44px"></div>
+              <div class="skel" style="width:34px;height:44px"></div><div class="skel" style="width:34px;height:44px"></div>
+            </div>
+            <div class="pending" style="border-style:solid">
+              <div class="pending__row">
+                <div class="pending__why"><strong>Waiting for the email…</strong> This screen polls on purpose; it is not stuck.</div>
+                <div class="pending__acts"><span class="countdown">resend in [ 00:42 ]</span></div>
+              </div>
+            </div>
+            <div class="note">The resend countdown comes from <code>resend_in_seconds</code> in the response. Polling endpoints are deliberately rate-limit free because clients poll them.</div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">A3 · S4 Complete account</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Finish</div></div>
+          <div class="body"><div class="content" style="padding-top:16px">
+            <div class="sec sec--first">Step 7 of 8 — and then a separate sign-in</div>
+            <div style="border:1px solid var(--rule);height:4px;margin:0 0 14px"><div style="width:88%;height:4px;background:var(--ink)"></div></div>
+            <label class="urlform__label">Display name (2–100 characters)</label>
+            <input class="urlform__field" type="text" readonly value="Reader">
+            <label class="urlform__label" style="margin-top:12px">Password (minimum 8 characters)</label>
+            <input class="urlform__field" type="text" placeholder="••••••••" readonly>
+            <button class="btn-ux btn-ux--primary" style="width:100%;margin-top:12px">Create account</button>
+            <div class="note note--strong">
+              Manual finalization <strong>creates no session</strong>. The app must then sign in separately.
+              A client that assumes registration signs the user in will break on this path.
+            </div>
+          </div></div>
+        </div>
+      </div>
+
+    </div>
+    <aside class="ann">
+      <div class="ann__title">A — Manual registration chain</div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Do not simplify multi-step authentication into an assumed single-step flow.</strong> <span class="ann__ref">ux §3 Journey F</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text>Manual registration is <strong>eight calls</strong>: register → PIN issue → poll → resend → verify → continuation → <strong>finalize (no session)</strong> → <strong>separate login</strong>. <span class="ann__ref">ux §F.1</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text">Social finalization <strong>does</strong> mint a session. The finalization paths are <strong>not interchangeable</strong>. <span class="ann__ref">ux §A.4</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text>Keep the held shared URL visible throughout auth so the user knows it is safe — this converts an anxious wait into a confident one. <span class="ann__ref">R3</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text><strong>Whether Google leads the welcome screen is undecided.</strong> Google reaches a session in far fewer steps, which bears directly on registration friction. <span class="ann__ref">decisions §3 Q6</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--verify">Verify</span><span class="ann__text><strong>PIN email budgets were never read</strong> during discovery and govern resend limits. This screen must not be built before that document is read. <span class="ann__ref">V13</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Rec</span><span class="ann__text>The step counter, progress bar and PIN-box styling are proposals. The <em>number of steps is not</em>. <span class="ann__ref">—</span></span></div>
+    </aside>
+  </div>
+
+  <!-- ============ B. SOCIAL + LINK + RECOVERY ====================== -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">B — Social sign-in, account link, and password recovery</div>
+    <div class="strip">
+
+      <div class="strip__cell">
+        <div class="strip__label">B1 · S5 Account link confirmation</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Link account</div></div>
+          <div class="body"><div class="content" style="padding-top:16px">
+            <p style="font-size:13px;margin:0 0 10px">An account already exists for:</p>
+            <div class="pending" style="border-style:solid;margin:0 0 12px">
+              <div class="pending__row">
+                <div class="pending__url">r•••••@example.com</div>
+                <div class="pending__why">provider: google<br>display name: Reader</div>
+              </div>
+            </div>
+            <p style="font-size:12.5px;color:var(--gray-d)">Link this Google account to it?</p>
+            <div style="display:flex;gap:9px;margin-top:12px">
+              <button class="btn-ux" style="flex:1">Not this one</button>
+              <button class="btn-ux btn-ux--primary" style="flex:1">Link it</button>
+            </div>
+            <div class="note note--strong">
+              This is a <strong>yes/no gate, not a picker</strong> — the backend has already matched the email,
+              and the masked address leaves nothing to mis-pick.
+            </div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">B2 · S6 Password recovery</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Reset password</div></div>
+          <div class="body"><div class="content" style="padding-top:16px">
+            <div class="sec sec--first">Four steps</div>
+            <div style="border:1px solid var(--rule);height:4px;margin:0 0 14px"><div style="width:25%;height:4px;background:var(--ink)"></div></div>
+            <label class="urlform__label">Email address</label>
+            <input class="urlform__field" type="text" readonly value="reader@example.com">
+            <button class="btn-ux btn-ux--primary" style="width:100%;margin-top:12px">Send a PIN</button>
+            <div class="note note--strong">
+              Completing a reset <strong>revokes every session the user has</strong>, in the same transaction
+              that writes the new credential.
+            </div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">B3 · Social sign-in outcome</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Sign in</div></div>
+          <div class="body"><div class="content" style="padding-top:22px">
+            <div class="sec sec--first">Two possible outcomes — the app must handle both</div>
+            <div class="pending" style="border-style:solid">
+              <div class="pending__head"><span class="pending__count">Existing account</span></div>
+              <div class="pending__row"><div class="pending__why">Session returned. Continue to Inbox, and any held link is submitted.</div></div>
+            </div>
+            <div class="pending" style="border-style:solid">
+              <div class="pending__head"><span class="pending__count">No account yet</span></div>
+              <div class="pending__row">
+                <div class="pending__why">Ask for a display name — finalizing here <strong>does</strong> return a session.</div>
+                <div class="pending__acts"><button class="linkbtn">Choose a display name</button></div>
+              </div>
+            </div>
+          </div></div>
+        </div>
+      </div>
+
+    </div>
+    <aside class="ann">
+      <div class="ann__title">B — Social, link, recovery</div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text>The account-link screen is a <strong>yes/no gate, not a picker</strong>: <code>GET</code> then <code>POST .../confirm</code>. A 401 on confirm means <em>"re-obtain the token"</em>, not <em>"wrong confirmation"</em>. <span class="ann__ref">ux §F.2</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text>Password recovery is a four-step PIN flow, and <strong>completing it revokes all sessions</strong>. <span class="ann__ref">ux §F.3</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text>Render provider values as received rather than switching on a client-maintained set — <code>provider</code> is free text from storage. <span class="ann__ref">ux §F.5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text><strong>Session-expired family.</strong> Refresh once, retry once, then sign in — and <strong>serialise refresh requests</strong>, because a concurrent double-refresh revokes the session server-side. The visible symptom of getting this wrong is random unexplained logout. <span class="ann__ref">decisions §2.10, R4</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Rec</span><span class="ann__text>Refresh fails closed during a Redis outage, which can lock out a user whose access token has expired for up to 15 minutes. Copy must acknowledge that this is temporary. <span class="ann__ref">ux §F.4</span></span></div>
+    </aside>
+  </div>
+
+  <!-- ============ C. AUTH GATE ======================================= -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">C — Auth gate: a shared URL arrives before sign-in</div>
+    <div class="screen">
+      <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+      <div class="appbar"><div class="appbar__title">Sign in to save</div></div>
+      <div class="body"><div class="content" style="padding-top:18px">
+        <div class="pending" style="border-style:solid;border-color:var(--ink);margin-bottom:16px">
+          <div class="pending__head"><span class="pending__count">Held safely while you sign in</span></div>
+          <div class="pending__row">
+            <div class="pending__url">https://example.com/the-link-you-shared</div>
+            <div class="pending__why">This link is <strong>not</strong> lost. Once you sign in it is sent once — this is a first submission, not a retry.</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <button class="btn-ux btn-ux--primary" style="width:100%">Continue with Google</button>
+          <button class="btn-ux" style="width:100%">Sign in with email</button>
+        </div>
+        <div class="note">
+          The link is persisted <strong>before</strong> the auth gate, because the OS may terminate the app
+          during a multi-step flow that includes waiting on an emailed PIN. In-memory is explicitly ruled out.
+        </div>
+      </div></div>
+    </div>
+    <aside class="ann">
+      <div class="ann__title">C — Auth gate</div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">A shared URL must be <strong>persisted durably before routing to authentication</strong>. In-memory-only storage is explicitly ruled out as insufficient. <span class="ann__ref">D6</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text><strong>It is never discarded and survives authentication.</strong> It is submitted once a session exists — a <strong>first submission, not a retry</strong>. <span class="ann__ref">D6, D23 scenario A</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text>Showing the held URL prominently is the recommended mitigation for registration friction (risk R3): it turns an anxious wait into a confident one. <span class="ann__ref">R3</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--verify">Verify</span><span class="ann__text>Whether secure storage (Keychain / Keystore) is available at acceptable cost for the seven-day queue is unverified. <span class="ann__ref">V5</span></span></div>
+    </aside>
+  </div>
+
+  <!-- ============ D. PROFILE ========================================= -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">D — Profile and supported account actions (S14)</div>
+    <div class="strip">
+
+      <div class="strip__cell">
+        <div class="strip__label">D1 — Profile</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Profile</div></div>
+          <div class="body"><div class="content">
+            <div class="sec sec--first">Account</div>
+            <div style="padding:4px 0 12px">
+              <div style="font-size:15px;font-weight:600">Reader</div>
+              <div class="row__url">reader@example.com</div>
+              <div class="row__meta" style="margin-top:5px"><span class="chip chip--muted">joined 2026-04-12</span></div>
+            </div>
+            <hr class="hr">
+            <div class="opt"><span class="opt__label">Display name</span><span class="chip">edit</span></div>
+            <div class="opt"><span class="opt__label">Change password</span><span class="chip">edit</span></div>
+            <hr class="hr">
+            <div class="sec">Linked identities</div>
+            <div class="opt"><span class="opt__label">google<span class="opt__verb">linked 2026-04-12</span></span></div>
+            <div class="opt"><span class="opt__label">email + password<span class="opt__verb">linked 2026-04-12</span></span></div>
+            <hr class="hr">
+            <button class="btn-ux" style="width:100%;margin-top:4px">Sign out</button>
+            <div class="pending" style="border-color:var(--ink);border-style:solid;margin-top:18px">
+              <div class="pending__head"><span class="pending__count">Account deletion</span></div>
+              <div class="pending__row">
+                <div class="pending__why"><strong>Not available.</strong> The backend has no account-deletion endpoint, so no flow is offered here. Recorded as an unresolved release requirement.</div>
+              </div>
+            </div>
+          </div></div>
+          <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item tabbar__item--profile" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">D2 — Session expired family</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Sign in again</div></div>
+          <div class="body"><div class="content" style="padding-top:22px">
+            <div class="empty" style="margin-top:6px">
+              <div class="empty__title">Your session ended</div>
+              Sign in again to continue. Anything you saved is safe.
+            </div>
+            <div class="note">
+              Do not blame the user, and do not imply the app is broken. This is an ordinary, documented outcome.
+            </div>
+            <div class="pending" style="border-style:solid;margin-top:12px">
+              <div class="pending__row">
+                <div class="pending__url">https://example.com/still-waiting</div>
+                <div class="pending__why">Sign in again to save this link. It was not saved.</div>
+              </div>
+            </div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">D3 — Error family (503 vs offline)</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Sign in</div></div>
+          <div class="body"><div class="content" style="padding-top:22px">
+            <div class="sec sec--first">Three distinct server states — never one generic error</div>
+            <div class="pending" style="border-style:solid">
+              <div class="pending__row"><div class="pending__why"><strong>429 — budget spent.</strong></div>
+                <div class="pending__acts"><span class="countdown">[ 01:30 ]</span></div></div>
+            </div>
+            <div class="pending" style="border-style:solid">
+              <div class="pending__row"><div class="pending__why"><strong>503 — server refusing.</strong> Temporarily unavailable.</div>
+                <div class="pending__acts"><span class="countdown countdown--absent">no countdown</span></div></div>
+            </div>
+            <div class="pending" style="border-style:solid">
+              <div class="pending__row"><div class="pending__why"><strong>Offline — no route.</strong> Check your connection. There is no error code at all.</div>
+                <div class="pending__acts"><span class="countdown countdown--absent">no countdown</span></div></div>
+            </div>
+            <div class="note note--strong">
+              A 503 carries <strong>no</strong> <code>Retry-After</code> and nothing wrote. A fabricated
+              countdown would be a guess presented as a fact.
+            </div>
+          </div></div>
+        </div>
+      </div>
+
+    </div>
+    <aside class="ann">
+      <div class="ann__title">D — Profile and error families</div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text>Profile is limited to <strong>essential account functionality the backend supports</strong>: display name and password. <span class="ann__ref">D10</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text><code>has_password_credential</code> is the rendering hint for one endpoint serving two cases: "Set a password" vs "Change password". <span class="ann__ref">ux §F.5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Device and session management are deferred</strong>, even though the endpoints exist and work. <span class="ann__ref">D10</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Account deletion is not supported.</strong> No endpoint exists. Classified as a <strong>release blocker</strong>, not a UX gap — App Store guideline 5.1.1(v) and Google Play both require it. <strong>No flow is drawn, because drawing one would imply support.</strong> <span class="ann__ref">D11, decisions §5.2</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text>Not designed for, because the backend does not provide them: avatar, email change, email verification, provider unlinking, password read. <span class="ann__ref">ux §F.5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text>Whether a manual language override belongs in Profile is <strong>undecided</strong>; device locale is only a proposal. <span class="ann__ref">decisions §3 Q12</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text>Whether to send <code>X-Platform</code> / <code>X-Device-Name</code> now, despite deferring device management, is undecided. <span class="ann__ref">decisions §3 Q7</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--verify">Verify</span><span class="ann__text>Store privacy declarations for on-device URL persistence, and for account deletion. <span class="ann__ref">V9</span></span></div>
+    </aside>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

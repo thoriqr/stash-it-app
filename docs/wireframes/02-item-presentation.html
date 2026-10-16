@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 — Saved-item presentation — Stash It wireframes</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-vp="portrait" data-ann="off">
+
+<div class="toolbar">
+  <div class="toolbar__group">
+    <span class="toolbar__label">Viewport</span>
+    <button class="btn" data-vp-set="fluid"     aria-pressed="false">Fluid</button>
+    <button class="btn" data-vp-set="narrow"    aria-pressed="false">Narrow 320</button>
+    <button class="btn" data-vp-set="portrait"  aria-pressed="true">Portrait 390</button>
+    <button class="btn" data-vp-set="landscape" aria-pressed="false">Landscape 844</button>
+    <button class="btn" data-vp-set="tablet"    aria-pressed="false">Tablet 834</button>
+    <button class="btn" data-vp-set="desktop"   aria-pressed="false">Desktop 1180</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="toolbar__group">
+    <span class="toolbar__label">Preset: <span id="vp-readout">portrait</span></span>
+    <button class="btn btn--sm" data-open="sheet-file">File sheet</button>
+    <button class="btn btn--sm" data-open="dlg-delete">Delete</button>
+    <button class="btn btn--ghost" data-ann-toggle aria-pressed="false">Annotations: OFF</button>
+    <a class="btn" href="index.html">&larr; Index</a>
+  </div>
+</div>
+
+<div class="page" style="max-width:none;padding-bottom:20px">
+  <h1 style="font-size:21px;margin:14px 0 4px">02 — Saved-item presentation</h1>
+  <p class="lede" style="margin-bottom:18px">
+    One saved-item row and one detail layout, shown across every enrichment state. The enrichment
+    state changes what is <em>displayed</em>; it must never change whether the item is presented as
+    valid. A title-less item is a normal item, not a broken one.
+  </p>
+  <p style="margin:0 0 20px"><span class="mockbar">Mock data</span></p>
+</div>
+
+<div class="stage">
+
+  <!-- ============ A. ENRICHMENT STATE MATRIX (side by side) ============ -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">A — The same saved item across all four enrichment presentations</div>
+
+    <div class="strip">
+      <div class="strip__cell">
+        <div class="strip__label">pending</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Inbox</div></div>
+          <div class="body">
+            <div class="row">
+              <div class="row__thumb row__thumb--empty">—</div>
+              <div class="row__main">
+                <div class="row__title row__title--fallback">https://social.example.org/@someone/isr-tradeoffs</div>
+                <div class="row__url">social.example.org</div>
+                <div class="row__meta">
+                  <span class="chip">Unsorted</span>
+                  <span class="state state--pending"><i class="state__dot"></i>Reading page…</span>
+                </div>
+                <div style="margin-top:6px"><button class="linkbtn linkbtn--quiet">Retry reading</button></div>
+              </div>
+            </div>
+            <div class="note" style="margin:12px">
+              <strong>pending is not in-progress and not broken.</strong> The client cannot know whether
+              this is queued, running, or permanently stuck — there is no <code>processing</code> state.
+              Retry <strong>is</strong> available on <code>pending</code>, because a stuck item has no other
+              recourse. No indefinite spinner.
+            </div>
+          </div>
+          <nav class="tabbar"><div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">completed — with metadata</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Inbox</div></div>
+          <div class="body">
+            <div class="row">
+              <div class="row__thumb">image</div>
+              <div class="row__main">
+                <div class="row__title">Understanding CRDTs: why eventual consistency is not a compromise</div>
+                <div class="row__url">example.com/articles/crdts-explained</div>
+                <div class="row__desc">Conflict-free replicated data types let several replicas converge without a central coordinator…</div>
+                <div class="row__meta">
+                  <span class="chip chip--solid">Camera Gear</span>
+                  <span class="state state--completed"><i class="state__dot"></i>Details read</span>
+                </div>
+              </div>
+            </div>
+            <div class="note" style="margin:12px">
+              Fullest presentation: image, title, URL, description excerpt, current collection.
+            </div>
+          </div>
+          <nav class="tabbar"><div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">completed — NO metadata</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Inbox</div></div>
+          <div class="body">
+            <div class="row">
+              <div class="row__thumb row__thumb--empty">no image</div>
+              <div class="row__main">
+                <div class="row__title row__title--fallback">https://archive.example.net/specs/build-notes</div>
+                <div class="row__url">archive.example.net</div>
+                <div class="row__meta">
+                  <span class="chip">Reading List</span>
+                  <span class="state state--completed"><i class="state__dot"></i>Saved — this page had no details</span>
+                </div>
+              </div>
+            </div>
+            <div class="note note--strong" style="margin:12px">
+              <strong>This is success.</strong> <code>completed</code> means the enrichment
+              <em>process</em> succeeded — not that metadata was found. A page that exposes nothing
+              usable is normal. <strong>No warning styling, no error framing, no retry.</strong>
+            </div>
+          </div>
+          <nav class="tabbar"><div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">failed</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__title">Inbox</div></div>
+          <div class="body">
+            <div class="row">
+              <div class="row__thumb row__thumb--empty">no image</div>
+              <div class="row__main">
+                <div class="row__title row__title--fallback">https://engineering.example.dev/pgsearch-3</div>
+                <div class="row__url">engineering.example.dev</div>
+                <div class="row__meta">
+                  <span class="chip chip--strong">Wishlist</span>
+                  <span class="state state--failed"><i class="state__dot"></i>Couldn't read this page</span>
+                </div>
+                <div style="margin-top:6px"><button class="linkbtn">Retry reading</button></div>
+              </div>
+            </div>
+            <div class="note" style="margin:12px">
+              <strong>A failed item is not a broken item.</strong> It keeps its URL, domain, collection
+              and searchability. Retry is prominent. It is <strong>never</strong> returned to the pending
+              URL queue — a failed enrichment and a failed save are different events.
+            </div>
+          </div>
+          <nav class="tabbar"><div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+    </div>
+
+    <aside class="ann">
+      <div class="ann__title">A — Enrichment states</div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text"><code>enrichment_status</code> has exactly three values: <code>pending</code>, <code>completed</code>, <code>failed</code>. There is deliberately <strong>no <code>processing</code> and no <code>retrying</code></strong>. The client must not invent an intermediate state. <span class="ann__ref">D8</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Distinguish <code>pending</code> from <code>failed</code> accurately. Retry is available on <strong>both</strong>. <span class="ann__ref">D8</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Respect the invariant: <strong>a <code>completed</code> item with no title, image or description is normal and successful</strong> and must not be styled as a problem. <span class="ann__ref">D8, ux §5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Enrichment failure never removes the item, never requeues it, and never triggers automatic organization.</strong> <span class="ann__ref">D17</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text>The exact state-line wording, the dot glyph, chip styling and row rhythm are <strong>proposals</strong>. What is confirmed is that the states must remain <em>distinguishable</em> and that <code>completed</code>-empty must not read as an error. <span class="ann__ref">decisions §2.1, §12.5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text>Wording is draft. Every state carrying translatable text must keep its meaning in <code>en</code> and <code>id</code> — final wording needs native-speaker review. <span class="ann__ref">D15, ux §12.5</span></span></div>
+    </aside>
+  </div>
+
+  <!-- ============ B. ROW ANATOMY / FALLBACK TITLES ==================== -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">B — Fallback title chain, preview image handling, and current collection</div>
+    <div class="screen">
+      <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+      <div class="appbar"><div class="appbar__title">Inbox</div><div class="appbar__action">Recent</div></div>
+      <div class="urlform">
+        <label class="urlform__label">Save a URL</label>
+        <input class="urlform__field" type="text" placeholder="https://" readonly>
+        <div class="urlform__actions"><button class="btn-ux">Paste</button><button class="btn-ux btn-ux--primary" disabled>Save URL</button></div>
+      </div>
+      <div class="body">
+        <div class="sec sec--first">Fallback chain applied</div>
+
+        <div class="row">
+          <div class="row__thumb">image</div>
+          <div class="row__main">
+            <div class="row__title">1 · title present</div>
+            <div class="row__url">example.com/a</div>
+            <div class="row__meta"><span class="chip">Camera Gear</span><span class="chip chip--muted">completed</span></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="row__thumb row__thumb--empty">no image</div>
+          <div class="row__main">
+            <div class="row__title row__title--fallback">2 · title absent → URL</div>
+            <div class="row__url">example.com/b</div>
+            <div class="row__meta"><span class="chip">Unsorted</span><span class="chip chip--muted">completed</span></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="row__thumb row__thumb--empty">no image</div>
+          <div class="row__main">
+            <div class="row__title row__title--fallback">3 · title + URL absent → domain</div>
+            <div class="row__url">example.com</div>
+            <div class="row__meta"><span class="chip">Wishlist</span><span class="chip chip--muted">pending</span></div>
+          </div>
+        </div>
+
+        <div class="sec">Preview image unavailable</div>
+        <div class="row">
+          <div class="row__thumb row__thumb--empty">image<br>unavailable</div>
+          <div class="row__main">
+            <div class="row__title">Hotlink protection, expired CDN, or deleted asset</div>
+            <div class="row__url">cdn.example.net/thumb.jpg</div>
+            <div class="row__meta"><span class="chip">Reading List</span><span class="state state--completed"><i class="state__dot"></i>Details read</span></div>
+          </div>
+          <div class="row__actions"><span class="chip chip--muted">row still tappable</span></div>
+        </div>
+        <div class="note" style="margin:12px">
+          Space is reserved, a neutral placeholder renders, there is <strong>no layout shift, no error state
+          and no retry affordance</strong> for the image itself. Image loading must not affect whether the row
+          is readable or tappable.
+        </div>
+
+        <div class="sec">Current collection per item</div>
+        <div class="row">
+          <div class="row__thumb">image</div>
+          <div class="row__main">
+            <div class="row__title">Automatic organization moved this out of Unsorted</div>
+            <div class="row__url">youtube.example/watch?v=…</div>
+            <div class="row__meta">
+              <span class="chip chip--solid">Watch Later</span>
+              <span class="chip chip--muted">was: Unsorted</span>
+            </div>
+          </div>
+        </div>
+        <div class="note note--strong" style="margin:12px">
+          The Inbox shows where the item is <strong>now</strong>. It must <strong>not</strong> claim
+          <em>why</em> it moved, <em>when</em> it moved, or where it will end up — no backend event reports
+          that transition. Never announce "moved to YouTube".
+        </div>
+      </div>
+      <nav class="tabbar"><div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+    </div>
+    <aside class="ann">
+      <div class="ann__title">B — Fallbacks, images, current collection</div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text">Defined fallback chain: <strong>title → URL → domain</strong>. <span class="ann__ref">ux §C.2</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Never render a missing title as an error, a warning colour, or a placeholder implying a fault.</strong> <span class="ann__ref">ux §C.2</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text">Broken preview images are <strong>routine</strong>: reserved layout, neutral placeholder, no error, no retry, no layout shift, no effect on tappability. <span class="ann__ref">decisions §2.12, R10</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">The Inbox may show an item's <strong>current collection</strong> — that is the stated purpose of the screen — but never as a promise about the destination. <span class="ann__ref">D26</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Automatic organization is unobservable.</strong> Never animate or dismiss an item that changes collection; never claim a specific destination. <span class="ann__ref">decisions §2.6, R1</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text>Whether a general explanation of automatic organization should exist at all is <strong>undecided</strong>, and no wording is decided. <span class="ann__ref">decisions §3 Q9</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Rec</span><span class="ann__text>The "was: Unsorted" chip is a <strong>proposal</strong> for showing prior placement; it may imply more than the client can support. <span class="ann__ref">—</span></span></div>
+    </aside>
+  </div>
+
+  <!-- ============ C. DETAIL ========================================== -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">C — Saved item detail, with inline enrich retry</div>
+    <div class="strip">
+
+      <div class="strip__cell">
+        <div class="strip__label">C1 — Detail with metadata</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Item</div></div>
+          <div class="body">
+            <div class="content">
+              <div class="row__thumb" style="width:100%;height:110px;margin:10px 0">image</div>
+              <h3 style="font-size:15px;margin:0 0 4px">Understanding CRDTs: why eventual consistency is not a compromise</h3>
+              <div class="row__url">example.com/articles/crdts-explained</div>
+              <div class="row__meta" style="margin:8px 0">
+                <span class="chip chip--solid">Camera Gear</span>
+                <span class="chip chip--muted">completed</span>
+              </div>
+              <p style="font-size:12.5px;color:var(--ink-2)">Conflict-free replicated data types let several replicas converge without a central coordinator. This description comes from the source page and is never rewritten or translated.</p>
+              <div class="hr"></div>
+              <div class="sec sec--first">Actions</div>
+              <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+                <button class="btn-ux" data-open="sheet-file">Move to a collection</button>
+                <button class="btn-ux">Open the original page &#8594;</button>
+                <button class="btn-ux" data-open="dlg-delete">Delete this item</button>
+              </div>
+              <div class="note">
+                Looking never fetches and never changes anything. Opening the original URL is a
+                <strong>platform action, not an API call</strong> — the app hands a user-supplied URL to
+                the OS.
+              </div>
+            </div>
+          </div>
+          <nav class="tabbar"><div class="tabbar__item" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">C2 — Detail, enrichment in progress</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Item</div></div>
+          <div class="body">
+            <div class="content">
+              <div class="row__thumb row__thumb--empty" style="width:100%;height:110px;margin:10px 0">image</div>
+              <h3 style="font-size:15px;margin:0 0 4px">A thread about incremental static regeneration</h3>
+              <div class="row__url">social.example.org/@someone/isr-tradeoffs</div>
+              <div class="row__meta" style="margin:8px 0">
+                <span class="chip">Unsorted</span>
+                <span class="state state--pending"><i class="state__dot"></i>Reading page…</span>
+              </div>
+              <div class="note">No description yet. The page may simply expose nothing.</div>
+              <div class="hr"></div>
+              <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+                <button class="btn-ux btn-ux--primary" disabled>Reading the page…</button>
+                <button class="btn-ux" data-open="sheet-file">Move to a collection</button>
+                <button class="btn-ux">Open the original page &#8594;</button>
+                <button class="btn-ux" data-open="dlg-delete">Delete this item</button>
+              </div>
+              <div class="note note--strong">
+                This is <strong>the only justified blocking spinner in the app</strong> — it is the only
+                request whose completion the server performs on demand. It can block for up to
+                <strong>~10 seconds</strong>, so the copy acknowledges the wait.
+              </div>
+            </div>
+          </div>
+          <nav class="tabbar"><div class="tabbar__item" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">C3 — Detail, item missing</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Item</div></div>
+          <div class="body">
+            <div class="content">
+              <div class="empty" style="margin-top:30px">
+                <div class="empty__title">This item is no longer available</div>
+                It may have been deleted, or it may belong to another account.
+              </div>
+              <button class="btn-ux" style="width:100%;margin-top:6px">Back to Inbox</button>
+            </div>
+          </div>
+          <nav class="tabbar"><div class="tabbar__item" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+    </div>
+    <aside class="ann">
+      <div class="ann__title">C — Detail</div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text">Opening an item <strong>never fetches and never changes anything</strong>. It shows everything, including what is still unknown, so a missing title can be told from a title that has not arrived. <span class="ann__ref">ux §C.1</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text>Enrich retry blocks inline for up to ~10 s. This is the only place a blocking spinner is fully justified. <span class="ann__ref">ux §E.3</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text>Opening the original URL is a platform action, not an API call; the backend's SSRF policy governs server-side fetching only. <span class="ann__ref">ux §C.3</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text>A missing item is a <strong>distinct state with a return path</strong>, distinct from an empty list. Unknown and foreign return the same code by design. <span class="ann__ref">ux §5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--verify">Verify</span><span class="ann__text>Third-party <code>image_url</code> behaviour — hotlink blocking, aspect ratios — is unverified. <span class="ann__ref">V8</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--verify">Verify</span><span class="ann__text>A shared URL can carry credentials in its query string; URL redaction in previews is unverified and also affects detail. <span class="ann__ref">V7</span></span></div>
+    </aside>
+  </div>
+
+  <!-- ============ D. FILE SHEET ====================================== -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">D — File into a collection (S12)</div>
+    <div class="screen" style="--vp-w:390px;--vp-h:844px;--content-max:390px">
+      <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+      <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Item</div></div>
+      <div class="body"><div class="content">
+        <h3 style="font-size:14px;margin:10px 0 2px">Understanding CRDTs…</h3>
+        <div class="row__url">example.com/articles/crdts-explained</div>
+        <div class="row__meta" style="margin-top:6px"><span class="chip chip--muted">currently: Camera Gear</span></div>
+        <div style="height:280px"></div>
+      </div></div>
+      <nav class="tabbar"><div class="tabbar__item" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+
+      <div class="sheetwrap sheetwrap--bottom is-hidden" id="sheet-file">
+        <div class="sheetwrap__scrim" data-scrim></div>
+        <div class="sheet" role="dialog" aria-label="Move to a collection">
+          <div class="sheet__head"><span>Move to a collection</span>
+            <button class="btn btn--sm" data-close="all">Close</button></div>
+          <div class="sheet__body">
+            <div class="sec sec--first">Existing collections</div>
+            <div class="opt opt--current">
+              <span class="opt__label">Unsorted<span class="opt__verb">protected collection</span></span>
+              <span class="chip">current</span>
+            </div>
+            <div class="opt"><span class="opt__label">Camera Gear<span class="opt__verb">move to Camera Gear</span></span></div>
+            <div class="opt"><span class="opt__label">Wishlist<span class="opt__verb">move to Wishlist</span></span></div>
+            <div class="opt"><span class="opt__label">Reading List<span class="opt__verb">move to Reading List</span></span></div>
+            <div class="opt opt--create">
+              <span class="opt__label"><input class="urlform__field" type="text" placeholder="New collection name" readonly>
+                <span class="opt__verb">create this collection and move the item into it</span></span>
+            </div>
+          </div>
+          <div class="sheet__foot">
+            <div style="font-size:11px;color:var(--gray-d)">
+              Destination: <strong>Wishlist</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="ann">
+      <div class="ann__title">D — File sheet</div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text">The endpoint takes a <strong>name, not an ID</strong>, and <strong>creates the collection if absent</strong>. There is no "list options for this item" endpoint, so the sheet depends on the already-loaded collection list. <span class="ann__ref">ux §C.4</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text"><strong>Existing collections first</strong>; the create-by-name input is visually secondary. The two paths must be labelled distinctly: <strong>"Move to X" vs "Create X"</strong>. Show the resolved destination before confirming. <span class="ann__ref">decisions §2.8, R6</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text">Names are case-insensitively unique per user; system names are reserved. Near-miss names create clutter that <strong>cannot be merged</strong> — no rename or merge endpoint exists. <span class="ann__ref">ux §1.6, decisions §5.3</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Unsorted appears as a <strong>normal collection row</strong> here and may be a move target, like any other. <span class="ann__ref">ux §D.4</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text>Exact sheet copy, and whether the resolved destination is pre-selected, are not decided. <span class="ann__ref">decisions §2.8</span></span></div>
+    </aside>
+  </div>
+
+  <!-- ============ E. DELETE ========================================== -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">E — Deleting a saved item, and the advisory collection offer</div>
+
+    <div class="toolbar__group" style="justify-content:center;margin-bottom:8px">
+      <span class="toolbar__label">Show state</span>
+      <button class="btn" data-variant-set="del" data-variant-val="confirm" aria-pressed="true">1 · Confirm delete</button>
+      <button class="btn" data-variant-set="del" data-variant-val="after"   aria-pressed="false">2 · After delete</button>
+    </div>
+
+    <div data-variant-group="del" data-current="confirm">
+      <div class="strip">
+
+        <div class="strip__cell" data-variant="confirm">
+          <div class="strip__label">E1 — Confirmation</div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+            <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Item</div></div>
+            <div class="body"><div class="content">
+              <h3 style="font-size:14px;margin:10px 0 2px">Understanding CRDTs…</h3>
+              <div class="row__url">example.com/articles/crdts-explained</div>
+              <div style="height:220px"></div>
+              <div class="sheetwrap sheetwrap--center is-hidden" id="dlg-delete" style="position:static;display:block">
+                <div class="sheet" role="dialog" aria-label="Delete item" style="max-width:none">
+                  <div class="sheet__head"><span>Delete this item?</span></div>
+                  <div class="sheet__body">
+                    <p style="font-size:12.5px;margin:0 0 8px">This removes the saved item. <strong>It cannot be undone</strong> — there is no trash and no undo in v1.</p>
+                    <p style="font-size:11.5px;color:var(--gray-d);margin:0">The item's URL, title, description and image reference are removed.</p>
+                  </div>
+                  <div class="sheet__foot">
+                    <button class="btn-ux" style="flex:1">Cancel</button>
+                    <button class="btn-ux btn-ux--primary" style="flex:1;border-color:var(--ink)" data-variant-set="del" data-variant-val="after">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div></div>
+            <nav class="tabbar"><div class="tabbar__item" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+          </div>
+        </div>
+
+        <div class="strip__cell is-hidden" data-variant="after">
+          <div class="strip__label">E2 — After delete: advisory offer</div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+            <div class="appbar"><div class="appbar__title">Inbox</div></div>
+            <div class="body"><div class="content" style="padding-top:10px">
+              <div class="note note--strong" style="border-left-color:var(--ink)">Item deleted.</div>
+              <div class="pending" style="border-style:solid;border-color:var(--ink)">
+                <div class="pending__head"><span class="pending__count">Wishlist is now empty</span></div>
+                <div class="pending__row">
+                  <div class="pending__why">This was the last item in <strong>Wishlist</strong>. An empty collection is a perfectly good state, so nothing is removed without being asked.</div>
+                  <div class="pending__acts">
+                    <button class="linkbtn linkbtn--quiet">Delete Wishlist too</button>
+                    <button class="linkbtn linkbtn--quiet">Keep it</button>
+                  </div>
+                </div>
+              </div>
+              <div class="note">Advisory flags are <strong>information, not a promise</strong>. The app must never delete a collection automatically.</div>
+            </div></div>
+            <nav class="tabbar"><div class="tabbar__item tabbar__item--inbox" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <aside class="ann">
+      <div class="ann__title">E — Delete</div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text>Saved-item delete is a <strong>hard delete</strong> — no soft delete, no <code>deleted_at</code>, no trash. The response returns <code>collection_empty</code> and <code>collection_deletable</code>, described as <em>"information for the caller to act on or ignore; it is not a promise"</em>. <span class="ann__ref">ux §C.5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text><strong>Handle the advisory collection-deletion information without automatically deleting collections.</strong> <span class="ann__ref">ux §C.5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text>Show at most a <strong>dismissible secondary offer</strong>. Never act on the flags automatically. <span class="ann__ref">decisions §2.4</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text><strong>No undo exists for any delete in v1.</strong> Whether to add one is unresolved. <span class="ann__ref">decisions §5.3</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Rec</span><span class="ann__text>Confirmation-dialog copy and button emphasis are proposals. <span class="ann__ref">—</span></span></div>
+    </aside>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

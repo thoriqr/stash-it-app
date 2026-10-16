@@ -1,0 +1,604 @@
+/* ==========================================================================
+   Stash It — low-fidelity wireframe stylesheet
+   --------------------------------------------------------------------------
+   GRAYSCALE ONLY. Black, white and neutral greys. System font stack.
+   No brand palette, no gradients, no decorative shadows, no remote assets.
+
+   Layout drivers, in priority order:
+     1. body[data-vp="..."]  -> deterministic preset widths (reviewable)
+     2. @media queries         -> natural response to real window resizing
+   Both are used so a preset is reproducible AND the prototype still reflows
+   when the browser window itself changes size.
+
+   FIDELITY RULE: this file must not grow into a design system. No tokens for
+   colour identity, no component library, no spacing scale that implies a
+   visual language. Everything here exists to make structure inspectable.
+   ========================================================================== */
+
+/* ---------- neutral palette (the ONLY colours permitted) ------------------ */
+:root {
+  --ink:        #111111;
+  --ink-2:      #2b2b2b;
+  --gray-d:     #4d4d4d;
+  --gray:       #6b6b6b;
+  --gray-m:     #8c8c8c;
+  --gray-l:     #b4b4b4;
+  --rule:       #c9c9c9;
+  --rule-soft:  #dcdcdc;
+  --fill:       #ececec;
+  --fill-2:     #f4f4f4;
+  --fill-3:     #fafafa;
+  --paper:      #ffffff;
+
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --vp-w: 100%;
+  --vp-h: auto;
+  --content-max: 100%;
+  --row-pad: 12px;
+  --gap: 8px;
+}
+
+/* ---------- reset -------------------------------------------------------- */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--fill-3);
+}
+
+/* ==========================================================================
+   1. REVIEW TOOLBAR  (prototype chrome - NOT part of the simulated product)
+   ========================================================================== */
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  align-items: center;
+  padding: 8px 14px;
+  background: var(--fill);
+  border-bottom: 1px solid var(--rule);
+}
+.toolbar__group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.toolbar__label {
+  font: 600 11px/1 var(--sans);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--gray);
+  margin-right: 2px;
+}
+.toolbar .spacer { flex: 1 1 auto; }
+
+.btn {
+  font: 500 12px/1 var(--sans);
+  color: var(--ink-2);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 6px 9px;
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--gray); }
+.btn:focus-visible { outline: 2px solid var(--gray-d); outline-offset: 1px; }
+.btn[aria-pressed="true"],
+.btn.is-active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.btn--ghost { background: transparent; }
+.btn--sm { padding: 4px 7px; font-size: 11px; }
+
+/* ==========================================================================
+   2. STAGE + SCREEN FRAME
+   ========================================================================== */
+.stage {
+  padding: 22px 16px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 34px;
+  overflow-x: auto;           /* prevents page-level horizontal overflow */
+}
+
+.screenwrap { display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 100%; }
+.screenwrap__caption {
+  font: 600 11px/1.3 var(--sans);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--gray);
+  text-align: center;
+  max-width: var(--content-max);
+}
+
+/* A "screen" is the simulated product surface. */
+.screen {
+  width: var(--vp-w);
+  max-width: 100%;
+  min-height: var(--vp-h);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+.screen--dashed { border-style: dashed; border-color: var(--gray-l); }
+
+/* ---------- viewport presets -------------------------------------------- */
+body[data-vp="narrow"]   { --vp-w: 320px; --vp-h: 568px;  --content-max: 320px;  --row-pad: 10px; --gap: 6px; }
+body[data-vp="portrait"] { --vp-w: 390px; --vp-h: 844px;  --content-max: 390px;  --row-pad: 12px; --gap: 8px; }
+body[data-vp="landscape"]{ --vp-w: 844px; --vp-h: 390px;  --content-max: 844px;  --row-pad: 9px;  --gap: 6px; }
+body[data-vp="tablet"]   { --vp-w: 834px; --vp-h: 1000px; --content-max: 620px; }
+body[data-vp="desktop"]  { --vp-w: 1180px;--vp-h: 900px;  --content-max: 660px; }
+body[data-vp="fluid"]    { --vp-w: 100%;  --vp-h: 620px;  --content-max: 660px; }
+
+/* Landscape: vertical space is the scarce resource. Compress the chrome. */
+body[data-vp="landscape"] .appbar { padding: 6px var(--row-pad); }
+body[data-vp="landscape"] .appbar__title { font-size: 15px; }
+body[data-vp="landscape"] .tabbar { padding: 3px 6px; }
+body[data-vp="landscape"] .tabbar__label { font-size: 10px; }
+body[data-vp="landscape"] .urlform { padding: 6px var(--row-pad); }
+body[data-vp="landscape"] .row__thumb { width: 40px; height: 40px; }
+body[data-vp="landscape"] .row__title { font-size: 13px; }
+
+/* ==========================================================================
+   3. SIMULATED PRODUCT CHROME (structure only, no visual identity)
+   ========================================================================== */
+.statusbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 4px 10px;
+  font: 600 10px/1 var(--mono);
+  color: var(--gray);
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--fill-3);
+  flex: 0 0 auto;
+}
+.appbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px var(--row-pad);
+  border-bottom: 1px solid var(--rule);
+  flex: 0 0 auto;
+}
+.appbar__back { font: 400 16px/1 var(--sans); color: var(--gray-d); padding: 2px 6px; }
+.appbar__title { font-size: 17px; font-weight: 600; flex: 1 1 auto; }
+.appbar__sub { font-size: 11px; color: var(--gray); font-weight: 400; }
+.appbar__action { font: 500 12px/1 var(--sans); color: var(--gray-d); padding: 4px 6px; border: 1px solid var(--rule-soft); border-radius: 3px; }
+
+/* Tab bar — four destinations only (D1). */
+.tabbar {
+  display: flex;
+  border-top: 1px solid var(--rule);
+  background: var(--fill-3);
+  flex: 0 0 auto;
+}
+.tabbar__item {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  padding: 7px 2px 6px;
+  border-right: 1px solid var(--rule-soft);
+  color: var(--gray);
+}
+.tabbar__item:last-child { border-right: 0; }
+.tabbar__glyph {
+  display: block;
+  width: 18px; height: 18px;
+  margin: 0 auto 3px;
+  border: 1.5px solid var(--gray-m);
+  border-radius: 2px;
+}
+.tabbar__item--inbox  .tabbar__glyph { border-radius: 2px 2px 6px 6px; }
+.tabbar__item--cols  .tabbar__glyph { border-radius: 2px; border-left-width: 5px; }
+.tabbar__item--search .tabbar__glyph { border-radius: 10px; }
+.tabbar__item--profile .tabbar__glyph { border-radius: 50%; }
+.tabbar__label { display: block; font: 600 10px/1.2 var(--sans); }
+.tabbar__item[aria-current="page"] { color: var(--ink); background: var(--fill); }
+.tabbar__item[aria-current="page"] .tabbar__glyph { border-color: var(--ink); border-width: 2px; }
+.tabbar__item[aria-current="page"] .tabbar__label { text-decoration: underline; text-underline-offset: 2px; }
+
+/* Scrollable body of a screen. */
+.body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 12px;
+  min-height: 0;
+}
+.body--flush { padding: 0; }
+
+/* Content column: never let text stretch full-bleed on wide screens. */
+.content { padding: 0 var(--row-pad); max-width: var(--content-max); margin: 0 auto; width: 100%; }
+
+/* Two-column arrangement for wide viewports (structure proposal, not a decision). */
+body[data-vp="desktop"] .split,
+body[data-vp="tablet"] .split { display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 16px; align-items: start; }
+.split__aside { border-left: 1px solid var(--rule-soft); padding-left: 16px; }
+@media (max-width: 900px) {
+  .split { display: block; }
+  .split__aside { border-left: 0; padding-left: 0; border-top: 1px solid var(--rule-soft); margin-top: 14px; padding-top: 12px; }
+}
+
+/* ==========================================================================
+   4. CONTENT PRIMITIVES
+   ========================================================================== */
+.sec {
+  font: 700 10px/1.3 var(--sans);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gray);
+  padding: 14px 0 6px;
+}
+.sec--first { padding-top: 8px; }
+.hr { border: 0; border-top: 1px solid var(--rule-soft); margin: 12px 0; }
+
+.note {
+  font-size: 12px;
+  color: var(--gray-d);
+  border-left: 3px solid var(--gray-l);
+  padding: 6px 0 6px 10px;
+  margin: 10px 0;
+}
+.note--strong { border-left-color: var(--ink); color: var(--ink-2); }
+.empty {
+  padding: 26px 14px;
+  text-align: center;
+  color: var(--gray);
+  border: 1px dashed var(--rule);
+  margin: 10px 0;
+}
+.empty__title { font-weight: 600; color: var(--ink-2); margin-bottom: 4px; }
+
+/* Saved-item row — the shared pattern across Inbox, collection, search. */
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px var(--row-pad);
+  border-bottom: 1px solid var(--rule-soft);
+  min-width: 0;
+}
+.row--tappable { cursor: default; }
+.row__thumb {
+  flex: 0 0 auto;
+  width: 52px; height: 52px;
+  border: 1px solid var(--rule);
+  background: var(--fill-2);
+  display: flex; align-items: center; justify-content: center;
+  font: 400 9px/1.1 var(--mono);
+  color: var(--gray-m);
+  text-align: center;
+  padding: 2px;
+}
+/* Unavailable preview image: reserved space, neutral, no error treatment.
+   [Rec] broken images are routine — no error, no retry, no layout shift. */
+.row__thumb--empty { background: var(--fill-3); border-style: dashed; color: var(--gray-m); }
+.row__main { flex: 1 1 auto; min-width: 0; }
+.row__title {
+  font-size: 13.5px; font-weight: 600; line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.row__title--fallback { font-weight: 400; font-style: italic; color: var(--gray-d); }
+.row__url { font: 400 11px/1.35 var(--mono); color: var(--gray); overflow-wrap: anywhere; }
+.row__desc { font-size: 12px; color: var(--gray-d); margin-top: 2px; }
+.row__meta { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 5px; align-items: center; }
+.row__actions { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; }
+
+.chip {
+  display: inline-block;
+  font: 600 10px/1 var(--sans);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 3px 5px;
+  color: var(--gray-d);
+  background: var(--paper);
+  white-space: nowrap;
+}
+.chip--solid { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.chip--strong { border-color: var(--ink); color: var(--ink); border-width: 2px; }
+.chip--muted { color: var(--gray-m); }
+
+/* Enrichment state line — presentation differs, but no error styling. */
+.state {
+  font: 500 11px/1.35 var(--sans);
+  color: var(--gray);
+  display: flex; align-items: center; gap: 5px;
+}
+.state__dot { width: 7px; height: 7px; border: 1px solid var(--gray-m); flex: 0 0 auto; }
+.state--pending .state__dot { border-style: dashed; }
+.state--completed .state__dot { background: var(--gray-m); }
+.state--failed .state__dot { background: var(--paper); border-width: 2px; border-color: var(--ink); }
+
+.linkbtn {
+  font: 600 11px/1 var(--sans);
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  padding: 4px 7px;
+  cursor: pointer;
+}
+.linkbtn--quiet { border-color: var(--rule); color: var(--gray-d); font-weight: 500; }
+
+/* Skeleton (initial loading, per the state matrix). */
+.skel { border: 1px solid var(--rule-soft); background: var(--fill-2); height: 10px; border-radius: 2px; }
+.skelrow { display: flex; gap: 10px; padding: 10px var(--row-pad); border-bottom: 1px solid var(--rule-soft); }
+.skelrow .skelrow__thumb { width: 52px; height: 52px; }
+.skelrow__lines { flex: 1 1 auto; }
+.skelrow__lines .skel { margin-bottom: 6px; }
+
+/* ==========================================================================
+   5. INBOX URL INPUT  (D25 — Confirmed)
+   Paste fills the input. Save URL submits. They are separate actions.
+   ========================================================================== */
+.urlform {
+  border-bottom: 1px solid var(--rule);
+  background: var(--fill-3);
+  padding: 10px var(--row-pad);
+  flex: 0 0 auto;
+}
+.urlform__label {
+  font: 600 10px/1 var(--sans);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--gray);
+  display: block;
+  margin-bottom: 5px;
+}
+.urlform__field {
+  width: 100%;
+  font: 400 12px/1.4 var(--mono);
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  padding: 8px;
+  min-height: 34px;
+}
+.urlform__actions { display: flex; gap: 8px; margin-top: 8px; }
+.btn-ux {
+  font: 600 12px/1 var(--sans);
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  padding: 8px 12px;
+  cursor: pointer;
+  background: var(--paper);
+  color: var(--ink);
+}
+.btn-ux--primary { background: var(--ink); color: var(--paper); }
+.btn-ux[disabled] { opacity: .45; cursor: not-allowed; }
+.urlform__hint { font-size: 11px; color: var(--gray); margin-top: 6px; }
+
+/* Save confirmation — confirms persistence ONLY. */
+.saved-toast {
+  border: 1px solid var(--ink);
+  border-left-width: 4px;
+  background: var(--fill-2);
+  padding: 9px 10px;
+  margin: 0 0 10px;
+}
+.saved-toast__title { font-weight: 700; font-size: 12px; }
+.saved-toast__body { font: 400 11px/1.4 var(--mono); color: var(--gray-d); margin-top: 3px; overflow-wrap: anywhere; }
+
+/* ==========================================================================
+   6. PENDING LOCAL URL QUEUE (S15)
+   NOT a navigation destination. NOT the saved-items history.
+   ========================================================================== */
+.pending {
+  border: 1px dashed var(--gray-m);
+  background: var(--fill-2);
+  margin: 10px 0;
+}
+.pending__head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px dashed var(--gray-l);
+}
+.pending__count { font-weight: 700; font-size: 12px; }
+.pending__toggle { font: 600 11px/1 var(--sans); background: none; border: 1px solid var(--rule); border-radius: 2px; padding: 4px 6px; cursor: pointer; }
+.pending__row {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--rule-soft);
+  display: flex; flex-direction: column; gap: 5px;
+}
+.pending__row:last-child { border-bottom: 0; }
+.pending__url { font: 400 11px/1.4 var(--mono); overflow-wrap: anywhere; }
+.pending__why { font-size: 11px; color: var(--gray-d); }
+.pending__why--uncertain { color: var(--ink); font-weight: 600; }
+.pending__acts { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Countdown affordance — present for 429, deliberately absent for 503. */
+.countdown {
+  display: inline-flex; align-items: center; gap: 5px;
+  font: 600 11px/1 var(--mono);
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  padding: 3px 6px;
+}
+.countdown--absent { border-style: dashed; border-color: var(--gray-m); color: var(--gray); font-weight: 500; }
+
+/* ==========================================================================
+   7. SHEET + DIALOG (structure only)
+   ========================================================================== */
+.sheetwrap { position: absolute; inset: 0; display: flex; z-index: 20; }
+.sheetwrap--bottom { align-items: flex-end; }
+.sheetwrap--center { align-items: center; justify-content: center; padding: 16px; }
+.sheetwrap__scrim { position: absolute; inset: 0; background: rgba(17,17,17,.28); }
+.sheet {
+  position: relative;
+  width: 100%;
+  max-height: 86%;
+  overflow-y: auto;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-bottom: 0;
+}
+.sheetwrap--center .sheet { max-width: 340px; border: 1px solid var(--ink); }
+.sheet__head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; border-bottom: 1px solid var(--rule);
+  font-weight: 700; font-size: 13px;
+}
+.sheet__body { padding: 10px 12px; }
+.sheet__foot { padding: 10px 12px; border-top: 1px solid var(--rule); display: flex; gap: 8px; }
+.is-hidden { display: none !important; }
+
+/* Option list for the file sheet. */
+.opt {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--rule-soft);
+}
+.opt:last-child { border-bottom: 0; }
+.opt__label { font-size: 13px; }
+.opt__verb { font-size: 10px; color: var(--gray); text-transform: uppercase; letter-spacing: .05em; display: block; }
+.opt--current { background: var(--fill-2); border: 1px solid var(--rule); padding: 9px; }
+.opt--create { background: var(--fill-3); border: 1px dashed var(--gray-m); padding: 9px; margin-top: 10px; }
+.opt--destructive { border: 1px solid var(--ink); border-left-width: 4px; padding: 9px; }
+
+/* ==========================================================================
+   8. ANNOTATIONS (prototype chrome — visually distinct from product UI)
+   ========================================================================== */
+.ann {
+  display: none;
+  max-width: var(--content-max);
+  width: 100%;
+  margin-top: 8px;
+  border: 1px dotted var(--gray-m);
+  background: var(--fill-3);
+  padding: 9px 11px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--gray-d);
+}
+body[data-ann="on"] .ann { display: block; }
+.ann__title {
+  font: 700 10px/1.3 var(--sans);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 5px;
+  border-bottom: 1px dotted var(--gray-l);
+  padding-bottom: 4px;
+}
+.ann__row { margin: 4px 0; display: flex; gap: 6px; align-items: baseline; }
+.ann__tag {
+  font: 700 9px/1.4 var(--mono);
+  border: 1px solid var(--gray-d);
+  border-radius: 2px;
+  padding: 1px 4px;
+  flex: 0 0 auto;
+  color: var(--ink);
+  background: var(--paper);
+  white-space: nowrap;
+}
+.ann__tag--confirmed { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.ann__tag--open      { border-width: 2px; border-style: dashed; }
+.ann__tag--verify    { border-style: dotted; }
+.ann__tag--rec       { border-style: double; border-width: 3px; }
+.ann__text { flex: 1 1 auto; }
+.ann__ref { font: 400 10px/1.4 var(--mono); color: var(--gray-m); display: block; }
+
+/* Mock-data banner. */
+.mockbar {
+  display: inline-flex; align-items: center; gap: 5px;
+  font: 700 9px/1.3 var(--mono);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  border: 2px dashed var(--ink);
+  border-radius: 2px;
+  padding: 2px 6px;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+/* ==========================================================================
+   9. COMPARISON STRIPS (state families side by side)
+   --------------------------------------------------------------------------
+   Strip cells inherit the ACTIVE viewport preset so that switching preset
+   genuinely re-tests each state (this is the point of the control). A zoom
+   keeps several cells comparable side by side at wide presets.
+   ========================================================================== */
+.strip {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 4px 2px 12px;
+  max-width: 100%;
+}
+.strip__cell {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  zoom: var(--strip-zoom, .78);
+}
+.strip__label {
+  font: 600 11px/1.3 var(--sans);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  background: var(--fill-2);
+  padding: 4px 7px;
+  text-align: center;
+  white-space: nowrap;
+}
+/* Per-preset zoom so a family stays side-by-side without losing real layout. */
+body[data-vp="fluid"]     { --strip-zoom: .78; }
+body[data-vp="narrow"]    { --strip-zoom: .95; }
+body[data-vp="portrait"]  { --strip-zoom: .78; }
+body[data-vp="landscape"] { --strip-zoom: .58; }
+body[data-vp="tablet"]    { --strip-zoom: .44; }
+body[data-vp="desktop"]   { --strip-zoom: .36; }
+
+/* ==========================================================================
+   10. INDEX PAGE
+   ========================================================================== */
+.page { max-width: 1100px; margin: 0 auto; padding: 24px 18px 80px; }
+.page h1 { font-size: 26px; margin: 0 0 6px; }
+.page h2 { font-size: 17px; margin: 30px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--rule); }
+.page h3 { font-size: 14px; margin: 18px 0 6px; }
+.page p, .page li { color: var(--ink-2); }
+.lede { color: var(--gray-d); max-width: 72ch; margin: 0 0 16px; }
+.card {
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.card--link { border-color: var(--ink); }
+.card__title { font-weight: 700; font-size: 15px; display: block; }
+a.card__title { color: var(--ink); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+table.simple { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+table.simple th, table.simple td { border: 1px solid var(--rule); padding: 6px 8px; text-align: left; vertical-align: top; }
+table.simple th { background: var(--fill-2); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-d); }
+code { font-family: var(--mono); font-size: .92em; background: var(--fill-2); padding: 1px 3px; border-radius: 2px; }
+.kbd { font: 600 11px/1 var(--mono); border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 3px; padding: 2px 5px; background: var(--paper); }
+
+/* ==========================================================================
+   11. NATURAL RESPONSIVENESS (real window resize, Fluid preset)
+   ========================================================================== */
+@media (max-width: 760px) {
+  .page { padding: 18px 12px 60px; }
+  .stage { padding: 14px 8px 50px; }
+}
+@media (max-width: 520px) {
+  body[data-vp="fluid"] { --vp-h: auto; }
+  .toolbar { gap: 8px 10px; padding: 7px 10px; }
+  .toolbar__label { display: none; }
+}
+
+/* Print: neutral, useful for review. */
+@media print {
+  .toolbar { display: none; }
+  .ann { display: block !important; }
+  .stage { padding: 0; }
+  .screen { border: 1px solid #000; }
+}

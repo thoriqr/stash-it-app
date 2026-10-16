@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 — Collections — Stash It wireframes</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-vp="portrait" data-ann="off">
+
+<div class="toolbar">
+  <div class="toolbar__group">
+    <span class="toolbar__label">Viewport</span>
+    <button class="btn" data-vp-set="fluid"     aria-pressed="false">Fluid</button>
+    <button class="btn" data-vp-set="narrow"    aria-pressed="false">Narrow 320</button>
+    <button class="btn" data-vp-set="portrait"  aria-pressed="true">Portrait 390</button>
+    <button class="btn" data-vp-set="landscape" aria-pressed="false">Landscape 844</button>
+    <button class="btn" data-vp-set="tablet"    aria-pressed="false">Tablet 834</button>
+    <button class="btn" data-vp-set="desktop"   aria-pressed="false">Desktop 1180</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="toolbar__group">
+    <span class="toolbar__label">Preset: <span id="vp-readout">portrait</span></span>
+    <button class="btn btn--sm" data-open="dlg-del-nonempty">Delete · non-empty</button>
+    <button class="btn btn--sm" data-open="dlg-del-empty">Delete · empty</button>
+    <button class="btn btn--ghost" data-ann-toggle aria-pressed="false">Annotations: OFF</button>
+    <a class="btn" href="index.html">&larr; Index</a>
+  </div>
+</div>
+
+<div class="page" style="max-width:none;padding-bottom:20px">
+  <h1 style="font-size:21px;margin:14px 0 4px">03 — Collections</h1>
+  <p class="lede" style="margin-bottom:18px">
+    Collections is the <strong>collection browser</strong>. It lists collections; opening one browses the
+    items inside it. It is a <strong>separate destination from the Inbox</strong> — the Inbox shows recent
+    saves across collections, Collections shows collections themselves.
+  </p>
+  <p style="margin:0 0 20px"><span class="mockbar">Mock data — collection item counts cannot be displayed</span></p>
+</div>
+
+<div class="stage">
+
+  <!-- ============ A. COLLECTIONS LIST ================================ -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">A — Collections list (S8): a pure browser</div>
+
+    <div class="toolbar__group" style="justify-content:center;margin-bottom:8px">
+      <span class="toolbar__label">Sort</span>
+      <button class="btn" data-variant-set="sort" data-variant-val="newest" aria-pressed="true">newest</button>
+      <button class="btn" data-variant-set="sort" data-variant-val="oldest" aria-pressed="false">oldest</button>
+      <button class="btn" data-variant-set="sort" data-variant-val="name"   aria-pressed="false">name</button>
+    </div>
+
+    <div data-variant-group="sort" data-current="newest">
+      <div class="strip">
+
+        <div class="strip__cell" data-variant="newest">
+          <div class="strip__label">A1 — sort=newest</div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+            <div class="appbar"><div class="appbar__title">Collections</div><div class="appbar__action">newest</div></div>
+            <div class="body">
+              <div class="row" style="border-left-width:4px;border-left-style:solid">
+                <div class="row__main">
+                  <div class="row__title">Unsorted</div>
+                  <div class="row__meta"><span class="chip chip--solid">protected</span><span class="chip chip--muted">system_key: unsorted</span></div>
+                </div>
+              </div>
+              <div class="row"><div class="row__main"><div class="row__title">Camera Gear</div></div></div>
+              <div class="row"><div class="row__main"><div class="row__title">Wishlist</div></div></div>
+              <div class="row"><div class="row__main"><div class="row__title">Reading List</div></div></div>
+              <div class="row"><div class="row__main"><div class="row__title">Watch Later</div>
+                <div class="row__meta"><span class="chip chip--muted">created by the app</span></div></div></div>
+              <div style="padding:12px 12px 4px;font-size:11px;color:var(--gray)">[ loading more ]</div>
+            </div>
+            <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item tabbar__item--cols" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+          </div>
+        </div>
+
+        <div class="strip__cell is-hidden" data-variant="oldest">
+          <div class="strip__label">A2 — sort=oldest</div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+            <div class="appbar"><div class="appbar__title">Collections</div><div class="appbar__action">oldest</div></div>
+            <div class="body">
+              <div class="row" style="border-left-width:4px;border-left-style:solid">
+                <div class="row__main"><div class="row__title">Unsorted</div>
+                  <div class="row__meta"><span class="chip chip--solid">protected</span></div></div>
+              </div>
+              <div class="row"><div class="row__main"><div class="row__title">Reading List</div></div></div>
+              <div class="row"><div class="row__main"><div class="row__title">Wishlist</div></div></div>
+              <div class="row"><div class="row__main"><div class="row__title">Camera Gear</div></div></div>
+              <div class="row"><div class="row__main"><div class="row__title">Watch Later</div></div></div>
+            </div>
+            <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item tabbar__item--cols" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+          </div>
+        </div>
+
+        <div class="strip__cell is-hidden" data-variant="name">
+          <div class="strip__label">A3 — sort=name</div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+            <div class="appbar"><div class="appbar__title">Collections</div><div class="appbar__action">name</div></div>
+            <div class="body">
+              <div class="row" style="border-left-width:4px;border-left-style:solid">
+                <div class="row__main"><div class="row__title">Unsorted</div>
+                  <div class="row__meta"><span class="chip chip--solid">protected</span></div></div>
+              </div>
+              <div class="row"><div class="row__main"><div class="row__title">Camera Gear</div></div></div>
+              <div class="row"><div class="row__main"><div class="row__title">Reading List</div></div></div>
+              <div class="row"><div class="row__main"><div class="row__title">Watch Later</div></div></div>
+              <div class="row"><div class="row__main"><div class="row__title">Wishlist</div></div></div>
+            </div>
+            <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item tabbar__item--cols" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+          </div>
+        </div>
+
+        <div class="strip__cell">
+          <div class="strip__label">A4 — pagination footer</div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+            <div class="appbar"><div class="appbar__title">Collections</div><div class="appbar__action">newest</div></div>
+            <div class="body">
+              <div class="row" style="border-left-width:4px;border-left-style:solid"><div class="row__main"><div class="row__title">Unsorted</div></div></div>
+              <div class="row"><div class="row__main"><div class="row__title">Camera Gear</div></div></div>
+              <div class="row"><div class="row__main"><div class="row__title">Wishlist</div></div></div>
+              <div style="padding:14px;text-align:center;font-size:11px;color:var(--gray)">[ loading more — append, never replace ]</div>
+            </div>
+            <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item tabbar__item--cols" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+          </div>
+        </div>
+
+        <div class="strip__cell">
+          <div class="strip__label">A5 — missing collection</div>
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+            <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Collection</div></div>
+            <div class="body"><div class="content">
+              <div class="empty" style="margin-top:30px">
+                <div class="empty__title">Collection not found</div>
+                It may have been deleted, or it may belong to another account.
+              </div>
+              <button class="btn-ux" style="width:100%;margin-top:6px">Back to Collections</button>
+            </div></div>
+            <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item tabbar__item--cols" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <aside class="ann">
+      <div class="ann__title">A — Collections list</div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Unsorted is a <strong>normal row</strong> in this list, identified by <code>system_key === "unsorted"</code> — never by its display name, never by <code>type</code>. It is the <strong>only protected collection</strong> and can never be deleted. <span class="ann__ref">D2, ux §1.5, §D.2</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text">Unsorted is <strong>pinned first under every sort</strong>, via a SQL rank — it never appears on a later page. Render the server's order; do not re-sort. <span class="ann__ref">D4, ux §2.2</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text"><strong>No item counts.</strong> <code>GET /collections</code> carries no count and no <code>total</code>; deriving one would cost a request per collection on an unbounded list. <span class="ann__ref">ux §4.1, decisions §2.7</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text><strong>No "New collection" affordance.</strong> There is no <code>POST /collections</code>; a collection is created only by filing an item into a named one. A create button here would have to be faked. <span class="ann__ref">ux §4.1, decisions §2.7</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Changing sort invalidates the held cursor</strong> and the app must reset it. A cursor must match the requested sort and the backend cannot prevent a mismatch. <span class="ann__ref">D4, ux §D.1</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Missing collection is a <strong>distinct screen</strong>, distinct from empty, with a route back. <span class="ann__ref">ux §5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text>The "protected" and "created by the app" chips are proposals. **[Confirmed]** Never frame a system-created collection as user-created. <span class="ann__ref">decisions §2.6</span></span></div>
+    </aside>
+  </div>
+
+  <!-- ============ B. COLLECTION CONTENTS ============================= -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">B — Collection contents (S9) and the empty case</div>
+    <div class="strip">
+
+      <div class="strip__cell">
+        <div class="strip__label">B1 — Populated collection</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Camera Gear</div></div>
+          <div class="body">
+            <div class="row">
+              <div class="row__thumb">image</div>
+              <div class="row__main">
+                <div class="row__title">Understanding CRDTs: why eventual consistency is not a compromise</div>
+                <div class="row__url">example.com/articles/crdts-explained</div>
+                <div class="row__desc">Conflict-free replicated data types let several replicas converge…</div>
+                <div class="row__meta"><span class="state state--completed"><i class="state__dot"></i>Details read</span></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row__thumb row__thumb--empty">—</div>
+              <div class="row__main">
+                <div class="row__title row__title--fallback">https://social.example.org/@someone/isr-tradeoffs</div>
+                <div class="row__url">social.example.org</div>
+                <div class="row__meta"><span class="state state--pending"><i class="state__dot"></i>Reading page…</span></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row__thumb">image</div>
+              <div class="row__main">
+                <div class="row__title">Designing a rate limiter that fails closed</div>
+                <div class="row__url">engineering.example.dev/rate-limits</div>
+                <div class="row__meta"><span class="state state--failed"><i class="state__dot"></i>Couldn't read this page</span></div>
+              </div>
+            </div>
+            <div style="padding:12px;font-size:11px;color:var(--gray)">[ loading more ]</div>
+          </div>
+          <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item tabbar__item--cols" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">B2 — Empty named collection</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Wishlist</div></div>
+          <div class="body"><div class="content">
+            <div class="empty" style="margin-top:26px">
+              <div class="empty__title">Nothing in Wishlist</div>
+              An empty collection is a perfectly good state.
+            </div>
+            <button class="btn-ux" style="width:100%">Save a URL</button>
+          </div></div>
+          <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item tabbar__item--cols" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">B3 — Unsorted contents</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar">
+            <div class="appbar__back">&#8592;</div>
+            <div class="appbar__title">Unsorted<div class="appbar__sub">every new save lands here</div></div>
+          </div>
+          <div class="body">
+            <div class="row">
+              <div class="row__thumb">image</div>
+              <div class="row__main">
+                <div class="row__title">A thread about incremental static regeneration</div>
+                <div class="row__url">social.example.org/@someone/isr-tradeoffs</div>
+                <div class="row__meta"><span class="state state--pending"><i class="state__dot"></i>Reading page…</span></div>
+              </div>
+            </div>
+            <div class="note" style="margin:12px">
+              Unsorted arrives here through <strong>exactly the same screen</strong> as every other
+              collection. It is not special-cased, and this screen is <strong>not</strong> the Inbox.
+            </div>
+          </div>
+          <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item tabbar__item--cols" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+    </div>
+    <aside class="ann">
+      <div class="ann__title">B — Collection contents</div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text><strong>One parameterised screen serves every collection, including Unsorted.</strong> Enrichment presentation, pagination and empty handling must behave identically across collections — drift would be a defect. <span class="ann__ref">ux §4.1</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">The Inbox is <strong>deliberately exempt</strong> from that identity, because it spans collections by design. This screen and the Inbox are no longer the same thing. <span class="ann__ref">D26, ux §4.1</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text">Ordering is fixed at <code>created_at DESC, id DESC</code> with <strong>no sort parameter</strong> — "newest first" is the only ordering. <span class="ann__ref">ux §B.1.1</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text">The collection's <strong>name is returned even on an empty page</strong>, so the title needs no extra request. <span class="ann__ref">ux §B.1.1</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text>An empty collection shows "Nothing in {name}" plus a save-URL affordance. The button's destination (Inbox input vs. a local sheet) is <strong>not decided</strong>. <span class="ann__ref">ux §D.3</span></span></div>
+    </aside>
+  </div>
+
+  <!-- ============ C. DELETE COLLECTION =============================== -->
+  <div class="screenwrap">
+    <div class="screenwrap__caption">C — Deleting a collection (S13): two shapes, because the field is always required</div>
+    <div class="strip">
+
+      <div class="strip__cell">
+        <div class="strip__label">C1 — Empty collection</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Collections</div></div>
+          <div class="body"><div class="content">
+            <div style="height:180px"></div>
+            <div class="sheetwrap sheetwrap--center is-hidden" id="dlg-del-empty" style="position:static;display:block">
+              <div class="sheet" role="dialog" aria-label="Delete collection" style="max-width:none">
+                <div class="sheet__head"><span>Delete Wishlist?</span></div>
+                <div class="sheet__body">
+                  <p style="font-size:12.5px;margin:0"><strong>This collection is empty.</strong> There are no items to keep or discard.</p>
+                </div>
+                <div class="sheet__foot">
+                  <button class="btn-ux" style="flex:1">Cancel</button>
+                  <button class="btn-ux btn-ux--primary" style="flex:1">Delete</button>
+                </div>
+              </div>
+            </div>
+          </div></div>
+          <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item tabbar__item--cols" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">C2 — Non-empty collection</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Collections</div></div>
+          <div class="body"><div class="content">
+            <div style="height:130px"></div>
+            <div class="sheetwrap sheetwrap--center is-hidden" id="dlg-del-nonempty" style="position:static;display:block">
+              <div class="sheet" role="dialog" aria-label="Delete collection" style="max-width:none">
+                <div class="sheet__head"><span>Delete Camera Gear?</span></div>
+                <div class="sheet__body">
+                  <p style="font-size:12.5px;margin:0 0 10px">This collection is <strong>not empty</strong>. Choose what happens to its items.</p>
+                  <div class="opt opt--destructive">
+                    <span class="opt__label"><strong>Delete the items and the collection</strong><span class="opt__verb">this cannot be undone</span></span>
+                    <input type="radio" name="disp" checked>
+                  </div>
+                  <div class="opt">
+                    <span class="opt__label"><strong>Move the items to…</strong><span class="opt__verb">choose a destination collection</span></span>
+                    <input type="radio" name="disp">
+                  </div>
+                  <div style="margin-top:10px;border:1px dashed var(--gray-m);padding:8px;font-size:11.5px;color:var(--gray-d)">
+                    Destination: <strong>Unsorted</strong>
+                  </div>
+                </div>
+                <div class="sheet__foot">
+                  <button class="btn-ux" style="flex:1">Cancel</button>
+                  <button class="btn-ux btn-ux--primary" style="flex:1">Continue</button>
+                </div>
+              </div>
+            </div>
+          </div></div>
+          <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item tabbar__item--cols" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">C3 — Unsorted cannot be deleted</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Collections</div></div>
+          <div class="body"><div class="content">
+            <div class="row" style="border-left-width:4px;border-left-style:solid"><div class="row__main"><div class="row__title">Unsorted</div>
+              <div class="row__meta"><span class="chip chip--solid">protected</span></div></div></div>
+            <div class="note note--strong" style="margin-top:14px">
+              <strong>No delete action is offered on this row.</strong> Unsorted is the single exception to
+              collection deletion and can never be removed.
+            </div>
+            <div class="hr"></div>
+            <div class="note">
+              Guard still applies in code: the backend rejects an attempt with
+              <code>UNSORTED_COLLECTION_PROTECTED</code>, but the action should never be reachable.
+            </div>
+          </div></div>
+          <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item tabbar__item--cols" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+      <div class="strip__cell">
+        <div class="strip__label">C4 — Collection became non-empty mid-delete</div>
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>[ status ]</span></div>
+          <div class="appbar"><div class="appbar__back">&#8592;</div><div class="appbar__title">Collections</div></div>
+          <div class="body"><div class="content">
+            <div class="sheetwrap sheetwrap--center is-hidden" id="dlg-col-notempty" style="position:static;display:block">
+              <div class="sheet" role="dialog" aria-label="Collection not empty" style="max-width:none">
+                <div class="sheet__head"><span>Nothing was changed</span></div>
+                <div class="sheet__body">
+                  <p style="font-size:12.5px;margin:0">Wishlist is no longer empty — an item was filed into it while you were deciding. The collection and its items were left exactly as they are.</p>
+                </div>
+                <div class="sheet__foot"><button class="btn-ux btn-ux--primary" style="flex:1">Reload</button></div>
+              </div>
+            </div>
+          </div></div>
+          <nav class="tabbar"><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Inbox</span></div><div class="tabbar__item tabbar__item--cols" aria-current="page"><i class="tabbar__glyph"></i><span class="tabbar__label">Collections</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Search</span></div><div class="tabbar__item"><i class="tabbar__glyph"></i><span class="tabbar__label">Profile</span></div></nav>
+        </div>
+      </div>
+
+    </div>
+    <aside class="ann">
+      <div class="ann__title">C — Delete collection</div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text"><code>saved_items_action</code> is <strong>required, with no default</strong>, because the two actions have opposite consequences and one discards saved items. <strong>It is required even when the collection holds zero items.</strong> <span class="ann__ref">ux §D.4–D.5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text><strong>Empty:</strong> do not ask the question. Say "This collection is empty" and offer only Delete. The client still sends <code>{"saved_items_action":"delete","target_collection_id":null}</code> internally — true of zero rows, and the only value that satisfies the contract. <span class="ann__ref">ux §D.5, R7</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text"><strong>Non-empty:</strong> show the real choice with <strong>equal visual weight on both options</strong>. <span class="ann__ref">ux §D.5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Never preselect one option</strong> — "the choice is never made on the caller's behalf". The radio shown here is a wireframe affordance and must not ship preselected. <span class="ann__ref">ux §D.5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text">Unsorted is a valid <strong>move target</strong>, named by its ID like any other collection. <span class="ann__ref">ux §D.4</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text">On a mid-operation conflict, <strong>everything happens together or not at all</strong> — nothing changed, and the caller is told why. <span class="ann__ref">ux §D.6</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text>Whether the item count can be shown in the dialog is <strong>not knowable from <code>GET /collections</code></strong>. Emptiness is knowable in exactly two places. The count here is a placeholder. <span class="ann__ref">ux §D.5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text>No undo exists for collection deletion either. <span class="ann__ref">decisions §5.3</span></span></div>
+    </aside>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

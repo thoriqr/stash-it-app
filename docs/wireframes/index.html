@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stash It — Low-Fidelity Wireframes</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-vp="portrait" data-ann="off">
+
+<!-- ===================== REVIEW TOOLBAR (prototype chrome) ============== -->
+<div class="toolbar">
+  <div class="toolbar__group">
+    <span class="toolbar__label">Viewport</span>
+    <button class="btn" data-vp-set="fluid"     aria-pressed="false">Fluid</button>
+    <button class="btn" data-vp-set="narrow"    aria-pressed="false">Narrow 320</button>
+    <button class="btn" data-vp-set="portrait"  aria-pressed="true">Portrait 390</button>
+    <button class="btn" data-vp-set="landscape" aria-pressed="false">Landscape 844</button>
+    <button class="btn" data-vp-set="tablet"    aria-pressed="false">Tablet 834</button>
+    <button class="btn" data-vp-set="desktop"   aria-pressed="false">Desktop 1180</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="toolbar__group">
+    <span class="toolbar__label">Preset: <span id="vp-readout">portrait</span></span>
+    <button class="btn btn--ghost" data-ann-toggle aria-pressed="false">Annotations: OFF</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <h1>Stash It — low-fidelity wireframes</h1>
+  <p class="lede">
+    A grayscale, structural review artifact for the Stash It Flutter app. It exists to answer
+    <em>layout, state coverage and interaction affordance</em> questions <em>before</em> any widget code
+    is written. It is not an implementation, not a design system, and not a decision record.
+  </p>
+
+  <div class="card">
+    <div class="row" style="padding:0;border:0;gap:10px;flex-wrap:wrap;align-items:center">
+      <span class="mockbar">Prototype data only</span>
+      <span style="font-size:12px;color:var(--gray-d)">
+        Every URL, title, domain, timestamp and state shown is fabricated for layout review.
+        Nothing here is a real save, a real API call, or evidence of a backend capability.
+      </span>
+    </div>
+  </div>
+
+  <!-- ===================== How to review ================================ -->
+  <h2>How to review</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>1 — Open</h3>
+      <p style="font-size:13px;margin:0">
+        Double-click <code>index.html</code>. No server, no install, no network. Works from
+        <code>file://</code>.
+      </p>
+    </div>
+    <div class="card">
+      <h3>2 — Switch viewport</h3>
+      <p style="font-size:13px;margin:0">
+        Use the <strong>Viewport</strong> buttons in the toolbar. <em>Fluid</em> removes the fixed frame
+        so the layout follows your real browser window.
+      </p>
+    </div>
+    <div class="card">
+      <h3>3 — Turn on annotations</h3>
+      <p style="font-size:13px;margin:0">
+        <strong>Annotations</strong> reveals, under every screen, which decision that screen represents
+        and whether it is <code>[Doc]</code>, <code>[Confirmed]</code>, <code>[Rec]</code>,
+        <code>[Verify]</code> or <code>[Open]</code>.
+      </p>
+    </div>
+    <div class="card">
+      <h3>4 — Compare states</h3>
+      <p style="font-size:13px;margin:0">
+        State families are laid out <strong>side by side</strong> so differences are visible without
+        paging. Some screens also offer a variant switcher.
+      </p>
+    </div>
+  </div>
+
+  <!-- ===================== Screens ====================================== -->
+  <h2>Wireframe files</h2>
+  <div class="grid2">
+
+    <div class="card card--link">
+      <a class="card__title" href="01-inbox-and-saving.html">01 — Inbox &amp; saving URLs</a>
+      <p style="font-size:12.5px;margin:6px 0 0">
+        S7 Inbox + S15 pending local URLs. Empty, populated, save in flight, confirmed save, and the
+        full pending-URL failure matrix (auth, 429, 503, offline, uncertain).
+      </p>
+      <p style="font-size:11.5px;margin:8px 0 0;color:var(--gray)">
+        Covers: app shell, tab bar, D25 URL input, D26 Inbox model, D13 ownership boundary.
+      </p>
+    </div>
+
+    <div class="card card--link">
+      <a class="card__title" href="02-item-presentation.html">02 — Saved-item presentation</a>
+      <p style="font-size:12.5px;margin:6px 0 0">
+        The shared saved-item row across all four enrichment states, detail layout, preview-image
+        handling, opening the original URL, the file sheet, and deletion.
+      </p>
+      <p style="font-size:11.5px;margin:8px 0 0;color:var(--gray)">
+        Covers: <code>pending</code> / <code>completed</code> / <code>completed</code>-no-metadata /
+        <code>failed</code>, fallback title chain, S12 file sheet, advisory post-delete offer.
+      </p>
+    </div>
+
+    <div class="card card--link">
+      <a class="card__title" href="03-collections.html">03 — Collections</a>
+      <p style="font-size:12.5px;margin:6px 0 0">
+        S8 Collections list, S9 collection contents, empty collection, the three documented sorts,
+        missing-collection, and the collection-deletion disposition dialog in both shapes.
+      </p>
+      <p style="font-size:11.5px;margin:8px 0 0;color:var(--gray)">
+        Covers: <code>system_key</code> identity, no counts, no create action, cursor reset on sort change.
+      </p>
+    </div>
+
+    <div class="card card--link">
+      <a class="card__title" href="04-search.html">04 — Search</a>
+      <p style="font-size:12.5px;margin:6px 0 0">
+        S11 Search: initial, query entered, mixed item + collection results, no results,
+        capped-results disclosure, loading and rate-limited states.
+      </p>
+      <p style="font-size:11.5px;margin:8px 0 0;color:var(--gray)">
+        Covers: one combined query, no paging, truncation disclosure, zero results is not an error.
+      </p>
+    </div>
+
+    <div class="card card--link">
+      <a class="card__title" href="05-auth-and-profile.html">05 — Authentication &amp; profile</a>
+      <p style="font-size:12.5px;margin:6px 0 0">
+        S1 Welcome, S2 register, S3 verify PIN, S4 complete account, S5 account-link,
+        S6 password recovery, S14 Profile, and the auth-gate state for a held shared URL.
+      </p>
+      <p style="font-size:11.5px;margin:8px 0 0;color:var(--gray)">
+        Structural fidelity only — state families, not every error permutation.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- ===================== Screen / state map =========================== -->
+  <h2>Screen coverage against the discovery screen inventory</h2>
+  <table class="simple">
+    <thead>
+      <tr><th>Screen</th><th>Where to review it</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>S1 Welcome / sign in</td><td><a href="05-auth-and-profile.html">05</a></td><td>Entry and sign-out; also the destination when a save needs auth</td></tr>
+      <tr><td>S2 Register (email)</td><td><a href="05-auth-and-profile.html">05</a></td><td>Step 1 of the manual chain</td></tr>
+      <tr><td>S3 Verify PIN</td><td><a href="05-auth-and-profile.html">05</a></td><td>Poll-and-countdown panel; resend countdown</td></tr>
+      <tr><td>S4 Complete account</td><td><a href="05-auth-and-profile.html">05</a></td><td>Manual finalize mints <em>no</em> session — a separate login follows</td></tr>
+      <tr><td>S5 Account-link confirmation</td><td><a href="05-auth-and-profile.html">05</a></td><td>A yes/no gate, not a picker</td></tr>
+      <tr><td>S6 Password recovery</td><td><a href="05-auth-and-profile.html">05</a></td><td>Four-step PIN flow; revokes all sessions on success</td></tr>
+      <tr><td><strong>S7 Inbox</strong></td><td><a href="01-inbox-and-saving.html">01</a></td><td>Recent-saved history across collections — <em>not</em> the <code>unsorted</code> collection</td></tr>
+      <tr><td>S8 Collections</td><td><a href="03-collections.html">03</a></td><td>Pure browser: no counts, no create action</td></tr>
+      <tr><td>S9 Collection contents</td><td><a href="03-collections.html">03</a></td><td>One parameterised screen for every collection</td></tr>
+      <tr><td>S10 Saved item detail</td><td><a href="02-item-presentation.html">02</a></td><td>Plus inline enrich retry and the delete action</td></tr>
+      <tr><td>S11 Search</td><td><a href="04-search.html">04</a></td><td>One combined query, capped</td></tr>
+      <tr><td>S12 File into collection (sheet)</td><td><a href="02-item-presentation.html">02</a></td><td>Existing collections first, create-by-name secondary</td></tr>
+      <tr><td>S13 Delete collection (dialog)</td><td><a href="03-collections.html">03</a></td><td>Two shapes: empty vs non-empty</td></tr>
+      <tr><td>S14 Profile</td><td><a href="05-auth-and-profile.html">05</a></td><td>Essential account actions only</td></tr>
+      <tr><td>S15 Pending URLs (Inbox section)</td><td><a href="01-inbox-and-saving.html">01</a></td><td><strong>Not</strong> a navigation destination; local only</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ===================== Coverage gaps =============================== -->
+  <h2>Deliberately not represented</h2>
+  <table class="simple">
+    <thead><tr><th>Item</th><th>Why it is absent</th></tr></thead>
+    <tbody>
+      <tr><td>Account deletion</td><td><strong>No backend endpoint exists.</strong> Recorded as an unresolved release blocker. No flow is drawn, because drawing one would imply support.</td></tr>
+      <tr><td>Device / session management</td><td><code>[Confirmed]</code> Deferred in v1.</td></tr>
+      <tr><td>Collection create button on S8</td><td><code>[Doc]</code> There is no <code>POST /collections</code>. Collections are created only by filing an item into a named one.</td></tr>
+      <tr><td>Collection item counts</td><td><code>[Doc]</code> <code>GET /collections</code> carries no count.</td></tr>
+      <tr><td>"Browse all saved items"</td><td>Out of scope for v1.</td></tr>
+      <tr><td>Search paging / autocomplete / suggestions</td><td><code>[Doc]</code> None exist in the API.</td></tr>
+      <tr><td>URL validation states on the Inbox input</td><td><code>[Open]</code> Q13 — not decided. Inventing them would pre-empt a product decision.</td></tr>
+      <tr><td>Offline-mode destination, sync UI</td><td><code>[Confirmed]</code> Not built in v1.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ===================== Fidelity statement ========================== -->
+  <h2>Fidelity statement</h2>
+  <div class="card">
+    <p style="margin:0 0 8px">
+      <strong>Structural and state-accuracy fidelity. Zero visual fidelity.</strong>
+    </p>
+    <ul style="margin:0;padding-left:20px;font-size:13px">
+      <li>Black, white and neutral grey only.</li>
+      <li>System font stack. No brand palette, no logo, no imagery, no gradients, no decorative shadows.</li>
+      <li>Preview images are neutral outlined placeholders with reserved space.</li>
+      <li>Copy is <em>placeholder copy that preserves the semantic slot</em>. It is not final wording, and
+          it is not localisation-ready.</li>
+      <li>Spacing, type size and chrome placement are <em>proposals under review</em>, not decisions.</li>
+    </ul>
+  </div>
+
+  <h2>Reviewer warnings</h2>
+  <div class="card">
+    <ul style="margin:0;padding-left:20px;font-size:13px">
+      <li><strong>This is a browser prototype.</strong> It does not prove, and cannot prove, native macOS
+          compatibility. See the platform note in <code>README.md</code>.</li>
+      <li><strong>Viewport presets are review instruments.</strong> They test structural possibilities.
+          They do not decide the final Flutter layout.</li>
+      <li><strong>Nothing here is a decision.</strong> Approving a screen in this artifact does not promote a
+          <code>[Rec]</code> to <code>[Confirmed]</code> — that happens only in
+          <code>docs/product-discovery/decisions.md</code>.</li>
+    </ul>
+  </div>
+
+  <p style="margin-top:28px;font-size:12px;color:var(--gray)">
+    Full instructions, mocked-data inventory and open questions: <a href="README.md">README.md</a> ·
+    Source of truth: <code>../product-discovery/</code>
+  </p>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
