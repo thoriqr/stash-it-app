@@ -4,8 +4,11 @@ This directory holds the initial UX discovery for the Stash It mobile frontend
 (Flutter). It exists to answer *what the product should do and feel like* before
 any UI, routing, state management, or API client code is written.
 
-**No Flutter project has been initialized and no application code exists in this
-repository.** These documents are the only content here.
+> **Note (added later).** The Flutter project *has* since been initialized, and
+> application code now exists in this repository. What these documents remain is the
+> record of *why* the product behaves as it does — they are not updated to describe
+> the current implementation. See [`../../PROGRESS.md`](../../PROGRESS.md) for that.
+> Nothing below has changed: the decisions here still bind the code.
 
 ## Documents in this directory
 
