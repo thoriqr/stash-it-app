@@ -908,10 +908,13 @@ must not be presented as proving *why* an item changed location.
 considered separately. **[Confirmed] No specific notification, surface, or wording
 is decided here**, and none may be invented.
 
-#### Backend dependency — planned, not implemented
+#### Backend dependency — implemented
 
-**[Open] The Inbox requires a backend capability that does not exist today.** This
-is a recorded product requirement, **not** an available endpoint.
+**[Doc] The backend capability this decision asked for now exists.** `GET /saved-items`
+is implemented: a cursor-paginated history of recent saved items across every
+collection the user owns, each item carrying its current collection and its
+enrichment status. **The product requirement below is unchanged and still governs what
+the screen is for.**
 
 **[Confirmed]** The product-level requirement, and nothing beyond it:
 
@@ -919,15 +922,15 @@ is a recorded product requirement, **not** an available endpoint.
 > including **each item's current collection** and **its relevant enrichment
 > status**, based on the **latest data available from the backend**.
 
-**[Confirmed] No endpoint path, request schema, response schema, pagination
-contract, ordering, or backend behaviour is specified or implied by this decision.**
-Any concrete contract must be designed in the backend repository, which remains
-authoritative for backend behavior. See
-[§5.1](#51-recently-saved-items-across-collections-inbox).
+**[Confirmed] This decision still specifies no endpoint path, request schema, response
+schema, pagination contract, ordering, or backend behaviour.** The concrete contract
+was designed in the backend repository, which remains authoritative for backend
+behavior; it is recorded here only so the Flutter client does not invent a different
+one. See [§5.1](#51-recently-saved-items-across-collections-inbox).
 
-*Prototype note.* A wireframe may use mock data shaped like the response such an
-endpoint would return. **[Confirmed] Mock data in a prototype is a design technique
-and is not evidence that the endpoint exists.**
+*Prototype note.* **[Confirmed] Mock data in a prototype is a design technique and is
+not evidence that an endpoint exists** — which is now the reason the Flutter Inbox
+still labels its sample content as mock while the real listing goes unused.
 
 *See:* ux-discovery §1.5, §2, §4 (S7), §6
 
@@ -1078,13 +1081,21 @@ here**, and none may be invented — see
 
 ### 2.7 Recommendation — Collections screen shows no item counts and no create action
 
-**[Doc]** `GET /collections` carries no count and there is no `total`. There is also
-**no `POST /collections`** — a collection is created only as a side effect of filing
-an item into it by name.
+**[Doc]** `GET /collections` **now returns a per-collection count** —
+`saved_items_count`, exact 0–99 and capped at 99, with `saved_items_count_overflow`
+true above 99 — and there is still no `total`. The count describes the whole
+collection on every page. There is also **no `POST /collections`** — a collection is
+created only as a side effect of filing an item into it by name.
+
+> **Superseded premise, recommendation unchanged.** This recommendation was written
+> when the listing carried no count and deriving one would have cost a request per
+> collection on an unbounded list. That reasoning is obsolete: the count now arrives
+> in the same response. **[Rec] The recommendation below still stands** and has not
+> been re-approved or withdrawn — whether to display the count is now a product
+> decision, not a technical constraint.
 
 **Recommendation.**
-- Show no counts. Deriving them would cost one request per collection on an
-  unbounded list.
+- Show no counts. *(Original rationale, now obsolete — see the note above.)*
 - Show no "New collection" affordance. The screen is a pure browser. A create
   control would have to be faked by filing an item, which would be misleading.
 - Accept "Collections with 0 items" as a normal, permanent state.
@@ -1235,16 +1246,17 @@ rediscovered as a surprise. None of these is a blocker for v1.
 
 ### 5.1 Recently saved items across collections (Inbox)
 
-> **[Confirmed] This entry now records a planned requirement, not a deferral.** The
-> Inbox's cross-collection listing was previously recorded here as *deferred*.
+> **[Confirmed] This entry records a product requirement that the backend has since
+> met.** The Inbox's cross-collection listing was previously recorded here as
+> *deferred*, and was still absent when this requirement was approved.
 
-**[Doc] The backend gap is unchanged.** `AGENTS.md` decision 19g removes the
-standalone listing deliberately: *"Two ways to ask the same question would be two
-answers to keep in step, and the standalone one was also the poorer answer."*
-**[Doc] No endpoint that lists recently saved items across collections exists
-today.**
+**[Doc] The backend gap is closed.** `AGENTS.md` decision 19g removed the standalone
+listing deliberately: *"Two ways to ask the same question would be two answers to keep
+in step, and the standalone one was also the poorer answer."* **[Doc] That position has
+since been reversed in the backend**, which now implements `GET /saved-items` as the
+Inbox's data source. The reasoning quoted above is retained as history.
 
-**[Confirmed] The product now requires one.** See
+**[Confirmed] The product requires it.** See
 [D26](#d26--inbox-is-a-recent-saved-history-across-collections). The requirement is
 stated **only at product level**:
 
@@ -1253,9 +1265,9 @@ stated **only at product level**:
 > status**, based on the **latest data available from the backend**.
 
 **[Confirmed] No endpoint path, request schema, response schema, pagination
-contract, ordering, or backend behaviour is specified or implied.** None of this is
-implemented or available. The backend repository remains authoritative for any
-contract that is later designed.
+contract, ordering, or backend behaviour is specified by this document.** Those were
+designed in the backend repository, which remains authoritative for the contract; the
+Flutter client must read them there rather than infer them from here.
 
 **[Confirmed] What stays deferred.** A full "browse every saved item" view is still
 not in v1. The requirement above is for a **bounded recent-saved history**, which is
@@ -1284,7 +1296,7 @@ Recorded for completeness. None is a v1 blocker.
 | Gap | **[Doc]** status | v1 handling |
 | --- | --- | --- |
 | **Collection rename / merge** | No endpoint. Near-duplicate collections from accidental creation are permanent. | Mitigate in UI ([§2.8](#28-recommendation--file-sheet-shows-existing-collections-first)); cannot be fixed properly without backend support. |
-| **Collection item counts** | `GET /collections` carries no count. | Omit counts ([§2.7](#27-recommendation--collections-screen-shows-no-item-counts-and-no-create-action)). |
+| **Collection item counts** | **[Doc]** `GET /collections` now carries `saved_items_count` (0–99, capped) and `saved_items_count_overflow`. | Still omit counts until the product re-approves (§2.7); availability is not approval. |
 | **Search paging / filters** | Caps at 20 items / 5 collections, unpaged, no filters. | Disclose truncation ([§2.5](#25-recommendation--search-framing-and-truncation-disclosure)). |
 | **Saved-item editing** | No `PATCH`/`PUT`. No rename, notes, tags, or favourites. | Not designed. |
 | **Read/unread, archive, trash** | Delete is a hard delete, irreversible. | Not designed. **[Open]** No undo exists for any delete in v1. |

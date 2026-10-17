@@ -17,8 +17,8 @@ prototype. **No product feature is implemented.**
 - A provisional **Paper & Ink** visual baseline. Provisional: the visual language is
   not designed, so these values are expected to change.
 - One reusable saved-item row, demonstrated on the Inbox over **explicitly labelled
-  mock data**. No Inbox listing API exists yet, so there is no API client, DTO or
-  repository.
+  mock data**. The backend listing (`GET /saved-items`) now exists, but no Flutter
+  API client, DTO or repository has been written yet.
 - No authentication, networking, localization, or persistence.
 
 [`PROGRESS.md`](./PROGRESS.md) is the current handoff document: what exists, what was

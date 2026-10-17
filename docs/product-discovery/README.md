@@ -54,11 +54,12 @@ collection the item currently belongs to. **[Confirmed] Collections remains the
 collection browser.** **[Confirmed] The Inbox is not an alias for the `unsorted`
 collection.** See [`decisions.md` D26](./decisions.md).
 
-**[Open] The Inbox needs a backend listing that does not exist yet.** This is a
-recorded product requirement, not an available capability. **[Confirmed]** No
-endpoint, request or response schema, pagination contract, or ordering is
-specified or implied by these documents, and the backend repository remains
-authoritative for any contract that is later designed.
+**[Doc] The Inbox's backend listing now exists.** This was a recorded product
+requirement with no capability behind it; the backend has since implemented
+`GET /saved-items`, a cursor-paginated history of recent saved items across every
+collection the user owns. **[Confirmed]** These documents still do not specify that
+contract themselves, and the backend repository remains authoritative for it — see
+[`AGENTS.md`](../../AGENTS.md) §3 for the verified shape.
 
 Explicitly out of scope for v1: a full "browse every saved item" view, device and
 session management, a separate mobile-web experience, a complete offline mode, a
@@ -147,9 +148,10 @@ directly. The primary references are:
   successful `200` with empty arrays.
 - **Serialize refresh-token requests.** A concurrent double-refresh revokes the
   session server-side.
-- **The Inbox's data source does not exist yet.** Do not assume an endpoint that
-  lists recently saved items across collections, and do not design against an
-  invented contract. See [§1 D26](./decisions.md#d26--inbox-is-a-recent-saved-history-across-collections).
+- **The Inbox's listing contract lives in the backend.** `GET /saved-items` is
+  implemented. Read it from the backend repository rather than assuming a shape, and
+  do not design against a different one. See
+  [§1 D26](./decisions.md#d26--inbox-is-a-recent-saved-history-across-collections).
 - **Nothing here is an approved architecture decision.** Navigation libraries,
   state management, API clients, and design systems are all still open.
 

@@ -87,22 +87,39 @@ presentation model**, not a DTO. It holds the `title → URL → domain` fallbac
 and the three `EnrichmentStatus` values from **D8**. The field set reflects what a row
 needs to render; **no field has been agreed with the backend.**
 
-### Inbox — mock data only
+### Inbox — contract available, client not integrated
 
 `lib/features/inbox/presentation/inbox_screen.dart` renders six fabricated items from
 `lib/features/inbox/presentation/inbox_mock_data.dart`, under a visible notice stating
 that every item is mock data.
 
-**There is no Inbox listing API.** No endpoint, path, schema, pagination contract or
-ordering exists (D26, `decisions.md` §5.1). Accordingly there is **no API client, no
-DTO, no repository, and no mapper** for the Inbox — none may be written until the
-backend designs that contract.
+**`GET /saved-items` now exists and is implemented in the backend.** Verified in the
+backend source and its Swagger:
+
+- Envelope `{ data: { saved_items: [...] }, message, meta: { cursor } }`.
+- Item fields: `id`, `url`, `domain`, `platform`, `title`, `description`, `image_url`,
+  `collection_id`, `enrichment_status`, `last_enriched_at`, `created_at`,
+  `updated_at`, plus a nested `collection: { id, name }`. Nullable metadata is an
+  explicit `null`, never omitted.
+- Ordering `created_at DESC, id DESC`; **no sort parameter**.
+- Cursor pagination: default 20, max 50; `has_more`; `next_cursor` null on the final
+  page; empty results are `[]`.
+- Read-only; triggers no enrichment and no automatic organization. Nothing is
+  filtered, so `pending`, `completed` and `failed` all appear.
+- Errors: `BAD_REQUEST`, `VALIDATION_ERROR`, `INVALID_CURSOR`, the three 401s,
+  `INTERNAL_SERVER_ERROR`. No rate limiter.
+- The Inbox is **not** the Unsorted collection. Unsorted is one collection among the
+  ones an item can be in, and keeps its own pinned place in `GET /collections`.
+
+**There is still no API client, DTO, repository, or mapper for it in this
+repository.** That is a client gap, not a backend gap.
 
 **Saved-time labels are pre-written mock strings** (`Saved 12 min ago`, `Saved
 yesterday`, …). They are deliberately `String`s rather than timestamps so the model
-cannot imply a field, format, ordering rule or timezone policy. They define no list
-order, and nothing sorts by them. **Future integration must follow the actual API
-contract, not these strings.**
+cannot imply a format, ordering rule or timezone policy. The contract exposes
+`created_at` on every read, but the relative-formatting policy — which thresholds,
+which phrases, which locale — is still undefined client copy under D20/D22. **Future
+integration must follow the actual API contract, not these strings.**
 
 ---
 
@@ -130,7 +147,8 @@ Inbox screen (six rows, the mock-data notice, one state line per row that needs 
 
 ## Not implemented
 
-- Inbox data, loading, empty states, pagination.
+- Inbox loading, empty states, pagination behaviour, and any real data. The listing
+  contract exists; nothing consumes it yet.
 - Collections list, collection contents, deletion.
 - Saved-item detail, enrichment retry, filing into a collection.
 - Search.
@@ -153,23 +171,37 @@ file needs it (`AGENTS.md` §2).
 
 Carried from the discovery documents; none is resolved here.
 
-1. **The Inbox has no data source** (D26, §5.1). Blocks any real Inbox work.
-2. **`flutter_localizations` absent.** Tolerable for a prototype, not for real screens.
-3. **Secure storage undecided (V5).** §7.12 rejects plain files and shared preferences,
+1. **The Inbox client integration is not started.** The `GET /saved-items` contract
+   exists and is verified; no API client, DTO, repository, or mapper has been
+   written. The screen still runs on labelled mock data.
+2. **Collection count display is undecided.** `GET /collections` now returns
+   `saved_items_count` (0–99, capped) and `saved_items_count_overflow`. Whether to
+   show it is still governed by **[Rec]** §2.7 ("show no counts") and the **[Open]**
+   question in §D.5. Availability is not approval: the rationale behind §2.7 is now
+   obsolete, but the recommendation itself is unchanged.
+3. **Inbox UX still open** — loading and empty-state copy, whether the screen pages on
+   scroll or stops at a bounded end, and the saved-time display policy. None of these
+   is settled by the backend contract.
+4. **`flutter_localizations` absent.** Tolerable for a prototype, not for real screens.
+5. **Secure storage undecided (V5).** §7.12 rejects plain files and shared preferences,
    so this is a decision to make, not a workaround to invent.
-4. **No build-time configuration.** No `--dart-define`/flavour convention exists for
+6. **No build-time configuration.** No `--dart-define`/flavour convention exists for
    the API base URL, so nothing can reach a backend yet.
-5. **Generated-file policy undecided.** `.gitignore` ignores neither `*.g.dart` nor
+7. **Generated-file policy undecided.** `.gitignore` ignores neither `*.g.dart` nor
    `*.freezed.dart`. First relevant when the first annotation is added.
-6. **`riverpod_lint` enables no rules.** Registered in `analysis_options.yaml`, but no
+8. **`riverpod_lint` enables no rules.** Registered in `analysis_options.yaml`, but no
    rule is listed, so it currently contributes nothing.
-7. **Open product questions** any Inbox or queue work must respect: **Q13** (input
+9. **Open product questions** any Inbox or queue work must respect: **Q13** (input
    validation timing), **Q10 / V14** (URL equivalence for local deduplication — no
    normalization may be implemented), **Q1 / Q2** (expiry notification form, queue
    capacity), **Q3** (discard vs retain on permanent validation failure).
-8. **V7** — whether a URL should be redacted before display is unresolved; the row
+10. **V7** — whether a URL should be redacted before display is unresolved; the row
    currently shows the query string, matching the approved wireframes.
-9. **D23** — automatic retry remains a provisional v1 decision, not a permanent rule.
+11. **D23** — automatic retry remains a provisional v1 decision, not a permanent rule.
+12. **No OpenAPI sync mechanism.** The backend contract is read from its Swagger and
+    its source by hand. Nothing keeps the two repositories aligned, which is how the
+    Inbox drift accumulated. Vendoring or generating the schema is a separate
+    decision and has not been taken.
 
 ---
 
@@ -193,11 +225,17 @@ Grounding: the backend `swagger.json` for routes and payloads, `documentation/au
 for token lifetimes and refresh semantics, `AGENTS.md` §2 for boundaries. **Take the
 contract from the backend repository; do not infer it.**
 
-Prerequisite to settle first: how the API base URL is supplied (see gap 4).
+Prerequisite to settle first: how the API base URL is supplied (see gap 6).
 
-Follow-on, once a session exists: Collections, because `GET /collections` is fully
-specified, it is the root data dependency for S8/S9/S12/S13, and it resolves Unsorted
-by `system_key` rather than by name (D2).
+Follow-on, once a session exists:
+
+- **Collections**, because `GET /collections` is fully specified, it is the root data
+  dependency for S8/S9/S12/S13, and it resolves Unsorted by `system_key` rather than
+  by name (D2).
+- **The Inbox**, against `GET /saved-items`. The contract is now verified, so this is
+  no longer blocked on the backend — only on the network and session work above.
+  Decide the count question (gap 2) before building the Collections screen, so the
+  DTO is written once.
 
 ---
 

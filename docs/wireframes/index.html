@@ -113,7 +113,7 @@
         missing-collection, and the collection-deletion disposition dialog in both shapes.
       </p>
       <p style="font-size:11.5px;margin:8px 0 0;color:var(--gray)">
-        Covers: <code>system_key</code> identity, no counts, no create action, cursor reset on sort change.
+        Covers: <code>system_key</code> identity, no counts shown, no create action, cursor reset on sort change.
       </p>
     </div>
 
@@ -155,7 +155,7 @@
       <tr><td>S5 Account-link confirmation</td><td><a href="05-auth-and-profile.html">05</a></td><td>A yes/no gate, not a picker</td></tr>
       <tr><td>S6 Password recovery</td><td><a href="05-auth-and-profile.html">05</a></td><td>Four-step PIN flow; revokes all sessions on success</td></tr>
       <tr><td><strong>S7 Inbox</strong></td><td><a href="01-inbox-and-saving.html">01</a></td><td>Recent-saved history across collections — <em>not</em> the <code>unsorted</code> collection</td></tr>
-      <tr><td>S8 Collections</td><td><a href="03-collections.html">03</a></td><td>Pure browser: no counts, no create action</td></tr>
+      <tr><td>S8 Collections</td><td><a href="03-collections.html">03</a></td><td>Pure browser: no counts shown, no create action</td></tr>
       <tr><td>S9 Collection contents</td><td><a href="03-collections.html">03</a></td><td>One parameterised screen for every collection</td></tr>
       <tr><td>S10 Saved item detail</td><td><a href="02-item-presentation.html">02</a></td><td>Plus inline enrich retry and the delete action</td></tr>
       <tr><td>S11 Search</td><td><a href="04-search.html">04</a></td><td>One combined query, capped</td></tr>
@@ -174,7 +174,7 @@
       <tr><td>Account deletion</td><td><strong>No backend endpoint exists.</strong> Recorded as an unresolved release blocker. No flow is drawn, because drawing one would imply support.</td></tr>
       <tr><td>Device / session management</td><td><code>[Confirmed]</code> Deferred in v1.</td></tr>
       <tr><td>Collection create button on S8</td><td><code>[Doc]</code> There is no <code>POST /collections</code>. Collections are created only by filing an item into a named one.</td></tr>
-      <tr><td>Collection item counts</td><td><code>[Doc]</code> <code>GET /collections</code> carries no count.</td></tr>
+      <tr><td>Collection item counts</td><td><code>[Doc]</code> <code>GET /collections</code> now carries <code>saved_items_count</code> (0&#8211;99, capped) and <code>saved_items_count_overflow</code>. <code>[Rec]</code> Showing them is still not approved.</td></tr>
       <tr><td>"Browse all saved items"</td><td>Out of scope for v1.</td></tr>
       <tr><td>Search paging / autocomplete / suggestions</td><td><code>[Doc]</code> None exist in the API.</td></tr>
       <tr><td>URL validation states on the Inbox input</td><td><code>[Open]</code> Q13 — not decided. Inventing them would pre-empt a product decision.</td></tr>

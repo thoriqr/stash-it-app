@@ -78,8 +78,9 @@ What exists today:
 - One reusable widget, the **saved-item row**, at
   `lib/features/saved_items/presentation/widgets/saved_item_row.dart`, with a mock
   presentation model beside it.
-- The Inbox renders that row over **explicitly labelled mock data**.
-  No API client, DTO, repository, or backend contract exists for the Inbox.
+- The Inbox renders that row over **explicitly labelled mock data**. The backend
+  contract for it now exists (see §3), but **no Flutter API client, DTO, or
+  repository has been written**.
 - `PROGRESS.md` records the current milestone, verification results, and gaps.
 
 What does **not** exist: any network layer, authentication, saved-item flows,
@@ -246,16 +247,39 @@ authoritative. Where a contract is unverified, record the limitation in
 Treat any code outside the verified lists as **unmapped**. Handle it defensively;
 never display a backend message for it.
 
-### The Inbox has no data source
+### The Inbox and the Inbox listing
 
-**No endpoint that lists recently saved items across collections exists.** The
-Inbox is a confirmed product requirement and a *planned* backend capability
-(D26, §5.1). No path, schema, pagination contract, or ordering may be invented.
+**The Inbox is not the Unsorted collection.** D26 makes the Inbox a recent saved
+items history across **every** collection the user owns, each item reporting the
+collection it currently sits in. Unsorted is one collection among those, pinned first
+in `GET /collections` and unchanged by any of this. Do not conflate them, and do not
+use Unsorted as a stand-in for the history.
 
-- Any Inbox UI built before that contract exists runs on mock data, and the mock
-  data **must be explicitly labelled as mock** in the code — do not let it read as
-  a real contract.
-- Do not design an API client for it "in advance".
+`GET /saved-items` **exists** and is implemented. Verified contract:
+
+- Envelope `{ data: { saved_items: [...] }, message, meta: { cursor } }`.
+- Each item carries `id`, `url`, `domain`, `platform`, `title`, `description`,
+  `image_url`, `collection_id`, `enrichment_status`, `last_enriched_at`,
+  `created_at`, `updated_at`, and a nested `collection: { id, name }`. The nested
+  object is inside each item because the listing spans collections. Nullable
+  metadata is present as an explicit `null`, never omitted.
+- Ordering `created_at DESC, id DESC`. **No sort parameter exists.**
+- Cursor pagination: default limit 20, maximum 50; opaque cursor; `has_more`;
+  `next_cursor` null on the final page; empty results are `[]`, never null. The
+  cursor payload carries no sort, so there is nothing to reset when paging.
+- Read-only. It does not trigger enrichment or automatic organization, and it
+  filters nothing: `pending`, `completed` and `failed` all appear.
+- Errors: `BAD_REQUEST`, `VALIDATION_ERROR`, `INVALID_CURSOR`, the three 401s,
+  `INTERNAL_SERVER_ERROR`. No rate limiter.
+
+The endpoint is verified in the backend repository and its Swagger; it is **not yet
+implemented in this client**. Until it is, the Inbox runs on mock data, and that mock
+data **must stay explicitly labelled as mock** in code and on screen.
+
+`GET /collections` also now reports `saved_items_count` (0–99, capped at 99) and
+`saved_items_count_overflow` (`true` above 99) per collection. The count describes
+the whole collection on every page, never the page. Availability is not approval to
+display it — see `decisions.md` §2.7 and the open question in §D.5.
 
 ### Behaviours that are easy to get wrong
 

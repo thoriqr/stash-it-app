@@ -101,13 +101,15 @@ and **can never be deleted** — identified by `system_key = 'unsorted'`, never 
 display name or `type` (`AGENTS.md`, decision 19b).
 
 **[Doc]** There is **no endpoint that lists every saved item at once**
-(`AGENTS.md`, decision 19g), and **[Doc]** none exists that lists recently saved
-items across collections either.
+(`AGENTS.md`, decision 19g), and **[Doc]** none is intended to. **[Doc]** The separate
+question — recently saved items *across* collections — was open when this was written
+and now has an answer: the backend implements `GET /saved-items` for it.
 
 **[Confirmed] The Inbox is no longer the Unsorted collection.** It is a separate
 destination showing a bounded recent-saved history across collections - see
-[`decisions.md` D26](./decisions.md). **[Open] The backend capability the Inbox
-needs is a planned requirement, not an available endpoint.**
+[`decisions.md` D26](./decisions.md). **[Doc] The backend capability the Inbox needs
+has since been implemented**; the contract itself lives in the backend repository and
+is not restated here.
 
 ### 1.6 Collections
 
@@ -433,16 +435,17 @@ collections**. It exists so a user can **verify that a URL was saved** and **see
 which collection the item currently belongs to** - see
 [`decisions.md` D26](./decisions.md).
 
-**[Open] The data source does not exist.** **[Doc]** There is no endpoint that
-lists recently saved items across collections. The product-level requirement is:
+**[Doc] The data source now exists:** `GET /saved-items`. The product-level
+requirement it was built to satisfy is:
 
 > A **bounded list of recently saved items across collections**, including **each
 > item's current collection** and **its relevant enrichment status**, based on the
 > **latest data available from the backend**.
 
 **[Confirmed] No endpoint path, request schema, response schema, pagination
-contract, or ordering is specified or implied.** None of this is implemented or
-available. **[Confirmed]** A wireframe may use mock data representing such a
+contract, or ordering is specified or implied here.** Those were designed in the
+backend repository, which remains authoritative. **[Confirmed]** A wireframe may use
+mock data representing such a
 response; mock data is a prototype technique and is **not** evidence that the
 endpoint exists.
 
@@ -1042,10 +1045,13 @@ longer renders the `unsorted` collection. **[Rec]** `GET /collections` remains t
 app's root data source for S8, S9, S12, and S13, and should still be loaded once
 per session and shared across those screens.
 
-**S8 — no item counts.** **[Doc]** `GET /collections` carries no count.
-**[Rec]** Do not show counts in v1. Deriving them would require one request per
-collection, which is unbounded work on an unbounded list. *(This is a recorded
-limitation, not a solved problem.)*
+**S8 — no item counts.** **[Doc]** `GET /collections` now carries
+`saved_items_count` (exact 0–99, capped at 99) and `saved_items_count_overflow`; the
+count describes the whole collection on every page. **[Rec]** Do not show counts in
+v1 — that recommendation is unchanged and awaits re-approval, and the original
+rationale (one request per collection on an unbounded list) is now obsolete. *(This is
+a recorded limitation, not a solved problem: the count is available, and whether to
+display it is still undecided.)*
 
 **S8 — no create action.** **[Doc]** No `POST /collections`. **[Rec]** The
 Collections screen is a pure browser. Do not present a "New collection" affordance
@@ -1163,7 +1169,7 @@ described as safe retry behaviour. See §7.8.
 
 | Journey | Endpoint | Success | Notable errors |
 | --- | --- | --- | --- |
-| B | **[Open] Inbox recent-saved listing** | **[Confirmed] NOT IMPLEMENTED - no endpoint exists** | **[Confirmed] Planned requirement only; no path, schema, or pagination is specified. See [`decisions.md` D26](./decisions.md)** |
+| B | `GET /saved-items` | `200`, cursor-paginated | `VALIDATION_ERROR`, `INVALID_CURSOR` |
 | A | `POST /saved-items` | `201` minimal body | `VALIDATION_ERROR`, `INVALID_URL`, 429, 503 |
 | B | `GET /search?q=` | `200` two groups, capped | `VALIDATION_ERROR`, 429 (30/min) |
 | B | `GET /collections` | `200` + `meta.cursor` | `VALIDATION_ERROR`, `INVALID_CURSOR` |
@@ -2059,8 +2065,9 @@ title**, so it is findable only by domain or URL.
 
 ### R14 — Missing item counts · **Low-Medium**
 
-**[Doc]** `GET /collections` carries no count. **[Rec]** Omit counts in v1.
-Deriving them would cost one request per collection on an unbounded list.
+**[Doc]** `GET /collections` now carries `saved_items_count` and
+`saved_items_count_overflow`. **[Rec]** Omit counts in v1 — unchanged, and the
+original rationale (one request per collection on an unbounded list) is now obsolete.
 
 ### R15 - Local deduplication mistaken for backend deduplication - **Medium**
 
@@ -2168,10 +2175,11 @@ that yet"*, and the UI should not pretend otherwise.
      input's placement (item 8). **[Open]** When, and whether, it validates a URL
      before submission is undecided, as is how an edited value interacts with local
      coalescing. See [`decisions.md` Q13](./decisions.md#3-open-product-questions).
-13. **The Inbox's backend data source.** **[Open]** The Inbox has **no endpoint**:
-     it needs a bounded cross-collection recently-saved listing that does not exist
-     yet. **[Confirmed]** No path, schema, pagination contract, or ordering may be
-     assumed or invented. See [`decisions.md` D26](./decisions.md) and
+13. **The Inbox's backend data source.** **[Doc] RESOLVED.** The Inbox has
+     `GET /saved-items`, a bounded cross-collection recently-saved listing that the
+     backend now implements. **[Confirmed]** Its path, schema, pagination contract and
+     ordering are the backend's to define and must not be assumed or invented here.
+     See [`decisions.md` D26](./decisions.md) and
      [B.1](#b1-browsing-the-inbox).
 
 ### Technical verification required

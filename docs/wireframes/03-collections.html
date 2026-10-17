@@ -35,7 +35,7 @@
     items inside it. It is a <strong>separate destination from the Inbox</strong> — the Inbox shows recent
     saves across collections, Collections shows collections themselves.
   </p>
-  <p style="margin:0 0 20px"><span class="mockbar">Mock data — collection item counts cannot be displayed</span></p>
+  <p style="margin:0 0 20px"><span class="mockbar">Mock data — the count <em>could</em> be fetched now; showing it is still not approved</span></p>
 </div>
 
 <div class="stage">
@@ -153,7 +153,7 @@
       <div class="ann__title">A — Collections list</div>
       <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Unsorted is a <strong>normal row</strong> in this list, identified by <code>system_key === "unsorted"</code> — never by its display name, never by <code>type</code>. It is the <strong>only protected collection</strong> and can never be deleted. <span class="ann__ref">D2, ux §1.5, §D.2</span></span></div>
       <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text">Unsorted is <strong>pinned first under every sort</strong>, via a SQL rank — it never appears on a later page. Render the server's order; do not re-sort. <span class="ann__ref">D4, ux §2.2</span></span></div>
-      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text"><strong>No item counts.</strong> <code>GET /collections</code> carries no count and no <code>total</code>; deriving one would cost a request per collection on an unbounded list. <span class="ann__ref">ux §4.1, decisions §2.7</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text"><strong>No item counts shown.</strong> <strong>[Doc]</strong> <code>GET /collections</code> now returns <code>saved_items_count</code> (exact 0&#8211;99, capped at 99) and <code>saved_items_count_overflow</code>, so the original rationale &#8212; one request per collection on an unbounded list &#8212; is obsolete. <em>The recommendation itself is unchanged</em> and awaits re-approval; availability is not approval. <span class="ann__ref">ux §4.1, decisions §2.7</span></span></div>
       <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text><strong>No "New collection" affordance.</strong> There is no <code>POST /collections</code>; a collection is created only by filing an item into a named one. A create button here would have to be faked. <span class="ann__ref">ux §4.1, decisions §2.7</span></span></div>
       <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Changing sort invalidates the held cursor</strong> and the app must reset it. A cursor must match the requested sort and the backend cannot prevent a mismatch. <span class="ann__ref">D4, ux §D.1</span></span></div>
       <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Missing collection is a <strong>distinct screen</strong>, distinct from empty, with a route back. <span class="ann__ref">ux §5</span></span></div>
@@ -371,7 +371,7 @@
       <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text"><strong>Never preselect one option</strong> — "the choice is never made on the caller's behalf". The radio shown here is a wireframe affordance and must not ship preselected. <span class="ann__ref">ux §D.5</span></span></div>
       <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text">Unsorted is a valid <strong>move target</strong>, named by its ID like any other collection. <span class="ann__ref">ux §D.4</span></span></div>
       <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text">On a mid-operation conflict, <strong>everything happens together or not at all</strong> — nothing changed, and the caller is told why. <span class="ann__ref">ux §D.6</span></span></div>
-      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text>Whether the item count can be shown in the dialog is <strong>not knowable from <code>GET /collections</code></strong>. Emptiness is knowable in exactly two places. The count here is a placeholder. <span class="ann__ref">ux §D.5</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text>Whether the item count is shown in the dialog is still <strong>undecided</strong>. <strong>[Doc]</strong> It is now <em>knowable</em>: <code>GET /collections</code> reports <code>saved_items_count</code>, and emptiness remains knowable in exactly two places. The count here is a placeholder. <span class="ann__ref">ux §D.5</span></span></div>
       <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text>No undo exists for collection deletion either. <span class="ann__ref">decisions §5.3</span></span></div>
     </aside>
   </div>

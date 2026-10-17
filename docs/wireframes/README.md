@@ -155,24 +155,26 @@ fabricated for layout review.
 
 | Mocked content | Why |
 | --- | --- |
-| All Inbox items | **[Open]** The Inbox listing API **does not exist**. This is the single most important caveat in the artifact. |
+| All Inbox items | **[Doc]** The Inbox listing API (`GET /saved-items`) now exists. These items still illustrate a *possible* page of it; nothing here was checked against a live response. |
 | All collection names and contents | Sample data for a real endpoint |
 | All search results | Sample data for a real endpoint |
 | All profile and identity data | Sample data for real endpoints |
-| The item count in the delete-collection dialog | `GET /collections` carries **no count**; the number is a placeholder |
-| How many recent items the Inbox shows | **Not decided** — the bounded end-marker is a placeholder |
+| The item count in the delete-collection dialog | **[Doc]** `GET /collections` now carries `saved_items_count` (0–99, capped) and `saved_items_count_overflow`. Whether to show it is **[Open]**; the number drawn here is still a placeholder |
+| How many recent items the Inbox shows | **Not decided** — the API returns cursor pages of up to 50, but the bounded end-marker is still a placeholder |
 
 ### The Inbox dependency, stated plainly
 
 The Inbox is a **confirmed product direction**: a bounded history of recently saved items across
 collections, each showing its current collection.
 
-**The endpoint that would serve it does not exist.** No path, schema, pagination contract or
-ordering has been designed, and **none may be invented**. Every Inbox screen in this prototype is
-representative of a *possible* response shape, nothing more. Treat the Inbox screens as
-**design proposals awaiting a backend capability**, not as a depiction of existing behaviour.
+**The endpoint that serves it now exists:** `GET /saved-items`, implemented by the backend after
+this prototype was drawn. Every Inbox screen here is therefore representative of a *possible* page
+of a **real** endpoint — but it was drawn before that endpoint existed and was **not** validated
+against it, so it must not be treated as a depiction of the contract's exact shape. Read the
+contract in the backend repository.
 
-Mock data in a prototype is a design technique. **It is not evidence that the endpoint exists.**
+The Inbox is **not** the Unsorted collection. Unsorted is one collection among the ones an item can
+be in, and keeps its own pinned place in `GET /collections`.
 
 ---
 

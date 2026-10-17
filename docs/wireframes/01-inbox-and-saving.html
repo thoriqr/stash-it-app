@@ -35,7 +35,7 @@
     <code>unsorted</code> collection. The pending-URL queue is a separate, local-only concern and is
     <strong>not</strong> the saved-items history.
   </p>
-  <p style="margin:0 0 20px"><span class="mockbar">Mock data — the Inbox listing API does not exist</span></p>
+  <p style="margin:0 0 20px"><span class="mockbar">Mock data — drawn before <code>GET /saved-items</code> existed, so it is not the contract</span></p>
 </div>
 
 <div class="stage">
@@ -273,12 +273,12 @@
     <aside class="ann">
       <div class="ann__title">B — Inbox states</div>
       <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Inbox shows <strong>recently saved items across collections</strong>, each with its <strong>current collection</strong>. It is not the <code>unsorted</code> collection. <span class="ann__ref">D26 (supersedes D3)</span></span></div>
-      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text"><strong>The listing API does not exist.</strong> Every item above is fabricated mock data representing what such a response would carry. No endpoint, schema, pagination or ordering is implied. <span class="ann__ref">D26, ux §B.1, decisions §5.1</span></span></div>
+      <div class="ann__row"><span class="ann__tag">Doc</span><span class="ann__text"><strong>The listing API now exists</strong> as <code>GET /saved-items</code>, implemented by the backend after this prototype was drawn. Every item above is still fabricated mock data, and was <em>not</em> validated against that response — read the contract in the backend repository rather than treating this layout as it. <span class="ann__ref">D26, ux §B.1, decisions §5.1</span></span></div>
       <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">The URL input is <strong>visible directly on the Inbox</strong>, with separate <strong>Paste</strong> and <strong>Save URL</strong> buttons. Paste fills the field; it does not save. <span class="ann__ref">D25</span></span></div>
       <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Empty Inbox shows "Nothing saved yet" <em>plus the input</em>, which is on the screen by definition. <span class="ann__ref">ux §5</span></span></div>
       <div class="ann__row"><span class="ann__tag ann__tag--confirmed">Confirmed</span><span class="ann__text">Initial loading uses <strong>neutral skeleton rows with no spinner text</strong>. <span class="ann__ref">ux §5</span></span></div>
       <div class="ann__row"><span class="ann__tag ann__tag--rec">Rec</span><span class="ann__text">Row composition, chip position and the "Recent" affordance are proposals. What is <em>confirmed</em> is that a row must carry: fallback title, domain, enrichment state, and current collection. <span class="ann__ref">ux §2.1, §C.2</span></span></div>
-      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text">"How many recent items?" and "ordered how?" are <strong>not decided</strong>. The bounded end-marker is a placeholder, not a rule. <span class="ann__ref">D26</span></span></div>
+      <div class="ann__row"><span class="ann__tag ann__tag--open">Open</span><span class="ann__text">"How many recent items does the user <em>see</em>?" is <strong>not decided</strong>. The API returns cursor pages of up to 50 ordered <code>created_at DESC, id DESC</code>, so both are settled below the UI — but the bounded end-marker here is still a placeholder, and whether the screen pages on scroll or stops is undecided. <span class="ann__ref">D26</span></span></div>
     </aside>
   </div>
 
