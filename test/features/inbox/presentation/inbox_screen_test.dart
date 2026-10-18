@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/network/network_providers.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
+import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
+import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 import 'package:stash_it_app/features/inbox/presentation/inbox_screen.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
@@ -27,12 +29,26 @@ void main() {
     addTearDown(tester.view.reset);
   }
 
-  Future<ProviderContainer> makeContainer() async {
+  /// The credential store behind the container, so a test can seed it and check
+  /// what the session layer did to it.
+  late InMemorySecureStorage backend;
+
+  /// A container with a scripted transport.
+  ///
+  /// [session] is written to the **store**, not only to `restoredTokensProvider`,
+  /// because that is where `AuthInterceptor` reads the bearer from and where
+  /// `SessionController` reads the refresh token from. A test that needs the
+  /// renewal path must therefore start with a session, or there is nothing to
+  /// renew and the run takes a different branch entirely.
+  Future<ProviderContainer> makeContainer({AuthTokens? session}) async {
+    backend = InMemorySecureStorage();
+    final store = SecureCredentialStore(backend);
+    if (session != null) await store.write(session);
+
     final made = ProviderContainer(
       overrides: [
-        credentialStoreProvider.overrideWithValue(
-          SecureCredentialStore(InMemorySecureStorage()),
-        ),
+        credentialStoreProvider.overrideWithValue(store),
+        restoredTokensProvider.overrideWithValue(session),
       ],
       retry: (_, _) => null,
     );
@@ -41,8 +57,11 @@ void main() {
     return made;
   }
 
-  Future<ProviderContainer> pumpInbox(WidgetTester tester) async {
-    final container = await makeContainer();
+  Future<ProviderContainer> pumpInbox(
+    WidgetTester tester, {
+    AuthTokens? session,
+  }) async {
+    final container = await makeContainer(session: session);
     addTearDown(container.dispose);
 
     await tester.pumpWidget(
@@ -321,17 +340,34 @@ void main() {
       expect(find.widgetWithText(AppButton, 'Retry'), findsNothing);
     });
 
-    testWidgets('an expired session reads as a sign-in problem', (
+    testWidgets('a session that cannot be renewed reads as a sign-in problem', (
       tester,
     ) async {
       useTallSurface(tester);
+
+      // The contract: `GET /saved-items` only ever answers the three
+      // bearer-guard codes, and `SESSION_REVOKED` comes from `POST /auth/refresh`.
+      // An earlier version of this test scripted the terminal code straight off
+      // the listing, which no protected route can produce — the client "passed"
+      // without ever exercising the interceptor or the session layer.
       adapter.on(
         '/saved-items',
+        status: 401,
+        body: errorBody('ACCESS_TOKEN_EXPIRED'),
+      );
+      adapter.on(
+        '/auth/refresh',
         status: 401,
         body: errorBody('SESSION_REVOKED'),
       );
 
-      await pumpInbox(tester);
+      final container = await pumpInbox(
+        tester,
+        session: const AuthTokens(
+          accessToken: 'access-1',
+          refreshToken: 'refresh-1',
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(
@@ -339,6 +375,104 @@ void main() {
         findsOneWidget,
         reason: 'the copy is selected from the typed failure, never the code',
       );
+
+      // The run really did go through the renewal, so the interceptor was the
+      // thing that produced the failure rather than the scripted listing.
+      expect(
+        adapter.countFor('/auth/refresh'),
+        1,
+        reason: 'an expired access token must trigger exactly one renewal',
+      );
+      expect(backend.values, isEmpty, reason: 'the session really was ended');
+      expect(
+        container.read(authStateProvider),
+        AuthStatus.signedOut,
+        reason: 'the Inbox has no router; the auth state is what it can see',
+      );
+    });
+
+    testWidgets('a plain 401 does not attempt a renewal', (tester) async {
+      useTallSurface(tester);
+
+      // The bearer guard's other refusals. Renewing for these cannot succeed,
+      // and the user still has to sign in again — so the copy matches while the
+      // behaviour behind it differs from the terminal case above.
+      adapter.on(
+        '/saved-items',
+        status: 401,
+        body: errorBody('INVALID_ACCESS_TOKEN'),
+      );
+
+      final container = await pumpInbox(
+        tester,
+        session: const AuthTokens(
+          accessToken: 'access-1',
+          refreshToken: 'refresh-1',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Sign in again'),
+        findsOneWidget,
+        reason: 'a refused token is still a sign-in problem',
+      );
+      expect(
+        adapter.countFor('/auth/refresh'),
+        0,
+        reason: 'only ACCESS_TOKEN_EXPIRED authorises a renewal attempt',
+      );
+      expect(
+        backend.values,
+        isNotEmpty,
+        reason: 'nothing ended the session, so nothing was cleared',
+      );
+      expect(container.read(authStateProvider), AuthStatus.signedIn);
+    });
+
+    testWidgets('an ambiguous renewal failure does not read as signed out', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+
+      // The renewal fails without the client learning whether the server
+      // committed the rotation. The policy is to keep the credentials and let the
+      // user decide, so the listing must not claim the session is over — that is
+      // the outcome this test exists to pin, and it is invisible to the screen if
+      // the transport is scripted as a plain 500 on the listing.
+      adapter.on(
+        '/saved-items',
+        status: 401,
+        body: errorBody('ACCESS_TOKEN_EXPIRED'),
+      );
+      adapter.on(
+        '/auth/refresh',
+        status: 500,
+        body: errorBody('INTERNAL_SERVER_ERROR'),
+      );
+
+      final container = await pumpInbox(
+        tester,
+        session: const AuthTokens(
+          accessToken: 'access-1',
+          refreshToken: 'refresh-1',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Sign in again'),
+        findsNothing,
+        reason:
+            'an uncertain outcome must not be presented as an ended session',
+      );
+      expect(
+        find.text('We could not load your saved items. Try again.'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(AppButton, 'Retry'), findsOneWidget);
+      expect(backend.values, isNotEmpty, reason: 'the evidence is kept');
+      expect(container.read(authStateProvider), AuthStatus.signedIn);
     });
   });
 
