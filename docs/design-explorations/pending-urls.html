@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pending URLs &mdash; Stash-it design system v1</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/components.css">
+<link rel="stylesheet" href="assets/screens.css">
+<link rel="stylesheet" href="assets/base.css">
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar__brand">Stash-it</span>
+  <span class="topbar__sep"></span>
+  <a class="topbar__link" href="index.html">Index</a>
+  <a class="topbar__link" href="inbox.html">Inbox</a>
+  <a class="topbar__link" href="collections.html">Collections</a>
+  <a class="topbar__link" href="search.html">Search</a>
+  <a class="topbar__link" href="profile.html">Profile</a>
+  <a class="topbar__link is-current" href="pending-urls.html">Pending URLs</a>
+  <a class="topbar__link" href="auth.html">Auth</a>
+  <a class="topbar__link" href="components.html">Components</a>
+  <a class="topbar__link" href="design-system.md">Spec</a>
+  <span class="topbar__spacer"></span>
+  <span class="ds-mockchip">mock data</span>
+</div>
+<div class="page">
+  <p class="page__kicker">Screen 5 of 6</p>
+  <h1 class="page__title">Pending URLs</h1>
+  <p class="page__lede">
+    A section inside the Inbox, not a fifth destination. A pending link is a URL the client
+    holds and the backend has not confirmed saving &mdash; it is <strong>not</strong> a saved
+    item, and it is not the saved-items history. The section is a count and a list of URLs,
+    nothing more: no titles, no previews, no local metadata.
+  </p>
+
+  <div class="stage">
+    <div class="variant">
+      <div class="variant__label">Light &middot; awaiting sign-in</div>
+      <div class="phone theme-light">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Inbox</h1>
+        </div>
+      </header>
+      <div class="notice">
+        <span class="notice__mark"></span>
+        <span>Every item below is fabricated mock data &mdash; not API data.</span>
+      </div>
+      <div class="phone__scroll">
+        <div class="ds-label-row"><span class="ds-label">Pending links</span><span class="ds-label-row__rule"></span></div>
+        <div class="pend">
+          <div class="pend__head">
+            <span class="pend__count">1 waiting</span>
+            <button class="ds-btn ds-btn--quiet ds-btn--sm">View</button>
+          </div>
+          <div class="pend__row">
+            <div class="pend__url">https://example.org/never-submitted</div>
+            <p class="pend__why">Waiting for you to sign in. This link was shared before you were signed in &mdash; it is safe, and it is sent once you are. This is a first submission, not a retry.</p>
+            <div class="pend__acts"><button class="ds-btn ds-btn--quiet ds-btn--sm">Sign in</button></div>
+          </div>
+        </div>
+        <div class="ds-label-row"><span class="ds-label">Recently saved</span><span class="ds-label-row__rule"></span></div>
+        <div class="inv-list inv-list--flush">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding CRDTs: why eventual consistency is not a compromise</h2>
+                <span class="inv-slot__time">12 min ago</span>
+              </div>
+              <div class="inv-slot__domain">example.com/articles/crdts-explained</div>
+              <p class="inv-slot__desc">Conflict-free replicated data types let several replicas converge without a central coordinator, at the cost of metadata every write must carry.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+      <p class="variant__note">A first submission, not a retry. It survives sign-in and is never discarded.</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Light &middot; session ended</div>
+      <div class="phone theme-light">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Inbox</h1>
+        </div>
+      </header>
+      <div class="notice">
+        <span class="notice__mark"></span>
+        <span>Every item below is fabricated mock data &mdash; not API data.</span>
+      </div>
+      <div class="phone__scroll">
+        <div class="ds-label-row"><span class="ds-label">Pending links</span><span class="ds-label-row__rule"></span></div>
+        <div class="pend">
+          <div class="pend__head">
+            <span class="pend__count">1 waiting</span>
+            <button class="ds-btn ds-btn--quiet ds-btn--sm">View</button>
+          </div>
+          <div class="pend__row">
+            <div class="pend__url">https://example.com/session-expired-link</div>
+            <p class="pend__why"><strong>Sign in again to save this link.</strong> It was not saved.</p>
+            <div class="pend__acts"><button class="ds-btn ds-btn--quiet ds-btn--sm">Sign in</button><button class="ds-btn ds-btn--quiet ds-btn--sm">Retry</button></div>
+          </div>
+        </div>
+        <div class="ds-label-row"><span class="ds-label">Recently saved</span><span class="ds-label-row__rule"></span></div>
+        <div class="inv-list inv-list--flush">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding CRDTs: why eventual consistency is not a compromise</h2>
+                <span class="inv-slot__time">12 min ago</span>
+              </div>
+              <div class="inv-slot__domain">example.com/articles/crdts-explained</div>
+              <p class="inv-slot__desc">Conflict-free replicated data types let several replicas converge without a central coordinator, at the cost of metadata every write must carry.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+      <p class="variant__note">Known not saved. It offers a way back to sign-in.</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Light &middot; budget spent</div>
+      <div class="phone theme-light">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Inbox</h1>
+        </div>
+      </header>
+      <div class="notice">
+        <span class="notice__mark"></span>
+        <span>Every item below is fabricated mock data &mdash; not API data.</span>
+      </div>
+      <div class="phone__scroll">
+        <div class="ds-label-row"><span class="ds-label">Pending links</span><span class="ds-label-row__rule"></span></div>
+        <div class="pend">
+          <div class="pend__head">
+            <span class="pend__count">1 waiting</span>
+            <button class="ds-btn ds-btn--quiet ds-btn--sm">View</button>
+          </div>
+          <div class="pend__row">
+            <div class="pend__url">https://example.com/over-the-limit</div>
+            <p class="pend__why">You are saving too quickly. Try again in:</p>
+            <div class="pend__acts"><span class="ds-timer">04:12</span><button class="ds-btn ds-btn--quiet ds-btn--sm" disabled>Retry</button></div>
+          </div>
+        </div>
+        <div class="ds-label-row"><span class="ds-label">Recently saved</span><span class="ds-label-row__rule"></span></div>
+        <div class="inv-list inv-list--flush">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding CRDTs: why eventual consistency is not a compromise</h2>
+                <span class="inv-slot__time">12 min ago</span>
+              </div>
+              <div class="inv-slot__domain">example.com/articles/crdts-explained</div>
+              <p class="inv-slot__desc">Conflict-free replicated data types let several replicas converge without a central coordinator, at the cost of metadata every write must carry.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+      <p class="variant__note">A 429 carries Retry-After, so the countdown is real and the action waits.</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Light &middot; server refused</div>
+      <div class="phone theme-light">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Inbox</h1>
+        </div>
+      </header>
+      <div class="notice">
+        <span class="notice__mark"></span>
+        <span>Every item below is fabricated mock data &mdash; not API data.</span>
+      </div>
+      <div class="phone__scroll">
+        <div class="ds-label-row"><span class="ds-label">Pending links</span><span class="ds-label-row__rule"></span></div>
+        <div class="pend">
+          <div class="pend__head">
+            <span class="pend__count">1 waiting</span>
+            <button class="ds-btn ds-btn--quiet ds-btn--sm">View</button>
+          </div>
+          <div class="pend__row">
+            <div class="pend__url">https://example.com/server-refused</div>
+            <p class="pend__why">We couldn&rsquo;t save this link just now. It is still queued &mdash; try again shortly.</p>
+            <div class="pend__acts"><button class="ds-btn ds-btn--quiet ds-btn--sm">Retry</button><span class="ds-timer ds-timer--none">no countdown</span></div>
+          </div>
+        </div>
+        <div class="ds-label-row"><span class="ds-label">Recently saved</span><span class="ds-label-row__rule"></span></div>
+        <div class="inv-list inv-list--flush">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding CRDTs: why eventual consistency is not a compromise</h2>
+                <span class="inv-slot__time">12 min ago</span>
+              </div>
+              <div class="inv-slot__domain">example.com/articles/crdts-explained</div>
+              <p class="inv-slot__desc">Conflict-free replicated data types let several replicas converge without a central coordinator, at the cost of metadata every write must carry.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+      <p class="variant__note">A 503 carries no Retry-After, so no countdown is invented.</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Light &middot; unconfirmed</div>
+      <div class="phone theme-light">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Inbox</h1>
+        </div>
+      </header>
+      <div class="notice">
+        <span class="notice__mark"></span>
+        <span>Every item below is fabricated mock data &mdash; not API data.</span>
+      </div>
+      <div class="phone__scroll">
+        <div class="ds-label-row"><span class="ds-label">Pending links</span><span class="ds-label-row__rule"></span></div>
+        <div class="pend">
+          <div class="pend__head">
+            <span class="pend__count">1 waiting</span>
+            <button class="ds-btn ds-btn--quiet ds-btn--sm">View</button>
+          </div>
+          <div class="pend__row">
+            <div class="pend__url">https://example.com/maybe-saved</div>
+            <p class="pend__why pend__why--uncertain"><strong>We couldn&rsquo;t confirm this save.</strong> It may or may not have gone through &mdash; check your Inbox before trying again.</p>
+            <div class="pend__acts"><button class="ds-btn ds-btn--quiet ds-btn--sm">Retry anyway</button><button class="ds-btn ds-btn--quiet ds-btn--sm">Check your Inbox</button></div>
+          </div>
+        </div>
+        <div class="ds-label-row"><span class="ds-label">Recently saved</span><span class="ds-label-row__rule"></span></div>
+        <div class="inv-list inv-list--flush">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding CRDTs: why eventual consistency is not a compromise</h2>
+                <span class="inv-slot__time">12 min ago</span>
+              </div>
+              <div class="inv-slot__domain">example.com/articles/crdts-explained</div>
+              <p class="inv-slot__desc">Conflict-free replicated data types let several replicas converge without a central coordinator, at the cost of metadata every write must carry.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+      <p class="variant__note">The only state that may not claim the item is unsaved.</p>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="variant">
+      <div class="variant__label">Dark &middot; awaiting sign-in</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Inbox</h1>
+        </div>
+      </header>
+      <div class="notice">
+        <span class="notice__mark"></span>
+        <span>Every item below is fabricated mock data &mdash; not API data.</span>
+      </div>
+      <div class="phone__scroll">
+        <div class="ds-label-row"><span class="ds-label">Pending links</span><span class="ds-label-row__rule"></span></div>
+        <div class="pend">
+          <div class="pend__head">
+            <span class="pend__count">1 waiting</span>
+            <button class="ds-btn ds-btn--quiet ds-btn--sm">View</button>
+          </div>
+          <div class="pend__row">
+            <div class="pend__url">https://example.org/never-submitted</div>
+            <p class="pend__why">Waiting for you to sign in. This link was shared before you were signed in &mdash; it is safe, and it is sent once you are. This is a first submission, not a retry.</p>
+            <div class="pend__acts"><button class="ds-btn ds-btn--quiet ds-btn--sm">Sign in</button></div>
+          </div>
+        </div>
+        <div class="ds-label-row"><span class="ds-label">Recently saved</span><span class="ds-label-row__rule"></span></div>
+        <div class="inv-list inv-list--flush">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding CRDTs: why eventual consistency is not a compromise</h2>
+                <span class="inv-slot__time">12 min ago</span>
+              </div>
+              <div class="inv-slot__domain">example.com/articles/crdts-explained</div>
+              <p class="inv-slot__desc">Conflict-free replicated data types let several replicas converge without a central coordinator, at the cost of metadata every write must carry.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Dark &middot; session ended</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Inbox</h1>
+        </div>
+      </header>
+      <div class="notice">
+        <span class="notice__mark"></span>
+        <span>Every item below is fabricated mock data &mdash; not API data.</span>
+      </div>
+      <div class="phone__scroll">
+        <div class="ds-label-row"><span class="ds-label">Pending links</span><span class="ds-label-row__rule"></span></div>
+        <div class="pend">
+          <div class="pend__head">
+            <span class="pend__count">1 waiting</span>
+            <button class="ds-btn ds-btn--quiet ds-btn--sm">View</button>
+          </div>
+          <div class="pend__row">
+            <div class="pend__url">https://example.com/session-expired-link</div>
+            <p class="pend__why"><strong>Sign in again to save this link.</strong> It was not saved.</p>
+            <div class="pend__acts"><button class="ds-btn ds-btn--quiet ds-btn--sm">Sign in</button><button class="ds-btn ds-btn--quiet ds-btn--sm">Retry</button></div>
+          </div>
+        </div>
+        <div class="ds-label-row"><span class="ds-label">Recently saved</span><span class="ds-label-row__rule"></span></div>
+        <div class="inv-list inv-list--flush">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding CRDTs: why eventual consistency is not a compromise</h2>
+                <span class="inv-slot__time">12 min ago</span>
+              </div>
+              <div class="inv-slot__domain">example.com/articles/crdts-explained</div>
+              <p class="inv-slot__desc">Conflict-free replicated data types let several replicas converge without a central coordinator, at the cost of metadata every write must carry.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Dark &middot; budget spent</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Inbox</h1>
+        </div>
+      </header>
+      <div class="notice">
+        <span class="notice__mark"></span>
+        <span>Every item below is fabricated mock data &mdash; not API data.</span>
+      </div>
+      <div class="phone__scroll">
+        <div class="ds-label-row"><span class="ds-label">Pending links</span><span class="ds-label-row__rule"></span></div>
+        <div class="pend">
+          <div class="pend__head">
+            <span class="pend__count">1 waiting</span>
+            <button class="ds-btn ds-btn--quiet ds-btn--sm">View</button>
+          </div>
+          <div class="pend__row">
+            <div class="pend__url">https://example.com/over-the-limit</div>
+            <p class="pend__why">You are saving too quickly. Try again in:</p>
+            <div class="pend__acts"><span class="ds-timer">04:12</span><button class="ds-btn ds-btn--quiet ds-btn--sm" disabled>Retry</button></div>
+          </div>
+        </div>
+        <div class="ds-label-row"><span class="ds-label">Recently saved</span><span class="ds-label-row__rule"></span></div>
+        <div class="inv-list inv-list--flush">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding CRDTs: why eventual consistency is not a compromise</h2>
+                <span class="inv-slot__time">12 min ago</span>
+              </div>
+              <div class="inv-slot__domain">example.com/articles/crdts-explained</div>
+              <p class="inv-slot__desc">Conflict-free replicated data types let several replicas converge without a central coordinator, at the cost of metadata every write must carry.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Dark &middot; server refused</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Inbox</h1>
+        </div>
+      </header>
+      <div class="notice">
+        <span class="notice__mark"></span>
+        <span>Every item below is fabricated mock data &mdash; not API data.</span>
+      </div>
+      <div class="phone__scroll">
+        <div class="ds-label-row"><span class="ds-label">Pending links</span><span class="ds-label-row__rule"></span></div>
+        <div class="pend">
+          <div class="pend__head">
+            <span class="pend__count">1 waiting</span>
+            <button class="ds-btn ds-btn--quiet ds-btn--sm">View</button>
+          </div>
+          <div class="pend__row">
+            <div class="pend__url">https://example.com/server-refused</div>
+            <p class="pend__why">We couldn&rsquo;t save this link just now. It is still queued &mdash; try again shortly.</p>
+            <div class="pend__acts"><button class="ds-btn ds-btn--quiet ds-btn--sm">Retry</button><span class="ds-timer ds-timer--none">no countdown</span></div>
+          </div>
+        </div>
+        <div class="ds-label-row"><span class="ds-label">Recently saved</span><span class="ds-label-row__rule"></span></div>
+        <div class="inv-list inv-list--flush">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding CRDTs: why eventual consistency is not a compromise</h2>
+                <span class="inv-slot__time">12 min ago</span>
+              </div>
+              <div class="inv-slot__domain">example.com/articles/crdts-explained</div>
+              <p class="inv-slot__desc">Conflict-free replicated data types let several replicas converge without a central coordinator, at the cost of metadata every write must carry.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Dark &middot; unconfirmed</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Inbox</h1>
+        </div>
+      </header>
+      <div class="notice">
+        <span class="notice__mark"></span>
+        <span>Every item below is fabricated mock data &mdash; not API data.</span>
+      </div>
+      <div class="phone__scroll">
+        <div class="ds-label-row"><span class="ds-label">Pending links</span><span class="ds-label-row__rule"></span></div>
+        <div class="pend">
+          <div class="pend__head">
+            <span class="pend__count">1 waiting</span>
+            <button class="ds-btn ds-btn--quiet ds-btn--sm">View</button>
+          </div>
+          <div class="pend__row">
+            <div class="pend__url">https://example.com/maybe-saved</div>
+            <p class="pend__why pend__why--uncertain"><strong>We couldn&rsquo;t confirm this save.</strong> It may or may not have gone through &mdash; check your Inbox before trying again.</p>
+            <div class="pend__acts"><button class="ds-btn ds-btn--quiet ds-btn--sm">Retry anyway</button><button class="ds-btn ds-btn--quiet ds-btn--sm">Check your Inbox</button></div>
+          </div>
+        </div>
+        <div class="ds-label-row"><span class="ds-label">Recently saved</span><span class="ds-label-row__rule"></span></div>
+        <div class="inv-list inv-list--flush">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding CRDTs: why eventual consistency is not a compromise</h2>
+                <span class="inv-slot__time">12 min ago</span>
+              </div>
+              <div class="inv-slot__domain">example.com/articles/crdts-explained</div>
+              <p class="inv-slot__desc">Conflict-free replicated data types let several replicas converge without a central coordinator, at the cost of metadata every write must carry.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+    </div>
+  </div>
+
+  <div class="note note--accent">
+    <strong>Load-bearing distinction:</strong> four of these five are <em>known not saved</em>
+    and may say so. Only the last one is <em>uncertain</em>, and only it offers &ldquo;check
+    your Inbox&rdquo;. Offline is a fifth, separate state (no <code>error.code</code> at all)
+    and is not drawn as a 503.
+  </div>
+
+  <div class="note">
+    <strong>Deliberately absent:</strong> an expiry warning, an overflow screen, a queue
+    capacity, a discard action and a provenance label (shared versus pasted). The expiry
+    notification form, the queue capacity and the discard-or-retain rule are all still open
+    (Q1, Q2, Q3), and drawing them would require numbers and forms that do not exist yet.
+    Manual retry is the v1 policy: no automatic retry, no retry loops.
+  </div>
+</div>
+</body>
+</html>

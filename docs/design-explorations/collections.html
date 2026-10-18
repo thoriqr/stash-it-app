@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Collections &mdash; Stash-it design system v1</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/components.css">
+<link rel="stylesheet" href="assets/screens.css">
+<link rel="stylesheet" href="assets/base.css">
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar__brand">Stash-it</span>
+  <span class="topbar__sep"></span>
+  <a class="topbar__link" href="index.html">Index</a>
+  <a class="topbar__link" href="inbox.html">Inbox</a>
+  <a class="topbar__link is-current" href="collections.html">Collections</a>
+  <a class="topbar__link" href="search.html">Search</a>
+  <a class="topbar__link" href="profile.html">Profile</a>
+  <a class="topbar__link" href="pending-urls.html">Pending URLs</a>
+  <a class="topbar__link" href="auth.html">Auth</a>
+  <a class="topbar__link" href="components.html">Components</a>
+  <a class="topbar__link" href="design-system.md">Spec</a>
+  <span class="topbar__spacer"></span>
+  <span class="ds-mockchip">mock data</span>
+</div>
+<div class="page">
+  <p class="page__kicker">Screen 2 of 6</p>
+  <h1 class="page__title">Collections</h1>
+  <p class="page__lede">
+    A pure browser: it lists collections, and opening one browses what is inside it. The
+    inventory-slot language is the same one the saved items use, so a collection and a saved
+    item read as two kinds of the same thing. <strong>No item counts</strong> (still an open
+    product question) and <strong>no create action</strong> &mdash; a collection comes into
+    existence by filing an item into it.
+  </p>
+
+  <div class="stage">
+    <div class="variant">
+      <div class="variant__label">Light</div>
+      <div class="phone theme-light">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Collections</h1>
+          <span class="ds-sort">newest <span class="ds-sort__caret"></span></span>
+        </div>
+      </header>
+      <div class="phone__scroll">
+            <div class="inv-grid">
+              <div class="inv-cell is-system">
+                <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+                <span class="inv-cell__tag">system</span>
+                <span class="inv-cell__name">Unsorted</span>
+              </div>
+              <div class="inv-cell">
+                <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+                <span class="inv-cell__name">Camera Gear</span>
+              </div>
+              <div class="inv-cell">
+                <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+                <span class="inv-cell__name">Wishlist</span>
+              </div>
+              <div class="inv-cell">
+                <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+                <span class="inv-cell__name">Reading List</span>
+              </div>
+              <div class="inv-cell">
+                <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+                <span class="inv-cell__name">Watch Later</span>
+              </div>
+            </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+      <p class="variant__note">Unsorted is a normal row, marked as the system collection. It is pinned first under every sort.</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Dark</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Collections</h1>
+          <span class="ds-sort">newest <span class="ds-sort__caret"></span></span>
+        </div>
+      </header>
+      <div class="phone__scroll">
+            <div class="inv-grid">
+              <div class="inv-cell is-system">
+                <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+                <span class="inv-cell__tag">system</span>
+                <span class="inv-cell__name">Unsorted</span>
+              </div>
+              <div class="inv-cell">
+                <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+                <span class="inv-cell__name">Camera Gear</span>
+              </div>
+              <div class="inv-cell">
+                <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+                <span class="inv-cell__name">Wishlist</span>
+              </div>
+              <div class="inv-cell">
+                <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+                <span class="inv-cell__name">Reading List</span>
+              </div>
+              <div class="inv-cell">
+                <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+                <span class="inv-cell__name">Watch Later</span>
+              </div>
+            </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+      <p class="variant__note">The same grid, re-valued. The system collection is marked with the accent border.</p>
+    </div>
+  </div>
+
+  <div class="note note--accent">
+    <strong>Deliberately absent:</strong> no item count per collection, no
+    &ldquo;new collection&rdquo; button, no selection, no swipe actions, and no sort control
+    beyond the three the backend supports. Each of those is either undecided or unsupported by
+    an endpoint, and drawing one would imply support that does not exist.
+  </div>
+</div>
+</body>
+</html>

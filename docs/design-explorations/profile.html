@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profile &mdash; Stash-it design system v1</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/components.css">
+<link rel="stylesheet" href="assets/screens.css">
+<link rel="stylesheet" href="assets/base.css">
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar__brand">Stash-it</span>
+  <span class="topbar__sep"></span>
+  <a class="topbar__link" href="index.html">Index</a>
+  <a class="topbar__link" href="inbox.html">Inbox</a>
+  <a class="topbar__link" href="collections.html">Collections</a>
+  <a class="topbar__link" href="search.html">Search</a>
+  <a class="topbar__link is-current" href="profile.html">Profile</a>
+  <a class="topbar__link" href="pending-urls.html">Pending URLs</a>
+  <a class="topbar__link" href="auth.html">Auth</a>
+  <a class="topbar__link" href="components.html">Components</a>
+  <a class="topbar__link" href="design-system.md">Spec</a>
+  <span class="topbar__spacer"></span>
+  <span class="ds-mockchip">mock data</span>
+</div>
+<div class="page">
+  <p class="page__kicker">Screen 4 of 6</p>
+  <h1 class="page__title">Profile</h1>
+  <p class="page__lede">
+    The account facts and the two things the backend actually supports: a display name and a
+    password. Everything on this screen is an account read. The rows are quiet, and the one
+    loud thing on the screen is the absence of account deletion &mdash; stated plainly rather
+    than faked.
+  </p>
+
+  <div class="stage">
+    <div class="variant">
+      <div class="variant__label">Light</div>
+      <div class="phone theme-light">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Profile</h1>
+        </div>
+      </header>
+      <div class="phone__scroll">
+        <div class="prof__identity">
+          <div class="prof__name">Reader</div>
+          <div class="prof__email">reader@example.com</div>
+          <div class="prof__meta"><span class="ds-chip">joined 2026-04-12</span></div>
+        </div>
+        <div class="ds-label-row"><span class="ds-label">Account</span><span class="ds-label-row__rule"></span></div>
+        <div class="prof__row"><span class="prof__row-label">Display name</span><span class="prof__row-value">Reader</span></div>
+        <div class="prof__row"><span class="prof__row-label">Change password</span><span class="ds-chev"></span></div>
+        <div class="ds-label-row"><span class="ds-label">Linked identities</span><span class="ds-label-row__rule"></span></div>
+        <div class="prof__row"><span class="prof__row-label">google<span class="prof__row-note">linked 2026-04-12</span></span></div>
+        <div class="prof__row"><span class="prof__row-label">email + password<span class="prof__row-note">linked 2026-04-12</span></span></div>
+        <div style="padding: var(--space-4)">
+          <button class="ds-btn ds-btn--block">Sign out</button>
+          <div class="ds-note" style="margin-top: var(--space-4)">
+            <span class="ds-note__mark"></span>
+            <span><strong>Account deletion is not available.</strong> The backend has no account-deletion endpoint, so no flow is offered here. It is recorded as an unresolved release requirement, not a missing screen.</span>
+          </div>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+      <p class="variant__note">No avatar: the backend has no avatar, so none is invented.</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Dark</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Profile</h1>
+        </div>
+      </header>
+      <div class="phone__scroll">
+        <div class="prof__identity">
+          <div class="prof__name">Reader</div>
+          <div class="prof__email">reader@example.com</div>
+          <div class="prof__meta"><span class="ds-chip">joined 2026-04-12</span></div>
+        </div>
+        <div class="ds-label-row"><span class="ds-label">Account</span><span class="ds-label-row__rule"></span></div>
+        <div class="prof__row"><span class="prof__row-label">Display name</span><span class="prof__row-value">Reader</span></div>
+        <div class="prof__row"><span class="prof__row-label">Change password</span><span class="ds-chev"></span></div>
+        <div class="ds-label-row"><span class="ds-label">Linked identities</span><span class="ds-label-row__rule"></span></div>
+        <div class="prof__row"><span class="prof__row-label">google<span class="prof__row-note">linked 2026-04-12</span></span></div>
+        <div class="prof__row"><span class="prof__row-label">email + password<span class="prof__row-note">linked 2026-04-12</span></span></div>
+        <div style="padding: var(--space-4)">
+          <button class="ds-btn ds-btn--block">Sign out</button>
+          <div class="ds-note" style="margin-top: var(--space-4)">
+            <span class="ds-note__mark"></span>
+            <span><strong>Account deletion is not available.</strong> The backend has no account-deletion endpoint, so no flow is offered here. It is recorded as an unresolved release requirement, not a missing screen.</span>
+          </div>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+    </div>
+  </div>
+
+  <div class="note note--accent">
+    <strong>Deliberately absent:</strong> device and session management (deferred by
+    <strong>D10</strong>, even though the endpoints exist), account deletion (<strong>D11</strong>
+    &mdash; no endpoint, so drawing a flow would imply support), a manual language override
+    (<strong>Q12</strong>, still open), email change, provider unlinking and preferences.
+  </div>
+</div>
+</body>
+</html>

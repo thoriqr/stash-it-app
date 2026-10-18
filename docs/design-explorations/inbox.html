@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inbox &mdash; Stash-it design system v1</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/components.css">
+<link rel="stylesheet" href="assets/screens.css">
+<link rel="stylesheet" href="assets/base.css">
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar__brand">Stash-it</span>
+  <span class="topbar__sep"></span>
+  <a class="topbar__link" href="index.html">Index</a>
+  <a class="topbar__link is-current" href="inbox.html">Inbox</a>
+  <a class="topbar__link" href="collections.html">Collections</a>
+  <a class="topbar__link" href="search.html">Search</a>
+  <a class="topbar__link" href="profile.html">Profile</a>
+  <a class="topbar__link" href="pending-urls.html">Pending URLs</a>
+  <a class="topbar__link" href="auth.html">Auth</a>
+  <a class="topbar__link" href="components.html">Components</a>
+  <a class="topbar__link" href="design-system.md">Spec</a>
+  <span class="topbar__spacer"></span>
+  <span class="ds-mockchip">mock data</span>
+</div>
+<div class="page">
+  <p class="page__kicker">Screen 1 of 6</p>
+  <h1 class="page__title">Inbox</h1>
+  <p class="page__lede">
+    The URL intake sits above the recent saved-items list, on its own recessed band, so the
+    two never blur together. <strong>Paste</strong> is a quiet outlined button that only fills
+    the field; <strong>Save&nbsp;URL</strong> is the one filled action, and it is the only thing
+    that sends anything. The saved-item slots, the collection chip and the enrichment states
+    are the ones from the approved B baseline.
+  </p>
+
+  <div class="stage">
+    <div class="variant">
+      <div class="variant__label">Light</div>
+      <div class="phone theme-light">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Inbox</h1>
+        </div>
+      </header>
+      <div class="notice">
+        <span class="notice__mark"></span>
+        <span>Every item below is fabricated mock data &mdash; not API data.</span>
+      </div>
+        <section class="intake">
+          <div class="intake__top">
+            <span class="ds-label">Save a URL</span>
+            <span class="intake__hint">Check or edit the link before saving.</span>
+          </div>
+          <input class="ds-field ds-field--mono" value="https://example.com/a-long-article-about-distributed-systems?ref=share">
+          <div class="intake__actions">
+            <button class="ds-btn">Paste</button>
+            <button class="ds-btn ds-btn--primary">Save URL</button>
+          </div>
+        </section>
+      <div class="phone__scroll">
+        <div class="ds-label-row"><span class="ds-label">Recently saved</span><span class="ds-label-row__rule"></span></div>
+        <div class="inv-list">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding CRDTs: why eventual consistency is not a compromise</h2>
+                <span class="inv-slot__time">12 min ago</span>
+              </div>
+              <div class="inv-slot__domain">example.com/articles/crdts-explained</div>
+              <p class="inv-slot__desc">Conflict-free replicated data types let several replicas converge without a central coordinator, at the cost of metadata every write must carry.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">A thread about incremental static regeneration</h2>
+                <span class="inv-slot__time">48 min ago</span>
+              </div>
+              <div class="inv-slot__domain">social.example.org/@someone/isr-tradeoffs</div>
+              <p class="inv-slot__desc">Where the build-time and request-time trade-offs actually land once a page has more than a handful of variants.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Unsorted</span>
+              </div>
+            </div>
+          </article>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Notes on reading more and remembering less</h2>
+                <span class="inv-slot__time">3 hours ago</span>
+              </div>
+              <div class="inv-slot__domain">notes.example.com/archive/reading-less?ref=inbox</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Reading List</span>
+              </div>
+            </div>
+          </article>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--none"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title is-fallback">https://archive.example.net/specs/build-notes</h2>
+                <span class="inv-slot__time">yesterday</span>
+              </div>
+              <div class="inv-slot__domain">archive.example.net</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Watch Later</span>
+                <span class="ds-state">No details on this page</span>
+              </div>
+            </div>
+          </article>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--none"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Full-Text Search in Postgres, part three</h2>
+                <span class="inv-slot__time">yesterday</span>
+              </div>
+              <div class="inv-slot__domain">engineering.example.dev/postgres/pgsearch-3</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Wishlist</span>
+                <span class="ds-state ds-state--failed"><i class="ds-state__pip"></i>Couldn&rsquo;t read this page</span>
+                <button class="ds-btn ds-btn--quiet ds-btn--sm">Retry</button>
+              </div>
+            </div>
+          </article>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Designing a rate limiter that fails closed, and what it costs you the first time the counter store is unreachable in production</h2>
+                <span class="inv-slot__time">2 days ago</span>
+              </div>
+              <div class="inv-slot__domain">engineering.example.dev/posts/rate-limiter-fail-closed-at-scale</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Reading List</span>
+                <span class="ds-state ds-state--pending"><i class="ds-state__pip"></i>Reading page&hellip;</span>
+                <button class="ds-btn ds-btn--quiet ds-btn--sm">Retry</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+      <p class="variant__note">Intake, then the list. The notice is one quiet line instead of a bar, so it costs the list less room.</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Dark</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Inbox</h1>
+        </div>
+      </header>
+      <div class="notice">
+        <span class="notice__mark"></span>
+        <span>Every item below is fabricated mock data &mdash; not API data.</span>
+      </div>
+        <section class="intake">
+          <div class="intake__top">
+            <span class="ds-label">Save a URL</span>
+            <span class="intake__hint">Check or edit the link before saving.</span>
+          </div>
+          <input class="ds-field ds-field--mono" value="https://example.com/a-long-article-about-distributed-systems?ref=share">
+          <div class="intake__actions">
+            <button class="ds-btn">Paste</button>
+            <button class="ds-btn ds-btn--primary">Save URL</button>
+          </div>
+        </section>
+      <div class="phone__scroll">
+        <div class="ds-label-row"><span class="ds-label">Recently saved</span><span class="ds-label-row__rule"></span></div>
+        <div class="inv-list">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding CRDTs: why eventual consistency is not a compromise</h2>
+                <span class="inv-slot__time">12 min ago</span>
+              </div>
+              <div class="inv-slot__domain">example.com/articles/crdts-explained</div>
+              <p class="inv-slot__desc">Conflict-free replicated data types let several replicas converge without a central coordinator, at the cost of metadata every write must carry.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">A thread about incremental static regeneration</h2>
+                <span class="inv-slot__time">48 min ago</span>
+              </div>
+              <div class="inv-slot__domain">social.example.org/@someone/isr-tradeoffs</div>
+              <p class="inv-slot__desc">Where the build-time and request-time trade-offs actually land once a page has more than a handful of variants.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Unsorted</span>
+              </div>
+            </div>
+          </article>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Notes on reading more and remembering less</h2>
+                <span class="inv-slot__time">3 hours ago</span>
+              </div>
+              <div class="inv-slot__domain">notes.example.com/archive/reading-less?ref=inbox</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Reading List</span>
+              </div>
+            </div>
+          </article>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--none"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title is-fallback">https://archive.example.net/specs/build-notes</h2>
+                <span class="inv-slot__time">yesterday</span>
+              </div>
+              <div class="inv-slot__domain">archive.example.net</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Watch Later</span>
+                <span class="ds-state">No details on this page</span>
+              </div>
+            </div>
+          </article>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--none"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Full-Text Search in Postgres, part three</h2>
+                <span class="inv-slot__time">yesterday</span>
+              </div>
+              <div class="inv-slot__domain">engineering.example.dev/postgres/pgsearch-3</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Wishlist</span>
+                <span class="ds-state ds-state--failed"><i class="ds-state__pip"></i>Couldn&rsquo;t read this page</span>
+                <button class="ds-btn ds-btn--quiet ds-btn--sm">Retry</button>
+              </div>
+            </div>
+          </article>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Designing a rate limiter that fails closed, and what it costs you the first time the counter store is unreachable in production</h2>
+                <span class="inv-slot__time">2 days ago</span>
+              </div>
+              <div class="inv-slot__domain">engineering.example.dev/posts/rate-limiter-fail-closed-at-scale</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Reading List</span>
+                <span class="ds-state ds-state--pending"><i class="ds-state__pip"></i>Reading page&hellip;</span>
+                <button class="ds-btn ds-btn--quiet ds-btn--sm">Retry</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+      <p class="variant__note">The same layout, re-valued. The accent is the app's green at a legible value.</p>
+    </div>
+  </div>
+
+  <h2>Intake states</h2>
+  <p>
+    The five states worth reviewing. Paste never changes the field&rsquo;s meaning on its own, so
+    the field is the only thing that says &ldquo;this is not saved yet&rdquo;.
+  </p>
+
+  <div class="compare">
+    <div class="variant">
+      <div class="variant__label">Empty</div>
+      <div class="panel theme-light">
+        <div class="panel__head">Empty</div>
+        <section class="intake">
+          <div class="intake__top">
+            <span class="ds-label">Save a URL</span>
+            <span class="intake__hint">Paste fills the field. Save URL sends it.</span>
+          </div>
+          <input class="ds-field ds-field--mono" placeholder="https://">
+          <div class="intake__actions">
+            <button class="ds-btn">Paste</button>
+            <button class="ds-btn ds-btn--primary" disabled>Save URL</button>
+          </div>
+        </section>
+      </div>
+      <p class="variant__note">Save URL is disabled. Nothing is queued and nothing is pending.</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Focused</div>
+      <div class="panel theme-light">
+        <div class="panel__head">Focused</div>
+        <section class="intake">
+          <div class="intake__top">
+            <span class="ds-label">Save a URL</span>
+            <span class="intake__hint">Paste fills the field. Save URL sends it.</span>
+          </div>
+          <input class="ds-field ds-field--mono is-focused" placeholder="https://">
+          <div class="intake__actions">
+            <button class="ds-btn">Paste</button>
+            <button class="ds-btn ds-btn--primary" disabled>Save URL</button>
+          </div>
+        </section>
+      </div>
+      <p class="variant__note">A 2px accent border and a soft ring. The disabled primary stays disabled.</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Filled</div>
+      <div class="panel theme-light">
+        <div class="panel__head">Filled</div>
+        <section class="intake">
+          <div class="intake__top">
+            <span class="ds-label">Save a URL</span>
+            <span class="intake__hint">Check or edit the link before saving.</span>
+          </div>
+          <input class="ds-field ds-field--mono" value="https://example.com/a-long-article-about-distributed-systems?ref=share">
+          <div class="intake__actions">
+            <button class="ds-btn">Paste</button>
+            <button class="ds-btn ds-btn--primary">Save URL</button>
+          </div>
+        </section>
+      </div>
+      <p class="variant__note">Paste filled the field. The value is editable before submission.</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Saving</div>
+      <div class="panel theme-light">
+        <div class="panel__head">Saving</div>
+        <section class="intake">
+          <div class="intake__top">
+            <span class="ds-label">Save a URL</span>
+            <span class="intake__hint">Saving. Nothing is confirmed yet.</span>
+          </div>
+          <input class="ds-field ds-field--mono" value="https://example.com/a-long-article-about-distributed-systems?ref=share" disabled>
+          <div class="intake__actions">
+            <button class="ds-btn" disabled>Paste</button>
+            <button class="ds-btn ds-btn--primary" disabled><span class="ds-spinner"></span>Saving&hellip;</button>
+          </div>
+        </section>
+      </div>
+      <p class="variant__note">Both actions are disabled. No success is claimed before the server answers.</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Invalid</div>
+      <div class="panel theme-light">
+        <div class="panel__head">Invalid</div>
+        <section class="intake">
+          <div class="intake__top">
+            <span class="ds-label">Save a URL</span>
+            <span class="intake__hint">Check the link before saving.</span>
+          </div>
+          <input class="ds-field ds-field--mono is-error" value="example.com/not-a-link">
+          <div class="intake__actions">
+            <button class="ds-btn">Paste</button>
+            <button class="ds-btn ds-btn--primary">Save URL</button>
+          </div>
+          <p class="ds-field__error">That doesn&rsquo;t look like a valid link.</p>
+        </section>
+      </div>
+      <p class="variant__note">Validation wording is a proposal: when the input validates is still open (Q13).</p>
+    </div>
+  </div>
+
+  <div class="compare">
+    <div class="variant">
+      <div class="variant__label">Empty</div>
+      <div class="panel panel--dark theme-dark">
+        <div class="panel__head">Empty</div>
+        <section class="intake">
+          <div class="intake__top">
+            <span class="ds-label">Save a URL</span>
+            <span class="intake__hint">Paste fills the field. Save URL sends it.</span>
+          </div>
+          <input class="ds-field ds-field--mono" placeholder="https://">
+          <div class="intake__actions">
+            <button class="ds-btn">Paste</button>
+            <button class="ds-btn ds-btn--primary" disabled>Save URL</button>
+          </div>
+        </section>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Focused</div>
+      <div class="panel panel--dark theme-dark">
+        <div class="panel__head">Focused</div>
+        <section class="intake">
+          <div class="intake__top">
+            <span class="ds-label">Save a URL</span>
+            <span class="intake__hint">Paste fills the field. Save URL sends it.</span>
+          </div>
+          <input class="ds-field ds-field--mono is-focused" placeholder="https://">
+          <div class="intake__actions">
+            <button class="ds-btn">Paste</button>
+            <button class="ds-btn ds-btn--primary" disabled>Save URL</button>
+          </div>
+        </section>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Filled</div>
+      <div class="panel panel--dark theme-dark">
+        <div class="panel__head">Filled</div>
+        <section class="intake">
+          <div class="intake__top">
+            <span class="ds-label">Save a URL</span>
+            <span class="intake__hint">Check or edit the link before saving.</span>
+          </div>
+          <input class="ds-field ds-field--mono" value="https://example.com/a-long-article-about-distributed-systems?ref=share">
+          <div class="intake__actions">
+            <button class="ds-btn">Paste</button>
+            <button class="ds-btn ds-btn--primary">Save URL</button>
+          </div>
+        </section>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Saving</div>
+      <div class="panel panel--dark theme-dark">
+        <div class="panel__head">Saving</div>
+        <section class="intake">
+          <div class="intake__top">
+            <span class="ds-label">Save a URL</span>
+            <span class="intake__hint">Saving. Nothing is confirmed yet.</span>
+          </div>
+          <input class="ds-field ds-field--mono" value="https://example.com/a-long-article-about-distributed-systems?ref=share" disabled>
+          <div class="intake__actions">
+            <button class="ds-btn" disabled>Paste</button>
+            <button class="ds-btn ds-btn--primary" disabled><span class="ds-spinner"></span>Saving&hellip;</button>
+          </div>
+        </section>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Invalid</div>
+      <div class="panel panel--dark theme-dark">
+        <div class="panel__head">Invalid</div>
+        <section class="intake">
+          <div class="intake__top">
+            <span class="ds-label">Save a URL</span>
+            <span class="intake__hint">Check the link before saving.</span>
+          </div>
+          <input class="ds-field ds-field--mono is-error" value="example.com/not-a-link">
+          <div class="intake__actions">
+            <button class="ds-btn">Paste</button>
+            <button class="ds-btn ds-btn--primary">Save URL</button>
+          </div>
+          <p class="ds-field__error">That doesn&rsquo;t look like a valid link.</p>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="note note--accent">
+    <strong>Density:</strong> the intake band costs roughly 120&nbsp;px of a 844&nbsp;px screen, which
+    leaves about three and a half slots visible without scrolling. That is the trade the
+    approved direction makes: a visible, usable intake area above a list that is already
+    comfortable. The list itself is unchanged from the baseline &mdash; no metadata was removed
+    to make room.
+  </div>
+
+  <div class="note">
+    <strong>Open questions left visible:</strong> when the input validates, and what the
+    clipboard does when it holds nothing (Q13) &mdash; no empty-clipboard state is drawn, because
+    inventing one would pre-empt the decision.
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,396 @@
+/* ==========================================================================
+   Stash-it — design system v1 · review chrome
+   --------------------------------------------------------------------------
+   Everything here belongs to the review page, not to the product: the page
+   shell, the phone bezel, the status bar, the comparison grid, the notes and
+   the token tables. Product components live in components.css.
+   ========================================================================== */
+
+* { box-sizing: border-box; }
+
+/* Reset the UA heading/paragraph margins. Item titles are <h2> elements and
+   page headings are <h2> too — without this, the two collide. */
+h1, h2, h3, h4, h5, h6, p, ul, ol, figure, blockquote { margin: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: #e7ebef;
+}
+
+/* ---------- page shell --------------------------------------------------- */
+
+.page {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 28px 20px 90px;
+}
+
+.page__kicker {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: 0 0 10px;
+}
+
+.page__title {
+  font-family: var(--font-ui);
+  font-size: 27px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+
+.page__lede {
+  max-width: 78ch;
+  color: var(--text-secondary);
+  margin: 0 0 20px;
+}
+
+.page > h2 {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 44px 0 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line-200, #dbe1e7);
+}
+
+.page > h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 22px 0 6px;
+}
+
+.page p { color: var(--text-secondary); margin: 0 0 10px; }
+.page ul { color: var(--text-secondary); }
+.page li { margin-bottom: 4px; }
+
+.page code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: #dde3e9;
+  color: var(--text-primary);
+  border-radius: 2px;
+  padding: 1px 4px;
+}
+
+/* ---------- topbar ------------------------------------------------------ */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid #dbe1e7;
+}
+
+.topbar__brand {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.topbar__sep {
+  width: 1px;
+  height: 16px;
+  background: #dbe1e7;
+}
+
+.topbar__link {
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 4px 7px;
+}
+
+.topbar__link:hover { border-color: #c3ccd6; color: var(--text-primary); }
+.topbar__link.is-current { border-color: #c3ccd6; color: var(--text-primary); background: #eef1f4; }
+
+.topbar__spacer { flex: 1 1 auto; }
+
+/* ==========================================================================
+   PHONE FRAME
+   ========================================================================== */
+
+.stage {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.variant {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.variant__label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  background: #fff;
+  border: 1px solid #c3ccd6;
+  border-radius: 2px;
+  padding: 5px 8px;
+  align-self: flex-start;
+}
+
+.variant__note {
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  max-width: 390px;
+}
+
+.phone {
+  width: var(--phone-w);
+  height: var(--phone-h);
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--canvas);
+  border: 1px solid #c3ccd6;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(16, 20, 24, 0.06);
+  position: relative;
+}
+
+.phone__status {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 14px;
+  height: 24px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.phone__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.phone__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #c3ccd6 transparent;
+}
+
+.phone__scroll::-webkit-scrollbar { width: 4px; }
+.phone__scroll::-webkit-scrollbar-thumb { background: #c3ccd6; border-radius: 2px; }
+
+/* ==========================================================================
+   PANEL — a component shown outside a phone, for state comparison
+   ========================================================================== */
+
+.panel {
+  width: 358px;
+  flex: 0 0 auto;
+  background: var(--canvas);
+  border: 1px solid #c3ccd6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.panel__head {
+  padding: 8px 12px;
+  background: #eef1f4;
+  border-bottom: 1px solid #dbe1e7;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7c8693;
+}
+
+.panel--dark .panel__head {
+  background: #1e2328;
+  border-bottom-color: #2c333a;
+  color: #848e99;
+}
+
+/* ==========================================================================
+   COMPARISON GRID
+   ========================================================================== */
+
+.compare {
+  display: flex;
+  gap: 26px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 12px;
+}
+
+.compare__cell {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  zoom: 0.55;
+}
+
+/* ==========================================================================
+   SCREEN GALLERY (index)
+   ========================================================================== */
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin: 18px 0 0;
+}
+
+.screen-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #dbe1e7;
+  border-radius: 4px;
+  padding: 14px 15px;
+}
+
+.screen-card:hover { border-color: var(--accent); }
+
+.screen-card h4 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.screen-card h4 span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.screen-card p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.screen-card__files {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   NOTES / CALLOUTS
+   ========================================================================== */
+
+.note {
+  border-left: 3px solid #c3ccd6;
+  background: #fff;
+  padding: 9px 12px;
+  margin: 12px 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 92ch;
+}
+
+.note strong { color: var(--text-primary); }
+.note--accent { border-left-color: var(--accent); }
+
+table.tbl {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 1000px;
+  font-size: 12.5px;
+  background: #fff;
+}
+
+table.tbl th,
+table.tbl td {
+  border: 1px solid #dbe1e7;
+  padding: 7px 9px;
+  text-align: left;
+  vertical-align: top;
+  color: var(--text-secondary);
+}
+
+table.tbl th {
+  background: #eef1f4;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+table.tbl td:first-child { color: var(--text-primary); font-weight: 600; }
+
+.swatch {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  border: 1px solid rgba(16, 20, 24, 0.18);
+  vertical-align: -1px;
+  margin-right: 5px;
+}
+
+@media (max-width: 760px) {
+  .page { padding: 20px 12px 60px; }
+  .page__title { font-size: 22px; }
+}
+
+@media print {
+  .topbar { display: none; }
+  body { background: #fff; }
+}

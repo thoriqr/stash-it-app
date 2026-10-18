@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Authentication &mdash; Stash-it design system v1</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/components.css">
+<link rel="stylesheet" href="assets/screens.css">
+<link rel="stylesheet" href="assets/base.css">
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar__brand">Stash-it</span>
+  <span class="topbar__sep"></span>
+  <a class="topbar__link" href="index.html">Index</a>
+  <a class="topbar__link" href="inbox.html">Inbox</a>
+  <a class="topbar__link" href="collections.html">Collections</a>
+  <a class="topbar__link" href="search.html">Search</a>
+  <a class="topbar__link" href="profile.html">Profile</a>
+  <a class="topbar__link" href="pending-urls.html">Pending URLs</a>
+  <a class="topbar__link is-current" href="auth.html">Auth</a>
+  <a class="topbar__link" href="components.html">Components</a>
+  <a class="topbar__link" href="design-system.md">Spec</a>
+  <span class="topbar__spacer"></span>
+  <span class="ds-mockchip">mock data</span>
+</div>
+<div class="page">
+  <p class="page__kicker">Screen 6 of 6</p>
+  <h1 class="page__title">Authentication</h1>
+  <p class="page__lede">
+    Authentication is genuinely multi-step &mdash; including waiting on an emailed PIN &mdash; so
+    it is not compressed into an assumed single-step login. It uses the same input, button,
+    typography, border and spacing tokens as the rest of the app; only the layout differs, and
+    it has no bottom navigation because it sits outside the four destinations.
+  </p>
+
+  <div class="stage">
+    <div class="variant">
+      <div class="variant__label">Light &middot; welcome</div>
+      <div class="phone theme-light">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <div class="auth">
+        <div class="auth__brand">
+          <span class="auth__brand-mark"></span>
+          <span class="auth__brand-name">Stash-it</span>
+        </div>
+        <h1 class="auth__title">A place for things you find on the internet.</h1>
+        <p class="auth__lede">Save a link from any browser, then find it again here.</p>
+        <div class="auth__actions">
+          <button class="ds-btn ds-btn--primary ds-btn--block">Continue with Google</button>
+          <button class="ds-btn ds-btn--block">Sign in with email</button>
+          <button class="ds-btn ds-btn--block">Create an account</button>
+        </div>
+      </div>
+        </div>
+      </div>
+      <p class="variant__note">One filled action, two outlined ones. Whether Google leads is still open (Q6).</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Light &middot; sign in</div>
+      <div class="phone theme-light">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <div class="auth">
+        <div class="auth__brand">
+          <span class="auth__brand-mark"></span>
+          <span class="auth__brand-name">Stash-it</span>
+        </div>
+        <h1 class="auth__title">Sign in to Stash-it</h1>
+        <p class="auth__lede">Use the email and password on your Stash-it account.</p>
+        <div class="auth__form">
+          <div>
+            <label class="ds-input-label">Email</label>
+            <input class="ds-field" value="reader@example.com">
+          </div>
+          <div>
+            <label class="ds-input-label">Password</label>
+            <input class="ds-field" type="password" value="correct-horse-battery-staple">
+          </div>
+        </div>
+        <div class="auth__actions">
+          <button class="ds-btn ds-btn--primary ds-btn--block">Sign in</button>
+        </div>
+        <p class="auth__link"><a href="#">Forgot your password?</a></p>
+      </div>
+        </div>
+      </div>
+      <p class="variant__note">The fields and copy match the shipped Flutter sign-in screen.</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Light &middot; invalid</div>
+      <div class="phone theme-light">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <div class="auth">
+        <div class="auth__brand">
+          <span class="auth__brand-mark"></span>
+          <span class="auth__brand-name">Stash-it</span>
+        </div>
+        <h1 class="auth__title">Sign in to Stash-it</h1>
+        <p class="auth__lede">Use the email and password on your Stash-it account.</p>
+        <div class="auth__form">
+          <div>
+            <label class="ds-input-label">Email</label>
+            <input class="ds-field" value="reader@example.com">
+          </div>
+          <div>
+            <label class="ds-input-label">Password</label>
+            <input class="ds-field" type="password" value="not-the-right-one">
+          </div>
+        </div>
+        <div class="ds-note ds-note--danger" style="margin-top: var(--space-3)">
+          <span class="ds-note__mark"></span>
+          <span>That doesn&rsquo;t look like a valid email or password.</span>
+        </div>
+        <div class="auth__actions">
+          <button class="ds-btn ds-btn--primary ds-btn--block">Sign in</button>
+          <button class="ds-btn ds-btn--quiet">Dismiss</button>
+        </div>
+      </div>
+        </div>
+      </div>
+      <p class="variant__note">One dismissible message. It never says which half was wrong.</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Light &middot; verify PIN</div>
+      <div class="phone theme-light">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <div class="auth">
+        <div class="auth__steps"><span class="ds-label">Step 3 of 8</span></div>
+        <div class="auth__progress"><div class="auth__progress__bar" style="width:38%"></div></div>
+        <h1 class="auth__title">Verify your email</h1>
+        <p class="auth__lede">Enter the 6-digit PIN sent to <strong>reader@example.com</strong>.</p>
+        <div class="auth__pin">
+          <div class="auth__pin__box auth__pin__box--filled">4</div>
+          <div class="auth__pin__box auth__pin__box--filled">2</div>
+          <div class="auth__pin__box"></div>
+          <div class="auth__pin__box"></div>
+          <div class="auth__pin__box"></div>
+          <div class="auth__pin__box"></div>
+        </div>
+        <div class="ds-note">
+          <span class="ds-note__mark"></span>
+          <span>Waiting for the email&hellip; this screen polls on purpose. It is not stuck.</span>
+        </div>
+        <div class="pend__acts" style="margin-top: var(--space-3)">
+          <span class="ds-timer">resend in 00:42</span>
+        </div>
+      </div>
+        </div>
+      </div>
+      <p class="variant__note">The step counter is a proposal; the number of steps is not.</p>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="variant">
+      <div class="variant__label">Dark &middot; welcome</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <div class="auth">
+        <div class="auth__brand">
+          <span class="auth__brand-mark"></span>
+          <span class="auth__brand-name">Stash-it</span>
+        </div>
+        <h1 class="auth__title">A place for things you find on the internet.</h1>
+        <p class="auth__lede">Save a link from any browser, then find it again here.</p>
+        <div class="auth__actions">
+          <button class="ds-btn ds-btn--primary ds-btn--block">Continue with Google</button>
+          <button class="ds-btn ds-btn--block">Sign in with email</button>
+          <button class="ds-btn ds-btn--block">Create an account</button>
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Dark &middot; sign in</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <div class="auth">
+        <div class="auth__brand">
+          <span class="auth__brand-mark"></span>
+          <span class="auth__brand-name">Stash-it</span>
+        </div>
+        <h1 class="auth__title">Sign in to Stash-it</h1>
+        <p class="auth__lede">Use the email and password on your Stash-it account.</p>
+        <div class="auth__form">
+          <div>
+            <label class="ds-input-label">Email</label>
+            <input class="ds-field" value="reader@example.com">
+          </div>
+          <div>
+            <label class="ds-input-label">Password</label>
+            <input class="ds-field" type="password" value="correct-horse-battery-staple">
+          </div>
+        </div>
+        <div class="auth__actions">
+          <button class="ds-btn ds-btn--primary ds-btn--block">Sign in</button>
+        </div>
+        <p class="auth__link"><a href="#">Forgot your password?</a></p>
+      </div>
+        </div>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Dark &middot; invalid</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <div class="auth">
+        <div class="auth__brand">
+          <span class="auth__brand-mark"></span>
+          <span class="auth__brand-name">Stash-it</span>
+        </div>
+        <h1 class="auth__title">Sign in to Stash-it</h1>
+        <p class="auth__lede">Use the email and password on your Stash-it account.</p>
+        <div class="auth__form">
+          <div>
+            <label class="ds-input-label">Email</label>
+            <input class="ds-field" value="reader@example.com">
+          </div>
+          <div>
+            <label class="ds-input-label">Password</label>
+            <input class="ds-field" type="password" value="not-the-right-one">
+          </div>
+        </div>
+        <div class="ds-note ds-note--danger" style="margin-top: var(--space-3)">
+          <span class="ds-note__mark"></span>
+          <span>That doesn&rsquo;t look like a valid email or password.</span>
+        </div>
+        <div class="auth__actions">
+          <button class="ds-btn ds-btn--primary ds-btn--block">Sign in</button>
+          <button class="ds-btn ds-btn--quiet">Dismiss</button>
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Dark &middot; verify PIN</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <div class="auth">
+        <div class="auth__steps"><span class="ds-label">Step 3 of 8</span></div>
+        <div class="auth__progress"><div class="auth__progress__bar" style="width:38%"></div></div>
+        <h1 class="auth__title">Verify your email</h1>
+        <p class="auth__lede">Enter the 6-digit PIN sent to <strong>reader@example.com</strong>.</p>
+        <div class="auth__pin">
+          <div class="auth__pin__box auth__pin__box--filled">4</div>
+          <div class="auth__pin__box auth__pin__box--filled">2</div>
+          <div class="auth__pin__box"></div>
+          <div class="auth__pin__box"></div>
+          <div class="auth__pin__box"></div>
+          <div class="auth__pin__box"></div>
+        </div>
+        <div class="ds-note">
+          <span class="ds-note__mark"></span>
+          <span>Waiting for the email&hellip; this screen polls on purpose. It is not stuck.</span>
+        </div>
+        <div class="pend__acts" style="margin-top: var(--space-3)">
+          <span class="ds-timer">resend in 00:42</span>
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note note--accent">
+    <strong>Deliberately absent:</strong> no invented sign-in method, no password strength
+    meter, no social provider list beyond the one the backend supports, and no screen for a
+    flow the documents do not describe. These are presentation mockups only &mdash; the
+    authentication architecture in <code>lib/features/auth/</code> is untouched.
+  </div>
+</div>
+</body>
+</html>

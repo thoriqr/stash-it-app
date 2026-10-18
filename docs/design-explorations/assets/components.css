@@ -1,0 +1,773 @@
+/* ==========================================================================
+   Stash-it — design system v1 · components
+   --------------------------------------------------------------------------
+   Reusable components. Every value comes from assets/tokens.css; there are no
+   literal colours in this file.
+
+   Class map (used by design-system.md):
+     .app-head      app header: wordmark, screen title, optional trailing action
+     .ds-label      pixel display label (section eyebrow)
+     .ds-btn        button: --primary / --secondary / --quiet / --danger
+     .ds-field      text input: focus / error / disabled, with hint + error
+     .inv-slot      inventory slot — one saved item
+     .inv-cell      collection cell — one collection in the grid
+     .ds-chip       collection chip
+     .ds-state      enrichment state (pending / failed / quiet)
+     .ds-note       feedback: info / success / warning / danger / uncertain
+     .ds-empty      empty state
+     .ds-mockbar    the mock-data notice
+     .ds-timer      countdown chip
+     .tabbar        bottom navigation + the outline icon family
+   ========================================================================== */
+
+/* ==========================================================================
+   APP HEADER
+   ========================================================================== */
+
+.app-head {
+  flex: 0 0 auto;
+  background: var(--surface);
+  border-bottom: var(--border-width) solid var(--border);
+  padding: var(--space-2) var(--space-4) var(--space-3);
+}
+
+.app-head__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.app-head__wordmark {
+  font-family: var(--font-display);
+  font-size: var(--size-display-wordmark);
+  line-height: 1;
+  letter-spacing: var(--tracking-wordmark);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.app-head__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.app-head__title {
+  font-family: var(--font-display);
+  font-size: var(--size-display-title);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.app-head__sub {
+  font-family: var(--font-mono);
+  font-size: var(--size-mono-sm);
+  color: var(--text-tertiary);
+  margin-top: 3px;
+}
+
+/* ==========================================================================
+   DISPLAY LABEL — the restrained pixel treatment
+   ========================================================================== */
+
+.ds-label {
+  font-family: var(--font-display);
+  font-size: var(--size-display-label);
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.ds-label-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) var(--space-1);
+}
+
+.ds-label-row__rule {
+  flex: 1 1 auto;
+  height: var(--border-width);
+  background: var(--border);
+}
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+
+.ds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 34px;
+  padding: 0 var(--space-3);
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-1);
+  cursor: default;
+  white-space: nowrap;
+}
+
+.ds-btn--primary {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.ds-btn--quiet {
+  color: var(--accent);
+  background: transparent;
+  border-color: transparent;
+  padding: 0 var(--space-2);
+}
+
+.ds-btn--danger {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+}
+
+.ds-btn--block { width: 100%; }
+
+/* a compact variant, for an action inside a dense row */
+.ds-btn--sm {
+  height: 24px;
+  padding: 0 6px;
+  font-size: 11px;
+}
+
+.ds-btn[disabled],
+.ds-btn.is-disabled {
+  color: var(--disabled-text);
+  background: var(--disabled-bg);
+  border-color: var(--disabled-border);
+}
+
+.ds-btn--primary[disabled] {
+  color: var(--disabled-text);
+  background: var(--disabled-bg);
+  border-color: var(--disabled-border);
+}
+
+/* the "in flight" button: label replaced by a spinner */
+.ds-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+}
+
+/* ==========================================================================
+   INPUTS
+   ========================================================================== */
+
+.ds-field {
+  display: block;
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--space-3);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-1);
+}
+
+.ds-field--mono {
+  font-family: var(--font-mono);
+  font-size: var(--size-mono);
+}
+
+.ds-field::placeholder {
+  color: var(--text-tertiary);
+  opacity: 1;
+}
+
+.ds-field.is-focused {
+  border: var(--border-width-focus) solid var(--accent);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+  padding-left: calc(var(--space-3) - 1px);
+}
+
+.ds-field.is-error {
+  border: var(--border-width-focus) solid var(--danger);
+  padding-left: calc(var(--space-3) - 1px);
+}
+
+.ds-field[disabled] {
+  color: var(--disabled-text);
+  background: var(--disabled-bg);
+  border-color: var(--disabled-border);
+}
+
+.ds-field__hint {
+  margin-top: var(--space-1);
+  font-family: var(--font-ui);
+  font-size: var(--size-meta);
+  line-height: 1.35;
+  color: var(--text-tertiary);
+}
+
+.ds-field__error {
+  margin-top: var(--space-1);
+  font-family: var(--font-ui);
+  font-size: var(--size-meta);
+  line-height: 1.35;
+  font-weight: 500;
+  color: var(--danger);
+}
+
+/* a visible label above a field */
+.ds-input-label {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: var(--size-label);
+  line-height: 1.2;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+/* a disclosure chevron */
+.ds-chev {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-right: 1.5px solid var(--text-tertiary);
+  border-bottom: 1.5px solid var(--text-tertiary);
+  transform: rotate(-45deg);
+}
+
+/* a field with a leading icon (search) */
+.ds-field-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ds-field-wrap > .ds-field { flex: 1 1 auto; min-width: 0; }
+
+.ds-field-wrap__icon {
+  position: absolute;
+  left: var(--space-3);
+  width: var(--icon-size);
+  height: var(--icon-size);
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.ds-field-wrap__icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--icon-stroke);
+  stroke-linejoin: miter;
+  stroke-linecap: butt;
+}
+
+.ds-field--with-icon { padding-left: calc(var(--space-3) * 2 + var(--icon-size)); }
+
+/* ==========================================================================
+   INVENTORY SLOT — one saved item
+   ========================================================================== */
+
+.inv-list {
+  padding: var(--space-2) var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  background: var(--canvas);
+}
+
+/* the same list, but flush with a parent that already provides the padding */
+.inv-list--flush { padding-left: 0; padding-right: 0; }
+
+.inv-slot {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: var(--space-3);
+  background: var(--surface);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-2);
+  padding: 11px 12px;
+  box-shadow: var(--slot-shadow);
+}
+
+.inv-slot__thumb {
+  width: 56px;
+  height: 56px;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-1);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+/* a preview image is expected */
+.inv-slot__thumb--image {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--slot-hatch-1) 0 4px,
+    var(--slot-hatch-2) 4px 9px
+  );
+}
+
+/* no preview image: a normal state, never an error */
+.inv-slot__thumb--none {
+  background: var(--canvas);
+  border-style: dashed;
+  position: relative;
+}
+
+.inv-slot__thumb--none::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 9px;
+  height: 9px;
+  border: var(--border-width) dashed var(--border-strong);
+}
+
+.inv-slot__main { min-width: 0; }
+
+.inv-slot__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.inv-slot__title {
+  font-family: var(--font-ui);
+  font-size: var(--size-item-title);
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* a fallback title is neutral copy, never a warning */
+.inv-slot__title.is-fallback {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.inv-slot__time {
+  font-family: var(--font-mono);
+  font-size: var(--size-mono-sm);
+  font-weight: 500;
+  color: var(--text-tertiary);
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+.inv-slot__domain {
+  font-family: var(--font-mono);
+  font-size: var(--size-mono);
+  font-weight: 500;
+  color: var(--text-tertiary);
+  margin-top: var(--space-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inv-slot__desc {
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  line-height: 1.48;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.inv-slot__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 9px;
+}
+
+/* ==========================================================================
+   COLLECTION CELL — one collection in the grid
+   ========================================================================== */
+
+.inv-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-4);
+  background: var(--canvas);
+}
+
+.inv-cell {
+  background: var(--surface);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-2);
+  padding: 12px 11px 11px;
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  box-shadow: var(--slot-shadow);
+}
+
+.inv-cell.is-system {
+  border-color: var(--accent-border);
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+}
+
+.inv-cell__icon {
+  width: 28px;
+  height: 28px;
+  color: var(--text-tertiary);
+}
+
+.inv-cell.is-system .inv-cell__icon { color: var(--accent); }
+
+.inv-cell__icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  shape-rendering: crispEdges;
+}
+
+.inv-cell__name {
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin-top: auto;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.inv-cell__tag {
+  font-family: var(--font-display);
+  font-size: 8.5px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  align-self: flex-start;
+  border: var(--border-width) solid var(--accent-border);
+  border-radius: var(--radius-1);
+  padding: 3px 4px;
+}
+
+/* ==========================================================================
+   CHIP — the item's current collection
+   ========================================================================== */
+
+.ds-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-ui);
+  font-size: var(--size-label);
+  line-height: 1;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: var(--border-width) solid var(--accent-border);
+  border-radius: var(--radius-1);
+  padding: 4px 6px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ds-chip__pip {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 auto;
+  background: var(--accent);
+}
+
+/* ==========================================================================
+   ENRICHMENT STATE
+   ========================================================================== */
+
+.ds-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: var(--size-meta);
+  line-height: 1;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.ds-state__pip {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 auto;
+  border: var(--border-width) solid currentColor;
+  background: transparent;
+}
+
+.ds-state--pending { color: var(--accent); }
+
+.ds-state--failed { color: var(--danger); }
+.ds-state--failed .ds-state__pip { background: currentColor; }
+
+/* ==========================================================================
+   FEEDBACK
+   ========================================================================== */
+
+.ds-note {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  padding: 9px 11px;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  background: var(--surface-inset);
+  border: var(--border-width) solid var(--border);
+  border-left-width: 3px;
+  border-radius: var(--radius-1);
+}
+
+.ds-note__mark {
+  width: 6px;
+  height: 6px;
+  margin-top: 5px;
+  flex: 0 0 auto;
+  background: var(--text-tertiary);
+}
+
+.ds-note--success {
+  background: var(--success-soft);
+  border-color: var(--success-border);
+  border-left-color: var(--success);
+  color: var(--text-primary);
+}
+.ds-note--success .ds-note__mark { background: var(--success); }
+
+.ds-note--warning {
+  background: var(--warning-soft);
+  border-color: var(--warning-border);
+  border-left-color: var(--warning);
+  color: var(--text-primary);
+}
+.ds-note--warning .ds-note__mark { background: var(--warning); }
+
+.ds-note--danger {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  border-left-color: var(--danger);
+  color: var(--text-primary);
+}
+.ds-note--danger .ds-note__mark { background: var(--danger); }
+
+/* the one state that must not claim the item is unsaved */
+.ds-note--uncertain {
+  background: var(--warning-soft);
+  border-color: var(--warning-border);
+  border-left-color: var(--warning);
+  color: var(--text-primary);
+}
+.ds-note--uncertain .ds-note__mark {
+  background: transparent;
+  border: var(--border-width) solid var(--warning);
+}
+
+/* ==========================================================================
+   EMPTY STATE
+   ========================================================================== */
+
+.ds-empty {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--text-tertiary);
+  border: var(--border-width) dashed var(--border-strong);
+  border-radius: var(--radius-2);
+  margin: var(--space-3) 0;
+}
+
+.ds-empty__title {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.ds-empty__body {
+  font-family: var(--font-ui);
+  font-size: var(--size-body);
+  line-height: 1.45;
+}
+
+/* ==========================================================================
+   MOCK-DATA MARKER
+   ========================================================================== */
+
+.ds-mockbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px var(--space-4);
+  background: var(--surface-inset);
+  border-bottom: var(--border-width) dashed var(--mock-border);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  line-height: 1.4;
+  color: var(--mock-text);
+}
+
+.ds-mockbar__mark {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 auto;
+  background: var(--accent);
+}
+
+.ds-mockchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mock-text);
+  border: var(--border-width) dashed var(--mock-border);
+  border-radius: var(--radius-1);
+  padding: 3px 5px;
+}
+
+/* ==========================================================================
+   COUNTDOWN
+   ========================================================================== */
+
+.ds-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: var(--size-mono-sm);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-1);
+  padding: 4px 6px;
+  white-space: nowrap;
+}
+
+/* no countdown may be fabricated: the absence is stated */
+.ds-timer--none {
+  color: var(--text-tertiary);
+  border-style: dashed;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   BOTTOM NAVIGATION + the outline icon family
+   ========================================================================== */
+
+.tabbar {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--surface);
+  border-top: var(--border-width) solid var(--border);
+  padding: 5px 0 7px;
+}
+
+.tabbar__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-tertiary);
+}
+
+.tabbar__item svg {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  display: block;
+}
+
+.tabbar__item path,
+.tabbar__item circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--icon-stroke);
+  stroke-linejoin: miter;
+  stroke-linecap: butt;
+  shape-rendering: geometricPrecision;
+}
+
+/* the front card of the stack occludes the card behind it */
+.tabbar__item .navicon--fill { fill: var(--surface); }
+
+/* the search handle carries the extra weight of the lens ring */
+.tabbar__item .navicon--heavy { stroke-width: 2; }
+
+.tabbar__label {
+  font-family: var(--font-ui);
+  font-size: 9.5px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.tabbar__item.is-active { color: var(--selected); }
+
+/* selected state: the accent colour plus a short marker on the bar's top edge */
+.tabbar__item.is-active::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 3px;
+  background: var(--selected-mark);
+}

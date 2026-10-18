@@ -1,0 +1,221 @@
+/* ==========================================================================
+   Stash-it — design tokens v1
+   --------------------------------------------------------------------------
+   THE SOURCE OF TRUTH for every colour, size and shape used by the HTML
+   prototypes. No screen file contains a literal colour.
+
+   Two scopes:
+     :root / .theme-light  — the light theme (B · Inventory baseline)
+     .theme-dark            — the dark theme (B-Dark baseline)
+
+   The accent is **Dusty Sage**: #4c6b5f in light, #74a88c in dark. One hue
+   across both themes; only the lightness differs, because only lightness
+   survives both surfaces. It is the only brand hue in the system.
+
+   The theme class sits on the phone element, so the review chrome around a
+   screen keeps the light neutrals and only the screen is themed.
+
+   These values are also the reference for the future Flutter theme: see
+   design-system.md for the mapping table.
+   ========================================================================== */
+
+/* ==========================================================================
+   1. PRIMITIVES  (identical in both themes)
+   ========================================================================== */
+
+:root {
+  /* ---- type families ---- */
+  --font-display: 'Silkscreen', ui-monospace, 'Courier New', monospace;
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+             'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
+               'Liberation Mono', monospace;
+
+  /* ---- type scale: size / line-height / weight ---- */
+  --size-display-wordmark: 10px;   /* 10 / 1    / 700 · tracking .20em */
+  --size-display-title: 15px;      /* 15 / 1    · Silkscreen, uppercase */
+  --size-display-label: 9.5px;     /*  9.5 / 1  · Silkscreen, uppercase, tracking .14em */
+  --size-title: 19px;              /* 19 / 1.1  / 600 */
+  --size-item-title: 15px;         /* 15 / 1.3  / 600 */
+  --size-body: 13px;               /* 13 / 1.5  / 400 */
+  --size-meta: 11.5px;             /* 11.5 / 1.35 / 500 */
+  --size-label: 10.5px;            /* 10.5 / 1  / 600 */
+  --size-mono: 11px;               /* 11 / 1.3  / 500 */
+  --size-mono-sm: 10px;            /* 10 / 1.25 / 500 */
+  --size-micro: 9px;               /*  9 / 1.2  / 500 · mono, labels only */
+
+  --tracking-wordmark: 0.2em;
+  --tracking-label: 0.14em;
+
+  /* ---- spacing scale ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+
+  /* ---- radii: nothing above 4px on a control ---- */
+  --radius-0: 0;
+  --radius-1: 2px;
+  --radius-2: 3px;
+  --radius-3: 4px;
+
+  /* ---- borders ---- */
+  --border-width: 1px;
+  --border-width-focus: 2px;
+
+  /* ---- icons ---- */
+  --icon-size: 18px;
+  --icon-stroke: 1.5;
+  --icon-viewbox: 16;
+
+  /* ---- the phone frame used by the review chrome ---- */
+  --phone-w: 390px;
+  --phone-h: 844px;
+}
+
+/* ==========================================================================
+   2. SEMANTIC COLOUR — LIGHT (default scope)
+   Baseline: B · Inventory.
+   ========================================================================== */
+
+:root,
+.theme-light {
+  /* surfaces */
+  --canvas: #f5f7f9;          /* the app background */
+  --surface: #ffffff;         /* raised surfaces: slots, header, tab bar */
+  --surface-raised: #ffffff;  /* sheets and dialogs */
+  --surface-inset: #eef1f4;   /* recessed bands: the intake area, notice bars */
+  --surface-sunken: #e4e9ed;  /* wells: thumbnail placeholders */
+
+  /* text — every step used for copy meets WCAG AA (4.5:1) on --surface and
+     on --surface-inset; --text-disabled is the only step below it, and it is
+     reserved for disabled controls */
+  --text-primary: #222a34;   /* 13.3:1 — titles                        */
+  --text-secondary: #4a545f; /*  7.7:1 — descriptions                  */
+  --text-tertiary: #5f6975;  /*  5.6:1 — domains, times, labels, hints */
+  --text-disabled: #a6afba;  /*  2.4:1 — disabled controls only        */
+  --text-inverse: #ffffff;
+
+  /* lines */
+  --border: #dbe1e7;
+  --border-strong: #c3ccd6;
+  --border-subtle: #e9edf1;
+
+  /* accent — Dusty Sage, the approved brand accent: identity and progress
+     only, never decoration. One hue (157 degrees) across both themes; only
+     its lightness changes, because only lightness survives both surfaces. */
+  --accent: #4c6b5f;
+  --accent-strong: #3f5b50;
+  --accent-soft: #ebf1ee;
+  --accent-border: #bdcfc6;
+  --accent-contrast: #ffffff;
+
+  /* selection (navigation) */
+  --selected: #4c6b5f;
+  --selected-soft: #ebf1ee;
+  --selected-mark: #4c6b5f;
+
+  /* semantic states */
+  --success: #1d6e5e;
+  --success-soft: #e6f1ee;
+  --success-border: #bbd8d0;
+
+  --warning: #8a6a2f;
+  --warning-soft: #f6f0e2;
+  --warning-border: #e0d2b4;
+
+  --danger: #a8463a;
+  --danger-soft: #f6e9e6;
+  --danger-border: #e4c4be;
+
+  /* disabled */
+  --disabled-bg: #eff2f5;
+  --disabled-border: #e2e7ec;
+  --disabled-text: #a6afba;
+
+  /* focus */
+  --focus-ring: rgba(76, 107, 95, 0.22);
+
+  /* inventory slot */
+  --slot-shadow: 0 1px 2px rgba(16, 20, 24, 0.05);
+  --slot-hatch-1: #eef1f4;
+  --slot-hatch-2: #e4e9ed;
+
+  /* mock-data marker */
+  --mock-text: #5f6975;
+  --mock-border: #c3ccd6;
+}
+
+/* ==========================================================================
+   3. SEMANTIC COLOUR — DARK
+   Baseline: B-Dark.
+   ========================================================================== */
+
+.theme-dark {
+  /* surfaces — layered charcoal, never pure black */
+  --canvas: #14171a;
+  --surface: #1b1f23;
+  --surface-raised: #21262b;
+  --surface-inset: #1e2328;
+  --surface-sunken: #121518;
+
+  /* text — every step used for copy meets WCAG AA (4.5:1) on --surface and
+     on --surface-inset; --text-disabled is the only step below it, and it is
+     reserved for disabled controls */
+  --text-primary: #dae0e5;   /* 12.5:1 */
+  --text-secondary: #a3acb5; /*  7.2:1 */
+  --text-tertiary: #848e99;  /*  5.0:1 */
+  --text-disabled: #5d6771;  /*  2.3:1 — disabled controls only */
+  --text-inverse: #14171a;
+
+  /* lines */
+  --border: #2c333a;
+  --border-strong: #3b434b;
+  --border-subtle: #22272d;
+
+  /* accent — Dusty Sage, lightened for charcoal. Same hue as the light theme
+     (#4c6b5f), one step up in lightness so it holds on #1b1f23. */
+  --accent: #74a88c;
+  --accent-strong: #86ba9c;
+  --accent-soft: #1b2620;
+  --accent-border: #3a5548;
+  --accent-contrast: #10140f;
+
+  /* selection */
+  --selected: #74a88c;
+  --selected-soft: #1b2620;
+  --selected-mark: #74a88c;
+
+  /* semantic states */
+  --success: #56bfa4;
+  --success-soft: #17241f;
+  --success-border: #2e4c42;
+
+  --warning: #d9ae5f;
+  --warning-soft: #262115;
+  --warning-border: #4a3f24;
+
+  --danger: #e08c7a;
+  --danger-soft: #2b1f1c;
+  --danger-border: #4e322c;
+
+  /* disabled */
+  --disabled-bg: #1b1f23;
+  --disabled-border: #262c33;
+  --disabled-text: #5d6771;
+
+  /* focus */
+  --focus-ring: rgba(116, 168, 140, 0.24);
+
+  /* inventory slot */
+  --slot-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  --slot-hatch-1: #1b2024;
+  --slot-hatch-2: #272d33;
+
+  /* mock-data marker */
+  --mock-text: #848e99;
+  --mock-border: #3b434b;
+}

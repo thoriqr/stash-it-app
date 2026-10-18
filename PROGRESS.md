@@ -55,6 +55,18 @@ inside the Inbox (D18, D25), not a route.
 an approved brand identity and not a design system.** The visual language is still
 undesigned (`decisions.md` §6), so expect these values to move.
 
+> **The visual direction has since been decided, and the Flutter theme has not caught
+> up.** The approved direction is **B · Inventory** (light) and **B-Dark** (dark),
+> specified in `docs/design-explorations/` — a set of browser mockups plus
+> `docs/design-explorations/design-system.md`, which is the token, typography and component
+> specification for the future Flutter work. **Nothing in `lib/` implements it yet**: the app
+> still renders the Paper & Ink values below, and the Flutter theme has not been migrated.
+> Read the specification before touching `app_theme.dart`.
+>
+> One thing in that specification is **also decided**: the accent. **Dusty Sage** is the
+> approved v1 accent — `#4C6B5F` in light, `#74A88C` in dark, one hue at two lightnesses.
+> It replaces the baseline's steel blue, which is no longer an active accent anywhere.
+
 | Role | Value |
 | --- | --- |
 | Paper background | `#FAFBF9` |

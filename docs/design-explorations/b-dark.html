@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Baseline B-Dark (dark) &mdash; Stash-it design system v1</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/components.css">
+<link rel="stylesheet" href="assets/screens.css">
+<link rel="stylesheet" href="assets/base.css">
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar__brand">Stash-it</span>
+  <span class="topbar__sep"></span>
+  <a class="topbar__link" href="index.html">Index</a>
+  <a class="topbar__link" href="inbox.html">Inbox</a>
+  <a class="topbar__link" href="collections.html">Collections</a>
+  <a class="topbar__link" href="search.html">Search</a>
+  <a class="topbar__link" href="profile.html">Profile</a>
+  <a class="topbar__link" href="pending-urls.html">Pending URLs</a>
+  <a class="topbar__link" href="auth.html">Auth</a>
+  <a class="topbar__link" href="components.html">Components</a>
+  <a class="topbar__link" href="design-system.md">Spec</a>
+  <a class="topbar__link is-current" href="b-dark.html">Baseline (dark)</a>
+  <span class="topbar__spacer"></span>
+  <span class="ds-mockchip">mock data</span>
+</div>
+
+<div class="page">
+  <p class="page__kicker">Direction B &middot; variant 2</p>
+  <h1 class="page__title">B-Dark</h1>
+  <p class="page__lede">
+        The Inventory layout in <strong>dark mode</strong> &mdash; the same structure, the same mock
+    content, the same type hierarchy, re-valued for a dark surface. Layered charcoal and cool
+    grey instead of white and pale grey, the accent carried over as the app&rsquo;s restrained
+    green at a legible value, and a custom outline icon set for the four destinations.
+  </p>
+
+  <div class="stage">
+    <div class="variant">
+      <div class="variant__label"><span class="swatch" style="background:var(--accent)"></span>B · Inbox</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>▮▮▮ 86%</span></div>
+        <div class="phone__body">
+          <header class="app-head">
+            <div class="app-head__meta">
+              <span class="app-head__wordmark">Stash-It</span>
+              <span class="ds-mockchip">mock data</span>
+            </div>
+            <div class="app-head__row">
+              <div>
+                <h1 class="app-head__title">Inbox</h1>
+                <div class="app-head__sub">recently saved, across collections</div>
+              </div>
+            </div>
+          </header>
+
+          <div class="notice">
+            <span class="notice__mark"></span>
+            <span>Prototype — every item below is mock data. The Flutter Inbox still runs on
+            labelled sample data; no listing endpoint is wired up.</span>
+          </div>
+
+          <div class="phone__scroll">
+            <div class="ds-label-row">
+              <span class="ds-label">Recently saved</span>
+              <span class="ds-label-row__rule"></span>
+            </div>
+
+            <div class="inv-list">
+
+              <article class="inv-slot">
+                <div class="inv-slot__thumb thumb--image"></div>
+                <div class="inv-slot__main">
+                  <div class="inv-slot__top">
+                    <h2 class="inv-slot__title">Understanding CRDTs: why eventual consistency is not a compromise</h2>
+                    <span class="inv-slot__time">12 min ago</span>
+                  </div>
+                  <div class="inv-slot__domain">example.com/articles/crdts-explained</div>
+                  <p class="inv-slot__desc">Conflict-free replicated data types let several replicas converge without a central coordinator, at the cost of metadata every write must carry.</p>
+                  <div class="inv-slot__meta">
+                    <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="inv-slot">
+                <div class="inv-slot__thumb thumb--image"></div>
+                <div class="inv-slot__main">
+                  <div class="inv-slot__top">
+                    <h2 class="inv-slot__title">A thread about incremental static regeneration</h2>
+                    <span class="inv-slot__time">48 min ago</span>
+                  </div>
+                  <div class="inv-slot__domain">social.example.org/@someone/isr-tradeoffs</div>
+                  <p class="inv-slot__desc">Where the build-time and request-time trade-offs actually land once a page has more than a handful of variants.</p>
+                  <div class="inv-slot__meta">
+                    <span class="ds-chip"><i class="ds-chip__pip"></i>Unsorted</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="inv-slot">
+                <div class="inv-slot__thumb thumb--image"></div>
+                <div class="inv-slot__main">
+                  <div class="inv-slot__top">
+                    <h2 class="inv-slot__title">Notes on reading more and remembering less</h2>
+                    <span class="inv-slot__time">3 hours ago</span>
+                  </div>
+                  <div class="inv-slot__domain">notes.example.com/archive/reading-less?ref=inbox</div>
+                  <div class="inv-slot__meta">
+                    <span class="ds-chip"><i class="ds-chip__pip"></i>Reading List</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="inv-slot">
+                <div class="inv-slot__thumb thumb--none"></div>
+                <div class="inv-slot__main">
+                  <div class="inv-slot__top">
+                    <h2 class="inv-slot__title is-fallback">https://archive.example.net/specs/build-notes</h2>
+                    <span class="inv-slot__time">yesterday</span>
+                  </div>
+                  <div class="inv-slot__domain">archive.example.net</div>
+                  <div class="inv-slot__meta">
+                    <span class="ds-chip"><i class="ds-chip__pip"></i>Watch Later</span>
+                    <span class="ds-state">No details on this page</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="inv-slot">
+                <div class="inv-slot__thumb thumb--none"></div>
+                <div class="inv-slot__main">
+                  <div class="inv-slot__top">
+                    <h2 class="inv-slot__title">Full-Text Search in Postgres, part three</h2>
+                    <span class="inv-slot__time">yesterday</span>
+                  </div>
+                  <div class="inv-slot__domain">engineering.example.dev/postgres/pgsearch-3</div>
+                  <div class="inv-slot__meta">
+                    <span class="ds-chip"><i class="ds-chip__pip"></i>Wishlist</span>
+                    <span class="ds-state ds-state--failed"><i class="ds-state__pip"></i>Couldn&rsquo;t read this page</span>
+                    <button class="ds-btn ds-btn--quiet ds-btn--sm" type="button">Retry</button>
+                  </div>
+                </div>
+              </article>
+
+              <article class="inv-slot">
+                <div class="inv-slot__thumb thumb--image"></div>
+                <div class="inv-slot__main">
+                  <div class="inv-slot__top">
+                    <h2 class="inv-slot__title">Designing a rate limiter that fails closed, and what it costs you the first time the counter store is unreachable in production</h2>
+                    <span class="inv-slot__time">2 days ago</span>
+                  </div>
+                  <div class="inv-slot__domain">engineering.example.dev/posts/rate-limiter-fail-closed-at-scale</div>
+                  <div class="inv-slot__meta">
+                    <span class="ds-chip"><i class="ds-chip__pip"></i>Reading List</span>
+                    <span class="ds-state ds-state--pending"><i class="ds-state__pip"></i>Reading page&hellip;</span>
+                    <button class="ds-btn ds-btn--quiet ds-btn--sm" type="button">Retry</button>
+                  </div>
+                </div>
+              </article>
+
+            </div>
+          </div>
+        </div>
+        <nav class="tabbar">
+          <div class="tabbar__item is-active">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+            <span class="tabbar__label">Inbox</span>
+          </div>
+          <div class="tabbar__item">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+            <span class="tabbar__label">Collections</span>
+          </div>
+          <div class="tabbar__item">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+            <span class="tabbar__label">Search</span>
+          </div>
+          <div class="tabbar__item">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+            <span class="tabbar__label">Profile</span>
+          </div>
+        </nav>
+      </div>
+      <p class="variant__note">Slots separate the items, so a slot can afford a larger
+      56&nbsp;px thumbnail. The time label leaves the metadata line, which now carries only
+      identity and state.</p>
+    </div>
+
+    <div class="variant">
+      <div class="variant__label"><span class="swatch" style="background:var(--accent)"></span>B · Collections</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>▮▮▮ 86%</span></div>
+        <div class="phone__body">
+          <header class="app-head">
+            <div class="app-head__meta">
+              <span class="app-head__wordmark">Stash-It</span>
+              <span class="ds-mockchip">mock data</span>
+            </div>
+            <div class="app-head__row">
+              <div>
+                <h1 class="app-head__title">Collections</h1>
+                <div class="app-head__sub">a browser, nothing else</div>
+              </div>
+              <button class="ds-sort" type="button">newest <span class="ds-sort__caret"></span></button>
+            </div>
+          </header>
+
+          <div class="phone__scroll">
+            <div class="b-grid">
+              <div class="inv-cell is-system">
+                <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+                <span class="inv-cell__tag">system</span>
+                <span class="inv-cell__name">Unsorted</span>
+              </div>
+              <div class="inv-cell">
+                <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+                <span class="inv-cell__name">Camera Gear</span>
+              </div>
+              <div class="inv-cell">
+                <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+                <span class="inv-cell__name">Wishlist</span>
+              </div>
+              <div class="inv-cell">
+                <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+                <span class="inv-cell__name">Reading List</span>
+              </div>
+              <div class="inv-cell">
+                <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+                <span class="inv-cell__name">Watch Later</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <nav class="tabbar">
+          <div class="tabbar__item">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+            <span class="tabbar__label">Inbox</span>
+          </div>
+          <div class="tabbar__item is-active">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+            <span class="tabbar__label">Collections</span>
+          </div>
+          <div class="tabbar__item">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+            <span class="tabbar__label">Search</span>
+          </div>
+          <div class="tabbar__item">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+            <span class="tabbar__label">Profile</span>
+          </div>
+        </nav>
+      </div>
+      <p class="variant__note">A two-up grid, the closest thing here to an inventory. It reads as
+      a set of places rather than a list of names &mdash; and it is the layout most at risk of
+      feeling like a game rather than an app.</p>
+    </div>
+  </div>
+
+  <div class="note note--accent">
+    <strong>Watch for:</strong> whether the slots still separate from the canvas once the
+    background is dark. The separation is carried by one step of surface value plus a single
+    hairline, and the preview well is recessed rather than outlined. The accent is the
+    app&rsquo;s green re-valued for charcoal. It is the same 157&deg; hue as the light
+    theme&rsquo;s <code>#4C6B5F</code>, one step up in lightness so it holds on a dark
+    surface.
+  </div>
+</div>
+
+</body>
+</html>

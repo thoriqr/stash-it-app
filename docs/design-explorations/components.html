@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Components &mdash; Stash-it design system v1</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/components.css">
+<link rel="stylesheet" href="assets/screens.css">
+<link rel="stylesheet" href="assets/base.css">
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar__brand">Stash-it</span>
+  <span class="topbar__sep"></span>
+  <a class="topbar__link" href="index.html">Index</a>
+  <a class="topbar__link" href="inbox.html">Inbox</a>
+  <a class="topbar__link" href="collections.html">Collections</a>
+  <a class="topbar__link" href="search.html">Search</a>
+  <a class="topbar__link" href="profile.html">Profile</a>
+  <a class="topbar__link" href="pending-urls.html">Pending URLs</a>
+  <a class="topbar__link" href="auth.html">Auth</a>
+  <a class="topbar__link is-current" href="components.html">Components</a>
+  <a class="topbar__link" href="design-system.md">Spec</a>
+  <span class="topbar__spacer"></span>
+  <span class="ds-mockchip">mock data</span>
+</div>
+<div class="page">
+  <p class="page__kicker">Reference</p>
+  <h1 class="page__title">Components</h1>
+  <p class="page__lede">
+    Every component the screens are built from, in both themes. Each panel is rendered with
+    the same stylesheets the screens use, so what you see here is what the screens do. The
+    values behind them are in <code>assets/tokens.css</code>; the written specification is in
+    <a href="design-system.md">design-system.md</a>.
+  </p>
+
+  <h2>Buttons</h2>
+  <div class="compare">
+    <div class="variant">
+      <div class="variant__label">Buttons</div>
+      <div class="panel theme-light">
+        <div class="panel__head">Buttons</div>
+        <div style="padding: var(--space-3)">
+          <div style="display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center;">
+            <button class="ds-btn ds-btn--primary">Save URL</button>
+            <button class="ds-btn">Paste</button>
+            <button class="ds-btn ds-btn--quiet">Dismiss</button>
+            <button class="ds-btn ds-btn--danger">Delete</button>
+            <button class="ds-btn" disabled>Disabled</button>
+            <button class="ds-btn ds-btn--primary" disabled>Save URL</button>
+            <button class="ds-btn ds-btn--sm">Retry</button>
+            <button class="ds-btn ds-btn--primary ds-btn--sm"><span class="ds-spinner"></span>Saving&hellip;</button>
+          </div>
+          <div style="margin-top: var(--space-3)">
+            <button class="ds-btn ds-btn--block">Sign out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Buttons</div>
+      <div class="panel panel--dark theme-dark">
+        <div class="panel__head">Buttons</div>
+        <div style="padding: var(--space-3)">
+          <div style="display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center;">
+            <button class="ds-btn ds-btn--primary">Save URL</button>
+            <button class="ds-btn">Paste</button>
+            <button class="ds-btn ds-btn--quiet">Dismiss</button>
+            <button class="ds-btn ds-btn--danger">Delete</button>
+            <button class="ds-btn" disabled>Disabled</button>
+            <button class="ds-btn ds-btn--primary" disabled>Save URL</button>
+            <button class="ds-btn ds-btn--sm">Retry</button>
+            <button class="ds-btn ds-btn--primary ds-btn--sm"><span class="ds-spinner"></span>Saving&hellip;</button>
+          </div>
+          <div style="margin-top: var(--space-3)">
+            <button class="ds-btn ds-btn--block">Sign out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Inputs</h2>
+  <div class="compare">
+    <div class="variant">
+      <div class="variant__label">Inputs</div>
+      <div class="panel theme-light">
+        <div class="panel__head">Inputs</div>
+        <div style="padding: var(--space-3)">
+          <label class="ds-input-label">Email</label>
+          <input class="ds-field" value="reader@example.com">
+          <div style="height: var(--space-3)"></div>
+          <label class="ds-input-label">Password</label>
+          <input class="ds-field" type="password" value="correct-horse-battery-staple">
+          <div style="height: var(--space-3)"></div>
+          <label class="ds-input-label">URL</label>
+          <input class="ds-field ds-field--mono" value="https://example.com/a-long-article-about-distributed-systems?ref=share">
+          <p class="ds-field__hint">Check or edit the link before saving.</p>
+          <div style="height: var(--space-3)"></div>
+          <label class="ds-input-label">Focused</label>
+          <input class="ds-field ds-field--mono is-focused" placeholder="https://">
+          <div style="height: var(--space-3)"></div>
+          <label class="ds-input-label">Invalid</label>
+          <input class="ds-field ds-field--mono is-error" value="example.com/not-a-link">
+          <p class="ds-field__error">That doesn&rsquo;t look like a valid link.</p>
+          <div style="height: var(--space-3)"></div>
+          <label class="ds-input-label">Disabled</label>
+          <input class="ds-field" value="reader@example.com" disabled>
+        </div>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Inputs</div>
+      <div class="panel panel--dark theme-dark">
+        <div class="panel__head">Inputs</div>
+        <div style="padding: var(--space-3)">
+          <label class="ds-input-label">Email</label>
+          <input class="ds-field" value="reader@example.com">
+          <div style="height: var(--space-3)"></div>
+          <label class="ds-input-label">Password</label>
+          <input class="ds-field" type="password" value="correct-horse-battery-staple">
+          <div style="height: var(--space-3)"></div>
+          <label class="ds-input-label">URL</label>
+          <input class="ds-field ds-field--mono" value="https://example.com/a-long-article-about-distributed-systems?ref=share">
+          <p class="ds-field__hint">Check or edit the link before saving.</p>
+          <div style="height: var(--space-3)"></div>
+          <label class="ds-input-label">Focused</label>
+          <input class="ds-field ds-field--mono is-focused" placeholder="https://">
+          <div style="height: var(--space-3)"></div>
+          <label class="ds-input-label">Invalid</label>
+          <input class="ds-field ds-field--mono is-error" value="example.com/not-a-link">
+          <p class="ds-field__error">That doesn&rsquo;t look like a valid link.</p>
+          <div style="height: var(--space-3)"></div>
+          <label class="ds-input-label">Disabled</label>
+          <input class="ds-field" value="reader@example.com" disabled>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Badges, states and timers</h2>
+  <div class="compare">
+    <div class="variant">
+      <div class="variant__label">Badges</div>
+      <div class="panel theme-light">
+        <div class="panel__head">Badges</div>
+        <div style="padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); align-items: flex-start;">
+          <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+          <span class="ds-state ds-state--pending"><i class="ds-state__pip"></i>Reading page&hellip;</span>
+          <span class="ds-state ds-state--failed"><i class="ds-state__pip"></i>Couldn&rsquo;t read this page</span>
+          <span class="ds-state">No details on this page</span>
+          <span class="ds-timer">04:12</span>
+          <span class="ds-timer ds-timer--none">no countdown</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Badges</div>
+      <div class="panel panel--dark theme-dark">
+        <div class="panel__head">Badges</div>
+        <div style="padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); align-items: flex-start;">
+          <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+          <span class="ds-state ds-state--pending"><i class="ds-state__pip"></i>Reading page&hellip;</span>
+          <span class="ds-state ds-state--failed"><i class="ds-state__pip"></i>Couldn&rsquo;t read this page</span>
+          <span class="ds-state">No details on this page</span>
+          <span class="ds-timer">04:12</span>
+          <span class="ds-timer ds-timer--none">no countdown</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Feedback</h2>
+  <div class="compare">
+    <div class="variant">
+      <div class="variant__label">Feedback</div>
+      <div class="panel theme-light">
+        <div class="panel__head">Feedback</div>
+        <div style="padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2);">
+          <div class="ds-note"><span class="ds-note__mark"></span><span>Neutral information.</span></div>
+          <div class="ds-note ds-note--success"><span class="ds-note__mark"></span><span><strong>Saved.</strong> The item was created.</span></div>
+          <div class="ds-note ds-note--warning"><span class="ds-note__mark"></span><span>You are saving too quickly.</span></div>
+          <div class="ds-note ds-note--danger"><span class="ds-note__mark"></span><span>That doesn&rsquo;t look like a valid email or password.</span></div>
+          <div class="ds-note ds-note--uncertain"><span class="ds-note__mark"></span><span><strong>We couldn&rsquo;t confirm this save.</strong> It may or may not have gone through.</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Feedback</div>
+      <div class="panel panel--dark theme-dark">
+        <div class="panel__head">Feedback</div>
+        <div style="padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2);">
+          <div class="ds-note"><span class="ds-note__mark"></span><span>Neutral information.</span></div>
+          <div class="ds-note ds-note--success"><span class="ds-note__mark"></span><span><strong>Saved.</strong> The item was created.</span></div>
+          <div class="ds-note ds-note--warning"><span class="ds-note__mark"></span><span>You are saving too quickly.</span></div>
+          <div class="ds-note ds-note--danger"><span class="ds-note__mark"></span><span>That doesn&rsquo;t look like a valid email or password.</span></div>
+          <div class="ds-note ds-note--uncertain"><span class="ds-note__mark"></span><span><strong>We couldn&rsquo;t confirm this save.</strong> It may or may not have gone through.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Inventory slot and collection cell</h2>
+  <div class="compare">
+    <div class="variant">
+      <div class="variant__label">Inventory slot</div>
+      <div class="panel theme-light">
+        <div class="panel__head">Inventory slot</div>
+        <div style="padding: var(--space-3)">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding CRDTs: why eventual consistency is not a compromise</h2>
+                <span class="inv-slot__time">12 min ago</span>
+              </div>
+              <div class="inv-slot__domain">example.com/articles/crdts-explained</div>
+              <p class="inv-slot__desc">Conflict-free replicated data types let several replicas converge without a central coordinator.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+          <div style="height: var(--space-2)"></div>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--none"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title is-fallback">https://archive.example.net/specs/build-notes</h2>
+                <span class="inv-slot__time">yesterday</span>
+              </div>
+              <div class="inv-slot__domain">archive.example.net</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Watch Later</span>
+                <span class="ds-state">No details on this page</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Inventory slot</div>
+      <div class="panel panel--dark theme-dark">
+        <div class="panel__head">Inventory slot</div>
+        <div style="padding: var(--space-3)">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding CRDTs: why eventual consistency is not a compromise</h2>
+                <span class="inv-slot__time">12 min ago</span>
+              </div>
+              <div class="inv-slot__domain">example.com/articles/crdts-explained</div>
+              <p class="inv-slot__desc">Conflict-free replicated data types let several replicas converge without a central coordinator.</p>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+          <div style="height: var(--space-2)"></div>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--none"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title is-fallback">https://archive.example.net/specs/build-notes</h2>
+                <span class="inv-slot__time">yesterday</span>
+              </div>
+              <div class="inv-slot__domain">archive.example.net</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Watch Later</span>
+                <span class="ds-state">No details on this page</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Collection cell</div>
+      <div class="panel theme-light">
+        <div class="panel__head">Collection cell</div>
+        <div style="padding: var(--space-3)">
+          <div class="inv-grid" style="padding: 0">
+            <div class="inv-cell is-system">
+              <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+              <span class="inv-cell__tag">system</span>
+              <span class="inv-cell__name">Unsorted</span>
+            </div>
+            <div class="inv-cell">
+              <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+              <span class="inv-cell__name">Camera Gear</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Collection cell</div>
+      <div class="panel panel--dark theme-dark">
+        <div class="panel__head">Collection cell</div>
+        <div style="padding: var(--space-3)">
+          <div class="inv-grid" style="padding: 0">
+            <div class="inv-cell is-system">
+              <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+              <span class="inv-cell__tag">system</span>
+              <span class="inv-cell__name">Unsorted</span>
+            </div>
+            <div class="inv-cell">
+              <span class="inv-cell__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h13v2h-13zM1.5 6.5h13v8h-13zM6 1.5h4v3H6z"/></svg></span>
+              <span class="inv-cell__name">Camera Gear</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Empty state and navigation icons</h2>
+  <div class="compare">
+    <div class="variant">
+      <div class="variant__label">Empty state</div>
+      <div class="panel theme-light">
+        <div class="panel__head">Empty state</div>
+        <div style="padding: var(--space-3)">
+          <div class="ds-empty">
+            <div class="ds-empty__title">Find something you saved</div>
+            <div class="ds-empty__body">Search matches item titles, domains, URLs and collection names.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Empty state</div>
+      <div class="panel panel--dark theme-dark">
+        <div class="panel__head">Empty state</div>
+        <div style="padding: var(--space-3)">
+          <div class="ds-empty">
+            <div class="ds-empty__title">Find something you saved</div>
+            <div class="ds-empty__body">Search matches item titles, domains, URLs and collection names.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Icons</div>
+      <div class="panel theme-light">
+        <div class="panel__head">Icons</div>
+        <div style="padding: var(--space-3); display: flex; gap: var(--space-4); align-items: center;">
+          <div class="tabbar__item is-active" style="color: var(--selected)">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+            <span class="tabbar__label">Inbox</span>
+          </div>
+          <div class="tabbar__item" style="color: var(--text-tertiary)">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+            <span class="tabbar__label">Collections</span>
+          </div>
+          <div class="tabbar__item" style="color: var(--text-tertiary)">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+            <span class="tabbar__label">Search</span>
+          </div>
+          <div class="tabbar__item" style="color: var(--text-tertiary)">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+            <span class="tabbar__label">Profile</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Icons</div>
+      <div class="panel panel--dark theme-dark">
+        <div class="panel__head">Icons</div>
+        <div style="padding: var(--space-3); display: flex; gap: var(--space-4); align-items: center;">
+          <div class="tabbar__item is-active" style="color: var(--selected)">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+            <span class="tabbar__label">Inbox</span>
+          </div>
+          <div class="tabbar__item" style="color: var(--text-tertiary)">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+            <span class="tabbar__label">Collections</span>
+          </div>
+          <div class="tabbar__item" style="color: var(--text-tertiary)">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+            <span class="tabbar__label">Search</span>
+          </div>
+          <div class="tabbar__item" style="color: var(--text-tertiary)">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+            <span class="tabbar__label">Profile</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

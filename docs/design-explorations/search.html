@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search &mdash; Stash-it design system v1</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/components.css">
+<link rel="stylesheet" href="assets/screens.css">
+<link rel="stylesheet" href="assets/base.css">
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar__brand">Stash-it</span>
+  <span class="topbar__sep"></span>
+  <a class="topbar__link" href="index.html">Index</a>
+  <a class="topbar__link" href="inbox.html">Inbox</a>
+  <a class="topbar__link" href="collections.html">Collections</a>
+  <a class="topbar__link is-current" href="search.html">Search</a>
+  <a class="topbar__link" href="profile.html">Profile</a>
+  <a class="topbar__link" href="pending-urls.html">Pending URLs</a>
+  <a class="topbar__link" href="auth.html">Auth</a>
+  <a class="topbar__link" href="components.html">Components</a>
+  <a class="topbar__link" href="design-system.md">Spec</a>
+  <span class="topbar__spacer"></span>
+  <span class="ds-mockchip">mock data</span>
+</div>
+<div class="page">
+  <p class="page__kicker">Screen 3 of 6</p>
+  <h1 class="page__title">Search</h1>
+  <p class="page__lede">
+    Search answers &ldquo;where is the thing I saved?&rdquo; &mdash; it is not a browser, and it
+    returns collections and saved items together. The field carries the outline search icon and
+    a Clear action once there is a query. <strong>Zero results is a successful response</strong>,
+    so it is never drawn as an error, and it never claims that nothing was ever saved.
+  </p>
+
+  <div class="stage">
+    <div class="variant">
+      <div class="variant__label">Light &middot; initial</div>
+      <div class="phone theme-light">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Search</h1>
+        </div>
+      </header>
+      <div class="srch">
+        <div class="ds-field-wrap srch__field">
+          <span class="ds-field-wrap__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg></span>
+          <input class="ds-field ds-field--with-icon" placeholder="Search saved items and collections">
+        </div>
+      </div>
+      <div class="phone__scroll">
+        <div style="padding: var(--space-4)">
+          <div class="ds-empty">
+            <div class="ds-empty__title">Find something you saved</div>
+            <div class="ds-empty__body">Search matches item titles, domains, URLs and collection names.</div>
+          </div>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+      <p class="variant__note">Before a query is submitted.</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Light &middot; results</div>
+      <div class="phone theme-light">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Search</h1>
+        </div>
+      </header>
+      <div class="srch">
+        <div class="ds-field-wrap srch__field">
+          <span class="ds-field-wrap__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg></span>
+          <input class="ds-field ds-field--with-icon" value="camera">
+        </div>
+        <button class="ds-btn ds-btn--sm">Clear</button>
+      </div>
+      <div class="phone__scroll">
+        <div class="srch__group">
+          <div class="srch__group-title"><span class="ds-label">Collections</span></div>
+          <div class="srch__collection"><span class="srch__collection-name">Camera Gear</span><span class="srch__collection-kind">collection</span><span class="ds-chev"></span></div>
+          <div class="srch__collection"><span class="srch__collection-name">Compact Camera Buying Guide</span><span class="srch__collection-kind">collection</span><span class="ds-chev"></span></div>
+        </div>
+        <div class="srch__group">
+          <div class="srch__group-title"><span class="ds-label">Saved items</span></div>
+          <div class="inv-list inv-list--flush">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding sensor sizes in mirrorless bodies</h2>
+                <span class="inv-slot__time">2 days ago</span>
+              </div>
+              <div class="inv-slot__domain">photo.example.com/sensor-sizes</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">A field review of the 35mm prime</h2>
+                <span class="inv-slot__time">3 weeks ago</span>
+              </div>
+              <div class="inv-slot__domain">reviews.example.net/35mm-prime</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Wishlist</span>
+              </div>
+            </div>
+          </article>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--none"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title is-fallback">https://archive.example.net/camera/raw</h2>
+                <span class="inv-slot__time">last month</span>
+              </div>
+              <div class="inv-slot__domain">archive.example.net</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Unsorted</span>
+                <span class="ds-state ds-state--pending"><i class="ds-state__pip"></i>Reading page&hellip;</span>
+                <button class="ds-btn ds-btn--quiet ds-btn--sm">Retry</button>
+              </div>
+            </div>
+          </article>
+          </div>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+      <p class="variant__note">Collections first, then saved items. Both groups are the same slots used in the Inbox.</p>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Light &middot; no results</div>
+      <div class="phone theme-light">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Search</h1>
+        </div>
+      </header>
+      <div class="srch">
+        <div class="ds-field-wrap srch__field">
+          <span class="ds-field-wrap__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg></span>
+          <input class="ds-field ds-field--with-icon" value="woodworking">
+        </div>
+        <button class="ds-btn ds-btn--sm">Clear</button>
+      </div>
+      <div class="phone__scroll">
+        <div style="padding: var(--space-4)">
+          <div class="ds-empty">
+            <div class="ds-empty__title">No matches for &ldquo;woodworking&rdquo;</div>
+            <div class="ds-empty__body">An item you saved may still match by domain or URL rather than by title, and results are capped &mdash; try a different word, or browse Collections.</div>
+          </div>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+      <p class="variant__note">A successful empty result. The copy names the two other reasons a match can be hidden.</p>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="variant">
+      <div class="variant__label">Dark &middot; initial</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Search</h1>
+        </div>
+      </header>
+      <div class="srch">
+        <div class="ds-field-wrap srch__field">
+          <span class="ds-field-wrap__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg></span>
+          <input class="ds-field ds-field--with-icon" placeholder="Search saved items and collections">
+        </div>
+      </div>
+      <div class="phone__scroll">
+        <div style="padding: var(--space-4)">
+          <div class="ds-empty">
+            <div class="ds-empty__title">Find something you saved</div>
+            <div class="ds-empty__body">Search matches item titles, domains, URLs and collection names.</div>
+          </div>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Dark &middot; results</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Search</h1>
+        </div>
+      </header>
+      <div class="srch">
+        <div class="ds-field-wrap srch__field">
+          <span class="ds-field-wrap__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg></span>
+          <input class="ds-field ds-field--with-icon" value="camera">
+        </div>
+        <button class="ds-btn ds-btn--sm">Clear</button>
+      </div>
+      <div class="phone__scroll">
+        <div class="srch__group">
+          <div class="srch__group-title"><span class="ds-label">Collections</span></div>
+          <div class="srch__collection"><span class="srch__collection-name">Camera Gear</span><span class="srch__collection-kind">collection</span><span class="ds-chev"></span></div>
+          <div class="srch__collection"><span class="srch__collection-name">Compact Camera Buying Guide</span><span class="srch__collection-kind">collection</span><span class="ds-chev"></span></div>
+        </div>
+        <div class="srch__group">
+          <div class="srch__group-title"><span class="ds-label">Saved items</span></div>
+          <div class="inv-list inv-list--flush">
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">Understanding sensor sizes in mirrorless bodies</h2>
+                <span class="inv-slot__time">2 days ago</span>
+              </div>
+              <div class="inv-slot__domain">photo.example.com/sensor-sizes</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Camera Gear</span>
+              </div>
+            </div>
+          </article>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--image"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title">A field review of the 35mm prime</h2>
+                <span class="inv-slot__time">3 weeks ago</span>
+              </div>
+              <div class="inv-slot__domain">reviews.example.net/35mm-prime</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Wishlist</span>
+              </div>
+            </div>
+          </article>
+          <article class="inv-slot">
+            <div class="inv-slot__thumb inv-slot__thumb--none"></div>
+            <div class="inv-slot__main">
+              <div class="inv-slot__top">
+                <h2 class="inv-slot__title is-fallback">https://archive.example.net/camera/raw</h2>
+                <span class="inv-slot__time">last month</span>
+              </div>
+              <div class="inv-slot__domain">archive.example.net</div>
+              <div class="inv-slot__meta">
+                <span class="ds-chip"><i class="ds-chip__pip"></i>Unsorted</span>
+                <span class="ds-state ds-state--pending"><i class="ds-state__pip"></i>Reading page&hellip;</span>
+                <button class="ds-btn ds-btn--quiet ds-btn--sm">Retry</button>
+              </div>
+            </div>
+          </article>
+          </div>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="variant__label">Dark &middot; no results</div>
+      <div class="phone theme-dark">
+        <div class="phone__status"><span>9:41</span><span>&#9642;&#9642;&#9642; 86%</span></div>
+        <div class="phone__body">
+      <header class="app-head">
+        <div class="app-head__meta">
+          <span class="app-head__wordmark">Stash-it</span>
+          <span class="ds-mockchip">mock data</span>
+        </div>
+        <div class="app-head__row">
+          <h1 class="app-head__title">Search</h1>
+        </div>
+      </header>
+      <div class="srch">
+        <div class="ds-field-wrap srch__field">
+          <span class="ds-field-wrap__icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg></span>
+          <input class="ds-field ds-field--with-icon" value="woodworking">
+        </div>
+        <button class="ds-btn ds-btn--sm">Clear</button>
+      </div>
+      <div class="phone__scroll">
+        <div style="padding: var(--space-4)">
+          <div class="ds-empty">
+            <div class="ds-empty__title">No matches for &ldquo;woodworking&rdquo;</div>
+            <div class="ds-empty__body">An item you saved may still match by domain or URL rather than by title, and results are capped &mdash; try a different word, or browse Collections.</div>
+          </div>
+        </div>
+      </div>
+        </div>
+      <nav class="tabbar">
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 9.25V3.5h12v5.75"/><path d="M2 9.25h3.5l1.1 1.9h2.8l1.1-1.9H14V13H2z"/></svg>
+          <span class="tabbar__label">Inbox</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.75 2.25h8.5v6.5h-8.5z"/><path class="navicon--fill" d="M2.75 6.25h9.5v7.5h-9.5z"/><path d="M4.75 9.25h4.25"/></svg>
+          <span class="tabbar__label">Collections</span>
+        </div>
+        <div class="tabbar__item is-active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.9" cy="6.9" r="4.6"/><path class="navicon--heavy" d="M10.2 10.2l4 4"/></svg>
+          <span class="tabbar__label">Search</span>
+        </div>
+        <div class="tabbar__item">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.25 2.75h3.5A1.75 1.75 0 0 1 11.5 4.5v2.5a1.75 1.75 0 0 1-1.75 1.75h-3.5A1.75 1.75 0 0 1 4.5 7V4.5A1.75 1.75 0 0 1 6.25 2.75z"/><path d="M2.75 13.75c0-2.6 2.35-4.1 5.25-4.1s5.25 1.5 5.25 4.1"/></svg>
+          <span class="tabbar__label">Profile</span>
+        </div>
+      </nav>
+      </div>
+    </div>
+  </div>
+
+  <div class="note note--accent">
+    <strong>Deliberately absent:</strong> filters, sort options, result ordering controls,
+    autocomplete, suggestions and recent searches. The search response has no filter or sort
+    parameter, and none of the others exist in the API. Whether result ordering should be
+    surfaced to users is still open (Q8), so no ordering claim appears in the UI.
+  </div>
+</div>
+</body>
+</html>

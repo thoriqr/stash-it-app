@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stash-it — design system v1</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/components.css">
+<link rel="stylesheet" href="assets/screens.css">
+<link rel="stylesheet" href="assets/base.css">
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar__brand">Stash-it</span>
+  <span class="topbar__sep"></span>
+  <a class="topbar__link is-current" href="index.html">Index</a>
+  <a class="topbar__link" href="inbox.html">Inbox</a>
+  <a class="topbar__link" href="collections.html">Collections</a>
+  <a class="topbar__link" href="search.html">Search</a>
+  <a class="topbar__link" href="profile.html">Profile</a>
+  <a class="topbar__link" href="pending-urls.html">Pending URLs</a>
+  <a class="topbar__link" href="auth.html">Auth</a>
+  <a class="topbar__link" href="components.html">Components</a>
+  <a class="topbar__link" href="design-system.md">Spec</a>
+  <span class="topbar__spacer"></span>
+  <span class="ds-mockchip">mock data</span>
+</div>
+
+<div class="page">
+
+  <p class="page__kicker">Design system v1</p>
+  <h1 class="page__title">Stash-it &mdash; visual design system v1</h1>
+  <p class="page__lede">
+    The approved visual direction, specified. <strong>B &middot; Inventory</strong> is the light
+    baseline and <strong>B-Dark</strong> is the dark baseline; every screen here is built on
+    them with the same tokens, the same components and the same navigation. Cool white-grey
+    surfaces in light mode, layered charcoal in dark mode, squared inventory slots, one
+    restrained accent, and a pixel-inspired face kept to the wordmark, the screen titles and
+    the small labels.
+  </p>
+
+  <div class="note">
+    <strong>These are mockups, not an implementation.</strong> Nothing in this directory changes
+    the Flutter app. Every item, collection, search result and account shown here is fabricated
+    mock data, and the screens say so on screen. The written specification is
+    <a href="design-system.md">design-system.md</a>; the tokens live in
+    <code>assets/tokens.css</code>.
+  </div>
+
+  <h2>Screens</h2>
+  <p>Each screen is shown in both themes, except where the two are identical by construction.</p>
+
+  <div class="gallery">
+    <a class="screen-card" href="inbox.html">
+      <h4>Inbox <span>S7</span></h4>
+      <p>The URL intake &mdash; field, <strong>Paste</strong>, <strong>Save URL</strong> &mdash;
+      above the recent saved items, in both themes, plus the five intake states.</p>
+      <span class="screen-card__files">inbox.html</span>
+    </a>
+    <a class="screen-card" href="collections.html">
+      <h4>Collections <span>S8</span></h4>
+      <p>The collection browser as a grid of inventory slots. No counts, no create action, and
+      the system collection marked as such.</p>
+      <span class="screen-card__files">collections.html</span>
+    </a>
+    <a class="screen-card" href="search.html">
+      <h4>Search <span>S11</span></h4>
+      <p>Initial, results and zero-results states. Zero results is a successful response and
+      never claims that nothing was saved.</p>
+      <span class="screen-card__files">search.html</span>
+    </a>
+    <a class="screen-card" href="profile.html">
+      <h4>Profile <span>S14</span></h4>
+      <p>The account facts and the two actions the backend supports, plus the plain statement
+      that account deletion is not available.</p>
+      <span class="screen-card__files">profile.html</span>
+    </a>
+    <a class="screen-card" href="pending-urls.html">
+      <h4>Pending URLs <span>S15</span></h4>
+      <p>A section inside the Inbox, not a fifth destination: five documented states, and the
+      line between &ldquo;known not saved&rdquo; and &ldquo;unconfirmed&rdquo;.</p>
+      <span class="screen-card__files">pending-urls.html</span>
+    </a>
+    <a class="screen-card" href="auth.html">
+      <h4>Authentication <span>S1&ndash;S6</span></h4>
+      <p>Welcome, email sign-in, the invalid-credentials message and the emailed-PIN step.
+      Same tokens, different layout, no bottom navigation.</p>
+      <span class="screen-card__files">auth.html</span>
+    </a>
+    <a class="screen-card" href="components.html">
+      <h4>Components <span>&mdash;</span></h4>
+      <p>Every button, input, badge, note, slot, cell and navigation icon, in both themes.</p>
+      <span class="screen-card__files">components.html</span>
+    </a>
+  </div>
+
+  <h2>The accent</h2>
+  <p>
+    <strong>Dusty Sage is the approved brand accent for v1</strong> &mdash;
+    <code>#4C6B5F</code> in the light theme and <code>#74A88C</code> in the dark one. The two
+    values are the same hue (157&nbsp;degrees); only the lightness differs, because only
+    lightness survives both a white and a charcoal surface. Every accent-driven element
+    &mdash; the primary button, the selected destination, collection chips, the pending marker,
+    focus states &mdash; resolves to these two values and nothing else.
+  </p>
+
+  <div class="cardrow">
+    <div class="card">
+      <h4><span class="swatch" style="background:var(--accent)"></span>Dusty Sage &mdash; light</h4>
+      <p style="margin-bottom:10px">
+        <button class="ds-btn ds-btn--primary">Save URL</button>
+        <span class="ds-chip" style="margin-left:8px"><i class="ds-chip__pip"></i>Camera Gear</span>
+      </p>
+      <p><code>#4C6B5F</code> &middot; 5.87:1 on white &middot; white label on it 5.87:1</p>
+    </div>
+
+    <div class="card">
+      <h4><span class="swatch" style="background:#74a88c"></span>Dusty Sage &mdash; dark</h4>
+      <p><code>#74A88C</code> &middot; 6.10:1 on <code>#1B1F23</code> &middot; near-black label on it 6.84:1</p>
+      <p>Same hue, one step lighter, so it holds on charcoal. Every screen page in this folder
+      carries a dark phone &mdash; open any of them to see it applied.</p>
+    </div>
+  </div>
+
+  <p style="margin-top:12px">
+    The token values, the contrast work behind them and the light/dark mapping are in
+    <a href="design-system.md">design-system.md &rarr;</a>
+  </p>
+
+  <h2>Specification and baseline</h2>
+  <div class="cardrow">
+    <div class="card">
+      <h4><span class="swatch" style="background:var(--accent)"></span>Design system specification</h4>
+      <p>Tokens, typography, spacing, radii, borders, the icon family, input and button states,
+      the inventory slot, and the light/dark mapping for every semantic token. Written to be
+      handed to the Flutter implementation.</p>
+      <p><a href="design-system.md">Read design-system.md &rarr;</a></p>
+    </div>
+    <div class="card">
+      <h4><span class="swatch" style="background:var(--accent)"></span>Approved baseline &mdash; B</h4>
+      <p>The approved light-theme prototype, unchanged in structure: the Inbox and Collections
+      before the intake area was added, at full size.</p>
+      <p><a href="direction-b.html">Open B &middot; Inventory &rarr;</a></p>
+    </div>
+    <div class="card">
+      <h4><span class="swatch" style="background:#74a88c"></span>Approved baseline &mdash; B-Dark</h4>
+      <p>The approved dark-theme prototype, the same two screens re-valued for a charcoal
+      surface.</p>
+      <p><a href="b-dark.html">Open B-Dark &rarr;</a></p>
+    </div>
+  </div>
+
+  <h2>How to view</h2>
+  <p>
+    Open any file in this folder directly in a browser. There is no server, no build step and
+    no network request: the three typefaces are self-hosted in <code>assets/fonts/</code>, and
+    every stylesheet is local. The pages are responsive, so they can also be opened on a phone.
+  </p>
+
+  <h2>What is deliberately absent</h2>
+  <p>
+    The screens show only what the product decisions support. The following are absent on
+    purpose, and each one would imply behaviour that does not exist:
+  </p>
+  <ul>
+    <li>Item counts on collections &mdash; the count is available but showing it is still an open product question.</li>
+    <li>A create-collection control &mdash; no endpoint creates a collection except by filing an item into it.</li>
+    <li>Search filters, sort options, autocomplete, suggestions and recent searches &mdash; the response has none of them.</li>
+    <li>Device and session management &mdash; deferred by <strong>D10</strong>, even though the endpoints work.</li>
+    <li>Account deletion &mdash; no endpoint exists, so no flow is drawn (<strong>D11</strong>).</li>
+    <li>A pending-URL expiry warning, a queue capacity and a discard action &mdash; the notification form and the capacity number are still open (<strong>Q1&ndash;Q3</strong>).</li>
+    <li>Per-item countdowns on a 503, and a fabricated countdown anywhere the server did not send one.</li>
+  </ul>
+
+  <h2>Unresolved questions these mockups do not answer</h2>
+  <table class="tbl">
+    <tr>
+      <th>Question</th>
+      <th>Where it shows up</th>
+      <th>How the mockup treats it</th>
+    </tr>
+    <tr>
+      <td><strong>Q13</strong> &mdash; when the URL input validates</td>
+      <td>Inbox intake</td>
+      <td>An invalid-link state is drawn as a proposal, and labelled as one</td>
+    </tr>
+    <tr>
+      <td><strong>Q6</strong> &mdash; whether Google leads the welcome screen</td>
+      <td>Authentication</td>
+      <td>Google is drawn first, as the shorter path, with the order flagged</td>
+    </tr>
+    <tr>
+      <td><strong>Q8</strong> &mdash; whether search result ordering is surfaced</td>
+      <td>Search</td>
+      <td>No ordering claim appears anywhere in the UI</td>
+    </tr>
+    <tr>
+      <td><strong>Q12</strong> &mdash; a manual language override in Profile</td>
+      <td>Profile</td>
+      <td>Not drawn; the device locale is the only proposal</td>
+    </tr>
+  </table>
+
+</div>
+
+</body>
+</html>
