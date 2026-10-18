@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
+import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -27,6 +28,20 @@ class SignInScreen extends ConsumerStatefulWidget {
   ConsumerState<SignInScreen> createState() => _SignInScreenState();
 }
 
+/// Copy for a session that ended while the user was elsewhere.
+///
+/// One string, two callers: the message shown when the screen mounts onto an
+/// ended session, and [messageFor]'s `ApiFailureSessionEnded` case. Keeping them
+/// the same constant is what stops the two explanations of one event from
+/// drifting apart.
+///
+/// **Neutral and factual.** It says the session ended and what to do next, and
+/// makes no claim about why — the backend's reason is not shown to users
+/// ([D22]), and an expiry the user did not cause is not presented as a mistake
+/// they made.
+const String sessionEndedMessage =
+    'Your session has ended. Sign in again to continue.';
+
 class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
@@ -34,6 +49,34 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   bool _submitting = false;
   String? _message;
+
+  /// How [_message] is presented. Defaults to danger so every ordinary
+  /// sign-in failure keeps the treatment it had before tones existed.
+  _MessageTone _messageTone = _MessageTone.danger;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // A session can end while the user is somewhere else entirely: a renewal the
+    // backend refuses terminally clears the credentials, the router sends them
+    // here, and nothing else would say why. The reason is *consumed* rather than
+    // stored, so it appears once and never repeats on a rebuild or a later visit
+    // — see `SessionController.consumeSessionEnded`.
+    //
+    // A deliberate sign-out does not set it: `AuthState.signOut` discards the
+    // session directly rather than ending it, so asking to be signed out is never
+    // reported back as an expiry. An ambiguous renewal failure does not set it
+    // either, because nothing ended the session — only `_endSession` does.
+    if (ref.read(sessionControllerProvider.notifier).consumeSessionEnded()) {
+      _message = sessionEndedMessage;
+
+      // Warning, not danger: `design-system.md` §6.5 files expiry under Warning.
+      // Nothing the user did failed here — a session simply lapsed — and a danger
+      // band would read as a mistake of theirs.
+      _messageTone = _MessageTone.warning;
+    }
+  }
 
   @override
   void dispose() {
@@ -70,6 +113,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       setState(() {
         _submitting = false;
         _message = messageFor(failure);
+
+        // Explicit even though it is the default: this is the branch that must
+        // keep the danger treatment, and saying so here stops a later default
+        // change from quietly re-toning every sign-in failure.
+        _messageTone = _MessageTone.danger;
       });
     } catch (_) {
       // A credential-storage failure surfaces here as
@@ -80,6 +128,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       setState(() {
         _submitting = false;
         _message = 'Something went wrong signing in. Try again.';
+        _messageTone = _MessageTone.danger;
       });
     }
   }
@@ -167,6 +216,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       _SignInMessage(
                         message: message,
                         onDismiss: _dismissMessage,
+                        tone: _messageTone,
                       ),
                     ],
                     const SizedBox(height: AppMetrics.space6),
@@ -285,8 +335,7 @@ String messageFor(ApiFailure failure) {
     ApiFailureTransport() =>
       'No connection to the server. We could not confirm this sign-in.',
 
-    ApiFailureSessionEnded() =>
-      'Your session has ended. Sign in again to continue.',
+    ApiFailureSessionEnded() => sessionEndedMessage,
 
     ApiFailureRefreshUncertain() =>
       'We could not confirm your session. Try again.',
@@ -296,12 +345,35 @@ String messageFor(ApiFailure failure) {
   };
 }
 
-/// A failure message the user can dismiss.
+/// How a message band presents itself.
 ///
-/// The known-failure treatment: `dangerSoft` fill, `dangerBorder` border, a
-/// danger mark. The **uncertain** copy produced by `messageFor` still uses this
-/// treatment, which is why the wording carries the distinction — colour is never
-/// the only signal.
+/// `design-system.md` §6.5 gives five feedback treatments. Only two of them can
+/// appear here, and the distinction is the point rather than decoration:
+///
+/// | Situation | Treatment | Mark |
+/// | --- | --- | --- |
+/// | **Warning** (budget spent, **expiry**) | `warning-soft` + `warning-border` | filled |
+/// | **Failure** (known) | `danger-soft` + `danger-border` | filled |
+///
+/// An expiry is filed under Warning by the specification, so it must not wear the
+/// Failure colours: the user did not do anything wrong, and a danger band reads
+/// as a mistake they made. The fifth row — **Uncertain**, the same warning colours
+/// with a *hollow* mark — is deliberately not modelled here. Nothing on this
+/// screen reports an outcome the client cannot determine, so adding a third tone
+/// now would be a case with no caller.
+enum _MessageTone {
+  /// A confirmed failure of something the user attempted.
+  danger,
+
+  /// Something lapsed without the user attempting it.
+  warning,
+}
+
+/// A message the user can dismiss.
+///
+/// The tone decides the fill, border and mark; the layout is identical either
+/// way, so a change of treatment never changes the band's height or its
+/// wrapping.
 ///
 /// The message and Dismiss share one row. They were stacked, and because
 /// Material gives a `TextButton` a 48 px minimum target the dismiss row alone
@@ -310,21 +382,42 @@ String messageFor(ApiFailure failure) {
 /// tall as the message it has to show — and a longer message still wraps, because
 /// the text is the flexible child and Dismiss is not.
 class _SignInMessage extends StatelessWidget {
-  const _SignInMessage({required this.message, required this.onDismiss});
+  const _SignInMessage({
+    required this.message,
+    required this.onDismiss,
+    this.tone = _MessageTone.danger,
+  });
 
   final String message;
   final VoidCallback onDismiss;
+
+  /// Defaults to [_MessageTone.danger], so every ordinary sign-in failure keeps
+  /// the treatment it has always had without each call site naming it.
+  final _MessageTone tone;
 
   @override
   Widget build(BuildContext context) {
     final tokens = AppTheme.tokensOf(context);
 
+    final fill = switch (tone) {
+      _MessageTone.danger => tokens.dangerSoft,
+      _MessageTone.warning => tokens.warningSoft,
+    };
+    final border = switch (tone) {
+      _MessageTone.danger => tokens.dangerBorder,
+      _MessageTone.warning => tokens.warningBorder,
+    };
+    final mark = switch (tone) {
+      _MessageTone.danger => tokens.danger,
+      _MessageTone.warning => tokens.warning,
+    };
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppMetrics.space3),
       decoration: BoxDecoration(
-        color: tokens.dangerSoft,
-        border: Border.all(color: tokens.dangerBorder),
+        color: fill,
+        border: Border.all(color: border),
         borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
       ),
       child: Row(
@@ -340,7 +433,7 @@ class _SignInMessage extends StatelessWidget {
                 Padding(
                   // Sits on the first line's baseline rather than the row's top.
                   padding: const EdgeInsets.only(top: 5),
-                  child: Container(width: 5, height: 5, color: tokens.danger),
+                  child: Container(width: 5, height: 5, color: mark),
                 ),
                 const SizedBox(width: AppMetrics.space2),
                 Expanded(

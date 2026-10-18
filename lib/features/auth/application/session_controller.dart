@@ -114,6 +114,30 @@ class SessionController extends _$SessionController implements TokenProvider {
   /// pushing a notification somewhere else.
   AuthTokens? get current => state;
 
+  /// Whether a session has ended that nothing has yet told the user about.
+  ///
+  /// Set only by [_endSession], and read once by whoever explains it. A field
+  /// here rather than a separate notice provider, because it is a fact about
+  /// *this* session ending — a second provider holding it would be a second
+  /// source of truth for the same thing, and a notification channel this project
+  /// deliberately does not have.
+  bool _endedWithoutNotice = false;
+
+  /// Whether a session has just ended, consuming the fact.
+  ///
+  /// Returns `true` **once** per ended session: the flag is cleared before the
+  /// answer is given, so a rebuild or a later visit to sign-in gets `false` and
+  /// cannot repeat the explanation.
+  ///
+  /// Consuming rather than reading is the point. A flag that outlived its first
+  /// reader would re-announce the same expiry every time the screen rebuilt,
+  /// which is exactly what a one-time notice exists to prevent.
+  bool consumeSessionEnded() {
+    if (!_endedWithoutNotice) return false;
+    _endedWithoutNotice = false;
+    return true;
+  }
+
   /// Records a freshly obtained pair after it has been persisted.
   ///
   /// Persistence is deliberately **not** this provider's job at sign-in time.
@@ -239,6 +263,15 @@ class SessionController extends _$SessionController implements TokenProvider {
   /// to avoid.
   Future<void> _endSession() async {
     await _store.clear();
+
+    // Recorded **before** `discard`, because discarding is what moves the app to
+    // sign-in. The fact has to be in place before anything can react to that
+    // transition, or the screen which explains it arrives to find nothing.
+    //
+    // Only once `clear` has succeeded. A cleanup that failed must not claim the
+    // session ended when storage says otherwise — and if it had thrown, the
+    // `discard` below would not have run either, so the two agree.
+    _endedWithoutNotice = true;
     discard();
   }
 }

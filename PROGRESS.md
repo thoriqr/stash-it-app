@@ -743,6 +743,82 @@ these tests do not otherwise need.
 protected reads inherits the same default unless it opts out, and nothing enforces that
 convention yet.
 
+### One-time session-expired feedback
+
+**Complete for this iteration.** A session can end while the user is on another destination: a
+renewal the backend refuses terminally clears the credentials, `AuthState` follows, and the
+router moves them to `/sign-in`. Nothing said why, so the screen was a bare form and the natural
+reading was that they had done something wrong.
+
+**The carrier is a flag on `SessionController`, not a notification system.** `_endSession()`
+sets it; `SignInScreen` consumes it once in `initState`. Three properties fall out of choosing
+that point rather than another:
+
+- **Terminal only, structurally.** `_endSession()` is the single place the client knowingly ends
+  a session, so an ambiguous failure — `500`, transport, `429`, `503` — cannot set the flag
+  without needing a conditional. `ApiFailureRefreshUncertain` deliberately keeps the credentials,
+  and nothing here changes that.
+- **No stale feedback after a logout.** `AuthState.signOut` calls `discard()` directly rather
+  than `_endSession()`, so asking to be signed out is never reported back as an expiry. No reset
+  logic is needed, because nothing sets the flag in that path.
+- **Consumed, not stored.** `consumeSessionEnded()` clears before returning, so a rebuild or a
+  later visit gets `false`. It is recorded **after** `clear()` succeeds and **before** `discard()`:
+  after, because a cleanup that failed must not claim the session ended; before, because
+  discarding is what triggers the redirect, and the screen must not arrive to find nothing.
+
+**The treatment follows `design-system.md` §6.5, which files expiry under Warning** —
+`warning-soft` + `warning-border`, a filled `--warning` mark — reserving `danger-soft` +
+`danger-border` for a known failure. A lapsed session is not something the user did wrong, and a
+danger band reads as their mistake. `_SignInMessage` gained a private `_MessageTone` for this;
+danger is the default, so every ordinary sign-in failure keeps the treatment it had without each
+call site naming it. The band, its height and its wrapping are identical either way — only the
+fill, border and mark change. No new component, no global feedback abstraction, no dependency.
+
+The **Uncertain** row of §6.5 — the same warning colours with a *hollow* mark — is deliberately
+not modelled. Nothing on this screen reports an outcome the client cannot determine, so a third
+tone would have had no caller.
+
+**Twelve tests in `test/features/auth/presentation/session_expired_feedback_test.dart`**, driving
+the real session controller, interceptor and provider-built router against a scripted transport:
+
+- each terminal code redirects to sign-in and shows the message **once**, with the flag consumed;
+- a rebuild, and a **fresh mount** of the screen, do not repeat it;
+- an ambiguous `500` and a transport failure produce **no** message, leave the session signed in,
+  and keep the stored refresh token;
+- a deliberate sign-out is not reported as an expiry;
+- invalid credentials show their own copy and no session-expired message;
+- the expiry band is `warningSoft` / `warningBorder` with a `warning` mark, and the
+  invalid-credentials band is `dangerSoft` / `dangerBorder` with a `danger` mark — asserted
+  against `AppTokens.light`, because the band is a private widget a test cannot name.
+
+Both halves were confirmed load-bearing by removing each in turn: disabling the screen-side
+consumption fails the three terminal tests and the rebuild test, and forcing the expired session
+back to the danger tone fails the two treatment tests.
+
+| Command | Result |
+| --- | --- |
+| `dart format lib test` | `Formatted 106 files (0 changed)` |
+| `flutter analyze` | `No issues found!` (whole project) |
+| `flutter test` (`features/auth`) | `All tests passed!` — **77 tests** |
+| `flutter test` | `All tests passed!` — **260 tests** (was 257) |
+
+**No device, emulator or live backend was involved.** The terminal path is verified against a
+scripted transport; the backend's revocation behaviour behind it remains read from its Go source
+rather than observed.
+
+**Two limitations worth recording.** First, the app must be pumped as `StashItApp()` with **no
+injected router** for the redirect to fire at all: the auth `refreshListenable` only delivers
+while `appRouterProvider` is watched, and `StashItApp` is what watches it.
+`StashItApp(router: …)` — the seam `auth_redirect_widget_test.dart` uses throughout — skips that
+watch, and the redirect then never runs. That test gets away with it because it only asserts states
+established before any transition; this milestone's subject *is* the transition. Production is
+unaffected, but the seam is a trap. Second, a `testWidgets` body runs in the fake-async zone, so
+**awaiting a Dio round-trip inline deadlocks**; the sign-out test uses `unawaited(…)` plus
+`pumpAndSettle()`.
+
+The `_endSession` clear-failure inconsistency (open item 6 below) is unchanged and deliberately
+untouched — this work records nothing in that case.
+
 ## Not implemented
 
 - Collections list, collection contents, deletion.
