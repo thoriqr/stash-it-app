@@ -19,6 +19,29 @@ part of 'saved_items_controller.dart';
 /// provider, which would discard the loaded page every time the user leaves the
 /// Inbox for another destination and back. The listing is a recent-history
 /// screen, so keeping it is the point.
+///
+/// **`retry: _neverRetry` — no automatic retry, ever.** Riverpod retries a failed
+/// provider build by default: `ProviderContainer.defaultRetry` allows **ten**
+/// rebuilds on a 200 ms doubling backoff capped at 6.4 s, and its only
+/// exclusions are `ProviderException` and `Error`. An `ApiFailure` is neither —
+/// it is a plain sealed class — so every failure below, including
+/// `ApiFailureRefreshUncertain`, would be retried.
+///
+/// That would undo the session policy this client already implements. A renewal
+/// that fails ambiguously is deliberately **not** retried: the outcome is
+/// genuinely unknown, the stored credentials are kept, and the user decides
+/// (`session_controller.dart`, `ApiFailureRefreshUncertain`). A rebuild here
+/// issues a brand-new request with a brand-new `RequestOptions`, so the
+/// interceptor's one-replay bound resets each time and a second
+/// `POST /auth/refresh` presents the **same** refresh token. The backend treats
+/// that as reuse, revokes the whole session, and answers `SESSION_REVOKED` — so
+/// an automatic retry converts a deliberately preserved session into a terminal
+/// one roughly 200 ms later, without the user having touched anything.
+///
+/// Scoped to this provider deliberately: the session controller and the router
+/// keep Riverpod's default, and no global policy is changed. [SavedItems.retry] —
+/// which the Inbox's Retry button calls — remains the only way this listing is
+/// fetched again, which is the manual retry **D23** asks for.
 
 @ProviderFor(SavedItems)
 final savedItemsProvider = SavedItemsProvider._();
@@ -34,6 +57,29 @@ final savedItemsProvider = SavedItemsProvider._();
 /// provider, which would discard the loaded page every time the user leaves the
 /// Inbox for another destination and back. The listing is a recent-history
 /// screen, so keeping it is the point.
+///
+/// **`retry: _neverRetry` — no automatic retry, ever.** Riverpod retries a failed
+/// provider build by default: `ProviderContainer.defaultRetry` allows **ten**
+/// rebuilds on a 200 ms doubling backoff capped at 6.4 s, and its only
+/// exclusions are `ProviderException` and `Error`. An `ApiFailure` is neither —
+/// it is a plain sealed class — so every failure below, including
+/// `ApiFailureRefreshUncertain`, would be retried.
+///
+/// That would undo the session policy this client already implements. A renewal
+/// that fails ambiguously is deliberately **not** retried: the outcome is
+/// genuinely unknown, the stored credentials are kept, and the user decides
+/// (`session_controller.dart`, `ApiFailureRefreshUncertain`). A rebuild here
+/// issues a brand-new request with a brand-new `RequestOptions`, so the
+/// interceptor's one-replay bound resets each time and a second
+/// `POST /auth/refresh` presents the **same** refresh token. The backend treats
+/// that as reuse, revokes the whole session, and answers `SESSION_REVOKED` — so
+/// an automatic retry converts a deliberately preserved session into a terminal
+/// one roughly 200 ms later, without the user having touched anything.
+///
+/// Scoped to this provider deliberately: the session controller and the router
+/// keep Riverpod's default, and no global policy is changed. [SavedItems.retry] —
+/// which the Inbox's Retry button calls — remains the only way this listing is
+/// fetched again, which is the manual retry **D23** asks for.
 final class SavedItemsProvider
     extends $AsyncNotifierProvider<SavedItems, SavedItemsState> {
   /// The Inbox listing: the first page, and any page after it.
@@ -47,11 +93,34 @@ final class SavedItemsProvider
   /// provider, which would discard the loaded page every time the user leaves the
   /// Inbox for another destination and back. The listing is a recent-history
   /// screen, so keeping it is the point.
+  ///
+  /// **`retry: _neverRetry` — no automatic retry, ever.** Riverpod retries a failed
+  /// provider build by default: `ProviderContainer.defaultRetry` allows **ten**
+  /// rebuilds on a 200 ms doubling backoff capped at 6.4 s, and its only
+  /// exclusions are `ProviderException` and `Error`. An `ApiFailure` is neither —
+  /// it is a plain sealed class — so every failure below, including
+  /// `ApiFailureRefreshUncertain`, would be retried.
+  ///
+  /// That would undo the session policy this client already implements. A renewal
+  /// that fails ambiguously is deliberately **not** retried: the outcome is
+  /// genuinely unknown, the stored credentials are kept, and the user decides
+  /// (`session_controller.dart`, `ApiFailureRefreshUncertain`). A rebuild here
+  /// issues a brand-new request with a brand-new `RequestOptions`, so the
+  /// interceptor's one-replay bound resets each time and a second
+  /// `POST /auth/refresh` presents the **same** refresh token. The backend treats
+  /// that as reuse, revokes the whole session, and answers `SESSION_REVOKED` — so
+  /// an automatic retry converts a deliberately preserved session into a terminal
+  /// one roughly 200 ms later, without the user having touched anything.
+  ///
+  /// Scoped to this provider deliberately: the session controller and the router
+  /// keep Riverpod's default, and no global policy is changed. [SavedItems.retry] —
+  /// which the Inbox's Retry button calls — remains the only way this listing is
+  /// fetched again, which is the manual retry **D23** asks for.
   SavedItemsProvider._()
     : super(
         from: null,
         argument: null,
-        retry: null,
+        retry: _neverRetry,
         name: r'savedItemsProvider',
         isAutoDispose: false,
         dependencies: null,
@@ -66,7 +135,7 @@ final class SavedItemsProvider
   SavedItems create() => SavedItems();
 }
 
-String _$savedItemsHash() => r'cd893d8edd37f9a6ae049f4245f3557789237bc6';
+String _$savedItemsHash() => r'2b274fb835df6b205baab35f3c796ad8409042d9';
 
 /// The Inbox listing: the first page, and any page after it.
 ///
@@ -79,6 +148,29 @@ String _$savedItemsHash() => r'cd893d8edd37f9a6ae049f4245f3557789237bc6';
 /// provider, which would discard the loaded page every time the user leaves the
 /// Inbox for another destination and back. The listing is a recent-history
 /// screen, so keeping it is the point.
+///
+/// **`retry: _neverRetry` — no automatic retry, ever.** Riverpod retries a failed
+/// provider build by default: `ProviderContainer.defaultRetry` allows **ten**
+/// rebuilds on a 200 ms doubling backoff capped at 6.4 s, and its only
+/// exclusions are `ProviderException` and `Error`. An `ApiFailure` is neither —
+/// it is a plain sealed class — so every failure below, including
+/// `ApiFailureRefreshUncertain`, would be retried.
+///
+/// That would undo the session policy this client already implements. A renewal
+/// that fails ambiguously is deliberately **not** retried: the outcome is
+/// genuinely unknown, the stored credentials are kept, and the user decides
+/// (`session_controller.dart`, `ApiFailureRefreshUncertain`). A rebuild here
+/// issues a brand-new request with a brand-new `RequestOptions`, so the
+/// interceptor's one-replay bound resets each time and a second
+/// `POST /auth/refresh` presents the **same** refresh token. The backend treats
+/// that as reuse, revokes the whole session, and answers `SESSION_REVOKED` — so
+/// an automatic retry converts a deliberately preserved session into a terminal
+/// one roughly 200 ms later, without the user having touched anything.
+///
+/// Scoped to this provider deliberately: the session controller and the router
+/// keep Riverpod's default, and no global policy is changed. [SavedItems.retry] —
+/// which the Inbox's Retry button calls — remains the only way this listing is
+/// fetched again, which is the manual retry **D23** asks for.
 
 abstract class _$SavedItems extends $AsyncNotifier<SavedItemsState> {
   FutureOr<SavedItemsState> build();

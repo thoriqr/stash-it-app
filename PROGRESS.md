@@ -661,6 +661,88 @@ decision about ambiguous local credential state, not part of this fix. `_endSess
 clear-then-discard ordering is deliberately unchanged: reversing it would race a sign-in
 writing a fresh pair against an in-flight clear.
 
+### `savedItemsProvider` automatic-retry fix
+
+**Complete for this iteration.** Riverpod retries a failed provider build by default, and
+`savedItemsProvider` was one of the providers it retried. Verified against the **installed**
+`riverpod 3.4.3` — the version in `pubspec.lock` and the resolved paths in
+`.dart_tool/package_config.json` — rather than inferred from documentation or a neighbouring
+version. `ProviderContainer.defaultRetry` allows **ten** rebuilds on a 200 ms doubling backoff
+capped at 6.4 s, and its only exclusions are `ProviderException` and `Error`. `ApiFailure` is
+a plain sealed class, so it is not among them.
+
+The consequence was specific to this provider. A renewal that fails ambiguously is
+deliberately **not** retried — the outcome is genuinely unknown, the stored credentials are
+kept, and the user decides (`ApiFailureRefreshUncertain`, and the manual retry **D23** asks
+for). But a Riverpod rebuild issues a brand-new `RequestOptions`, so the interceptor's
+one-replay bound restarts each time and a second `POST /auth/refresh` presents the **same**
+refresh token. The backend reads that as reuse, revokes the session and answers
+`SESSION_REVOKED` — so the framework, unprompted, destroyed roughly 200 ms later the exact
+session the client had deliberately preserved.
+
+**The change is one annotation argument.** `SavedItems` now passes `retry: _neverRetry`, a
+private top-level function returning `null`. `null` is how Riverpod is told not to retry:
+`triggerRetry` reads it as "no delay", arms no timer, and publishes `AsyncError` rather than
+the `AsyncLoading` it would otherwise publish while a retry is pending.
+
+Two things worth recording, because both are easy to get wrong:
+
+- **`@Riverpod(retry: (_, __) => null)` does not compile.** The annotation is a `const`
+  constructor and an inline closure is not a constant expression. Riverpod 3.4.3 ships no
+  built-in no-retry constant and `Retry` is `@internal`, so a named top-level function is the
+  only route — and a top-level tear-off *is* a constant expression.
+- **`invalidateSelf` only schedules a rebuild while the element `isActive`,** and `isActive`
+  is `listenerCount > 0`. An unlistened provider is mounted but inert, so the regression tests
+  below passed against the *unfixed* code until they were given a listener modelling
+  `InboxScreen`'s `ref.watch`.
+
+`saved_items_controller.g.dart` was regenerated with `dart run build_runner build` and now
+emits `retry: _neverRetry` where it emitted `retry: null`. **`ProviderScope`, `appDio`,
+`AuthInterceptor` and `SessionController` are untouched**: no global retry policy changed, and
+the session controller and the router keep Riverpod's default. Because the provider is
+`keepAlive`, its Retry button remains the only way the listing is fetched again.
+
+**Five regression tests**, in a file of their own —
+`test/features/saved_items/application/saved_items_no_auto_retry_test.dart`. They are separate
+because `saved_items_controller_test.dart` passes `retry: (_, _) => null` to its container,
+which is right for its request-count assertions and **would mask this defect entirely**.
+Every container in the new file is built on Riverpod's **real default policy**; suppressing
+retry is the provider's job, and one test asserts the override is attached at all.
+
+- **Four fail against the previous code.** Removing the argument and regenerating makes the
+  request count `3` rather than `1` — two extra `GET /saved-items`, at the 200 ms and 600 ms
+  retries — and leaves the provider in `AsyncLoading(retrying)` rather than `AsyncError`, which
+  is precisely what keeps the Inbox's Retry action unreachable.
+- **One is an invariant guard, not proof.** *"an ambiguous renewal failure keeps the stored
+  credentials"* passes with **and** without the fix, because the scripted `/auth/refresh`
+  always answers `500`, so the renewal stays ambiguous however often it is retried. It pins the
+  policy the fix protects; it is not evidence that retries stopped.
+
+| Command | Result |
+| --- | --- |
+| `dart run build_runner build` | Built, 4 outputs; a re-run writes `0 changed` outputs, so generation is in sync |
+| `dart format lib test` | `Formatted 105 files (0 changed)` |
+| `flutter analyze` | `No issues found!` (whole project) |
+| `flutter test` (`features/saved_items` + `features/inbox`) | `All tests passed!` — **74 tests** |
+| `flutter test` | `All tests passed!` — **248 tests** (was 243) |
+
+**No device, emulator or live backend was involved.** Nothing here is evidence about how the
+feature behaves against a running server, and the reuse-detection consequence above is read
+from the backend's Go source rather than observed.
+
+**Limitation — the regression tests wait on real time.** `fake_async` is present in the pub
+cache but is not a declared dependency, and adding one is not a decision this change should
+make, so the tests use `Future.delayed(1200ms)` — the project's existing convention, as in
+`untilCalled`. That clears both the 200 ms and 600 ms retries with 2× margin and makes the
+counts unambiguous (1 versus 3), but it is wall-clock rather than deterministic. Under heavy
+CI load it is the one part of this suite that could go flaky. A `testWidgets` using
+`tester.pump` would give fake time with no new dependency, at the cost of widget scaffolding
+these tests do not otherwise need.
+
+**Not covered.** Only the Inbox listing. Any future `@Riverpod` AsyncNotifier that makes
+protected reads inherits the same default unless it opts out, and nothing enforces that
+convention yet.
+
 ## Not implemented
 
 - Collections list, collection contents, deletion.
