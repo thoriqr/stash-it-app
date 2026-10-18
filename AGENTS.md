@@ -326,13 +326,27 @@ Add a dependency only when a specific implementation requirement cannot be met
 without it, and say which one.
 
 **Known gaps.** Several confirmed behaviours need capabilities that are *not yet*
-in `pubspec.yaml`: localization (`flutter_localizations`), secure storage for the
-pending queue (V5), clipboard (D25), deep links for share intake (V1–V4), and
-opening the source URL (§Journey C.3). These are real requirements, not optional
-polish. Note in `PROGRESS.md` when one becomes the blocker for a feature, and
-propose the specific package — do not work around a missing capability with a
-home-grown substitute, and in particular do not substitute plain shared preferences
-for the secure storage the decision record requires (§7.12).
+in `pubspec.yaml`: localization (`flutter_localizations`), clipboard (D25), deep
+links for share intake (V1–V4), and opening the source URL (§Journey C.3). These are
+real requirements, not optional polish. Note in `PROGRESS.md` when one becomes the
+blocker for a feature, and propose the specific package — do not work around a
+missing capability with a home-grown substitute.
+
+**Secure storage is now declared** (`flutter_secure_storage: ^11.2.0`), used by
+`core/storage/` for the token pair and available for the pending queue (V5, §7.12).
+Two constraints follow from it and are not visible in the Dart:
+
+- `android:allowBackup="false"` is required in the manifest. Keystore keys are not
+  in an Auto Backup upload, so restoring an encrypted value elsewhere leaves it
+  undecryptable and every read throws.
+- Writes must be **all-or-nothing across the whole pair**, since the backend
+  rotates both tokens together and a half-written pair is indistinguishable from a
+  real session once persisted. `SecureCredentialStore.write` discards whatever
+  landed if the second write fails.
+
+API configuration uses `--dart-define=API_BASE_URL=...` read by
+`app/config/api_config.dart`. Do not introduce dotenv or another environment
+package for it.
 
 ### Riverpod 3 — verified behaviours, not Riverpod 2 habits
 

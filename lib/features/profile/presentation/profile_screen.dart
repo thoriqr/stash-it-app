@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/app/theme/app_tokens.dart';
+import 'package:stash_it_app/features/auth/application/auth_state.dart';
 
 /// The Profile destination (S14).
 ///
-/// **Placeholder only.** `GET /users/me` exists in the backend, but this screen
-/// does not call it. There is no session, no sign-in, and no account data.
-class ProfileScreen extends StatelessWidget {
+/// **Partly implemented.** Sign-in, sign-out and session handling exist; the
+/// profile itself does not. `GET /users/me` is implemented in the backend and is
+/// not called here — D10 limits this screen to profile and account actions, and
+/// the account data is the next milestone's work.
+///
+/// No authentication check lives in this widget. The router redirect decides
+/// whether a session exists; a per-screen guard would be a second copy of that
+/// decision that could disagree (`AGENTS.md` §2, rule 5).
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final tokens = theme.extension<AppTokens>() ?? AppTheme.tokens;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
@@ -27,17 +38,35 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Text('Profile', style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
-              const Text('Not implemented yet.', textAlign: TextAlign.center),
-              const SizedBox(height: 8),
-              const Text(
-                'This placeholder shows no account. Sign-in is not implemented, '
-                'so there is no session to display.',
+              Text(
+                'Your account details are not shown yet.',
                 textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: tokens.textMuted,
+                ),
+              ),
+              const SizedBox(height: 32),
+              OutlinedButton.icon(
+                onPressed: () => _signOut(context, ref),
+                icon: const Icon(Icons.logout),
+                label: const Text('Sign out'),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// Signs out and lets the router redirect to sign-in.
+  ///
+  /// No confirmation dialog and no success message: **[Confirmed]** the outcome
+  /// is communicated by the screen change, and a dialog would be one more thing
+  /// to be dismissed before the user is signed out.
+  ///
+  /// [AuthState.signOut] clears local credentials whether or not the server
+  /// call succeeded, so this cannot leave the app apparently signed in.
+  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
+    await ref.read(authStateProvider.notifier).signOut();
   }
 }

@@ -1,8 +1,24 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+      android:allowBackup="false" is required by flutter_secure_storage.
+
+      The plugin encrypts values with a key held in the Android Keystore. Keystore
+      keys are not included in an Auto Backup upload, so restoring an encrypted
+      value onto a different device leaves it undecryptable and every read throws
+      java.security.InvalidKeyException: Failed to unwrap key. Disabling backup for
+      the application avoids restoring credentials this device cannot read.
+
+      This app's backupable state is currently nothing — the tokens it does hold
+      must not leave the device, and nothing else is persisted yet — so nothing is
+      given up by turning it off. If backupable state is added later, re-evaluate
+      this together with that change.
+    -->
     <application
         android:label="stash_it_app"
+        android:usesCleartextTraffic="true"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"

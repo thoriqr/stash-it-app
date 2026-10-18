@@ -14,6 +14,14 @@ abstract final class AppRoutes {
 
   static const String profile = '/profile';
 
+  /// Manual sign-in.
+  ///
+  /// **Not a fifth destination.** D1 fixes four bottom-navigation destinations
+  /// and this is not one of them: it sits outside the `StatefulShellRoute`
+  /// entirely, has no navigation-bar entry, and is replaced by the shell once
+  /// a session exists.
+  static const String signIn = '/sign-in';
+
   /// The destination the app opens on. The core loop is share → save → Inbox,
   /// so the Inbox is the entry point.
   static const String initial = inbox;

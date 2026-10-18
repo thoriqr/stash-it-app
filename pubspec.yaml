@@ -41,6 +41,12 @@ dependencies:
   retrofit: ^4.10.0
   freezed_annotation: ^3.1.0
   json_annotation: ^4.12.0
+  # Keychain (iOS) / Keystore-backed (Android) storage for the access and
+  # refresh tokens. V5 and decisions.md 7.12 require real secure storage:
+  # plain files and shared preferences are explicitly ruled out.
+  # 11.x requires Android minSdk 24, which is what `flutter.minSdkVersion`
+  # already resolves to, and iOS 12 against this project's 13.0 target.
+  flutter_secure_storage: ^11.2.0
 
 dev_dependencies:
   flutter_test:

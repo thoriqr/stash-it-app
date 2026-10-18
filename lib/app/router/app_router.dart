@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stash_it_app/app/router/routes.dart';
+import 'package:stash_it_app/features/auth/application/auth_state.dart';
+import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
 import 'package:stash_it_app/features/collections/presentation/collections_screen.dart';
 import 'package:stash_it_app/features/inbox/presentation/inbox_screen.dart';
 import 'package:stash_it_app/features/profile/presentation/profile_screen.dart';
 import 'package:stash_it_app/features/search/presentation/search_screen.dart';
 
+part 'app_router.g.dart';
+
 /// The application router.
+///
+/// Owned by Riverpod rather than a top-level `final` for two reasons: the
+/// redirect needs a `Ref` to read auth state, and the router must be rebuilt
+/// when the session changes so `refreshListenable` fires. A top-level singleton
+/// could do neither — it has no `Ref`, and one built once would keep a
+/// `refreshListenable` that outlives any particular session.
 ///
 /// D1 fixes four destinations: Inbox, Collections, Search, Profile. They are
 /// peers, so they sit in a `StatefulShellRoute.indexedStack` and each destination
@@ -14,55 +26,121 @@ import 'package:stash_it_app/features/search/presentation/search_screen.dart';
 ///
 /// The pending-URL queue is deliberately absent here: D18 and D25 place it as a
 /// section inside the Inbox, not as a fifth destination.
-final GoRouter appRouter = createAppRouter();
+@Riverpod(keepAlive: true)
+GoRouter appRouter(Ref ref) {
+  final notifier = AuthRefreshNotifier(ref);
 
-/// Builds a router with the current route structure.
+  // `GoRouter.dispose` removes its listener from `refreshListenable` but does
+  // not dispose the notifier, so the subscription is closed here. Without this
+  // the listener outlives the router and fires into a disposed delegate.
+  ref.onDispose(notifier.dispose);
+
+  return GoRouter(
+    initialLocation: AppRoutes.initial,
+    refreshListenable: notifier,
+    redirect: (context, state) =>
+        redirectFor(ref.read(authStateProvider), state.matchedLocation),
+    routes: _routes,
+  );
+}
+
+/// Sends the user to sign-in, or back into the app.
 ///
-/// Exposed so tests can supply a router that carries no navigation history
-/// between test cases.
-GoRouter createAppRouter() => GoRouter(
-  initialLocation: AppRoutes.initial,
-  routes: [
-    StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) =>
-          _AppShell(navigationShell: navigationShell),
-      branches: [
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: AppRoutes.inbox,
-              builder: (context, state) => const InboxScreen(),
-            ),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: AppRoutes.collections,
-              builder: (context, state) => const CollectionsScreen(),
-            ),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: AppRoutes.search,
-              builder: (context, state) => const SearchScreen(),
-            ),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: AppRoutes.profile,
-              builder: (context, state) => const ProfileScreen(),
-            ),
-          ],
-        ),
-      ],
-    ),
-  ],
-);
+/// A pure function of the session and the current location, so the rule can be
+/// tested exhaustively without pumping a router — and so there is exactly one
+/// statement of it rather than one per call site.
+///
+/// **Redirects, not per-screen checks** (`AGENTS.md` §2, rule 5). A screen that
+/// guards itself can be reached by a route that does not, and the gap shows up
+/// only as a flash of protected content.
+///
+/// Returns null to leave navigation alone.
+String? redirectFor(AuthStatus auth, String location) {
+  // Startup has not settled. Returning null parks the navigation rather than
+  // guessing. In practice `bootstrap` has already answered by the first frame,
+  // so this is a guard rather than a state the user sees.
+  if (!auth.isResolved) return null;
+
+  final atSignIn = location == AppRoutes.signIn;
+
+  if (auth.isSignedOut) {
+    // Everything except sign-in needs a session. Pending URLs are held behind
+    // this gate and surface on return (D6); that queue is not built yet, and
+    // this redirect is what will later release it.
+    return atSignIn ? null : AppRoutes.signIn;
+  }
+
+  // Signed in and looking at sign-in: there is nothing to sign in to.
+  if (atSignIn) return AppRoutes.initial;
+
+  return null;
+}
+
+final List<RouteBase> _routes = [
+  GoRoute(
+    path: AppRoutes.signIn,
+    builder: (context, state) => const SignInScreen(),
+  ),
+  StatefulShellRoute.indexedStack(
+    builder: (context, state, navigationShell) =>
+        _AppShell(navigationShell: navigationShell),
+    branches: [
+      StatefulShellBranch(
+        routes: [
+          GoRoute(
+            path: AppRoutes.inbox,
+            builder: (context, state) => const InboxScreen(),
+          ),
+        ],
+      ),
+      StatefulShellBranch(
+        routes: [
+          GoRoute(
+            path: AppRoutes.collections,
+            builder: (context, state) => const CollectionsScreen(),
+          ),
+        ],
+      ),
+      StatefulShellBranch(
+        routes: [
+          GoRoute(
+            path: AppRoutes.search,
+            builder: (context, state) => const SearchScreen(),
+          ),
+        ],
+      ),
+      StatefulShellBranch(
+        routes: [
+          GoRoute(
+            path: AppRoutes.profile,
+            builder: (context, state) => const ProfileScreen(),
+          ),
+        ],
+      ),
+    ],
+  ),
+];
+
+/// Bridges Riverpod's auth state into the [Listenable] `GoRouter` expects.
+///
+/// `GoRouter` takes a `Listenable` and nothing else, so this is the adapter
+/// between the two. It notifies rather than re-creating the router, so
+/// navigation state survives a sign-in or sign-out.
+class AuthRefreshNotifier extends ChangeNotifier {
+  AuthRefreshNotifier(Ref ref) {
+    _subscription = ref.listen<AuthStatus>(authStateProvider, (previous, next) {
+      if (previous != next) notifyListeners();
+    });
+  }
+
+  late final ProviderSubscription<AuthStatus> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.close();
+    super.dispose();
+  }
+}
 
 /// The frame shared by every destination: the destination's own `Scaffold` above
 /// a navigation bar that switches between the four branches.
@@ -104,3 +182,10 @@ class _AppShell extends StatelessWidget {
     );
   }
 }
+
+/// Builds a router for a test, isolated from any other test's history.
+///
+/// Tests that pump [StashItApp] with an explicit router get one with no
+/// navigation history carried in from a previous case.
+GoRouter createAppRouter() =>
+    GoRouter(initialLocation: AppRoutes.initial, routes: _routes);
