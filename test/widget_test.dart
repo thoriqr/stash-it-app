@@ -3,17 +3,40 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:stash_it_app/app/app.dart';
+import 'package:stash_it_app/app/network/network_providers.dart';
 import 'package:stash_it_app/app/router/app_router.dart';
+
+import 'support/fake_http.dart';
+import 'support/saved_items_fixtures.dart';
 
 void main() {
   /// Pumps the application inside the required [ProviderScope].
   ///
   /// Each test gets its own router so navigation history never leaks between
-  /// test cases.
+  /// test cases, and its own scripted transport so the Inbox's
+  /// `GET /saved-items` never reaches a socket (`AGENTS.md` §5).
   Future<GoRouter> pumpApp(WidgetTester tester) async {
-    final router = createAppRouter();
+    final adapter = FakeHttpAdapter();
+    adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
 
-    await tester.pumpWidget(ProviderScope(child: StashItApp(router: router)));
+    final container = ProviderContainer(
+      // Riverpod 3 retries a failed provider with backoff; an unscripted
+      // listing would leave one of those timers pending past the test body.
+      retry: (_, _) => null,
+    );
+    addTearDown(container.dispose);
+    container.read(appDioProvider).httpClientAdapter = adapter;
+    container.read(refreshDioProvider).httpClientAdapter = adapter;
+
+    final router = createAppRouter();
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: StashItApp(router: router),
+      ),
+    );
     await tester.pumpAndSettle();
 
     return router;
@@ -40,7 +63,9 @@ void main() {
   ) async {
     final router = await pumpApp(tester);
 
-    expect(find.widgetWithText(AppBar, 'Inbox'), findsOneWidget);
+    // Screen titles are the approved pixel face, written uppercase at the call
+    // site because Flutter has no text-transform.
+    expect(find.widgetWithText(AppBar, 'INBOX'), findsOneWidget);
     expect(currentPath(router), '/inbox');
     expect(selectedDestinationIndex(tester), 0);
   });
@@ -59,7 +84,7 @@ void main() {
       await tapDestination(tester, destination.$1);
 
       expect(
-        find.widgetWithText(AppBar, destination.$1),
+        find.widgetWithText(AppBar, destination.$1.toUpperCase()),
         findsOneWidget,
         reason: '${destination.$1} should be shown after selecting it',
       );

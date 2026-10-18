@@ -139,14 +139,50 @@ void main() {
       expect(pendingRetries, 2);
     });
 
-    testWidgets('a thumbnail only appears when the item has a preview image', (
-      tester,
-    ) async {
+    testWidgets('a preview image is drawn as a hatch, a missing one as an empty '
+        'well', (tester) async {
+      // The specification reserves the thumbnail space in both cases so rows
+      // never shift, and draws the two states differently rather than colouring
+      // a missing image as a problem.
+      String wellOf(SavedItemSummary item) {
+        final painters = tester.widgetList<CustomPaint>(
+          find.descendant(
+            of: find.byType(SavedItemRow),
+            matching: find.byType(CustomPaint),
+          ),
+        );
+        return painters.map((p) => p.painter.runtimeType.toString()).join(',');
+      }
+
       await tester.pumpWidget(host(itemWith(hasPreviewImage: true)));
-      expect(find.byIcon(Icons.image_outlined), findsOneWidget);
+      final withImage = wellOf(itemWith(hasPreviewImage: true));
 
       await tester.pumpWidget(host(itemWith()));
-      expect(find.byIcon(Icons.image_outlined), findsNothing);
+      final withoutImage = wellOf(itemWith());
+
+      expect(withImage, contains('Hatch'));
+      expect(withoutImage, contains('DashedSquare'));
+      expect(
+        withImage == withoutImage,
+        isFalse,
+        reason: 'the two states must be distinguishable',
+      );
+    });
+
+    testWidgets('the thumbnail space is reserved whether or not one exists', (
+      tester,
+    ) async {
+      // A missing preview is routine: no error, no retry, and the slot keeps its
+      // width so a list of mixed items does not reflow.
+      Future<double> slotHeightFor(SavedItemSummary item) async {
+        await tester.pumpWidget(host(item));
+        return tester.getSize(find.byType(SavedItemRow)).height;
+      }
+
+      final withImage = await slotHeightFor(itemWith(hasPreviewImage: true));
+      final withoutImage = await slotHeightFor(itemWith());
+
+      expect(withImage, withoutImage);
     });
 
     testWidgets('long titles and sources truncate instead of overflowing', (

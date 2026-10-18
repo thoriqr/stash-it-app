@@ -127,6 +127,30 @@ ApiFailure mapApiFailure(DioException error) {
 /// and a `FormatException` from that escapes as a `DioException` with no
 /// `response` attached — structurally identical to a dropped connection. The
 /// cause is the only thing that distinguishes them.
+/// Converts a body that arrived but could not be decoded into an [ApiFailure].
+///
+/// **[D15] group F. Known not saved** — a reply did arrive, so the outcome is
+/// determinate. There is no `DioException` to pass to [mapApiFailure] in this
+/// case: Retrofit decodes the body *after* Dio's transformer returns it, so a
+/// shape mismatch surfaces as a `TypeError` from the generated `fromJson` and
+/// never passes through Dio at all.
+///
+/// Without this, a body the client does not understand would escape as a raw
+/// `TypeError` and reach presentation unclassified, bypassing the taxonomy that
+/// exists precisely so nothing above the mapper inspects a failure's shape.
+///
+/// The backend's body is never surfaced, only its arrival.
+ApiFailure mapDecodeFailure(Object error) {
+  if (error is ApiFailure) return error;
+  return const ApiFailureUnreadableResponse();
+}
+
+/// Whether a response arrived but could not be decoded.
+///
+/// Dio's `FusedTransformer` runs `jsonDecode` on a body it was told was JSON,
+/// and a `FormatException` from that escapes as a `DioException` with no
+/// `response` attached — structurally identical to a dropped connection. The
+/// cause is the only thing that distinguishes them.
 bool _isDecodeFailure(DioException error) {
   final cause = error.error;
 

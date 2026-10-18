@@ -12,7 +12,8 @@ class CollectionsScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Collections')),
+      // Written uppercase at the call site: Flutter has no text-transform.
+      appBar: AppBar(title: const Text('COLLECTIONS')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),

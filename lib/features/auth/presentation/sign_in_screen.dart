@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
-import 'package:stash_it_app/app/theme/app_tokens.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
+import 'package:stash_it_app/shared/widgets/app_button.dart';
+import 'package:stash_it_app/shared/widgets/app_field.dart';
 
-/// Manual sign-in.
+/// Manual sign-in, following `docs/design-explorations/auth.html`.
 ///
 /// Reached only through the router redirect, so this screen does not check
 /// whether a session exists — doing so in both places is how the two drift
@@ -14,6 +15,11 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 /// Covers only manual sign-in. Registration, Google sign-in and password reset
 /// all exist in the backend and are out of scope for this milestone; none of
 /// their routes is registered, so none can be reached.
+///
+/// The behaviour is unchanged from the prototype: the same validators, the same
+/// client-side email and password rules that mirror the server's, the same
+/// dismissal-not-retry failure message, and the same `ApiFailure` mapping. Only
+/// the presentation follows the approved design system.
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
@@ -80,15 +86,18 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final tokens = theme.extension<AppTokens>() ?? AppTheme.tokens;
+    final tokens = AppTheme.tokensOf(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Sign in')),
+      // The brand row replaces the app bar: auth sits outside the four
+      // destinations, so it carries the wordmark rather than a screen title.
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppMetrics.screenPadding,
+              vertical: AppMetrics.space6,
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: Form(
@@ -97,29 +106,29 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    const _BrandRow(),
+                    const SizedBox(height: AppMetrics.space5),
                     Text(
                       'Sign in to Stash It',
-                      style: theme.textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Use the email and password on your Stash It account.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: tokens.textMuted,
+                      style: AppTypography.screenHeading.copyWith(
+                        color: tokens.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    TextFormField(
+                    const SizedBox(height: AppMetrics.space1),
+                    Text(
+                      'Use the email and password on your Stash It account.',
+                      style: AppTypography.body.copyWith(
+                        color: tokens.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: AppMetrics.space6),
+                    AppField(
+                      label: 'Email',
                       controller: _emailController,
                       enabled: !_submitting,
                       keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
                       autofillHints: const [AutofillHints.email],
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(),
-                      ),
                       validator: (value) {
                         final email = value?.trim() ?? '';
                         if (email.isEmpty) return 'Enter your email address.';
@@ -132,18 +141,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
+                    const SizedBox(height: AppMetrics.space4),
+                    AppField(
+                      label: 'Password',
                       controller: _passwordController,
                       enabled: !_submitting,
                       obscureText: true,
                       autofillHints: const [AutofillHints.password],
                       textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _submit(),
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        border: OutlineInputBorder(),
-                      ),
+                      onSubmitted: (_) => _submit(),
                       validator: (value) {
                         final password = value ?? '';
                         if (password.isEmpty) return 'Enter your password.';
@@ -156,23 +162,19 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         return null;
                       },
                     ),
-                    if (_message != null) ...[
-                      const SizedBox(height: 16),
+                    if (_message case final message?) ...[
+                      const SizedBox(height: AppMetrics.space4),
                       _SignInMessage(
-                        message: _message!,
+                        message: message,
                         onDismiss: _dismissMessage,
                       ),
                     ],
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: _submitting ? null : _submit,
-                      child: _submitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Sign in'),
+                    const SizedBox(height: AppMetrics.space6),
+                    AppButton(
+                      label: 'Sign in',
+                      variant: AppButtonVariant.primary,
+                      busy: _submitting,
+                      onPressed: _submit,
                     ),
                   ],
                 ),
@@ -191,6 +193,51 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   /// failure in the first place. The user edits and submits deliberately.
   void _dismissMessage() {
     setState(() => _message = null);
+  }
+}
+
+/// The wordmark and its mark, the one place the brand is set.
+class _BrandRow extends StatelessWidget {
+  const _BrandRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTheme.tokensOf(context);
+
+    return Row(
+      children: [
+        Container(
+          width: AppMetrics.brandMarkSize,
+          height: AppMetrics.brandMarkSize,
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: tokens.accent,
+              width: AppMetrics.borderWidthEmphasis,
+            ),
+            borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: tokens.accent,
+                borderRadius: BorderRadius.circular(1),
+              ),
+              child: const SizedBox.expand(),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppMetrics.space2),
+        // Written uppercase at the call site: Flutter has no text-transform.
+        Text(
+          'STASH-IT',
+          style: AppTypography.wordmark.copyWith(
+            fontSize: 12,
+            color: tokens.textPrimary,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -250,6 +297,18 @@ String messageFor(ApiFailure failure) {
 }
 
 /// A failure message the user can dismiss.
+///
+/// The known-failure treatment: `dangerSoft` fill, `dangerBorder` border, a
+/// danger mark. The **uncertain** copy produced by `messageFor` still uses this
+/// treatment, which is why the wording carries the distinction — colour is never
+/// the only signal.
+///
+/// The message and Dismiss share one row. They were stacked, and because
+/// Material gives a `TextButton` a 48 px minimum target the dismiss row alone
+/// was taller than the sentence above it, so a one-line failure occupied roughly
+/// a hundred pixels with an empty gap under the text. Inline, the band is as
+/// tall as the message it has to show — and a longer message still wraps, because
+/// the text is the flexible child and Dismiss is not.
 class _SignInMessage extends StatelessWidget {
   const _SignInMessage({required this.message, required this.onDismiss});
 
@@ -258,27 +317,59 @@ class _SignInMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final tokens = theme.extension<AppTokens>() ?? AppTheme.tokens;
+    final tokens = AppTheme.tokensOf(context);
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppMetrics.space3),
       decoration: BoxDecoration(
-        color: tokens.danger.withValues(alpha: 0.08),
-        border: Border.all(color: tokens.danger),
-        borderRadius: BorderRadius.circular(8),
+        color: tokens.dangerSoft,
+        border: Border.all(color: tokens.dangerBorder),
+        borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        // Centred, so a single-line message and its dismiss action read as one
+        // unit rather than as two unrelated rows.
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            message,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: tokens.textPrimary,
+          // The flexible child: this is what wraps when a message is long.
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  // Sits on the first line's baseline rather than the row's top.
+                  padding: const EdgeInsets.only(top: 5),
+                  child: Container(width: 5, height: 5, color: tokens.danger),
+                ),
+                const SizedBox(width: AppMetrics.space2),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: AppTypography.meta.copyWith(
+                      color: tokens.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          TextButton(onPressed: onDismiss, child: const Text('Dismiss')),
+          const SizedBox(width: AppMetrics.space2),
+          TextButton(
+            onPressed: onDismiss,
+            style: TextButton.styleFrom(
+              // 32 px rather than Material's 48: the band is a confirmation of
+              // a failure, not the primary action, and its own target still
+              // clears WCAG 2.5.8's 24 px minimum by a comfortable margin.
+              minimumSize: const Size(0, 32),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppMetrics.space2,
+              ),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+            child: const Text('Dismiss'),
+          ),
         ],
       ),
     );

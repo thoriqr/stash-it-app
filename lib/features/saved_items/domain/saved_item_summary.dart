@@ -10,15 +10,14 @@ enum EnrichmentStatus { pending, completed, failed }
 
 /// One saved item as the Inbox row presents it.
 ///
-/// **This is a mock presentation model for the visual prototype. It is not a DTO and
-/// it is not an API contract.** No endpoint lists recently saved items across
-/// collections; D26 records a product-level requirement only, so no field set here has
-/// been agreed with the backend. Fields mirror what the approved wireframes show a
-/// row needing, and nothing more.
+/// **The presentation model, not a DTO.** It is built by
+/// `saved_item_mapper.dart` from a `ListedSavedItemResponse`, so the wire shape
+/// and the display shape stay separate: a backend field cannot silently become a
+/// rendering rule. It carries no HTTP concern and no serialization.
 ///
-/// Shape follows `docs/wireframes/02-item-presentation.html`: optional title,
-/// optional description, optional preview image, a URL, the item's *current*
-/// collection, and an enrichment status.
+/// Fields mirror what a row needs to render. **Nothing is inferred**: a missing
+/// title stays missing here and is resolved by [displayTitle], not filled in
+/// with a placeholder the model invents.
 class SavedItemSummary {
   const SavedItemSummary({
     required this.id,
@@ -31,7 +30,7 @@ class SavedItemSummary {
     this.savedTimeLabel,
   });
 
-  /// Mock identifier. Not a backend id contract.
+  /// The item's id, exactly as the backend sent it.
   final String id;
 
   /// The saved URL, exactly as the page supplied it.
@@ -52,17 +51,22 @@ class SavedItemSummary {
   /// Page-derived description excerpt. `null` when unavailable.
   final String? description;
 
-  /// Whether the backend would have supplied a preview image.
+  /// Whether a preview image exists for this item.
+  ///
+  /// Derived from the response's `image_url`: a URL means one, `null` (or an
+  /// empty string) means none. There is no image loading in this milestone, so
+  /// the row draws a placeholder either way.
   final bool hasPreviewImage;
 
-  /// A pre-formatted, presentation-only saved-time string, such as
-  /// `Saved 12 min ago`.
+  /// A pre-formatted saved-time string, such as `Saved 12 min ago`.
   ///
-  /// **Prototype data. Not a timestamp and not a backend field.** It is deliberately a
-  /// `String` rather than a `DateTime` so this model cannot imply a timestamp format,
-  /// a timezone policy, or an ordering contract. Real `created_at` integration waits
-  /// for the Inbox API contract, which does not exist (D26). These strings also do
-  /// not define the list order; nothing here sorts by them.
+  /// **A display string, not a timestamp.** The mapper derives it from the
+  /// response's `created_at`; keeping it a `String` means this model cannot imply
+  /// a timestamp format, a timezone policy, or an ordering contract, and the row
+  /// renders copy rather than doing arithmetic. `null` when the timestamp could
+  /// not be parsed, in which case the row simply shows no label.
+  ///
+  /// It does not define the list order; nothing here sorts by it. **[D4]**
   final String? savedTimeLabel;
 
   /// `true` when enrichment produced no usable metadata at all.

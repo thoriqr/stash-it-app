@@ -1,21 +1,24 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
-import 'package:stash_it_app/app/theme/app_tokens.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/shared/widgets/app_button.dart';
 
-/// One saved item in a list — the reusable row described in
-/// `docs/wireframes/02-item-presentation.html`.
+/// One saved item — the **inventory slot** of `design-system.md` §6.3.
 ///
-/// Structure follows the approved wireframe anatomy: optional thumbnail, title,
-/// compact source with the saved-time label, optional description, then a metadata
-/// line carrying the item's current collection and its enrichment state.
+/// A bordered card on the canvas: a 56 px thumbnail well, the title with the
+/// saved time in its top-right corner, the domain in mono, a two-line
+/// description, then a metadata line carrying the item's current collection, its
+/// enrichment state and — when the state allows it — a quiet **Retry**.
 ///
-/// Design intent: no card, no shadow. Separation comes from a hairline divider drawn
-/// by the parent list, so consecutive rows read as one document on paper.
+/// **Colour carries one rule.** The accent marks identity and progress: the
+/// collection chip and the pending marker. Everything factual — domain, saved
+/// time, state wording — is neutral. Only a known failure uses `danger`.
 ///
-/// Colour carries one rule: the accent marks identity and progress (the collection
-/// pill, the pending marker, retry); everything factual — source, saved time, state
-/// wording — is neutral. Only failure uses the danger colour.
+/// **A missing preview is a normal state.** The space is always reserved so rows
+/// never shift, and the empty well is drawn dashed and neutral: no error colour,
+/// no retry (`decisions` §2.12).
 ///
 /// Copy is a draft. The exact wording of the state line and the retry label is a
 /// [Rec] in the discovery documents and needs native-speaker review before it is
@@ -33,130 +36,249 @@ class SavedItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final tokens = theme.extension<AppTokens>() ?? AppTheme.tokens;
+    final tokens = AppTheme.tokensOf(context);
 
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (item.hasPreviewImage) ...[
-              _Thumbnail(tokens: tokens),
-              const SizedBox(width: 14),
-            ],
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.displayTitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      // A fallback title is neutral copy, never a warning colour.
-                      color: item.usesFallbackTitle
-                          ? tokens.textMuted
-                          : tokens.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens.surface,
+        border: Border.all(color: tokens.border),
+        borderRadius: const BorderRadius.all(AppMetrics.slotRadius),
+        boxShadow: [
+          BoxShadow(
+            color: tokens.slotShadowColor,
+            // A drop shadow is invisible on a dark canvas, so dark lifts the
+            // slot with an inset hairline instead.
+            offset: tokens.slotShadowInset ? Offset.zero : const Offset(0, 1),
+            blurRadius: tokens.slotShadowInset ? 0 : 2,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: const BorderRadius.all(AppMetrics.slotRadius),
+          child: Padding(
+            padding: AppMetrics.slotPadding,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Thumbnail(hasPreviewImage: item.hasPreviewImage),
+                const SizedBox(width: AppMetrics.slotGap),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          item.displaySource,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.displayTitle,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.itemTitle.copyWith(
+                                // A fallback title is neutral copy, never a
+                                // warning colour.
+                                color: item.usesFallbackTitle
+                                    ? tokens.textTertiary
+                                    : tokens.textPrimary,
+                                fontWeight: item.usesFallbackTitle
+                                    ? FontWeight.w400
+                                    : FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          if (item.savedTimeLabel case final savedAt?) ...[
+                            const SizedBox(width: AppMetrics.space2),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                savedAt,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.monoSmall.copyWith(
+                                  color: tokens.textTertiary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: AppMetrics.space1),
+                      Text(
+                        item.displaySource,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.mono.copyWith(
+                          color: tokens.textTertiary,
                         ),
                       ),
-                      if (item.savedTimeLabel case final savedAt?) ...[
-                        const SizedBox(width: 10),
-                        // Bounded so a long label can never push the source line into
-                        // an overflow; the source keeps its share.
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 130),
-                          child: Text(
-                            savedAt,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              // Held a step quieter than the source so the domain
-                              // keeps the left edge of this line.
-                              color: tokens.textMuted.withValues(alpha: 0.85),
-                              fontSize: 12,
-                            ),
+                      if (item.description case final description?) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.body.copyWith(
+                            fontSize: 12.5,
+                            height: 1.48,
+                            color: tokens.textSecondary,
                           ),
                         ),
                       ],
+                      const SizedBox(height: AppMetrics.space2),
+                      _MetadataLine(item: item, onRetry: onRetry),
                     ],
                   ),
-                  if (item.description case final description?) ...[
-                    const SizedBox(height: 7),
-                    Text(
-                      description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
-                  const SizedBox(height: 9),
-                  _MetadataLine(item: item, tokens: tokens, onRetry: onRetry),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Reserved slot for a preview image.
+/// The reserved 56 px well.
 ///
-/// No image loading exists yet, so this renders a neutral placeholder rather than
-/// pretending to show content. The box is always the same size, so rows never shift
-/// when an image is present (`decisions` §2.12: broken preview images are routine,
-/// reserve the space, show no error, offer no retry).
+/// A preview image is a 45° hatch: there is no image loading in this milestone,
+/// and a hatch says "an image belongs here" without pretending to show one. With
+/// no image the well is dashed and empty.
 class _Thumbnail extends StatelessWidget {
-  const _Thumbnail({required this.tokens});
+  const _Thumbnail({required this.hasPreviewImage});
 
-  final AppTokens tokens;
+  final bool hasPreviewImage;
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppTheme.tokensOf(context);
+
+    final border = Border.all(
+      color: tokens.border,
+      width: AppMetrics.borderWidth,
+    );
+
+    if (hasPreviewImage) {
+      return Container(
+        width: AppMetrics.slotThumbSize,
+        height: AppMetrics.slotThumbSize,
+        decoration: BoxDecoration(
+          border: border,
+          borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: CustomPaint(
+          painter: _HatchPainter(
+            first: tokens.slotHatch1,
+            second: tokens.slotHatch2,
+          ),
+        ),
+      );
+    }
+
     return Container(
-      width: 52,
-      height: 52,
+      width: AppMetrics.slotThumbSize,
+      height: AppMetrics.slotThumbSize,
       decoration: BoxDecoration(
-        color: tokens.surfaceMuted,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: tokens.border),
+        color: tokens.canvas,
+        border: Border.all(color: tokens.border, width: 1),
+        borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
       ),
-      child: Icon(
-        Icons.image_outlined,
-        size: 17,
-        color: tokens.textMuted.withValues(alpha: 0.5),
+      // A small dashed square, centred: the well reads as "nothing here yet".
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: 9,
+        height: 9,
+        child: CustomPaint(
+          painter: _DashedSquarePainter(color: tokens.borderStrong),
+        ),
       ),
     );
   }
 }
 
+/// The 45° hatch that stands in for a preview image: 4 px of one step, 5 px of
+/// the next, repeating.
+class _HatchPainter extends CustomPainter {
+  const _HatchPainter({required this.first, required this.second});
+
+  final Color first;
+  final Color second;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.fill
+      ..strokeWidth = 0;
+
+    canvas.drawRect(Offset.zero & size, paint..color = first);
+
+    // Clip to the well so the bands cannot bleed past its rounded corners.
+    canvas.save();
+    canvas.clipRect(Offset.zero & size);
+
+    paint.color = second;
+    paint.strokeWidth = 9;
+    paint.style = PaintingStyle.stroke;
+
+    // Bands run corner to corner, so the step is measured along the diagonal.
+    final span = math.sqrt(size.width * size.width + size.height * size.height);
+    for (var offset = -span; offset < span; offset += 9) {
+      canvas.drawLine(
+        Offset(offset, span),
+        Offset(offset + span, -span),
+        paint,
+      );
+    }
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_HatchPainter oldDelegate) =>
+      oldDelegate.first != first || oldDelegate.second != second;
+}
+
+/// The dashed square inside an empty well.
+class _DashedSquarePainter extends CustomPainter {
+  const _DashedSquarePainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = AppMetrics.borderWidth
+      ..color = color;
+
+    final path = Path()..addRect(Offset.zero & size);
+
+    // 3 on, 2 off.
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        canvas.drawPath(
+          metric.extractPath(distance, math.min(distance + 3, metric.length)),
+          paint,
+        );
+        distance += 5;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedSquarePainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
 /// Collection plus enrichment state.
 class _MetadataLine extends StatelessWidget {
-  const _MetadataLine({
-    required this.item,
-    required this.tokens,
-    required this.onRetry,
-  });
+  const _MetadataLine({required this.item, required this.onRetry});
 
   final SavedItemSummary item;
-  final AppTokens tokens;
   final VoidCallback? onRetry;
 
   @override
@@ -164,14 +286,18 @@ class _MetadataLine extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        _CollectionPill(name: item.collectionName, tokens: tokens),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _EnrichmentState(item: item, tokens: tokens),
-        ),
+        _CollectionChip(name: item.collectionName),
+        const SizedBox(width: AppMetrics.space2),
+        Expanded(child: _EnrichmentState(item: item)),
         if (_showsRetry) ...[
-          const SizedBox(width: 4),
-          _RetryButton(onPressed: onRetry, tokens: tokens),
+          const SizedBox(width: AppMetrics.space1),
+          AppButton(
+            label: 'Retry',
+            variant: AppButtonVariant.quiet,
+            small: true,
+            block: false,
+            onPressed: onRetry,
+          ),
         ],
       ],
     );
@@ -185,30 +311,39 @@ class _MetadataLine extends StatelessWidget {
 
 /// The item's current collection — the Inbox's stated reason for existing (D26).
 ///
-/// The one place the accent appears in a row, so collection identity reads
-/// immediately against the neutral metadata beside it.
-class _CollectionPill extends StatelessWidget {
-  const _CollectionPill({required this.name, required this.tokens});
+/// The one place the accent fills a surface in a row, so collection identity
+/// reads immediately against the neutral metadata beside it.
+class _CollectionChip extends StatelessWidget {
+  const _CollectionChip({required this.name});
 
   final String name;
-  final AppTokens tokens;
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppTheme.tokensOf(context);
+
     return Container(
-      constraints: const BoxConstraints(maxWidth: 150),
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      constraints: const BoxConstraints(maxWidth: 140),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
         color: tokens.accentSoft,
-        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: tokens.accentBorder),
+        borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
       ),
-      child: Text(
-        name,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(
-          context,
-        ).textTheme.labelSmall?.copyWith(color: tokens.accent),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(width: 5, height: 5, color: tokens.accent),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.label.copyWith(color: tokens.accent),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -221,27 +356,28 @@ class _CollectionPill extends StatelessWidget {
 /// keeps `completed`-with-metadata quiet and makes the two remaining states
 /// genuinely distinguishable.
 class _EnrichmentState extends StatelessWidget {
-  const _EnrichmentState({required this.item, required this.tokens});
+  const _EnrichmentState({required this.item});
 
   final SavedItemSummary item;
-  final AppTokens tokens;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final tokens = AppTheme.tokensOf(context);
+
+    final lineStyle = AppTypography.meta.copyWith(color: tokens.textTertiary);
 
     switch (item.enrichmentStatus) {
       case EnrichmentStatus.pending:
         return Row(
           children: [
-            _StateDot(color: tokens.accent, filled: false),
+            _StatePip(color: tokens.accent, filled: false),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
                 'Reading page…',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall,
+                style: lineStyle.copyWith(color: tokens.accent),
               ),
             ),
           ],
@@ -255,22 +391,20 @@ class _EnrichmentState extends StatelessWidget {
           'No details on this page',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.bodySmall,
+          style: lineStyle,
         );
 
       case EnrichmentStatus.failed:
         return Row(
           children: [
-            _StateDot(color: tokens.danger, filled: true),
+            _StatePip(color: tokens.danger, filled: true),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
                 "Couldn't read this page",
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: tokens.danger,
-                ),
+                style: lineStyle.copyWith(color: tokens.danger),
               ),
             ),
           ],
@@ -279,10 +413,10 @@ class _EnrichmentState extends StatelessWidget {
   }
 }
 
-/// Hollow while reading, filled when the read failed. Shape carries the distinction
-/// so colour is never the only signal.
-class _StateDot extends StatelessWidget {
-  const _StateDot({required this.color, required this.filled});
+/// Hollow while reading, filled when the read failed. Shape carries the
+/// distinction so colour is never the only signal.
+class _StatePip extends StatelessWidget {
+  const _StatePip({required this.color, required this.filled});
 
   final Color color;
   final bool filled;
@@ -293,35 +427,9 @@ class _StateDot extends StatelessWidget {
       width: 6,
       height: 6,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
         color: filled ? color : Colors.transparent,
         border: filled ? null : Border.all(color: color, width: 1.4),
       ),
-    );
-  }
-}
-
-class _RetryButton extends StatelessWidget {
-  const _RetryButton({required this.onPressed, required this.tokens});
-
-  final VoidCallback? onPressed;
-  final AppTokens tokens;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: onPressed,
-      style: TextButton.styleFrom(
-        foregroundColor: tokens.accent,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        minimumSize: const Size(0, 30),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        textStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: tokens.accent,
-        ),
-      ),
-      child: const Text('Retry'),
     );
   }
 }

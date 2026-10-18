@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
-import 'package:stash_it_app/app/theme/app_tokens.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 
 /// The Profile destination (S14).
@@ -20,10 +19,11 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final tokens = theme.extension<AppTokens>() ?? AppTheme.tokens;
+    final tokens = AppTheme.tokensOf(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      // Written uppercase at the call site: Flutter has no text-transform.
+      appBar: AppBar(title: const Text('PROFILE')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -41,9 +41,7 @@ class ProfileScreen extends ConsumerWidget {
               Text(
                 'Your account details are not shown yet.',
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: tokens.textMuted,
-                ),
+                style: AppTypography.body.copyWith(color: tokens.textTertiary),
               ),
               const SizedBox(height: 32),
               OutlinedButton.icon(

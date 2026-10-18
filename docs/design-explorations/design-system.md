@@ -212,7 +212,7 @@ mistaken for saving.
 
 | State | Treatment |
 | --- | --- |
-| Default | `--surface` fill, 1 px `--border`, 2 px radius, 40 px height |
+| Default | `--surface` fill, 1 px `--border`, 2 px radius, **48 px** height |
 | Focused | 2 px `--accent` border **and** a 3 px `--focus-ring` halo |
 | Filled | same as default; the value stays editable |
 | Invalid | 2 px `--danger` border, with a `--danger` message under the field |
@@ -220,6 +220,15 @@ mistaken for saving.
 
 A visible label (`--size-label`, `--text-secondary`) sits above every field. The URL field
 uses the mono face; name and password fields use the UI face.
+
+> **Revised from 40 px to 48 px.** The original 40 px figure was measured on the Flutter
+> build rather than seen on a device, and it produced a field whose 20 px text run sat
+> flush against the top border with 20 px of dead space beneath it — a thin text bar rather
+> than a control, and under Material's 48 px minimum touch target. 48 px with a 12 px
+> vertical content inset centres the text with 14 px above and below, and restores a
+> comfortable tap target. The proportion the 40 px figure was reaching for is unchanged;
+> only the height is. Flagged here because it changes an approved number rather than
+> implementing it.
 
 ### 6.3 Inventory slot — one saved item
 

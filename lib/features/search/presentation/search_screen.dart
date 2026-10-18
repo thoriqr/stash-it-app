@@ -12,7 +12,8 @@ class SearchScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Search')),
+      // Written uppercase at the call site: Flutter has no text-transform.
+      appBar: AppBar(title: const Text('SEARCH')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/app.dart';
+import 'package:stash_it_app/app/network/network_providers.dart';
 import 'package:stash_it_app/app/router/app_router.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
@@ -12,6 +13,7 @@ import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 
 import '../support/fake_http.dart';
+import '../support/saved_items_fixtures.dart';
 
 void main() {
   /// Overrides for a container that needs the auth state and nothing else.
@@ -45,8 +47,23 @@ void main() {
     AuthStatus status, {
     String initialLocation = AppRoutes.inbox,
   }) async {
-    final container = ProviderContainer(overrides: authOverrides(status));
+    final adapter = FakeHttpAdapter();
+
+    // The Inbox reads `GET /saved-items` now, so a signed-in container needs a
+    // scripted transport. `AGENTS.md` §5: no test opens a socket.
+    adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+
+    // `retry: (_, _) => null` because Riverpod 3 retries a failed provider up to
+    // ten times with backoff; an unscripted listing would leave one of those
+    // timers pending past the end of the test body.
+    final container = ProviderContainer(
+      overrides: authOverrides(status),
+      retry: (_, _) => null,
+    );
     addTearDown(container.dispose);
+
+    container.read(appDioProvider).httpClientAdapter = adapter;
+    container.read(refreshDioProvider).httpClientAdapter = adapter;
 
     final router = container.read(appRouterProvider);
     addTearDown(router.dispose);

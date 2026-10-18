@@ -1,120 +1,241 @@
 import 'package:flutter/material.dart';
+import 'package:stash_it_app/app/theme/app_metrics.dart';
 import 'package:stash_it_app/app/theme/app_tokens.dart';
+import 'package:stash_it_app/app/theme/app_typography.dart';
 
-/// Theme configuration for the **Paper & Ink** prototype direction.
+export 'app_metrics.dart';
+export 'app_tokens.dart';
+export 'app_typography.dart';
+
+/// The approved design system's Material themes — B · Inventory (light) and
+/// B-Dark (dark).
 ///
-/// Material 3 only (Flutter 3.47.7 has no `useMaterial3` flag). Clean paper-white
-/// surfaces, crisp dark type, and one deep pine accent used sparingly. Not a design
-/// system; see [AppTokens].
+/// Both themes are built from one [AppTokens] instance and one [AppTypography],
+/// so a value can only ever be changed in one place. The Material 3 [ColorScheme]
+/// is derived from the tokens rather than being a second, parallel palette.
+///
+/// **Theme selection.** `StashItApp` passes [light] and [dark] to `MaterialApp`
+/// and leaves `themeMode` at its default, so the **system brightness** chooses.
+/// There is no in-app theme switch, because none is specified — inventing one
+/// would be a product decision this milestone has not made.
 abstract final class AppTheme {
-  /// The prototype values.
-  static const Color background = Color(0xFFFAFBF9); // paper
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceMuted = Color(0xFFF0F2EF);
-  static const Color textPrimary = Color(0xFF202522);
+  /// The approved light theme.
+  static ThemeData light() => _theme(AppTokens.light, Brightness.light);
 
-  /// Secondary copy: neutral charcoal-grey, ~6.2:1 on [background] and ~6.5:1 on
-  /// [surface], so it is safe at small sizes.
-  static const Color textMuted = Color(0xFF5B625C);
+  /// The approved dark theme.
+  static ThemeData dark() => _theme(AppTokens.dark, Brightness.dark);
 
-  static const Color accent = Color(0xFF315B49); // deep pine
-  static const Color accentSoft = Color(0xFFE6EDE9);
-  static const Color border = Color(0xFFE2E5E2);
+  /// The tokens for the brightness currently in force.
+  ///
+  /// Widgets must read colour through this. The extension is always present
+  /// because both themes register [AppTokens], so the `?? AppTheme.light`
+  /// fallback the previous prototype carried is not needed — and would have been
+  /// a bug in dark mode, silently substituting light colours.
+  static AppTokens tokensOf(BuildContext context) =>
+      Theme.of(context).extension<AppTokens>() ?? AppTokens.light;
 
-  /// Semantic failure colour, unchanged from the previous iteration.
-  static const Color danger = Color(0xFFA15C43);
-
-  static const AppTokens tokens = AppTokens(
-    background: background,
-    surface: surface,
-    surfaceMuted: surfaceMuted,
-    textPrimary: textPrimary,
-    textMuted: textMuted,
-    accent: accent,
-    accentSoft: accentSoft,
-    border: border,
-    danger: danger,
-  );
-
-  static ThemeData light() => _theme();
-
-  /// Dark values are not part of this direction yet, so this currently returns the
-  /// light theme rather than inventing a dark palette. Replace when dark is decided.
-  static ThemeData dark() => _theme();
-
-  static ThemeData _theme() {
-    const scheme = ColorScheme.light(
-      primary: accent,
-      onPrimary: surface,
-      primaryContainer: accentSoft,
-      onPrimaryContainer: accent,
-      secondary: accent,
-      onSecondary: textPrimary,
-      surface: background,
-      onSurface: textPrimary,
-      outlineVariant: border,
-      error: danger,
-    );
-
+  static ThemeData _theme(AppTokens tokens, Brightness brightness) {
     return ThemeData(
-      colorScheme: scheme,
-      scaffoldBackgroundColor: background,
-      dividerColor: border,
-      extensions: const [tokens],
+      colorScheme: _scheme(tokens, brightness),
+      scaffoldBackgroundColor: tokens.canvas,
+      dividerColor: tokens.border,
+      splashFactory: NoSplash.splashFactory,
+      highlightColor: Colors.transparent,
+      hoverColor: Colors.transparent,
+      focusColor: Colors.transparent,
+      extensions: [tokens],
+      textTheme: AppTypography.textTheme.apply(
+        bodyColor: tokens.textPrimary,
+        displayColor: tokens.textPrimary,
+      ),
       appBarTheme: AppBarTheme(
-        // White against the paper canvas: a brighter band, drawn off by a hairline.
-        backgroundColor: surface,
+        backgroundColor: tokens.surface,
         surfaceTintColor: Colors.transparent,
-        foregroundColor: textPrimary,
+        foregroundColor: tokens.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 0,
-        titleTextStyle: const TextStyle(
-          color: textPrimary,
-          fontSize: 19,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.3,
+        centerTitle: false,
+        titleSpacing: AppMetrics.screenPadding,
+        // The screen title is the restrained pixel face, uppercase — written at
+        // the call site, because Flutter has no text-transform.
+        titleTextStyle: AppTypography.screenTitle.copyWith(
+          color: tokens.textPrimary,
         ),
-        shape: const Border(bottom: BorderSide(color: border)),
+        shape: Border(bottom: BorderSide(color: tokens.border)),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: surface,
+        backgroundColor: tokens.surface,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: accentSoft,
+        indicatorColor: tokens.selectedSoft,
         elevation: 0,
         height: 68,
+        indicatorShape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(AppMetrics.controlRadius),
+        ),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
-          return TextStyle(
-            fontSize: 11.5,
-            letterSpacing: 0.1,
-            color: states.contains(WidgetState.selected) ? accent : textMuted,
+          final selected = states.contains(WidgetState.selected);
+          return AppTypography.navigationLabel.copyWith(
+            color: selected ? tokens.selected : tokens.textTertiary,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
           return IconThemeData(
-            size: 22,
-            color: states.contains(WidgetState.selected) ? accent : textMuted,
+            size: AppMetrics.iconSize,
+            color: selected ? tokens.selected : tokens.textTertiary,
           );
         }),
       ),
-      textTheme: const TextTheme(
-        // Crisp dark titles with tightened tracking; open line height on secondary
-        // copy for reading comfort.
-        titleSmall: TextStyle(
-          fontSize: 15,
-          height: 1.32,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.15,
-          color: textPrimary,
-        ),
-        bodySmall: TextStyle(fontSize: 12.5, height: 1.4, color: textMuted),
-        labelSmall: TextStyle(
-          fontSize: 11,
-          height: 1.2,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.4,
-          color: textPrimary,
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: tokens.surface,
+        // The shared vertical inset, so a Material field not built on AppField
+        // still reads as a filled control rather than a text bar.
+        contentPadding: AppMetrics.fieldContentPadding,
+        border: _fieldBorder(tokens.border),
+        enabledBorder: _fieldBorder(tokens.border),
+        disabledBorder: _fieldBorder(tokens.disabledBorder),
+        focusedBorder: _fieldBorder(tokens.accent, emphasis: true),
+        errorBorder: _fieldBorder(tokens.danger, emphasis: true),
+        focusedErrorBorder: _fieldBorder(tokens.danger, emphasis: true),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? tokens.disabledBg
+                : tokens.accent,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? tokens.disabledText
+                : tokens.accentContrast,
+          ),
+          side: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? BorderSide(color: tokens.disabledBorder)
+                : BorderSide(color: tokens.accent),
+          ),
+          shape: const WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(AppMetrics.controlRadius),
+            ),
+          ),
+          minimumSize: const WidgetStatePropertyAll(
+            Size(0, AppMetrics.buttonHeight),
+          ),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: AppMetrics.space3),
+          ),
+          textStyle: WidgetStatePropertyAll(
+            AppTypography.button.copyWith(color: tokens.accentContrast),
+          ),
+          splashFactory: NoSplash.splashFactory,
         ),
       ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStatePropertyAll(tokens.surface),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? tokens.disabledText
+                : tokens.textPrimary,
+          ),
+          side: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? BorderSide(color: tokens.disabledBorder)
+                : BorderSide(color: tokens.borderStrong),
+          ),
+          shape: const WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(AppMetrics.controlRadius),
+            ),
+          ),
+          minimumSize: const WidgetStatePropertyAll(
+            Size(0, AppMetrics.buttonHeight),
+          ),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: AppMetrics.space3),
+          ),
+          textStyle: WidgetStatePropertyAll(
+            AppTypography.button.copyWith(color: tokens.textPrimary),
+          ),
+          splashFactory: NoSplash.splashFactory,
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: ButtonStyle(
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? tokens.disabledText
+                : tokens.accent,
+          ),
+          shape: const WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(AppMetrics.controlRadius),
+            ),
+          ),
+          textStyle: WidgetStatePropertyAll(
+            AppTypography.button.copyWith(color: tokens.accent),
+          ),
+          splashFactory: NoSplash.splashFactory,
+        ),
+      ),
+    );
+  }
+
+  static OutlineInputBorder _fieldBorder(Color color, {bool emphasis = false}) {
+    return OutlineInputBorder(
+      borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
+      borderSide: BorderSide(
+        color: color,
+        width: emphasis
+            ? AppMetrics.borderWidthEmphasis
+            : AppMetrics.borderWidth,
+      ),
+    );
+  }
+
+  /// The M3 scheme, derived so that a Material widget which reaches for
+  /// `colorScheme` lands on the approved palette instead of its own defaults.
+  static ColorScheme _scheme(AppTokens tokens, Brightness brightness) {
+    return ColorScheme(
+      brightness: brightness,
+      primary: tokens.accent,
+      onPrimary: tokens.accentContrast,
+      primaryContainer: tokens.accentSoft,
+      onPrimaryContainer: tokens.accent,
+      secondary: tokens.accent,
+      onSecondary: tokens.accentContrast,
+      secondaryContainer: tokens.accentSoft,
+      onSecondaryContainer: tokens.accent,
+      tertiary: tokens.accent,
+      onTertiary: tokens.accentContrast,
+      tertiaryContainer: tokens.accentSoft,
+      onTertiaryContainer: tokens.accent,
+      error: tokens.danger,
+      onError: tokens.textInverse,
+      errorContainer: tokens.dangerSoft,
+      onErrorContainer: tokens.danger,
+      surface: tokens.surface,
+      onSurface: tokens.textPrimary,
+      onSurfaceVariant: tokens.textSecondary,
+      surfaceContainerLowest: tokens.canvas,
+      surfaceContainerLow: tokens.surface,
+      surfaceContainer: tokens.surface,
+      surfaceContainerHigh: tokens.surfaceRaised,
+      surfaceContainerHighest: tokens.surfaceRaised,
+      surfaceDim: tokens.canvas,
+      surfaceBright: tokens.surfaceRaised,
+      surfaceTint: Colors.transparent,
+      outline: tokens.borderStrong,
+      outlineVariant: tokens.border,
+      shadow: Colors.transparent,
+      scrim: Colors.transparent,
+      inverseSurface: tokens.textPrimary,
+      onInverseSurface: tokens.canvas,
+      inversePrimary: tokens.accent,
     );
   }
 }

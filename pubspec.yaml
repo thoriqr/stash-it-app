@@ -76,6 +76,42 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # The approved design system v1 (`docs/design-explorations`). These are the same
+  # three self-hosted faces the HTML prototypes use, bundled rather than fetched:
+  # no font package, and nothing loaded at runtime over the network.
+  #
+  # They ship as .ttf rather than the prototypes' .woff2. Flutter's font loader
+  # goes through Skia, which reads TTF/OTF only and cannot parse WOFF2, so the
+  # same files were decompressed once when this section was written. The
+  # conversion tool is not part of this project.
+  #
+  # Inter and JetBrains Mono are variable fonts: one file serves every weight, and
+  # `AppTypography` sets the `wght` axis through `FontVariation`. The weights are
+  # declared here as well so font matching always finds an exact match and never
+  # synthesises a faux bold on top of a real weight.
+  fonts:
+    # Display only: the wordmark, screen titles and small section labels.
+    - family: Silkscreen
+      fonts:
+        - asset: assets/fonts/silkscreen-400.ttf
+          weight: 400
+        - asset: assets/fonts/silkscreen-700.ttf
+          weight: 700
+    # All UI copy and saved-item content.
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/inter-var.ttf
+          weight: 400
+        - asset: assets/fonts/inter-var.ttf
+          weight: 500
+        - asset: assets/fonts/inter-var.ttf
+          weight: 600
+    # Machine text only: domains, URLs, timestamps, mock-data markers.
+    - family: JetBrains Mono
+      fonts:
+        - asset: assets/fonts/jbmono-var.ttf
+          weight: 500
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
