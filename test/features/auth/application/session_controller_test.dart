@@ -361,4 +361,148 @@ void main() {
       },
     );
   });
+
+  group('credential failures the interceptor has to survive', () {
+    // These run through `appDio`, so the real interceptor is in the loop rather
+    // than a stubbed `TokenProvider`. What they pin is the other end of the
+    // contract: a credential layer that fails in a way renewal does not model
+    // must still reach the caller as a *completed* request. A failure the
+    // interceptor does not catch leaves its handler uncompleted, and an
+    // uncompleted handler is a request that never returns — so every assertion
+    // here is also a liveness assertion.
+
+    /// How long a request is given to complete before the test calls it hung.
+    const budget = Duration(seconds: 5);
+
+    /// Points both real clients at the scripted transport and scripts a
+    /// protected route that answers `ACCESS_TOKEN_EXPIRED`.
+    void expireProtectedRoute() {
+      container.read(appDioProvider).httpClientAdapter = adapter;
+      container.read(refreshDioProvider).httpClientAdapter = adapter;
+      adapter.on(
+        '/protected',
+        status: 401,
+        body: errorBody('ACCESS_TOKEN_EXPIRED'),
+      );
+    }
+
+    test('a refresh token that cannot be read fails the request', () async {
+      // Reading the refresh token is the first thing a renewal does, so the
+      // store failing here means no request was ever attempted and no
+      // `POST /auth/refresh` was made.
+      container = makeContainer();
+      expireProtectedRoute();
+      backend.values[refreshKey] = 'refresh-1';
+      backend.failingReads.add(refreshKey);
+
+      await expectLater(
+        container
+            .read(appDioProvider)
+            .get<dynamic>('/protected')
+            .timeout(budget),
+        throwsA(
+          isA<DioException>().having(
+            (e) => e.error,
+            'error',
+            isA<ApiFailureCredentialStorage>(),
+          ),
+        ),
+      );
+
+      expect(
+        adapter.countFor('/auth/refresh'),
+        0,
+        reason: 'the failure happened before anything could be submitted',
+      );
+      expect(
+        backend.values[refreshKey],
+        'refresh-1',
+        reason: 'a failure to read is not a reason to destroy anything',
+      );
+    });
+
+    test(
+      'a terminal refresh whose cleanup fails still completes the request',
+      () async {
+        // The backend has committed the revocation, so this really is the end of
+        // the session — but the local clear reports that it did not happen.
+        // `_endSession` clears before it discards, so a failed clear leaves the
+        // client still describing a session. That is deliberate: it must not
+        // claim the credentials are gone when storage says otherwise. What it
+        // must never do is leave the request hanging.
+        container = makeContainer(
+          restored: const AuthTokens(
+            accessToken: 'access-1',
+            refreshToken: 'refresh-1',
+          ),
+        );
+        expireProtectedRoute();
+        backend.values[accessKey] = 'access-1';
+        backend.values[refreshKey] = 'refresh-1';
+        backend.failingDeletes.add(accessKey);
+        adapter.on(
+          '/auth/refresh',
+          status: 401,
+          body: errorBody('SESSION_REVOKED'),
+        );
+
+        await expectLater(
+          container
+              .read(appDioProvider)
+              .get<dynamic>('/protected')
+              .timeout(budget),
+          throwsA(
+            isA<DioException>().having(
+              (e) => e.error,
+              'error',
+              isA<ApiFailureCredentialStorage>(),
+            ),
+          ),
+        );
+
+        expect(
+          container.read(authStateProvider),
+          AuthStatus.signedIn,
+          reason:
+              'a clear that failed must not be reported as a completed sign-out',
+        );
+        expect(backend.values, {
+          'stash_it.auth.access_token': 'access-1',
+          refreshKey: 'refresh-1',
+        }, reason: 'nothing was removed, because the clear never finished');
+      },
+    );
+
+    test('a renewal that cannot persist its pair fails the request', () async {
+      // The end-to-end shape of the write failure the interceptor has to
+      // survive: the rotation succeeded on the server, the pair could not be
+      // written, and there is therefore no token to replay with.
+      container = makeContainer();
+      expireProtectedRoute();
+      backend.values[accessKey] = 'access-1';
+      backend.values[refreshKey] = 'refresh-1';
+      backend.failingWrites.add(accessKey);
+      adapter.on('/auth/refresh', body: rotated());
+
+      await expectLater(
+        container
+            .read(appDioProvider)
+            .get<dynamic>('/protected')
+            .timeout(budget),
+        throwsA(
+          isA<DioException>().having(
+            (e) => e.error,
+            'error',
+            isA<ApiFailureCredentialStorage>(),
+          ),
+        ),
+      );
+
+      expect(
+        adapter.countFor('/protected'),
+        1,
+        reason: 'nothing is replayed without a token the client can use',
+      );
+    });
+  });
 }

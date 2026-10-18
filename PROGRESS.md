@@ -9,7 +9,11 @@ Neither is duplicated here.
 complete. Manual sign-in, secure credential storage, startup restoration, access-token
 attachment, single-flight renewal, session invalidation and logout all work and are tested.
 The Inbox now reads `GET /saved-items` over that same pipeline — loading, empty,
-error-with-retry and rows states, with cursor pagination. **No other product feature is
+error-with-retry and rows states, with cursor pagination. The refresh path's failure handling
+was hardened this iteration: a renewal that failed with anything other than a
+`SessionExpiredException` or a `DioException` used to leave the request's Dio error handler
+unresolved and the request hanging, and now fails in a controlled, classified way.
+**No other product feature is
 implemented**: Collections, Search and Profile data are not fetched, the Inbox intake is
 still visual only, and Registration, Google sign-in and password reset are not built.
 
@@ -574,6 +578,89 @@ shell now performs a real request, so `widget_test.dart` and `auth_redirect_widg
 script the transport and disable Riverpod's automatic provider retry. Neither changed what
 they assert.
 
+### AuthInterceptor exception-handling fix
+
+**Complete for this iteration.** A renewal that failed outside `SessionExpiredException` and
+`DioException` escaped `AuthInterceptor._renewAndReplay`'s `unawaited` future. Dio completes
+a request from its `ErrorInterceptorHandler`, so a handler that is never completed leaves the
+caller's `await` pending forever: the request **hung** rather than failed, with no error and
+nothing to report. Three paths reached it — a rotated pair that could not be persisted, a
+refresh token that could not be read before any request was attempted, and a cleanup that
+failed while clearing credentials on a terminal outcome.
+
+The two `try` blocks gained new arms, and not the same ones. On the **renewal** block:
+
+- **`ApiFailure`** is passed through unchanged. It is already classified by the layer that
+  raised it, and re-deriving a decision from a status would discard the reason the renewal
+  actually failed.
+- **Anything else** becomes `ApiFailureCredentialStorage(cause: …)` — this device could not
+  produce a usable session — and the request is rejected, never replayed.
+
+The **replay** block gained only a catch-all, beside the `DioException` arm it already had.
+There is deliberately no `ApiFailure` pass-through there: `_replay` returns `dio.fetch`, and
+every failure that produces is already a `DioException`. An `ApiFailure` reaching that block
+would be wrapped a second time rather than passed through, which is why the arm exists only to
+stop an unmodelled throw from leaving the handler unresolved, not because that case is
+expected.
+
+The `DioException` arm's construction moved into a `_renewalFailure` helper, field for field
+identical, so that arm's behaviour is unchanged. Every arm completes the handler and returns,
+which is what makes the exactly-once property hold; Dio also throws `StateError` on a
+*second* completion, so "twice" would be a defect too.
+
+**Unchanged, deliberately.** A successful renewal still persists both tokens before the
+replay. A terminal code still surfaces the original `401` with credentials cleared. An
+ambiguous failure — `500`, transport, `429`, `503` — still reaches the caller as
+`ApiFailureRefreshUncertain` with the stored tokens intact and is still not retried
+automatically; `mapApiFailure` never reaches a new arm.
+
+**Credential-storage failure is not one case, and none of them replays the request.** A
+refresh-token read failure, a failed cleanup and an unexpected exception all reach the
+interceptor, become `ApiFailureCredentialStorage`, and clear nothing. A **rotated pair that
+could not be persisted** is different, and that difference is pre-existing: `_persist` calls
+`_endSession()` before it throws, because an access token the client cannot refresh beside a
+refresh token that does not match it is unusable, so that case signs the user out on purpose.
+The new arms neither introduce nor remove that.
+
+Seven regression tests across **five scenarios** — the extra two are duplicate coverage, not
+missing scenarios. A refresh-token read failure and a persistence failure are each covered
+twice: once against a stub `TokenProvider` in `auth_interceptor_test.dart`, which isolates the
+interceptor, and once through the real `appDio` graph in `session_controller_test.dart`, which
+exercises `SecureCredentialStore` and `SessionController` as they ship. Three of the seven
+therefore sit in the former file and four in the latter.
+
+- a refresh token that cannot be read, before any `POST /auth/refresh` is made;
+- a rotated pair that cannot be persisted — asserted to fail with a `null` response, so the
+  original `401` is not laundered into it, and **not replayed**;
+- an unexpected `StateError`, asserted to arrive with its `cause` retained, not discarded;
+- a terminal refresh whose cleanup fails, asserted to leave both the stored credentials and
+  `AuthStatus` untouched rather than claiming a completed sign-out;
+- a failed renewal leaving the interceptor usable on the next request.
+
+Each was confirmed to **fail against the previous code**, and each failed two ways at once.
+The request never completed, so every `expectLater` tripped the five-second bound its own test
+places on the await — the runner advanced in exact five-second steps. Alongside that, in all
+seven cases the exception that had escaped `_renewAndReplay` surfaced first as an unhandled
+zone error: `PlatformException` for the read and cleanup failures, `Bad state: boom` for the
+unexpected-throw cases, and `Instance of 'ApiFailureCredentialStorage'` for the persistence
+cases.
+
+| Command | Result |
+| --- | --- |
+| `dart format` (5 changed files) | `Formatted 5 files (1 changed)`; re-run `0 changed` |
+| `flutter analyze` | `No issues found!` (whole project) |
+| `flutter test` (2 focused files) | `All tests passed!` — **41 tests** |
+| `flutter test` | `All tests passed!` — **243 tests** (was 236) |
+
+**No device, emulator or live backend was involved.**
+
+**Still open.** This closes the hang; it does not close session lifecycle. A credential
+cleanup that fails still leaves local auth state describing a session the backend has already
+ended, so the app stays signed in until a later renewal resolves it. That is a separate
+decision about ambiguous local credential state, not part of this fix. `_endSession`'s
+clear-then-discard ordering is deliberately unchanged: reversing it would race a sign-in
+writing a fresh pair against an in-flight clear.
+
 ## Not implemented
 
 - Collections list, collection contents, deletion.
@@ -638,6 +725,13 @@ Carried from the discovery documents, plus what this milestone surfaced.
 5. **Generated-file policy (gap 7 below) is now live.** Generated files exist
    alongside their sources and `.gitignore` ignores neither, so they will be
    committed. That was the pre-existing default, not a choice made here.
+6. **A failed credential cleanup still leaves local auth state describing a
+   session the backend has ended.** `_endSession` clears storage before it discards
+   state, so a `clear()` that reports failure leaves `AuthStatus.signedIn` with the
+   tokens still on disk. Deliberate for now — reversing the order would race a sign-in
+   writing a fresh pair against an in-flight clear — but it is a real inconsistency,
+   not a settled policy. The interceptor fix above only guarantees such a request
+   *completes*; it does not decide what the app should then believe.
 
 ### Carried from the discovery documents
 

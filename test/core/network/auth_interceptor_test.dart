@@ -1,12 +1,21 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/core/error/api_error_codes.dart';
 import 'package:stash_it_app/core/network/auth_interceptor.dart';
 import 'package:stash_it_app/core/network/token_provider.dart';
 
 import '../../support/fake_http.dart';
+
+/// How long a request is given to complete before the test calls it hung.
+///
+/// The failure this group covers presents as an `await` that simply never
+/// returns, so an unbounded wait would turn a one-line assertion into a
+/// thirty-second stall. Same budget [untilCalled] uses.
+const Duration _completionBudget = Duration(seconds: 5);
 
 /// Pumps the event loop until [condition] holds, or fails after a short budget.
 ///
@@ -446,12 +455,147 @@ void main() {
 
         expect(
           carried,
-          isNotNull,
-          reason: 'the renewal failure is carried to the caller, not discarded',
+          isA<ApiFailureTransport>(),
+          reason:
+              'the renewal failure is carried to the caller, not discarded, and '
+              'keeps the classification it arrived with rather than being '
+              'laundered into a lost session',
         );
         expect(adapter.countFor('/protected'), 1, reason: 'no replay');
       },
     );
+  });
+
+  group('failures that are not a renewal refusal', () {
+    // The defect this group covers. `_renewAndReplay` completed the handler
+    // only for `SessionExpiredException` and `DioException`, so anything else
+    // — a credential write that fails, a refresh token that cannot be read, a
+    // storage error while clearing credentials — escaped its `unawaited`
+    // future. A handler that is never completed leaves Dio's completer pending
+    // and the caller's `await` unresolved: the request hangs rather than fails,
+    // with no error and no timeout. Every test here is therefore also a
+    // liveness assertion.
+
+    /// A client whose protected route answers `ACCESS_TOKEN_EXPIRED` and whose
+    /// renewal fails with [error].
+    Dio expiringWithRenewalFailure(Object error) {
+      final dio = buildDio(StubTokenProvider()..refreshError = error);
+      adapter.on(
+        '/protected',
+        status: 401,
+        body: errorBody(ApiErrorCode.accessTokenExpired),
+      );
+      return dio;
+    }
+
+    test('a refresh token that cannot be read fails the request', () async {
+      // Reading the refresh token is the first thing a renewal does, so this
+      // one fails before any request is attempted. A platform channel that
+      // cannot be reached throws a `PlatformException`, which is neither a
+      // `DioException` nor an `ApiFailure`.
+      final dio = expiringWithRenewalFailure(
+        PlatformException(code: 'keystore', message: 'read failed'),
+      );
+
+      await expectLater(
+        dio.get<dynamic>('/protected').timeout(_completionBudget),
+        throwsA(
+          isA<DioException>().having(
+            (e) => e.error,
+            'error',
+            isA<ApiFailureCredentialStorage>(),
+          ),
+        ),
+      );
+
+      expect(adapter.countFor('/protected'), 1, reason: 'no replay');
+    });
+
+    test('a rotated pair that cannot be persisted fails the request', () async {
+      final dio = expiringWithRenewalFailure(
+        const ApiFailureCredentialStorage(cause: 'write failed'),
+      );
+
+      await expectLater(
+        dio.get<dynamic>('/protected').timeout(_completionBudget),
+        throwsA(
+          isA<DioException>()
+              .having(
+                (e) => e.error,
+                'error',
+                isA<ApiFailureCredentialStorage>(),
+              )
+              // The original `401` must not be laundered into this failure:
+              // the request failed because the credentials could not be
+              // written, which is a different thing from the session ending.
+              .having((e) => e.response?.statusCode, 'status', isNull),
+        ),
+      );
+
+      expect(
+        adapter.countFor('/protected'),
+        1,
+        reason: 'nothing is replayed without a token the client can use',
+      );
+    });
+
+    test('an unexpected renewal failure is reported with its cause', () async {
+      // A programming error reaches the same arm. It is converted into a
+      // failure the caller can act on rather than left to escape, and the
+      // cause is retained rather than discarded — swallowing it would hide the
+      // defect this very test exists to catch.
+      final dio = expiringWithRenewalFailure(StateError('boom'));
+
+      await expectLater(
+        dio.get<dynamic>('/protected').timeout(_completionBudget),
+        throwsA(
+          isA<DioException>().having(
+            (e) => e.error,
+            'error',
+            isA<ApiFailureCredentialStorage>().having(
+              (f) => f.cause,
+              'cause',
+              isA<StateError>(),
+            ),
+          ),
+        ),
+      );
+
+      expect(adapter.countFor('/protected'), 1, reason: 'no replay');
+    });
+
+    test('a failed renewal leaves the interceptor usable', () async {
+      // One failed renewal must not poison the next request: a second, healthy
+      // request still renews and replays, which is also the check that the
+      // failure did not leave the handler machinery half-completed.
+      final tokens = StubTokenProvider()..refreshError = StateError('boom');
+      final dio = buildDio(tokens);
+
+      adapter.onSequence('/protected', [
+        FakeReply.error(401, ApiErrorCode.accessTokenExpired),
+        const FakeReply(200, {'data': 'ok'}),
+      ]);
+
+      await expectLater(
+        dio.get<dynamic>('/protected').timeout(_completionBudget),
+        throwsA(isA<DioException>()),
+      );
+
+      tokens.refreshError = null;
+      tokens.accessToken = 'access-2';
+
+      adapter.onSequence('/protected', [
+        FakeReply.error(401, ApiErrorCode.accessTokenExpired),
+        const FakeReply(200, {'data': 'recovered'}),
+      ]);
+
+      final response = await dio
+          .get<dynamic>('/protected')
+          .timeout(_completionBudget);
+
+      expect(response.data, {'data': 'recovered'});
+      expect(tokens.refreshCalls, 2);
+    });
   });
 
   group('replay fidelity', () {

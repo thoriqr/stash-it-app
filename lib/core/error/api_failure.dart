@@ -161,8 +161,17 @@ final class ApiFailureRefreshUncertain extends ApiFailure {
 /// Raised when a rotation's write fails partway. The alternative — carrying on
 /// with a half-written pair — would leave the client holding an access token it
 /// cannot refresh and a refresh token that does not match it.
+///
+/// **Also the classification for a renewal that fails inside the local
+/// credential layer and arrives unclassified**: a refresh token that cannot be
+/// read before the request is even attempted, or credentials that cannot be
+/// cleared once a session has ended. All three are the same thing to a caller —
+/// this device could not produce a usable session — and none of them says the
+/// session ended, so none of them may be read as terminal. [cause] keeps the
+/// underlying error for diagnosis; it is never displayed ([D22]).
 final class ApiFailureCredentialStorage extends ApiFailure {
   const ApiFailureCredentialStorage({required this.cause});
 
+  /// The platform error that made the credential layer unusable.
   final Object cause;
 }

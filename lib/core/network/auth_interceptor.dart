@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 
+import '../error/api_failure.dart';
 import '../error/api_failure_mapper.dart';
 import 'token_provider.dart';
 
@@ -107,6 +108,30 @@ class AuthInterceptor extends Interceptor {
     unawaited(_renewAndReplay(err, handler));
   }
 
+  /// Renews, then replays the original request exactly once.
+  ///
+  /// ## Why every arm completes `handler`
+  ///
+  /// An [ErrorInterceptorHandler] that is never completed leaves Dio's internal
+  /// completer pending, so the caller's `await` never returns: the request
+  /// hangs rather than fails, and there is no error to report. Completion is
+  /// not idempotent either — Dio throws `StateError` on a second call — so
+  /// both "never" and "twice" are defects.
+  ///
+  /// Hence the arms below are exhaustive **and** mutually exclusive: each
+  /// completes `handler` and returns, so whichever way this method exits, the
+  /// original request is completed once. "Exhaustive" is the part that is easy
+  /// to get wrong, because [SessionExpiredException] and [DioException] are
+  /// not the only things a renewal can throw:
+  ///
+  /// - [ApiFailureCredentialStorage], when the rotated pair cannot be written.
+  /// - a platform-channel error reading the refresh token, before any request.
+  /// - a storage error clearing credentials on a terminal outcome.
+  ///
+  /// Each of those previously escaped this `unawaited` future and hung the
+  /// request. A bare `catch` is what stops that recurring; it is not a
+  /// catch-all that swallows, because every failure it converts still reaches
+  /// the caller with its cause attached.
   Future<void> _renewAndReplay(
     DioException original,
     ErrorInterceptorHandler handler,
@@ -127,12 +152,27 @@ class AuthInterceptor extends Interceptor {
       // did not fail because the session ended, and telling the user otherwise
       // would sign them out over a network blip.
       handler.reject(
-        DioException(
-          requestOptions: original.requestOptions,
+        _renewalFailure(
+          original,
+          mapApiFailure(error),
           response: error.response,
-          type: DioExceptionType.badResponse,
-          error: mapApiFailure(error),
         ),
+      );
+      return;
+    } on ApiFailure catch (failure) {
+      // Already classified by the layer that raised it, and carried past this
+      // point unchanged: re-deriving a decision from a status would discard the
+      // reason the renewal actually failed.
+      handler.reject(_renewalFailure(original, failure));
+      return;
+    } catch (error) {
+      // A failure of the local credential layer that arrives unclassified — a
+      // platform channel that cannot be reached, most likely. It is reported
+      // rather than dropped, and it is emphatically not terminal: nothing here
+      // says the session ended, so the stored credentials are left alone and
+      // this request is simply not replayed.
+      handler.reject(
+        _renewalFailure(original, ApiFailureCredentialStorage(cause: error)),
       );
       return;
     }
@@ -143,7 +183,34 @@ class AuthInterceptor extends Interceptor {
       // The replay failed. It passes through without further renewal: this
       // request has already had its one attempt.
       handler.next(error);
+    } catch (error) {
+      // Same reasoning as the renewal above. A renewal that succeeded is not
+      // replayable when the replay itself throws something Dio does not model,
+      // and leaving `handler` uncompleted would hang the request.
+      handler.reject(
+        _renewalFailure(original, ApiFailureCredentialStorage(cause: error)),
+      );
     }
+  }
+
+  /// A failed renewal, reported as the original request's failure.
+  ///
+  /// [failure] is decided by the renewal and passed in rather than derived
+  /// here: the outcome is already known, and on the paths that matter there may
+  /// be no response left to derive it from. [response] is the renewal's own
+  /// response when it had one, carried through so a caller inspecting the body
+  /// still sees it.
+  DioException _renewalFailure(
+    DioException original,
+    ApiFailure failure, {
+    Response<dynamic>? response,
+  }) {
+    return DioException(
+      requestOptions: original.requestOptions,
+      response: response,
+      type: DioExceptionType.badResponse,
+      error: failure,
+    );
   }
 
   Future<Response<dynamic>> _replay(

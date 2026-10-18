@@ -296,6 +296,10 @@ class InMemorySecureStorage extends FlutterSecureStorage {
   /// Keys whose **read** should throw, used to simulate an unreachable store.
   final Set<String> failingReads = {};
 
+  /// Keys whose **delete** should throw, used to simulate a cleanup that
+  /// reports it did not happen.
+  final Set<String> failingDeletes = {};
+
   int clearAllCalls = 0;
 
   @override
@@ -345,6 +349,9 @@ class InMemorySecureStorage extends FlutterSecureStorage {
     AppleOptions? mOptions,
     WindowsOptions? wOptions,
   }) async {
+    if (failingDeletes.contains(key)) {
+      throw PlatformException(code: 'simulated', message: 'delete failed');
+    }
     values.remove(key);
   }
 
