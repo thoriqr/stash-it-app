@@ -1,139 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
 
-/// Placeholder rows shown while the Inbox listing is loading.
+/// One placeholder row, shown while the Inbox listing is loading.
 ///
-/// **The same geometry as [SavedItemRow]**, to the pixel: the same card border,
-/// corner, padding and shadow, the same 56 px well on the left, the same
-/// two-line title block, the same mono-width source line, the same two-line
-/// description and the same metadata row. When the real rows replace these, the
-/// list does not change size and nothing jumps.
+/// **The real row, painted over.** This used to hand-draw a second copy of the
+/// saved-item layout in bars, which meant the two could disagree: any change to
+/// [SavedItemRow]'s padding, clamps or metadata line silently left the loading
+/// state describing a card the app no longer renders. Building the actual widget
+/// and skeletonizing it makes that failure impossible — the placeholder *is* the
+/// row, so it is the same height, the same thumbnail and the same metadata line
+/// by construction rather than by agreement.
 ///
-/// Hand-built rather than pulled from a shimmer/skeleton package. The thing that
-/// makes a skeleton read correctly is matching the real layout, and that layout
-/// is six boxes in this project's own tokens; a generic package would need as
-/// much configuration and would add a dependency for it.
+/// The shimmer treatment itself is shared: `StashItApp` installs one
+/// [SkeletonizerConfig] for every route, so a Collections list or a saved-item
+/// listing that arrives later inherits the same treatment without restating it.
 class SavedItemSkeleton extends StatelessWidget {
   const SavedItemSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final tokens = AppTheme.tokensOf(context);
-    final fill = tokens.surfaceSunken;
-
-    Widget bar(double width, double height) => Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: fill,
-        borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
-      ),
-    );
-
-    Widget line(double fraction) => LayoutBuilder(
-      builder: (context, constraints) =>
-          bar(constraints.maxWidth * fraction, 10),
-    );
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: tokens.surface,
-        border: Border.all(color: tokens.border),
-        borderRadius: const BorderRadius.all(AppMetrics.slotRadius),
-        boxShadow: [
-          BoxShadow(
-            color: tokens.slotShadowColor,
-            offset: tokens.slotShadowInset ? Offset.zero : const Offset(0, 1),
-            blurRadius: tokens.slotShadowInset ? 0 : 2,
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: AppMetrics.slotPadding,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // The reserved thumbnail well, hatched exactly as a real preview is.
-            Container(
-              width: AppMetrics.slotThumbSize,
-              height: AppMetrics.slotThumbSize,
-              decoration: BoxDecoration(
-                border: Border.all(color: tokens.border),
-                borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: CustomPaint(
-                painter: _SkeletonHatchPainter(
-                  first: tokens.surfaceSunken,
-                  second: tokens.surfaceInset,
-                ),
-              ),
-            ),
-            const SizedBox(width: AppMetrics.slotGap),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Two title lines, matching the real two-line clamp, then the
-                  // mono source line, then the two-line description, then the
-                  // metadata row. The gaps are the real row's `space` tokens.
-                  bar(double.infinity, 12),
-                  const SizedBox(height: AppMetrics.space2),
-                  bar(double.infinity, 12),
-                  const SizedBox(height: AppMetrics.space1),
-                  line(0.45),
-                  const SizedBox(height: 6),
-                  line(0.92),
-                  const SizedBox(height: AppMetrics.space1),
-                  line(0.62),
-                  const SizedBox(height: AppMetrics.space2),
-                  bar(96, 18),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const Skeletonizer(child: SavedItemRow(item: _placeholder));
   }
 }
 
-/// The 45° hatch, matching the real preview placeholder.
-class _SkeletonHatchPainter extends CustomPainter {
-  const _SkeletonHatchPainter({required this.first, required this.second});
-
-  final Color first;
-  final Color second;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
-    canvas.drawRect(Offset.zero & size, paint..color = first);
-
-    canvas.save();
-    canvas.clipRect(Offset.zero & size);
-
-    paint
-      ..color = second
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 9;
-
-    final span = size.width + size.height;
-    for (var offset = -span; offset < span; offset += 9) {
-      canvas.drawLine(
-        Offset(offset, span),
-        Offset(offset + span, -span),
-        paint,
-      );
-    }
-
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_SkeletonHatchPainter oldDelegate) =>
-      oldDelegate.first != first || oldDelegate.second != second;
-}
+/// The item the placeholder row is built from.
+///
+/// **Not filler copy.** A bone takes the width of the text it replaces, so every
+/// field here is chosen to make the card occupy the shape a real one will:
+///
+/// * a title and a description long enough to fill their two-line clamps, so the
+///   placeholder is not shorter than the rows that replace it;
+/// * a saved-time label, so the top-right slot is exercised rather than left
+///   empty;
+/// * [EnrichmentStatus.pending], the state whose metadata line is the widest —
+///   chip, pip and wording — without borrowing the failure colour;
+/// * `hasPreviewImage: true`, because the hatch is how the well actually looks,
+///   and [SavedItemRow] keeps its custom painting out of skeletonization.
+///
+/// `id` is never rendered; the model requires one and this one exists only to
+/// fill it.
+const SavedItemSummary _placeholder = SavedItemSummary(
+  id: 'skeleton',
+  url: 'https://example.com/articles/quiet-mornings',
+  collectionName: 'Unsorted',
+  enrichmentStatus: EnrichmentStatus.pending,
+  title: 'A page title about as long as a real one tends to run',
+  description:
+      'A description long enough to fill the two-line clamp, so the placeholder '
+      'keeps the height a real row occupies.',
+  hasPreviewImage: true,
+  savedTimeLabel: 'Saved just now',
+);
 
 /// A block of skeleton rows, for the Inbox's loading state.
 class SavedItemSkeletonList extends StatelessWidget {

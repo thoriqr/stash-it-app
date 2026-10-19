@@ -6,6 +6,7 @@ import 'package:stash_it_app/app/theme/app_typography.dart';
 export 'app_metrics.dart';
 export 'app_tokens.dart';
 export 'app_typography.dart';
+export 'skeleton_theme.dart';
 
 /// The approved design system's Material themes — B · Inventory (light) and
 /// B-Dark (dark).

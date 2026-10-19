@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
@@ -146,6 +147,14 @@ class SavedItemRow extends StatelessWidget {
 /// A preview image is a 45° hatch: there is no image loading in this milestone,
 /// and a hatch says "an image belongs here" without pretending to show one. With
 /// no image the well is dashed and empty.
+///
+/// **The hatching is exempt from skeletonization.** `Skeletonizer` treats any
+/// childless render object — which is what a `CustomPaint` is — as a bone, so it
+/// would repaint the hatch's base fill with the shimmer gradient and then draw
+/// the solid bands over the top of it. `Skeleton.keep` paints the subtree
+/// through an ordinary context instead, so a skeletonized row shows the well
+/// exactly as a real row does. It costs nothing when not skeletonized: the
+/// annotation is inert outside a [Skeletonizer].
 class _Thumbnail extends StatelessWidget {
   const _Thumbnail({required this.hasPreviewImage});
 
@@ -169,10 +178,12 @@ class _Thumbnail extends StatelessWidget {
           borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
         ),
         clipBehavior: Clip.antiAlias,
-        child: CustomPaint(
-          painter: _HatchPainter(
-            first: tokens.slotHatch1,
-            second: tokens.slotHatch2,
+        child: Skeleton.keep(
+          child: CustomPaint(
+            painter: _HatchPainter(
+              first: tokens.slotHatch1,
+              second: tokens.slotHatch2,
+            ),
           ),
         ),
       );
@@ -191,8 +202,10 @@ class _Thumbnail extends StatelessWidget {
       child: SizedBox(
         width: 9,
         height: 9,
-        child: CustomPaint(
-          painter: _DashedSquarePainter(color: tokens.borderStrong),
+        child: Skeleton.keep(
+          child: CustomPaint(
+            painter: _DashedSquarePainter(color: tokens.borderStrong),
+          ),
         ),
       ),
     );

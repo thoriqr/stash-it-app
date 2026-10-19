@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:stash_it_app/app/network/network_providers.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
@@ -89,19 +90,40 @@ void main() {
         FakeReply(200, SavedItemsFixtures.emptyPage()),
       );
 
-      await pumpInbox(tester);
+      final container = await pumpInbox(tester);
       await tester.pump();
 
       expect(find.byType(SavedItemSkeletonList), findsOneWidget);
-      expect(find.byType(SavedItemRow), findsNothing);
+
+      // The placeholder **is** a `SavedItemRow`, so "no row widgets yet" stopped
+      // being the thing worth asserting when the skeleton moved onto the real
+      // widget. What has to hold instead is that every row on screen is a
+      // skeletonized placeholder: none of the listing's own rows can exist
+      // before the page arrives, and the provider is genuinely still loading.
+      //
+      // Matched by predicate rather than by type: `Skeletonizer` is a factory
+      // for a private class, and `find.byType` compares the runtime type.
+      expect(
+        find.descendant(
+          of: find.byWidgetPredicate((widget) => widget is Skeletonizer),
+          matching: find.byType(SavedItemRow),
+        ),
+        findsNWidgets(4),
+      );
+      expect(container.read(savedItemsProvider), isA<AsyncLoading>());
 
       adapter.releaseBlocked();
       await tester.pumpAndSettle();
 
       expect(find.byType(SavedItemSkeletonList), findsNothing);
+      expect(
+        find.byWidgetPredicate((widget) => widget is Skeletonizer),
+        findsNothing,
+        reason: 'the shimmer goes with the placeholder',
+      );
     });
 
-    testWidgets('the skeleton occupies the saved-item card layout', (
+    testWidgets('the placeholder is the card, not a copy of one', (
       tester,
     ) async {
       useTallSurface(tester);
@@ -113,16 +135,80 @@ void main() {
       final container = await pumpInbox(tester);
       await tester.pump();
 
+      final placeholder = find.byType(SavedItemSkeleton).first;
+      final placeholderHeight = tester.getSize(placeholder).height;
       // The thumbnail well is the one dimension the card cannot vary.
-      final skeletonWell = tester.getSize(
+      final placeholderWell = tester.getSize(
         find
-            .descendant(
-              of: find.byType(SavedItemSkeleton).first,
-              matching: find.byType(CustomPaint),
-            )
+            .descendant(of: placeholder, matching: find.byType(CustomPaint))
             .first,
       );
-      final skeletonHeight = tester
+
+      adapter.releaseBlocked();
+      await tester.pumpAndSettle();
+
+      // A real row filling the same content shape: a two-line title, a two-line
+      // description and a state line. The placeholder is built from the same
+      // widget, so this is an equality rather than a band — which is the whole
+      // point of skeletonizing the row instead of restating its layout.
+      adapter.on(
+        '/saved-items',
+        body: SavedItemsFixtures.page(
+          items: [
+            SavedItemsFixtures.item(
+              title: 'A page title about as long as a real one tends to run',
+              description:
+                  'A description long enough to fill the two-line clamp, so '
+                  'the placeholder keeps the height a real row occupies.',
+              enrichmentStatus: 'pending',
+            ),
+          ],
+        ),
+      );
+      await container.read(savedItemsProvider.notifier).retry();
+      await tester.pumpAndSettle();
+
+      final realRow = find.byType(SavedItemRow);
+      final realWell = tester.getSize(
+        find.descendant(of: realRow, matching: find.byType(CustomPaint)).first,
+      );
+
+      // The measured box is the well's paint area. Its 1 px border is painted
+      // inside the 56 px slot, so the hatch itself is that much smaller — the
+      // same arithmetic a real row gets, unchanged by skeletonization.
+      final paintedWell = const Size.square(
+        AppMetrics.slotThumbSize - 2 * AppMetrics.borderWidth,
+      );
+
+      expect(
+        placeholderWell,
+        paintedWell,
+        reason: 'the reserved well survives being skeletonized',
+      );
+      expect(
+        realWell,
+        placeholderWell,
+        reason: 'and it is the very same well the real row draws',
+      );
+      expect(
+        placeholderHeight,
+        tester.getSize(realRow).height,
+        reason: 'same widget, same content shape, same geometry',
+      );
+    });
+
+    testWidgets('the placeholder reserves at least a minimal row', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      adapter.onBlocking(
+        '/saved-items',
+        FakeReply(200, SavedItemsFixtures.emptyPage()),
+      );
+
+      final container = await pumpInbox(tester);
+      await tester.pump();
+      final placeholderHeight = tester
           .getSize(find.byType(SavedItemSkeleton).first)
           .height;
 
@@ -131,32 +217,115 @@ void main() {
 
       adapter.on(
         '/saved-items',
-        body: SavedItemsFixtures.page(items: [SavedItemsFixtures.item()]),
+        body: SavedItemsFixtures.page(
+          items: [SavedItemsFixtures.item(title: null, description: null)],
+        ),
       );
       await container.read(savedItemsProvider.notifier).retry();
       await tester.pumpAndSettle();
 
-      final rowHeight = tester.getSize(find.byType(SavedItemRow)).height;
-      final realWell = tester.getSize(
-        find
-            .descendant(
-              of: find.byType(SavedItemRow),
-              matching: find.byType(CustomPaint),
-            )
-            .first,
+      // The placeholder is the *largest* shape a row can take. A short real row
+      // is therefore shorter, which is the safe direction: the card is already
+      // the right size when the data lands, so nothing below it is pushed down.
+      expect(
+        placeholderHeight,
+        greaterThan(tester.getSize(find.byType(SavedItemRow)).height),
       );
+    });
+
+    testWidgets('the placeholder keeps every part of a saved-item card', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      adapter.onBlocking(
+        '/saved-items',
+        FakeReply(200, SavedItemsFixtures.emptyPage()),
+      );
+
+      await pumpInbox(tester);
+      await tester.pump();
+      final placeholder = find.byType(SavedItemSkeleton).first;
+
+      // The hand-drawn placeholder had to restate these and could drift from the
+      // row; here they are the row's own widgets.
+      expect(
+        find.descendant(of: placeholder, matching: find.byType(InkWell)),
+        findsOneWidget,
+        reason: 'the card is still the card',
+      );
+      expect(
+        find.descendant(of: placeholder, matching: find.byType(CustomPaint)),
+        findsOneWidget,
+        reason: 'the hatched thumbnail well is built by the row itself',
+      );
+      expect(
+        tester
+            .widgetList<Text>(
+              find.descendant(of: placeholder, matching: find.byType(Text)),
+            )
+            .length,
+        greaterThanOrEqualTo(5),
+        reason: 'title, saved time, source, description, chip and state',
+      );
+
+      // Released rather than left blocked: an unsent request leaves a pending
+      // timer behind when the tree is torn down.
+      adapter.releaseBlocked();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('the thumbnail keeps its hatching under the shimmer', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      adapter.onBlocking(
+        '/saved-items',
+        FakeReply(200, SavedItemsFixtures.emptyPage()),
+      );
+
+      await pumpInbox(tester);
+      await tester.pump();
+
+      // `Skeletonizer` treats a childless `CustomPaint` as a bone, which would
+      // repaint the hatch's base fill with the shimmer gradient and then draw the
+      // solid bands over the top of it. `Skeleton.keep` is the exemption, and it
+      // only exists here because the integration required it.
+      expect(
+        find.descendant(
+          of: find.byType(SavedItemSkeleton).first,
+          matching: find.byWidgetPredicate((widget) => widget is Skeleton),
+        ),
+        findsOneWidget,
+      );
+
+      adapter.releaseBlocked();
+      // A paint or clip assertion in the well would surface here.
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the placeholder survives a narrow surface', (tester) async {
+      tester.view.physicalSize = const Size(320, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      adapter.onBlocking(
+        '/saved-items',
+        FakeReply(200, SavedItemsFixtures.emptyPage()),
+      );
+
+      await pumpInbox(tester);
+      await tester.pump();
 
       expect(
-        skeletonWell,
-        realWell,
-        reason: 'the placeholder keeps the reserved 56 px well',
+        find.byType(SavedItemSkeleton),
+        findsWidgets,
+        reason: 'rows are still built at phone width',
       );
+      expect(tester.takeException(), isNull);
 
-      // Height cannot be equal for every content shape — the real row grows
-      // with its title and description — so this pins the card to the same
-      // order of magnitude rather than a false exactness.
-      expect(skeletonHeight, greaterThan(rowHeight * 0.8));
-      expect(skeletonHeight, lessThan(rowHeight * 1.3));
+      adapter.releaseBlocked();
+      await tester.pumpAndSettle();
     });
   });
 

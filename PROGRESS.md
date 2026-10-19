@@ -191,10 +191,13 @@ controller, plus a page model for the cursor.
 - `application/saved_items_controller.dart` — an `AsyncNotifier` so `retry()` genuinely
   refetches and paging appends without blanking the list. `@Riverpod(keepAlive: true)`:
   the listing is a history, so leaving and returning must not discard it.
-- `presentation/widgets/saved_item_skeleton.dart` — a hand-built placeholder in the same
-  geometry as the real slot. **`skeletonizer` was not added**: it is not currently a
-  dependency, and a placeholder matching *this* card is six boxes in the project's own
-  tokens, which is less configuration than adapting a generic package.
+- `presentation/widgets/saved_item_skeleton.dart` — the Inbox loading state. It was a
+  hand-built copy of the card; it is now `skeletonizer` wrapping the real `SavedItemRow`,
+  so the placeholder cannot drift from the row. The shimmer treatment is shared and lives
+  in `app/theme/skeleton_theme.dart`. See the `skeletonizer` milestone under
+  *Verification actually performed* for the dependency, the package annotation the
+  thumbnail needed, and why the earlier "less configuration than adapting a generic
+  package" reasoning did not hold.
 
 **Pagination.** `limit` is deliberately not sent, so the documented server default (20) and
 cap (50) apply — restating a cap the client does not own would be a second place for it to
@@ -877,6 +880,94 @@ are committed here (`.gitignore` ignores neither `*.g.dart` nor `*.freezed.dart`
 by an earlier session had gone stale.
 
 **No device, emulator or live backend was involved.**
+
+### `skeletonizer` — the Inbox placeholder is now the real row
+
+**Complete for this iteration.** `SavedItemSkeleton` was a hand-drawn second copy of the saved-item
+card: seven bars and its own `_SkeletonHatchPainter`, restating a layout that `SavedItemRow` also
+owns. It was ~163 lines that could silently disagree with the row, and its doc comment argued
+against using any skeleton package. It is now three lines:
+
+```dart
+const Skeletonizer(child: SavedItemRow(item: _placeholder))
+```
+
+The placeholder **is** the card, so its height, its 56 px well and its metadata line agree with a
+real row by construction rather than by discipline. What was deleted is worth naming: the entire
+duplicated layout and `_SkeletonHatchPainter`, which was a near-copy of the row's real
+`_HatchPainter`.
+
+**Dependency.** `skeletonizer: ^3.0.0`. It declares `sdk >=3.7.0` / `flutter >=3.32.0` — satisfied by
+this project's Dart 3.13.5 and Flutter 3.47.7 without touching `environment` — and its only
+dependency is `flutter` itself. `pubspec.lock` gained one entry and nothing else moved.
+
+**Shared configuration.** `lib/app/theme/skeleton_theme.dart` exposes one function,
+`appSkeletonizerConfig(brightness, {reducedMotion})`, and `StashItApp` installs it once through
+`MaterialApp.router`'s `builder` — inside the app, so it can read `Theme` and `MediaQuery`, and above
+the router, so every route inherits it. Future screens get the treatment by being in the app; they
+still own the *shape* of their own placeholder, because `Skeletonizer` wraps whatever real widget
+they pass. No wrapper widget, no `SkeletonWrapper`, nothing speculative.
+
+- **Colours are tokens, not the package's defaults.** Base `surfaceSunken`, highlight
+  `surfaceInset` — the well grey and the recessed-band grey, one step apart, in both themes. Neutral
+  in both, which is what `ux-discovery` §5 asks for (*"Initial loading … Neutral skeleton rows"*). A
+  test pins that neither theme leaks an accent into the bones.
+- **Reduced motion.** `MediaQuery.disableAnimations` → `SolidColorEffect`, which the package's
+  `Skeletonizer` special-cases: it creates no `AnimationController` for a zero duration, so the
+  treatment is genuinely still rather than a shimmer frozen at frame zero.
+- **The resolver is a top-level tear-off, not a closure.** `SkeletonizerConfigData` compares its
+  resolver by identity, so a closure rebuilt each build would make the config unequal every frame —
+  and an unequal config restarts the animation. Verified: swapping in closures fails
+  `the same inputs produce an equal config`.
+
+**One package annotation was genuinely required.** `SkeletonizerPaintingContext.paintChild` treats
+any childless `RenderObjectWithChildMixin` as a bone, and a `CustomPaint` is exactly that. The
+thumbnail's hatch would have had its base fill repainted with the shimmer gradient and its bands
+then drawn solid on top of it. `Skeleton.keep` on both thumbnail painters routes the subtree through
+an ordinary `PaintingContext` instead. It is inert outside a `Skeletonizer`, so it costs a real row
+nothing.
+
+**Tests.** The two loading tests coupled to the old layout were rewritten rather than deleted: the
+"no rows yet" assertion became "every row on screen is a skeletonized placeholder, and the provider
+is still loading"; the 0.8×–1.3× height **band** became an **equality** against a real row filling
+the same content shape, which is only true because the placeholder is the row. Four more cover the
+card's parts, the thumbnail exemption, a 320 px surface, and that the placeholder exceeds a minimal
+row — the safe direction to be wrong in. `test/app/theme/skeleton_theme_test.dart` adds 11 for the
+shared configuration, including light, dark, reduced motion, and the app actually installing it.
+
+| Command | Result |
+| --- | --- |
+| `flutter pub get` | `Changed 1 dependency!` |
+| `dart format lib test` | `Formatted 108 files (0 changed)` |
+| `flutter analyze` | `No issues found!` (whole project) |
+| `flutter test test/features/inbox/presentation/inbox_screen_test.dart` | `All tests passed!` — **19 tests** |
+| `flutter test test/app/theme/skeleton_theme_test.dart` | `All tests passed!` — **11 tests** |
+| `flutter test` | `All tests passed!` — **273 tests** (was 258) |
+
+Code generation was not run and was not needed: nothing here carries a `@riverpod`, `@RestApi`,
+`@freezed` or `@JsonSerializable` annotation, and `git diff --stat` shows no generated-file drift.
+
+**Each new test was checked against a reverted implementation.** Removing `Skeleton.keep` fails the
+thumbnail test; removing the `builder:` from `StashItApp` fails all three install tests; swapping the
+tear-offs for closures fails the config-stability test.
+
+**No device, emulator or live backend was involved.**
+
+**Worth a human's eye.** `decisions.md` §2.2 says *"Explicitly not recommended. No shimmer or skeleton
+implying data is arriving"*, which could be read as a ban on this work. It is scoped to the **save
+confirmation** — the reason given there is that the server never signals that enrichment has begun,
+which is true of `POST /saved-items` and not of a listing read. `ux-discovery` §5 and the Inbox
+wireframe annotate initial loading as **[Confirmed]** *neutral skeleton rows*. The colours here are
+neutral; only the motion is new. No document was edited, because this is a question about whether an
+existing decision was read correctly, not a change to one.
+
+**Limitations.** There is no golden or pixel test, so *that the hatch still looks like a hatch* is
+argued from the package's own painting code (`createDefaultContext` bypasses `_treatedAsLeaf`) and
+pinned structurally by asserting the `Skeleton.keep` annotation is present — not verified by sampling
+rendered pixels. `AppTokens.mockText` and `mockBorder` remain unused: they are documented as the
+"this is not API data" marker, and reusing them for shimmer would give one colour two meanings.
+Collections and saved-items-by-collection inherit the treatment through `StashItApp`, but neither
+screen was built here.
 
 ## Not implemented
 
