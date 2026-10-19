@@ -28,8 +28,10 @@ import 'package:stash_it_app/shared/widgets/app_button.dart';
 ///
 /// The intake above the list is the only write: `POST /saved-items`, one URL per
 /// confirmed tap, followed by a head refresh so the new item appears without
-/// discarding the pages already loaded. Not implemented here, deliberately: the
-/// clipboard, the pending-URL queue, and any collection mutation.
+/// discarding the pages already loaded. Pulling the list down reads page one
+/// again and replaces the loaded history with the server's current head. Not
+/// implemented here, deliberately: the clipboard, the pending-URL queue, and any
+/// collection mutation.
 class InboxScreen extends ConsumerStatefulWidget {
   const InboxScreen({super.key});
 
@@ -66,6 +68,35 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     if (position.pixels >= position.maxScrollExtent - 320) {
       ref.read(savedItemsProvider.notifier).loadMore();
     }
+  }
+
+  /// Fetches a fresh first page and replaces the loaded history.
+  ///
+  /// The provider does the request and state replacement; the indicator only
+  /// waits on it, which is why it stays visible for exactly as long as the
+  /// refresh takes. Current rows stay in the tree while this runs, so the
+  /// skeleton is reserved for a genuine first load.
+  Future<void> _refresh() => ref.read(savedItemsProvider.notifier).refresh();
+
+  /// Wraps a centred, non-scrolling state so it can still be pulled.
+  ///
+  /// `RefreshIndicator` needs a scrollable descendant. The empty and error
+  /// states are messages rather than lists, so this gives them a full-height
+  /// scroll view with `AlwaysScrollableScrollPhysics`; the message still sits in
+  /// the middle, and a downward drag anywhere over it starts a refresh.
+  Widget _refreshable(Widget child) {
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: child,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -110,38 +141,56 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
 
       // A failed first page. Retry refetches — it is not a re-read of a cached
       // future — and the copy is selected from the typed failure, never from a
-      // backend message.
-      AsyncError(:final error) => _InboxError(
-        failure: error,
-        onRetry: () => ref.read(savedItemsProvider.notifier).retry(),
+      // backend message. Pulling the message is also a retry, so the state stays
+      // usable even before the button is reached. While that explicit Retry is
+      // rebuilding, Riverpod keeps the previous failure (`isLoading: true` on an
+      // `AsyncError`) rather than emitting a bare `AsyncLoading`; show the
+      // skeleton then, as a first load does, and keep the error itself for a
+      // settled failure or a failed manual refresh.
+      AsyncError(:final error, isLoading: false) => _refreshable(
+        _InboxError(
+          failure: error,
+          onRetry: () => ref.read(savedItemsProvider.notifier).retry(),
+        ),
       ),
+      AsyncError() => const SavedItemSkeletonList(),
 
-      // Loading, or refreshing while nothing is on screen yet.
+      // A genuine first load. A manual pull does not reach here: it keeps the
+      // current rows (or the current empty/error state) in the tree and shows
+      // only the RefreshIndicator.
       _ => const SavedItemSkeletonList(),
     };
   }
 
   Widget _rows(BuildContext context, SavedItemsState state) {
     // An empty page is a successful answer, not an error and not a loading
-    // state: this user has saved nothing yet.
-    if (state.items.isEmpty) return const _InboxEmpty();
+    // state: this user has saved nothing yet. It is still refreshable, because
+    // the empty answer may have changed on the server since it was read.
+    if (state.items.isEmpty) return _refreshable(const _InboxEmpty());
 
-    return ListView.separated(
-      controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(
-        AppMetrics.space3,
-        AppMetrics.space2,
-        AppMetrics.space3,
-        AppMetrics.space4,
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: ListView.separated(
+        controller: _scrollController,
+        // A short first page may not fill the viewport. Always-scrollable
+        // physics is what lets the pull gesture reach RefreshIndicator in that
+        // case, and is harmless once the list is long enough to scroll.
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppMetrics.space3,
+          AppMetrics.space2,
+          AppMetrics.space3,
+          AppMetrics.space4,
+        ),
+        itemCount: state.items.length + (state.isLoadingMore ? 1 : 0),
+        // Inventory slots are separate cards on the canvas, not rows divided by a
+        // hairline.
+        separatorBuilder: (context, index) => const SizedBox(height: 9),
+        itemBuilder: (context, index) {
+          if (index >= state.items.length) return const _LoadingMoreRow();
+          return SavedItemRow(item: state.items[index]);
+        },
       ),
-      itemCount: state.items.length + (state.isLoadingMore ? 1 : 0),
-      // Inventory slots are separate cards on the canvas, not rows divided by a
-      // hairline.
-      separatorBuilder: (context, index) => const SizedBox(height: 9),
-      itemBuilder: (context, index) {
-        if (index >= state.items.length) return const _LoadingMoreRow();
-        return SavedItemRow(item: state.items[index]);
-      },
     );
   }
 }

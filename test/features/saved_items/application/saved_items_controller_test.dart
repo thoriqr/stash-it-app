@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:stash_it_app/app/feedback/app_feedback.dart';
+import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/app/network/network_providers.dart';
+import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
@@ -51,6 +54,10 @@ void main() {
         AsyncData(:final value) => value,
         final other => throw StateError('expected data, got $other'),
       };
+
+  /// The app-wide notice currently showing, if any.
+  AppFeedback? noticeOf(ProviderContainer container) =>
+      container.read(feedbackProvider);
 
   setUp(() {
     adapter = FakeHttpAdapter();
@@ -137,6 +144,11 @@ void main() {
         container.read(savedItemsProvider.future),
         throwsA(isA<Object>()),
       );
+      expect(
+        noticeOf(container),
+        isNull,
+        reason: 'an initial-load failure is not a manual refresh',
+      );
 
       scriptPages([
         SavedItemsFixtures.page(items: [SavedItemsFixtures.item(id: 'a')]),
@@ -145,7 +157,44 @@ void main() {
       await container.read(savedItemsProvider.future);
 
       expect(stateOf(container).items.map((i) => i.id), ['a']);
+      expect(
+        noticeOf(container),
+        isNull,
+        reason: 'an explicit retry reports through the screen, not feedback',
+      );
     });
+
+    test(
+      'a failed retry leaves the inline error and publishes no notice',
+      () async {
+        final container = await makeContainer();
+        addTearDown(container.dispose);
+
+        adapter.on(
+          '/saved-items',
+          status: 500,
+          body: errorBody('INTERNAL_SERVER_ERROR'),
+        );
+        await expectLater(
+          container.read(savedItemsProvider.future),
+          throwsA(isA<Object>()),
+        );
+
+        await container.read(savedItemsProvider.notifier).retry();
+        await expectLater(
+          container.read(savedItemsProvider.future),
+          throwsA(isA<Object>()),
+        );
+
+        expect(container.read(savedItemsProvider), isA<AsyncError>());
+        expect(
+          noticeOf(container),
+          isNull,
+          reason:
+              'Retry is recovered on the screen, not through global feedback',
+        );
+      },
+    );
   });
 
   group('pagination', () {
@@ -368,6 +417,11 @@ void main() {
       expect(state.items.map((i) => i.id), ['a']);
       expect(state.isLoadingMore, isFalse);
       expect(container.read(savedItemsProvider).hasError, isFalse);
+      expect(
+        noticeOf(container),
+        isNull,
+        reason: 'a pagination failure is not a manual refresh',
+      );
     });
   });
 
@@ -473,6 +527,11 @@ void main() {
 
       expect(stateOf(container).items.map((i) => i.id), ['a']);
       expect(container.read(savedItemsProvider).hasError, isFalse);
+      expect(
+        noticeOf(container),
+        isNull,
+        reason: 'a background head refresh is not a manual refresh',
+      );
     });
 
     test('refetches page one when nothing is loaded yet', () async {
@@ -599,6 +658,587 @@ void main() {
       final state = stateOf(container);
       expect(state.items.map((i) => i.id), ['new', 'a', 'b']);
       expect(state.isLoadingMore, isFalse);
+    });
+  });
+
+  group('manual refresh', () {
+    test(
+      'fetches page one and replaces the rows, cursor and has_more',
+      () async {
+        final container = await makeContainer();
+        addTearDown(container.dispose);
+
+        scriptPages([
+          SavedItemsFixtures.page(
+            items: [
+              SavedItemsFixtures.item(id: 'a'),
+              SavedItemsFixtures.item(id: 'b'),
+            ],
+            nextCursor: 'cursor-2',
+            hasMore: true,
+          ),
+          SavedItemsFixtures.page(
+            items: [
+              SavedItemsFixtures.item(id: 'fresh-a'),
+              SavedItemsFixtures.item(id: 'fresh-b'),
+            ],
+            nextCursor: 'cursor-fresh',
+            hasMore: true,
+          ),
+        ]);
+
+        await container.read(savedItemsProvider.future);
+        await container.read(savedItemsProvider.notifier).refresh();
+
+        final state = stateOf(container);
+        expect(state.items.map((i) => i.id), ['fresh-a', 'fresh-b']);
+        expect(
+          state.nextCursor,
+          'cursor-fresh',
+          reason: 'the old continuation point belonged to the old list',
+        );
+        expect(state.hasMore, isTrue);
+        expect(state.isLoadingMore, isFalse);
+        expect(
+          Uri.parse(adapter.requests.last.path).queryParameters,
+          isNot(contains('cursor')),
+          reason: 'a refresh asks for page one, never the old cursor',
+        );
+        expect(adapter.countFor('/saved-items'), 2);
+        expect(
+          noticeOf(container),
+          isNull,
+          reason: 'a successful refresh has no failure to announce',
+        );
+      },
+    );
+
+    test('loadMore continues from the refreshed cursor', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      scriptPages([
+        SavedItemsFixtures.page(
+          items: [SavedItemsFixtures.item(id: 'old')],
+          nextCursor: 'cursor-old',
+          hasMore: true,
+        ),
+        SavedItemsFixtures.page(
+          items: [SavedItemsFixtures.item(id: 'fresh')],
+          nextCursor: 'cursor-fresh',
+          hasMore: true,
+        ),
+        SavedItemsFixtures.page(
+          items: [SavedItemsFixtures.item(id: 'next')],
+          hasMore: false,
+        ),
+      ]);
+
+      await container.read(savedItemsProvider.future);
+      final notifier = container.read(savedItemsProvider.notifier);
+      await notifier.refresh();
+      await notifier.loadMore();
+
+      final state = stateOf(container);
+      expect(state.items.map((i) => i.id), ['fresh', 'next']);
+      expect(state.nextCursor, isNull);
+      expect(state.hasMore, isFalse);
+      expect(
+        adapter.requests
+            .map((r) => Uri.parse(r.path).queryParameters['cursor'])
+            .toList(),
+        [null, null, 'cursor-fresh'],
+        reason: 'the page after a refresh uses the refresh cursor, not the old',
+      );
+    });
+
+    test('concurrent refreshes share one request', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      adapter.onSequenceHolding('/saved-items', [
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [SavedItemsFixtures.item(id: 'a')],
+            nextCursor: 'cursor-2',
+            hasMore: true,
+          ),
+        ),
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [SavedItemsFixtures.item(id: 'fresh')],
+            hasMore: false,
+          ),
+        ),
+      ], holdAt: 2);
+
+      await container.read(savedItemsProvider.future);
+      final notifier = container.read(savedItemsProvider.notifier);
+
+      final first = notifier.refresh();
+      final second = notifier.refresh();
+
+      await untilCalled(() => adapter.countFor('/saved-items') == 2);
+      expect(
+        adapter.countFor('/saved-items'),
+        2,
+        reason: 'two gestures, one refresh request',
+      );
+
+      adapter.releaseBlocked();
+      await Future.wait([first, second]);
+
+      expect(stateOf(container).items.map((i) => i.id), ['fresh']);
+      expect(adapter.countFor('/saved-items'), 2);
+    });
+
+    test('a coalesced failed refresh publishes one notice', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      adapter.onSequenceHolding('/saved-items', [
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [SavedItemsFixtures.item(id: 'a')],
+            nextCursor: 'cursor-2',
+            hasMore: true,
+          ),
+        ),
+        FakeReply.error(500, 'INTERNAL_SERVER_ERROR'),
+      ], holdAt: 2);
+
+      await container.read(savedItemsProvider.future);
+      final notifier = container.read(savedItemsProvider.notifier);
+
+      final notices = <AppFeedback>[];
+      container.listen<AppFeedback?>(feedbackProvider, (previous, next) {
+        if (next != null) notices.add(next);
+      });
+
+      final first = notifier.refresh();
+      final second = notifier.refresh();
+
+      await untilCalled(() => adapter.countFor('/saved-items') == 2);
+      adapter.releaseBlocked();
+      await Future.wait([first, second]);
+
+      expect(
+        adapter.countFor('/saved-items'),
+        2,
+        reason: 'the second gesture joined the request already in flight',
+      );
+      expect(
+        notices,
+        hasLength(1),
+        reason: 'two gestures shared one request, so they share one notice',
+      );
+      expect(notices.single.copy, "Couldn't refresh. Check your connection.");
+
+      final state = stateOf(container);
+      expect(state.items.map((i) => i.id), ['a']);
+      expect(state.nextCursor, 'cursor-2');
+    });
+
+    test('blocks loadMore while the refresh is in flight', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      adapter.onSequenceHolding('/saved-items', [
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [SavedItemsFixtures.item(id: 'a')],
+            nextCursor: 'cursor-2',
+            hasMore: true,
+          ),
+        ),
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [SavedItemsFixtures.item(id: 'fresh')],
+            hasMore: false,
+          ),
+        ),
+      ], holdAt: 2);
+
+      await container.read(savedItemsProvider.future);
+      final notifier = container.read(savedItemsProvider.notifier);
+
+      final refresh = notifier.refresh();
+      await untilCalled(() => adapter.countFor('/saved-items') == 2);
+
+      await notifier.loadMore();
+
+      expect(
+        adapter.countFor('/saved-items'),
+        2,
+        reason: 'a page requested now would belong to the old list',
+      );
+      expect(stateOf(container).items.map((i) => i.id), ['a']);
+      expect(stateOf(container).isLoadingMore, isFalse);
+
+      adapter.releaseBlocked();
+      await refresh;
+
+      expect(stateOf(container).items.map((i) => i.id), ['fresh']);
+    });
+
+    test('a loadMore in flight cannot append to a refreshed list', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      adapter.onSequenceHolding('/saved-items', [
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [SavedItemsFixtures.item(id: 'a')],
+            nextCursor: 'cursor-2',
+            hasMore: true,
+          ),
+        ),
+        // Held page two, belonging to the list the refresh replaces.
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [SavedItemsFixtures.item(id: 'old-page')],
+            hasMore: true,
+          ),
+        ),
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [SavedItemsFixtures.item(id: 'fresh')],
+            nextCursor: 'cursor-fresh',
+            hasMore: true,
+          ),
+        ),
+      ], holdAt: 2);
+
+      await container.read(savedItemsProvider.future);
+      final notifier = container.read(savedItemsProvider.notifier);
+
+      final more = notifier.loadMore();
+      await untilCalled(() => adapter.countFor('/saved-items') == 2);
+
+      final refresh = notifier.refresh();
+      await refresh;
+
+      expect(stateOf(container).items.map((i) => i.id), ['fresh']);
+      expect(stateOf(container).nextCursor, 'cursor-fresh');
+      expect(stateOf(container).isLoadingMore, isFalse);
+
+      adapter.releaseBlocked();
+      await more;
+
+      final state = stateOf(container);
+      expect(state.items.map((i) => i.id), ['fresh']);
+      expect(
+        state.nextCursor,
+        'cursor-fresh',
+        reason: 'the old page cannot move the refreshed cursor',
+      );
+      expect(state.isLoadingMore, isFalse);
+    });
+
+    test(
+      'a failed loadMore in flight cannot overwrite a refreshed list',
+      () async {
+        final container = await makeContainer();
+        addTearDown(container.dispose);
+
+        adapter.onSequenceHolding('/saved-items', [
+          FakeReply(
+            200,
+            SavedItemsFixtures.page(
+              items: [SavedItemsFixtures.item(id: 'a')],
+              nextCursor: 'cursor-2',
+              hasMore: true,
+            ),
+          ),
+          FakeReply.error(500, 'INTERNAL_SERVER_ERROR'),
+          FakeReply(
+            200,
+            SavedItemsFixtures.page(
+              items: [SavedItemsFixtures.item(id: 'fresh')],
+              nextCursor: 'cursor-fresh',
+              hasMore: true,
+            ),
+          ),
+        ], holdAt: 2);
+
+        await container.read(savedItemsProvider.future);
+        final notifier = container.read(savedItemsProvider.notifier);
+
+        final more = notifier.loadMore();
+        await untilCalled(() => adapter.countFor('/saved-items') == 2);
+
+        final refresh = notifier.refresh();
+        await refresh;
+
+        adapter.releaseBlocked();
+        await more;
+
+        final listing = container.read(savedItemsProvider);
+        expect(listing.hasError, isFalse);
+        expect(stateOf(container).items.map((i) => i.id), ['fresh']);
+        expect(stateOf(container).nextCursor, 'cursor-fresh');
+        expect(stateOf(container).isLoadingMore, isFalse);
+      },
+    );
+
+    test('a failed refresh keeps populated rows and the cursor', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      scriptPages([
+        SavedItemsFixtures.page(
+          items: [
+            SavedItemsFixtures.item(id: 'a'),
+            SavedItemsFixtures.item(id: 'b'),
+          ],
+          nextCursor: 'cursor-2',
+          hasMore: true,
+        ),
+      ]);
+      await container.read(savedItemsProvider.future);
+
+      adapter.on(
+        '/saved-items',
+        status: 500,
+        body: errorBody('INTERNAL_SERVER_ERROR'),
+      );
+      await container.read(savedItemsProvider.notifier).refresh();
+
+      final state = stateOf(container);
+      expect(state.items.map((i) => i.id), ['a', 'b']);
+      expect(state.nextCursor, 'cursor-2');
+      expect(state.hasMore, isTrue);
+      expect(state.isLoadingMore, isFalse);
+      expect(
+        container.read(savedItemsProvider).hasError,
+        isFalse,
+        reason: 'a failed refresh does not make the rows already shown wrong',
+      );
+      expect(adapter.countFor('/saved-items'), 2);
+
+      final notice = noticeOf(container)!;
+      expect(notice.tone, FeedbackTone.uncertain);
+      expect(notice.copy, "Couldn't refresh. Check your connection.");
+    });
+
+    test(
+      'a failed refresh without rows becomes the retryable error state',
+      () async {
+        final container = await makeContainer();
+        addTearDown(container.dispose);
+
+        scriptPages([SavedItemsFixtures.emptyPage()]);
+        await container.read(savedItemsProvider.future);
+
+        adapter.on(
+          '/saved-items',
+          status: 500,
+          body: errorBody('INTERNAL_SERVER_ERROR'),
+        );
+        await container.read(savedItemsProvider.notifier).refresh();
+
+        final listing = container.read(savedItemsProvider);
+        expect(listing, isA<AsyncError>());
+        expect(listing.error, isA<ApiFailureServerFault>());
+        expect(listing.isLoading, isFalse);
+        expect(adapter.countFor('/saved-items'), 2);
+        expect(
+          noticeOf(container)?.copy,
+          "Couldn't refresh. Check your connection.",
+        );
+      },
+    );
+
+    test('a failed refresh from an error state leaves it retryable', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      adapter.on(
+        '/saved-items',
+        status: 500,
+        body: errorBody('INTERNAL_SERVER_ERROR'),
+      );
+      await expectLater(
+        container.read(savedItemsProvider.future),
+        throwsA(isA<Object>()),
+      );
+
+      await container.read(savedItemsProvider.notifier).refresh();
+
+      expect(container.read(savedItemsProvider), isA<AsyncError>());
+      expect(adapter.countFor('/saved-items'), 2);
+      expect(
+        noticeOf(container)?.copy,
+        "Couldn't refresh. Check your connection.",
+      );
+    });
+
+    test('a failed refresh clears an in-flight load-more marker', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      adapter.onSequenceHolding('/saved-items', [
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [SavedItemsFixtures.item(id: 'a')],
+            nextCursor: 'cursor-2',
+            hasMore: true,
+          ),
+        ),
+        // Held page two, which will never be used.
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [SavedItemsFixtures.item(id: 'old-page')],
+            hasMore: true,
+          ),
+        ),
+        // The failed refresh.
+        FakeReply.error(500, 'INTERNAL_SERVER_ERROR'),
+      ], holdAt: 2);
+
+      await container.read(savedItemsProvider.future);
+      final notifier = container.read(savedItemsProvider.notifier);
+
+      final more = notifier.loadMore();
+      await untilCalled(() => adapter.countFor('/saved-items') == 2);
+
+      await notifier.refresh();
+
+      final afterFailure = stateOf(container);
+      expect(afterFailure.items.map((i) => i.id), ['a']);
+      expect(afterFailure.nextCursor, 'cursor-2');
+      expect(afterFailure.isLoadingMore, isFalse);
+      expect(container.read(savedItemsProvider).hasError, isFalse);
+
+      adapter.releaseBlocked();
+      await more;
+
+      expect(stateOf(container).items.map((i) => i.id), ['a']);
+      expect(stateOf(container).isLoadingMore, isFalse);
+    });
+
+    test(
+      'a head refresh in flight is dropped when a manual refresh wins',
+      () async {
+        final container = await makeContainer();
+        addTearDown(container.dispose);
+
+        adapter.onSequenceHolding('/saved-items', [
+          FakeReply(
+            200,
+            SavedItemsFixtures.page(
+              items: [SavedItemsFixtures.item(id: 'a')],
+              nextCursor: 'cursor-2',
+              hasMore: true,
+            ),
+          ),
+          // The head the save produced, held until the manual refresh lands.
+          FakeReply(
+            200,
+            SavedItemsFixtures.page(
+              items: [
+                SavedItemsFixtures.item(id: 'saved'),
+                SavedItemsFixtures.item(id: 'a'),
+              ],
+              nextCursor: 'cursor-2',
+              hasMore: true,
+            ),
+          ),
+          FakeReply(
+            200,
+            SavedItemsFixtures.page(
+              items: [SavedItemsFixtures.item(id: 'fresh')],
+              nextCursor: 'cursor-fresh',
+              hasMore: true,
+            ),
+          ),
+        ], holdAt: 2);
+
+        await container.read(savedItemsProvider.future);
+        final notifier = container.read(savedItemsProvider.notifier);
+
+        final head = notifier.refreshHead();
+        await untilCalled(() => adapter.countFor('/saved-items') == 2);
+
+        await notifier.refresh();
+
+        expect(stateOf(container).items.map((i) => i.id), ['fresh']);
+
+        adapter.releaseBlocked();
+        await head;
+
+        final state = stateOf(container);
+        expect(
+          state.items.map((i) => i.id),
+          ['fresh'],
+          reason:
+              'the manual refresh started a new list; the old head is stale',
+        );
+        expect(state.nextCursor, 'cursor-fresh');
+        expect(state.isLoadingMore, isFalse);
+      },
+    );
+
+    test('a stale refresh failure cannot overwrite a newer build', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      adapter.onSequenceHolding('/saved-items', [
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [SavedItemsFixtures.item(id: 'a')],
+            nextCursor: 'cursor-2',
+            hasMore: true,
+          ),
+        ),
+        // The refresh, held until a rebuild has replaced the list.
+        FakeReply.error(500, 'INTERNAL_SERVER_ERROR'),
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [SavedItemsFixtures.item(id: 'rebuilt')],
+            nextCursor: 'cursor-rebuilt',
+            hasMore: true,
+          ),
+        ),
+      ], holdAt: 2);
+
+      await container.read(savedItemsProvider.future);
+      final notifier = container.read(savedItemsProvider.notifier);
+
+      final refresh = notifier.refresh();
+      await untilCalled(() => adapter.countFor('/saved-items') == 2);
+
+      await notifier.retry();
+      await container.read(savedItemsProvider.future);
+
+      expect(stateOf(container).items.map((i) => i.id), ['rebuilt']);
+
+      adapter.releaseBlocked();
+      await refresh;
+
+      final state = stateOf(container);
+      expect(state.items.map((i) => i.id), [
+        'rebuilt',
+      ], reason: 'the newer build owns the list; the old failure is stale');
+      expect(state.nextCursor, 'cursor-rebuilt');
+      expect(container.read(savedItemsProvider).hasError, isFalse);
+      expect(
+        noticeOf(container),
+        isNull,
+        reason: 'a stale failure must not announce itself over a newer list',
+      );
     });
   });
 

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
 import 'package:stash_it_app/app/feedback/feedback_controller.dart';
+import 'package:stash_it_app/app/feedback/feedback_host.dart';
 import 'package:stash_it_app/app/network/network_providers.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
@@ -63,6 +64,7 @@ void main() {
   Future<ProviderContainer> pumpInbox(
     WidgetTester tester, {
     AuthTokens? session,
+    bool withFeedbackHost = false,
   }) async {
     final container = await makeContainer(session: session);
     addTearDown(container.dispose);
@@ -73,7 +75,9 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
-          home: const InboxScreen(),
+          home: withFeedbackHost
+              ? const FeedbackHost(child: InboxScreen())
+              : const InboxScreen(),
         ),
       ),
     );
@@ -459,6 +463,302 @@ void main() {
       // A completed row with nothing to show says so in neutral copy — it is not
       // styled as a problem and never filtered out.
       expect(find.text('No details on this page'), findsOneWidget);
+    });
+  });
+
+  group('pull to refresh', () {
+    /// Drags [scrollable] far enough to arm the RefreshIndicator, then pumps
+    /// through its snap animation so `onRefresh` has been called.
+    Future<void> pull(WidgetTester tester, Finder scrollable) async {
+      // The test surface is tall, and RefreshIndicator arms at a fraction of
+      // the viewport height. A drag shorter than that fraction never calls
+      // `onRefresh`, however far it looks in a screenshot.
+      await tester.drag(scrollable, const Offset(0, 800));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      // The snap animation finishing is one frame; the provider's request is
+      // handed to a zero-delay timer after that, so a second frame is needed
+      // before the transport sees it.
+      await tester.pump(Duration.zero);
+    }
+
+    testWidgets(
+      'a short populated list stays pullable and keeps its rows while refreshing',
+      (tester) async {
+        useTallSurface(tester);
+        adapter.on(
+          '/saved-items',
+          body: SavedItemsFixtures.page(
+            items: [
+              SavedItemsFixtures.item(id: 'old', title: 'Already loaded'),
+            ],
+          ),
+        );
+
+        final container = await pumpInbox(tester);
+        await tester.pumpAndSettle();
+
+        // One row does not fill the viewport, which is exactly the case
+        // always-scrollable physics exists for.
+        expect(find.byType(SavedItemRow), findsOneWidget);
+        expect(find.byType(SavedItemSkeletonList), findsNothing);
+
+        adapter.onBlocking(
+          '/saved-items',
+          FakeReply(
+            200,
+            SavedItemsFixtures.page(
+              items: [SavedItemsFixtures.item(id: 'new', title: 'Refreshed')],
+            ),
+          ),
+        );
+
+        await pull(tester, find.byType(ListView));
+
+        expect(adapter.countFor('/saved-items'), 2);
+        expect(
+          find.text('Already loaded'),
+          findsOneWidget,
+          reason: 'a manual refresh keeps the current rows in the tree',
+        );
+        expect(
+          find.byType(SavedItemSkeletonList),
+          findsNothing,
+          reason: 'the skeleton is only for a genuine first load or Retry',
+        );
+        expect(
+          find.byType(RefreshProgressIndicator),
+          findsOneWidget,
+          reason: 'the indicator is the progress UI for a manual refresh',
+        );
+
+        // The rest of the screen is untouched by the gesture.
+        expect(find.text('INBOX'), findsOneWidget);
+        expect(find.text('RECENTLY SAVED'), findsOneWidget);
+        expect(find.text('Paste'), findsOneWidget);
+        expect(find.text('Save URL'), findsOneWidget);
+
+        adapter.releaseBlocked();
+        await tester.pumpAndSettle();
+
+        expect(find.text('Already loaded'), findsNothing);
+        expect(find.text('Refreshed'), findsOneWidget);
+        expect(find.byType(SavedItemSkeletonList), findsNothing);
+        expect(
+          container.read(feedbackProvider),
+          isNull,
+          reason: 'a successful refresh has nothing to report',
+        );
+      },
+    );
+
+    testWidgets('an empty listing is pullable and can become populated', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+
+      await pumpInbox(tester);
+      await tester.pumpAndSettle();
+      expect(find.text('Nothing saved yet'), findsOneWidget);
+
+      adapter.on(
+        '/saved-items',
+        body: SavedItemsFixtures.page(
+          items: [SavedItemsFixtures.item(id: 'new', title: 'Refreshed')],
+        ),
+      );
+
+      await pull(tester, find.byType(SingleChildScrollView));
+      await tester.pumpAndSettle();
+
+      expect(adapter.countFor('/saved-items'), 2);
+      expect(find.text('Nothing saved yet'), findsNothing);
+      expect(find.text('Refreshed'), findsOneWidget);
+      expect(find.byType(SavedItemSkeletonList), findsNothing);
+    });
+
+    testWidgets('an initial error is pullable and can recover', (tester) async {
+      useTallSurface(tester);
+      adapter.on(
+        '/saved-items',
+        status: 500,
+        body: errorBody('INTERNAL_SERVER_ERROR'),
+      );
+
+      final container = await pumpInbox(tester);
+      await tester.pumpAndSettle();
+      expect(
+        find.text('We could not reach the server. Try again shortly.'),
+        findsOneWidget,
+      );
+      expect(
+        container.read(feedbackProvider),
+        isNull,
+        reason: 'an initial-load failure is not a manual refresh',
+      );
+
+      adapter.on(
+        '/saved-items',
+        body: SavedItemsFixtures.page(
+          items: [SavedItemsFixtures.item(id: 'new', title: 'Recovered')],
+        ),
+      );
+
+      await pull(tester, find.byType(SingleChildScrollView));
+      await tester.pumpAndSettle();
+
+      expect(adapter.countFor('/saved-items'), 2);
+      expect(find.text('Recovered'), findsOneWidget);
+      expect(find.widgetWithText(AppButton, 'Retry'), findsNothing);
+      expect(
+        container.read(feedbackProvider),
+        isNull,
+        reason: 'a successful manual refresh announces nothing',
+      );
+    });
+
+    testWidgets('a failed refresh keeps the populated rows on screen', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      adapter.on(
+        '/saved-items',
+        body: SavedItemsFixtures.page(
+          items: [
+            SavedItemsFixtures.item(id: 'a', title: 'Still here'),
+            SavedItemsFixtures.item(id: 'b', title: 'Also here'),
+          ],
+        ),
+      );
+
+      final container = await pumpInbox(tester, withFeedbackHost: true);
+      await tester.pumpAndSettle();
+
+      adapter.on(
+        '/saved-items',
+        status: 500,
+        body: errorBody('INTERNAL_SERVER_ERROR'),
+      );
+
+      await pull(tester, find.byType(SavedItemRow).first);
+      await tester.pumpAndSettle();
+
+      expect(adapter.countFor('/saved-items'), 2);
+      expect(find.text('Still here'), findsOneWidget);
+      expect(find.text('Also here'), findsOneWidget);
+      expect(find.byType(SavedItemSkeletonList), findsNothing);
+      expect(find.widgetWithText(AppButton, 'Retry'), findsNothing);
+      expect(
+        find.text('We could not reach the server. Try again shortly.'),
+        findsNothing,
+      );
+
+      final notice = container.read(feedbackProvider)!;
+      expect(notice.tone, FeedbackTone.uncertain);
+      expect(notice.copy, "Couldn't refresh. Check your connection.");
+      expect(
+        find.text("Couldn't refresh. Check your connection."),
+        findsOneWidget,
+        reason: 'the notice is shown through the app-wide feedback host',
+      );
+
+      // Run the notice's clock out so its dismissal timer does not outlive the
+      // test body.
+      await tester.pump(
+        feedbackVisibleDuration + const Duration(milliseconds: 1),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text("Couldn't refresh. Check your connection."),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a failed refresh on an empty listing shows the retry state', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+
+      final container = await pumpInbox(tester);
+      await tester.pumpAndSettle();
+
+      adapter.on(
+        '/saved-items',
+        status: 500,
+        body: errorBody('INTERNAL_SERVER_ERROR'),
+      );
+
+      await pull(tester, find.byType(SingleChildScrollView));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('We could not reach the server. Try again shortly.'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(AppButton, 'Retry'), findsOneWidget);
+      expect(find.text('Nothing saved yet'), findsNothing);
+      expect(find.byType(SavedItemSkeletonList), findsNothing);
+      expect(
+        container.read(feedbackProvider)?.copy,
+        "Couldn't refresh. Check your connection.",
+        reason: 'this was still a manual refresh, even with no rows to keep',
+      );
+    });
+
+    testWidgets('Retry still uses the initial-load skeleton', (tester) async {
+      useTallSurface(tester);
+      adapter.on(
+        '/saved-items',
+        status: 500,
+        body: errorBody('INTERNAL_SERVER_ERROR'),
+      );
+
+      final container = await pumpInbox(tester);
+      await tester.pumpAndSettle();
+      expect(
+        container.read(feedbackProvider),
+        isNull,
+        reason: 'the initial failure is reported inline, not globally',
+      );
+
+      adapter.onBlocking(
+        '/saved-items',
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [SavedItemsFixtures.item(id: 'new', title: 'Recovered')],
+          ),
+        ),
+      );
+
+      await tester.tap(find.widgetWithText(AppButton, 'Retry'));
+      await tester.pump();
+      await tester.pump(Duration.zero);
+
+      expect(adapter.countFor('/saved-items'), 2);
+      expect(
+        container.read(savedItemsProvider).isLoading,
+        isTrue,
+        reason: 'Riverpod keeps the old failure while Retry rebuilds',
+      );
+      expect(
+        find.byType(SavedItemSkeletonList),
+        findsOneWidget,
+        reason: 'an explicit Retry is a first load, not a manual refresh',
+      );
+
+      adapter.releaseBlocked();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Recovered'), findsOneWidget);
+      expect(find.byType(SavedItemSkeletonList), findsNothing);
+      expect(
+        container.read(feedbackProvider),
+        isNull,
+        reason: 'a Retry is reported inline, not through global feedback',
+      );
     });
   });
 

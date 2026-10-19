@@ -10,16 +10,21 @@ Neither is duplicated here.
 secure credential storage, startup restoration, access-token attachment, single-flight
 renewal, session invalidation and logout all work and are tested. The Inbox reads
 `GET /saved-items` over that same pipeline — loading, empty, error-with-retry and rows
-states, with cursor pagination — and now **writes to it**: `POST /saved-items` from the URL
-field, one URL per confirmed tap, followed by a head refresh that keeps the pages already
-loaded. Every outcome is reported through one app-wide notice hosted above the router,
-drawn to the Feedback component in `docs/design-explorations/components.html`; the intake
+states, with cursor pagination and **manual pull-to-refresh** — and now **writes to it**:
+`POST /saved-items` from the URL field, one URL per confirmed tap, followed by a head
+refresh that keeps the pages already loaded. Pulling down re-reads page one and replaces
+the loaded history and its cursor; a failed populated pull keeps the rows already shown
+and reports once through the app-wide notice in the **uncertain** tone. Every save outcome
+is also reported through that notice, hosted above the router and drawn to the Feedback
+component in `docs/design-explorations/components.html`; the intake
 refuses a clearly invalid URL locally, before any request, and the server stays the
-authority for everything the client cannot decide. The
-refresh path's failure handling was hardened this iteration: a renewal that failed with
+authority for everything the client cannot decide. The token-renewal path's failure
+handling was hardened this iteration: a renewal that failed with
 anything other than a `SessionExpiredException` or a `DioException` used to leave the
 request's Dio error handler unresolved and the request hanging, and now fails in a
-controlled, classified way. **No other product feature is implemented**: Collections,
+controlled, classified way. A `SessionController` regression fixed in the same cycle also
+stops a late terminal request re-arming the one-time session-expired notice after sign-in
+has consumed it. **No other product feature is implemented**: Collections,
 Search and Profile data are not fetched, the intake's **Paste** action is still unwired
 (there is no clipboard dependency), and Registration, Google sign-in and password reset are
 not built.
@@ -218,6 +223,35 @@ be wrong. The cursor is stored and returned byte for byte and never parsed. Pagi
 *either* signal: `has_more` false, or `next_cursor` null. Rows are de-duplicated by `id`
 across pages, because a cursor explicitly survives an item being re-saved. A failed later
 page keeps the rows already on screen.
+
+**Pull-to-refresh is the manual read path.** Pulling the list down calls
+`SavedItems.refresh()`, which re-reads page one with no cursor and replaces the loaded
+rows, cursor and `has_more` with the fresh page; previously loaded pages are intentionally
+discarded rather than merged, because they and their continuation point belong to the
+history being replaced. A later `loadMore()` continues from the refreshed cursor. The
+populated list, the empty state and a settled initial error are all pullable, and
+`AlwaysScrollableScrollPhysics` keeps a page that does not fill the viewport pullable too.
+Current rows stay on screen while the request runs — the indicator is the only progress
+UI, and the skeleton is reserved for a first load or an explicit Retry.
+
+**Concurrency and stale responses.** Concurrent pull gestures share one in-flight future,
+so two gestures make one request. `_listVersion` identifies the list each page request
+belongs to; a rebuild and a manual refresh each start a new version. A `loadMore()` or
+`refreshHead()` already in flight against the old list has its response dropped, so it
+cannot append an old page or move the refreshed cursor. `loadMore()` is refused while a
+refresh is in flight, and beginning a refresh clears a stale load-more marker.
+
+**Failure.** With rows on screen, a failed refresh leaves the rows, cursor and `has_more`
+unchanged, with no load-more marker left set, so the indicator retracts over the same
+valid list. With no rows — an empty listing or an existing error — it publishes
+`AsyncError`, preserving the existing inline copy and Retry action. The failure does not
+escape `refresh()`. **Only a failed manual refresh announces itself**:
+`_refreshFailedFeedback()` returns `FeedbackTone.uncertain` with
+`"Couldn't refresh. Check your connection."`, published after the version guard so a stale
+response cannot announce over a newer list and coalesced gestures share one notice.
+Initial load, explicit `retry()`, `loadMore()` and `refreshHead()` stay silent. A failed
+read leaves the displayed rows valid but not provably current, which is why the copy claims
+neither a lost item nor a failed save.
 
 **Saved-time labels are now derived from `created_at`** by the mapper, using the wording the
 approved prototype already established (`Saved just now` / `12 min ago` / `3 hours ago` /
@@ -822,6 +856,20 @@ back to the danger tone fails the two treatment tests.
 scripted transport; the backend's revocation behaviour behind it remains read from its Go source
 rather than observed.
 
+**Late terminal requests no longer re-arm the notice (fixed during the pull-to-refresh
+cycle).** One case was missed: a request already in flight when the terminal renewal
+arrived could call `_endSession()` again after `consumeSessionEnded()` had returned true.
+It found no credentials left to clear but set `_endedWithoutNotice` again, so a later
+mount of the sign-in screen would announce an expiry belonging to the previous session.
+`SessionController` now records `_sessionEnded` for the current session and returns
+immediately if an end has already been processed. It is set by `_endSession()` and
+`discard()`, cleared by `adopt()` for a new session, and cleared again if credential
+cleanup throws so a later attempt can still end the session. It cannot be replaced by
+`state == null`, because bootstrap and storage-seeded tests can hold credentials before
+adoption. The regression test in `session_controller_test.dart` drives a terminal
+`SESSION_REVOKED`, consumes the notice, then renews again with no refresh token left and
+asserts the notice stays consumed.
+
 **Two limitations worth recording.** First, the app must be pumped as `StashItApp()` with **no
 injected router** for the redirect to fire at all: the auth `refreshListenable` only delivers
 while `appRouterProvider` is watched, and `StashItApp` is what watches it.
@@ -1211,6 +1259,47 @@ New coverage:
 acceptability or the server's length cap, and it deliberately does not try. Q13/§2.9 in the
 product record still read `[Open]`/`[Rec]` — see open item 9.
 
+### Inbox pull-to-refresh verification
+
+**Complete for this iteration; the behaviour is described under Inbox above and the
+session fix under One-time session-expired feedback.** New coverage:
+
+- **Manual refresh controller** — page one requested with no cursor; rows, cursor and
+  `has_more` replaced; `loadMore()` continuing from the refreshed cursor; concurrent
+  gestures sharing one request and one notice on failure; `loadMore()` blocked during a
+  refresh and an in-flight load-more invalidated; a stale head refresh and a stale refresh
+  failure both dropped; a failed populated refresh keeping its rows, cursor and pagination
+  state while clearing the load-more marker; no-rows and existing-error failures becoming
+  the retryable `AsyncError`; and successful refreshes, initial loads, `retry()`,
+  `loadMore()` and `refreshHead()` publishing nothing.
+- **Inbox pull-to-refresh** — a short populated list staying pullable with its rows in the
+  tree and no skeleton while the indicator runs; an empty listing becoming populated; an
+  initial error recovering; a failed populated refresh keeping the rows and showing the
+  notice through the feedback host before it auto-dismisses; a failed empty refresh
+  showing the retry state plus the notice; and an explicit Retry still using the skeleton
+  without publishing.
+- **Session notice** — the late-terminal-request regression above.
+
+Results from the implementation/test cycle; this document was the only file changed
+afterwards:
+
+| Command | Result |
+| --- | --- |
+| `dart format --set-exit-if-changed` (changed Dart files) | `0 changed` |
+| `flutter analyze` | `No issues found!` (whole project) |
+| `flutter test test/features/saved_items/application/saved_items_controller_test.dart` | `All tests passed!` — **34 tests** |
+| `flutter test test/features/inbox/presentation/inbox_screen_test.dart` | `All tests passed!` — **32 tests** |
+| `flutter test` | `All tests passed!` — **436 tests** (was 415) |
+
+Generated files were not regenerated because no `@riverpod`, `@RestApi`, `@freezed`,
+`@JsonSerializable` or `@JsonKey` annotation changed, and no generated file changed.
+
+**Limitations.** A successful refresh discards the pages after page one, so the user must
+load more again. The failure notice is transient and generic across failure variants — see
+open item 10 — so once it dismisses, a populated list carries no persistent sign that it
+may be stale. No device, emulator or live backend was involved: the gesture is verified by
+widget tests against the scripted transport, not by eye or against a running server.
+
 ## Not implemented
 
 - Collections list, collection contents, deletion.
@@ -1306,6 +1395,14 @@ Carried from the discovery documents, plus what this milestone surfaced.
    controller. Until it is recorded, treat the local gate's exact rule (shape only, no length
    cap, no network probe) as **implemented on instruction**, not as an approved product
    decision, and do not extend it (deduplication, domain rules) without the record saying so.
+10. **The failed-refresh notice is generic, transient, and can overlap a session-ending
+    redirect.** Every failed manual pull — a `5xx`, an offline device, and a refresh that
+    ended the session — publishes the same `uncertain` "Couldn't refresh. Check your
+    connection." A session-ending pull therefore shows it alongside sign-in's one-time
+    session explanation, and once it dismisses a populated list carries no persistent sign
+    that it may be stale. Whether to vary the copy by failure or suppress it during sign-out
+    is a copy/product decision; the single notice was chosen to reuse the existing feedback
+    system and keep the failure scope to manual refresh.
 
 ### Carried from the discovery documents
 
@@ -1319,10 +1416,10 @@ Carried from the discovery documents, plus what this milestone surfaced.
    question in §D.5. Availability is not approval: the rationale behind §2.7 is now
    obsolete, but the recommendation itself is unchanged.
 3. **Inbox UX partially settled by implementation, not by decision.** Loading and empty
-   states exist, and the screen pages on scroll. The copy for both, and the saved-time
-   wording, were chosen during implementation — the documents settle neither, so treat
-   all three as revisitable. Bounded-end paging remains genuinely open: the screen has
-   no end boundary.
+   states exist, the screen pages on scroll, and the list supports manual pull-to-refresh.
+   The copy for those states, the saved-time wording and the failed-refresh notice were
+   chosen during implementation — the documents settle none of them, so treat them as
+   revisitable. Bounded-end paging remains genuinely open: the screen has no end boundary.
 4. **`flutter_localizations` absent.** Tolerable for a prototype, not for real screens.
 5. **Secure storage undecided (V5).** §7.12 rejects plain files and shared preferences,
    so this is a decision to make, not a workaround to invent.

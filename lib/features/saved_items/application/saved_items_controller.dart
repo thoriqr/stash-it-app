@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:stash_it_app/app/feedback/app_feedback.dart';
+import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
@@ -20,6 +22,21 @@ part 'saved_items_controller.g.dart';
 /// It is a top-level tear-off rather than a static member so it is a compile-time
 /// constant, which is what the annotation argument requires.
 Duration? _neverRetry(int retryCount, Object error) => null;
+
+/// What a failed manual pull-to-refresh says.
+///
+/// A refresh is a **read**: the rows already on screen remain valid, so the
+/// notice must not suggest that an item was lost or was never saved.
+/// [FeedbackTone.uncertain] is the tone for a request whose refreshed page did
+/// not arrive — the client cannot claim the displayed list is current, but it
+/// is not reporting a failed item.
+///
+/// Published only by [SavedItems.refresh]. An initial load, [SavedItems.retry],
+/// [SavedItems.loadMore] and [SavedItems.refreshHead] all stay silent.
+AppFeedback _refreshFailedFeedback() => AppFeedback(
+  tone: FeedbackTone.uncertain,
+  copy: "Couldn't refresh. Check your connection.",
+);
 
 /// The Inbox listing: the first page, and any page after it.
 ///
@@ -52,15 +69,107 @@ Duration? _neverRetry(int retryCount, Object error) => null;
 /// one roughly 200 ms later, without the user having touched anything.
 ///
 /// Scoped to this provider deliberately: the session controller and the router
-/// keep Riverpod's default, and no global policy is changed. [SavedItems.retry] —
-/// which the Inbox's Retry button calls — remains the only way this listing is
-/// fetched again, which is the manual retry **D23** asks for.
+/// keep Riverpod's default, and no global policy is changed. [SavedItems.retry]
+/// remains the explicit recovery from a failed first load, and
+/// [SavedItems.refresh] is the manual pull-to-refresh path; neither is automatic,
+/// which is the manual retry **D23** asks for.
 @Riverpod(keepAlive: true, retry: _neverRetry)
 class SavedItems extends _$SavedItems {
+  /// Identifies the list a page request belongs to.
+  ///
+  /// A manual refresh starts a new list. A load-more already in flight belongs
+  /// to the old one and must be dropped rather than appended to the new rows or
+  /// used to move the new cursor.
+  int _listVersion = 0;
+
+  /// The manual refresh currently in flight, shared by concurrent gestures.
+  Future<void>? _refreshInFlight;
+
   @override
   Future<SavedItemsState> build() async {
+    // A rebuild is a new list too. Any page requested against the previous one
+    // must not land in this one.
+    _listVersion++;
+
     final page = await ref.watch(savedItemsRepositoryProvider).list();
     return _toState(page);
+  }
+
+  /// Replaces the loaded history with a fresh first page.
+  ///
+  /// This is the pull-to-refresh path, distinct from [retry] and [refreshHead].
+  /// The current rows stay on screen while the request is in flight — the
+  /// `RefreshIndicator` is the only progress UI — and are replaced, together
+  /// with the cursor, only when the new first page arrives. Replacing rather
+  /// than merging is deliberate: the user asked for current server state, and
+  /// keeping older pages would preserve rows and a continuation point that no
+  /// longer match the refreshed head.
+  ///
+  /// Concurrent gestures share one request. A load-more already in flight is
+  /// invalidated through [_listVersion], so its page cannot be appended to the
+  /// refreshed list or advance its cursor.
+  ///
+  /// **Failure:** with rows on screen, they remain exactly as they were and the
+  /// indicator retracts so the user can try again. With nothing on screen — an
+  /// empty result or an earlier failure — the failure becomes the provider's
+  /// error state, preserving the existing inline copy and Retry action. A failed
+  /// gesture is also announced once through the app-wide feedback channel; see
+  /// [_refreshFailedFeedback].
+  Future<void> refresh() {
+    final inFlight = _refreshInFlight;
+    if (inFlight != null) return inFlight;
+
+    final version = ++_listVersion;
+
+    late final Future<void> future;
+    future = _refresh(version).whenComplete(() {
+      if (identical(_refreshInFlight, future)) _refreshInFlight = null;
+    });
+    _refreshInFlight = future;
+
+    // A load-more from the previous list can no longer be used. Stop showing
+    // its row while the refresh owns the list.
+    final current = switch (state) {
+      AsyncData(:final value) => value,
+      _ => null,
+    };
+    if (current != null && current.isLoadingMore) {
+      state = AsyncData(current.copyWith(isLoadingMore: false));
+    }
+
+    return future;
+  }
+
+  Future<void> _refresh(int version) async {
+    try {
+      final page = await ref.read(savedItemsRepositoryProvider).list();
+
+      // A newer refresh or a rebuild owns the list now.
+      if (!ref.mounted || version != _listVersion) return;
+
+      state = AsyncData(_toState(page));
+    } catch (error, stackTrace) {
+      if (!ref.mounted || version != _listVersion) return;
+
+      final current = switch (state) {
+        AsyncData(:final value) => value,
+        _ => null,
+      };
+
+      // The list is a history, and a failed refresh does not make the rows
+      // already on screen wrong. With nothing to keep, use the same AsyncError
+      // the initial load uses so the existing error copy and Retry appear.
+      if (current == null || current.items.isEmpty) {
+        state = AsyncError(error, stackTrace);
+      }
+
+      // This is the one failure path that announces itself: the user explicitly
+      // asked for fresh state and the request did not deliver it. `retry`,
+      // `loadMore` and `refreshHead` deliberately stay silent. Publishing here,
+      // after the version guard, means a stale response cannot raise a notice;
+      // coalesced gestures share this one `_refresh` and therefore one notice.
+      ref.read(feedbackProvider.notifier).show(_refreshFailedFeedback());
+    }
   }
 
   /// Refetches the newest page, discarding whatever is on screen.
@@ -95,7 +204,9 @@ class SavedItems extends _$SavedItems {
   ///
   /// **Concurrent callers are handled by [loadMore], not here.** A page may be in
   /// flight while this runs; [loadMore] re-reads the state when it completes, so
-  /// neither operation discards the other's rows.
+  /// neither operation discards the other's rows. A manual [refresh] is
+  /// different: it starts a new list, so if it begins while this is in flight,
+  /// its refreshed head wins and this reply is dropped.
   Future<void> refreshHead() async {
     final loaded = switch (state) {
       AsyncData(:final value) => value,
@@ -111,6 +222,7 @@ class SavedItems extends _$SavedItems {
       return;
     }
 
+    final version = _listVersion;
     final SavedItemPage head;
     try {
       head = await ref.read(savedItemsRepositoryProvider).list();
@@ -120,7 +232,7 @@ class SavedItems extends _$SavedItems {
       return;
     }
 
-    if (!ref.mounted) return;
+    if (!ref.mounted || version != _listVersion) return;
 
     // Re-read rather than reuse `loaded`: a `loadMore` may have completed while
     // this request was in flight, and merging into that snapshot would drop its
@@ -147,8 +259,9 @@ class SavedItems extends _$SavedItems {
   /// Appends the next page.
   ///
   /// Does nothing when the listing has already ended, when a page is already in
-  /// flight, or when nothing is loaded to append to — so a scroll notification
-  /// arriving repeatedly cannot queue duplicate requests.
+  /// flight, when a manual refresh owns the list, or when nothing is loaded to
+  /// append to — so a scroll notification arriving repeatedly cannot queue
+  /// duplicate requests.
   ///
   /// **Stops on either signal.** The contract says `has_more` is false and
   /// `next_cursor` is explicitly null together on the final page; both are
@@ -159,6 +272,8 @@ class SavedItems extends _$SavedItems {
   /// throw away pages one and two. There is no second error channel for it: the
   /// user can retry the listing, which is the manual retry **D23** asks for.
   Future<void> loadMore() async {
+    if (_refreshInFlight != null) return;
+
     final current = switch (state) {
       AsyncData(:final value) => value,
       _ => null,
@@ -168,12 +283,18 @@ class SavedItems extends _$SavedItems {
     if (current == null || cursor == null || !current.hasMore) return;
     if (current.isLoadingMore) return;
 
+    final version = _listVersion;
     state = AsyncData(current.copyWith(isLoadingMore: true));
 
     try {
       final page = await ref
           .read(savedItemsRepositoryProvider)
           .list(cursor: cursor);
+
+      // A manual refresh started after this request: its first page replaced
+      // the list and cursor this page was fetched against. Appending now would
+      // mix two list generations and move a cursor that no longer applies.
+      if (!ref.mounted || version != _listVersion) return;
 
       // Re-read rather than merge into `current`: `refreshHead` may have
       // prepended newer rows while this page was in flight, and writing the
@@ -197,6 +318,8 @@ class SavedItems extends _$SavedItems {
     } catch (_) {
       // ApiFailure or anything else. See the doc comment: the loaded rows stay,
       // and `isLoadingMore` is cleared so a later scroll can try again.
+      if (!ref.mounted || version != _listVersion) return;
+
       final latest = switch (state) {
         AsyncData(:final value) => value,
         _ => null,

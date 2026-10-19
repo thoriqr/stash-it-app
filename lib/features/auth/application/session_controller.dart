@@ -123,6 +123,15 @@ class SessionController extends _$SessionController implements TokenProvider {
   /// deliberately does not have.
   bool _endedWithoutNotice = false;
 
+  /// Whether this controller has processed an end for the current session.
+  ///
+  /// Unlike `state == null`, this stays true after [_endedWithoutNotice] is
+  /// consumed, so a late expired request cannot re-arm the one-time notice. It
+  /// also cannot be used in place of a null state at startup: in a test that
+  /// seeds only storage, or during bootstrap, there is no adopted session yet
+  /// but there may still be credentials that must be cleared.
+  bool _sessionEnded = false;
+
   /// Whether a session has just ended, consuming the fact.
   ///
   /// Returns `true` **once** per ended session: the flag is cleared before the
@@ -146,12 +155,14 @@ class SessionController extends _$SessionController implements TokenProvider {
   /// described in the class documentation.
   void adopt(AuthTokens tokens) {
     if (!ref.mounted) return;
+    _sessionEnded = false;
     state = tokens;
   }
 
   /// Records that no session is held. The credentials are cleared by the caller.
   void discard() {
     if (!ref.mounted) return;
+    _sessionEnded = true;
     state = null;
   }
 
@@ -262,15 +273,33 @@ class SessionController extends _$SessionController implements TokenProvider {
   /// edge in the wrong direction and would recreate the cycle this class exists
   /// to avoid.
   Future<void> _endSession() async {
-    await _store.clear();
+    // A late expired request can re-enter renewal after an earlier terminal
+    // response already ended the session. There is nothing left to clear, and
+    // running on would re-arm the one-time notice after sign-in consumed it.
+    //
+    // This cannot be written as `state == null`: a null state is also the
+    // starting state for a test (or bootstrap) that has credentials in storage
+    // but has not adopted them yet, and those credentials still have to be
+    // cleared. The marker records that an end has actually been processed.
+    if (_sessionEnded) return;
+    _sessionEnded = true;
+
+    try {
+      await _store.clear();
+    } catch (_) {
+      // A cleanup that failed did not end the session locally. Leave the
+      // credentials and the state alone, and allow a later attempt; a failure
+      // must not claim the session ended when storage says otherwise.
+      _sessionEnded = false;
+      rethrow;
+    }
 
     // Recorded **before** `discard`, because discarding is what moves the app to
     // sign-in. The fact has to be in place before anything can react to that
     // transition, or the screen which explains it arrives to find nothing.
     //
-    // Only once `clear` has succeeded. A cleanup that failed must not claim the
-    // session ended when storage says otherwise — and if it had thrown, the
-    // `discard` below would not have run either, so the two agree.
+    // Only once `clear` has succeeded, so a cleanup failure never arms the
+    // notice.
     _endedWithoutNotice = true;
     discard();
   }

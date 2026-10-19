@@ -250,6 +250,50 @@ void main() {
       }
     });
 
+    test('a late request does not re-arm the one-time notice', () async {
+      container = makeContainer(
+        restored: const AuthTokens(
+          accessToken: 'access-1',
+          refreshToken: 'refresh-1',
+        ),
+      );
+      container.read(refreshDioProvider).httpClientAdapter = adapter;
+
+      backend.values[accessKey] = 'access-1';
+      backend.values[refreshKey] = 'refresh-1';
+      adapter.on(
+        '/auth/refresh',
+        status: 401,
+        body: errorBody('SESSION_REVOKED'),
+      );
+
+      await expectLater(
+        controller().refreshAccessToken(),
+        throwsA(isA<SessionExpiredException>()),
+      );
+      expect(controller().consumeSessionEnded(), isTrue);
+
+      // A request already in flight when the terminal reply arrived now finds
+      // its refresh token gone and tries to end the session again.
+      await expectLater(
+        controller().refreshAccessToken(),
+        throwsA(
+          isA<SessionExpiredException>().having(
+            (e) => e.code,
+            'code',
+            'NO_REFRESH_TOKEN',
+          ),
+        ),
+      );
+
+      expect(
+        controller().consumeSessionEnded(),
+        isFalse,
+        reason: 'the second ending must not re-arm the already-consumed notice',
+      );
+      expect(backend.values, isEmpty);
+    });
+
     test('an ambiguous failure keeps credentials and does not retry', () async {
       container = makeContainer();
       container.read(refreshDioProvider).httpClientAdapter = adapter;
