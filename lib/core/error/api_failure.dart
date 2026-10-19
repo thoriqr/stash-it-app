@@ -73,8 +73,10 @@ sealed class ApiFailureRequest extends ApiFailure {
   const ApiFailureRequest();
 }
 
-/// `VALIDATION_ERROR`. The fields carry field-level detail for diagnosis; they
-/// are not rendered verbatim.
+/// `VALIDATION_ERROR`, and `INVALID_URL` — a URL that parses but names nothing.
+///
+/// The fields carry field-level detail for diagnosis; they are not rendered
+/// verbatim.
 final class ApiFailureValidation extends ApiFailureRequest {
   const ApiFailureValidation(this.fields);
 
@@ -86,11 +88,23 @@ final class ApiFailureMalformedRequest extends ApiFailureRequest {
   const ApiFailureMalformedRequest();
 }
 
-/// A non-2xx response arrived but its body could not be read as a coded error:
-/// not JSON, no `error` key, or a code this client does not recognise.
+/// A reply arrived but its body could not be read as a coded error: not JSON, no
+/// `error` key, or a code this client does not recognise — **or** a reply whose
+/// status is `2xx` and whose body does not decode into the documented shape.
 ///
-/// **[D15] group F. Known not saved** — a response did arrive, so the outcome is
-/// determinate. The body is never surfaced.
+/// **[D15] group F. Known not saved for a read** — a response did arrive, so the
+/// outcome is determinate: the page is not shown. The body is never surfaced.
+///
+/// **For a write, this variant does not establish the outcome.** The two shapes
+/// it collapses mean opposite things: a non-2xx body the client could not read is
+/// a known-not-saved refusal (**D16**), while a `2xx` whose body failed to decode
+/// — Dio only decodes a status that passed `validateStatus`, and the create
+/// handler answers `201` only after the row committed — means the write landed
+/// and only its representation is unreadable. Nothing in the variant separates
+/// them, so a mutation must treat it as *unestablished* rather than as a failure
+/// to save. Adding a variant for the second case would be the honest fix; it is
+/// deliberately not done here, because nothing in this client yet distinguishes
+/// them and a guessed distinction would be worse than a stated one.
 final class ApiFailureUnreadableResponse extends ApiFailure {
   const ApiFailureUnreadableResponse({this.code});
 

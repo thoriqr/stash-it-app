@@ -26,8 +26,10 @@ import 'package:stash_it_app/shared/widgets/app_button.dart';
 /// it at `created_at DESC, id DESC` with no sort parameter, so sorting here would
 /// be a second ordering rule that could disagree with the server's (**D4**).
 ///
-/// Not implemented here, deliberately: URL submission, the clipboard, the
-/// pending-URL queue, `POST /saved-items`, and any collection mutation.
+/// The intake above the list is the only write: `POST /saved-items`, one URL per
+/// confirmed tap, followed by a head refresh so the new item appears without
+/// discarding the pages already loaded. Not implemented here, deliberately: the
+/// clipboard, the pending-URL queue, and any collection mutation.
 class InboxScreen extends ConsumerStatefulWidget {
   const InboxScreen({super.key});
 

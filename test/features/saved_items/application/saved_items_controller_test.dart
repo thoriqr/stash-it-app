@@ -371,6 +371,237 @@ void main() {
     });
   });
 
+  group('the head refresh that follows a save', () {
+    test('puts the newest page in front and keeps the loaded rows', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      scriptPages([
+        SavedItemsFixtures.page(
+          items: [
+            SavedItemsFixtures.item(id: 'a'),
+            SavedItemsFixtures.item(id: 'b'),
+          ],
+          nextCursor: 'cursor-2',
+          hasMore: true,
+        ),
+        // The head as it looks after the save: the new row on top, and a row the
+        // page below already holds.
+        SavedItemsFixtures.page(
+          items: [
+            SavedItemsFixtures.item(id: 'new'),
+            SavedItemsFixtures.item(id: 'a'),
+          ],
+          hasMore: true,
+          nextCursor: 'cursor-2',
+        ),
+      ]);
+
+      await container.read(savedItemsProvider.future);
+      await container.read(savedItemsProvider.notifier).refreshHead();
+
+      final state = stateOf(container);
+      expect(state.items.map((i) => i.id), ['new', 'a', 'b']);
+      expect(
+        state.nextCursor,
+        'cursor-2',
+        reason:
+            'the loaded pages keep their own continuation point, so the next '
+            'loadMore does not re-fetch what is already here',
+      );
+      expect(state.hasMore, isTrue);
+      expect(
+        adapter.countFor('/saved-items'),
+        2,
+        reason: 'one page-one read before the save, one after',
+      );
+      expect(
+        adapter.requests.last.path,
+        isNot(contains('cursor')),
+        reason: 'a head refresh asks for page one, never a cursor',
+      );
+    });
+
+    test('adopts a continuation point when the list had none', () async {
+      // The case a fully-loaded history is in when a save pushes it past a page
+      // boundary: page one was the only page, and now there is a second.
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      scriptPages([
+        SavedItemsFixtures.page(items: [SavedItemsFixtures.item(id: 'a')]),
+        SavedItemsFixtures.page(
+          items: [
+            SavedItemsFixtures.item(id: 'new'),
+            SavedItemsFixtures.item(id: 'a'),
+          ],
+          nextCursor: 'cursor-2',
+          hasMore: true,
+        ),
+      ]);
+
+      await container.read(savedItemsProvider.future);
+      await container.read(savedItemsProvider.notifier).refreshHead();
+
+      final state = stateOf(container);
+      expect(state.items.map((i) => i.id), ['new', 'a']);
+      expect(state.hasMore, isTrue);
+      expect(state.nextCursor, 'cursor-2');
+    });
+
+    test('a failed refresh throws nothing and leaves the list alone', () async {
+      // A save the server confirmed is not turned into a failure by a read that
+      // did not arrive. The rows stay, and the screen reports no error.
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      scriptPages([
+        SavedItemsFixtures.page(items: [SavedItemsFixtures.item(id: 'a')]),
+      ]);
+      await container.read(savedItemsProvider.future);
+
+      adapter.on(
+        '/saved-items',
+        status: 500,
+        body: errorBody('INTERNAL_SERVER_ERROR'),
+      );
+
+      await expectLater(
+        container.read(savedItemsProvider.notifier).refreshHead(),
+        completes,
+      );
+
+      expect(stateOf(container).items.map((i) => i.id), ['a']);
+      expect(container.read(savedItemsProvider).hasError, isFalse);
+    });
+
+    test('refetches page one when nothing is loaded yet', () async {
+      // A save can land while the first page is still in flight, and that page's
+      // query may already have run. Invalidating re-runs `build`, so the fetch
+      // that lands is one issued *after* the save.
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      scriptPages([
+        SavedItemsFixtures.page(items: [SavedItemsFixtures.item(id: 'a')]),
+        SavedItemsFixtures.page(items: [SavedItemsFixtures.item(id: 'b')]),
+      ]);
+
+      final notifier = container.read(savedItemsProvider.notifier);
+      await notifier.refreshHead();
+      await container.read(savedItemsProvider.future);
+
+      expect(stateOf(container).items.map((i) => i.id), ['b']);
+      expect(adapter.countFor('/saved-items'), 2);
+    });
+
+    test('a page in flight when the head lands keeps both', () async {
+      // Race one: `loadMore` is issued first and answered last. Its merge has to
+      // read the state as it stands *then*, or the row the refresh prepended is
+      // dropped on the floor.
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      adapter.onSequenceHolding('/saved-items', [
+        // 1: page one.
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [SavedItemsFixtures.item(id: 'a')],
+            nextCursor: 'cursor-2',
+            hasMore: true,
+          ),
+        ),
+        // 2: page two, held until the refresh has written.
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(items: [SavedItemsFixtures.item(id: 'b')]),
+        ),
+        // 3: the head the save produced.
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [
+              SavedItemsFixtures.item(id: 'new'),
+              SavedItemsFixtures.item(id: 'a'),
+            ],
+          ),
+        ),
+      ], holdAt: 2);
+
+      await container.read(savedItemsProvider.future);
+      final notifier = container.read(savedItemsProvider.notifier);
+
+      final more = notifier.loadMore();
+      await notifier.refreshHead();
+
+      expect(stateOf(container).items.map((i) => i.id), ['new', 'a']);
+
+      adapter.releaseBlocked();
+      await more;
+
+      final state = stateOf(container);
+      expect(state.items.map((i) => i.id), ['new', 'a', 'b']);
+      expect(state.isLoadingMore, isFalse);
+      expect(state.hasMore, isFalse, reason: 'page two was the last page');
+    });
+
+    test('a head refresh in flight when the page lands keeps both', () async {
+      // Race two: the refresh is issued last and answered last, so it has to
+      // re-read the state rather than merge into the snapshot it took before the
+      // page arrived.
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      adapter.onSequenceHolding('/saved-items', [
+        // 1: page one.
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [SavedItemsFixtures.item(id: 'a')],
+            nextCursor: 'cursor-2',
+            hasMore: true,
+          ),
+        ),
+        // 2: page two.
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(items: [SavedItemsFixtures.item(id: 'b')]),
+        ),
+        // 3: the head, held until page two has been written.
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [
+              SavedItemsFixtures.item(id: 'new'),
+              SavedItemsFixtures.item(id: 'a'),
+            ],
+          ),
+        ),
+      ], holdAt: 3);
+
+      await container.read(savedItemsProvider.future);
+      final notifier = container.read(savedItemsProvider.notifier);
+
+      final more = notifier.loadMore();
+      final head = notifier.refreshHead();
+      await untilCalled(() => adapter.countFor('/saved-items') == 3);
+
+      await more;
+      expect(stateOf(container).items.map((i) => i.id), [
+        'a',
+        'b',
+      ], reason: 'page two landed on its own, before the head was answered');
+
+      adapter.releaseBlocked();
+      await head;
+
+      final state = stateOf(container);
+      expect(state.items.map((i) => i.id), ['new', 'a', 'b']);
+      expect(state.isLoadingMore, isFalse);
+    });
+  });
+
   group('integration with the protected pipeline', () {
     const session = AuthTokens(
       accessToken: 'access-1',

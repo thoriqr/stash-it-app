@@ -72,6 +72,55 @@ class FakeHttpAdapter implements HttpClientAdapter {
     _handlers[pathFragment] = (options) async => reply.toResponseBody();
   }
 
+  /// Handlers that answer one HTTP method only, checked before the verb-blind
+  /// ones, in insertion order.
+  ///
+  /// The fragment match alone is verb-blind, which cannot express `POST` and
+  /// `GET /saved-items`: they share a path and answer with different bodies, so a
+  /// fragment-only handler would answer a create with a page of items — or a
+  /// listing with one created item.
+  final List<({String method, String fragment, FakeHandler handler})>
+  _methodHandlers = [];
+
+  /// Registers a handler for [method] on every path containing [pathFragment].
+  void onMethod(
+    String method,
+    String pathFragment, {
+    int status = 200,
+    Object? body,
+    Map<String, List<String>> headers = const {},
+  }) {
+    final reply = FakeReply(status, body, headers: headers);
+    _methodHandlers.add((
+      method: method,
+      fragment: pathFragment,
+      handler: (options) async => reply.toResponseBody(),
+    ));
+  }
+
+  /// Registers a handler that fails the way an unreachable network does.
+  ///
+  /// The adapter throws instead of answering, so Dio produces the shape
+  /// `mapApiFailure` treats as groups G and H: a [DioException] carrying no
+  /// response, which is the only shape that makes a write's outcome uncertain.
+  void onOffline(String pathFragment, {String? method}) {
+    Future<ResponseBody> refuse(RequestOptions options) async =>
+        throw DioException.connectionError(
+          requestOptions: options,
+          reason: 'no route to host',
+        );
+
+    if (method == null) {
+      _handlers[pathFragment] = refuse;
+    } else {
+      _methodHandlers.add((
+        method: method,
+        fragment: pathFragment,
+        handler: refuse,
+      ));
+    }
+  }
+
   /// Registers a handler that never completes until [releaseBlocked].
   ///
   /// Used to hold several requests open at once, which is what a genuine
@@ -106,6 +155,33 @@ class FakeHttpAdapter implements HttpClientAdapter {
       final reply =
           replies[index < replies.length ? index : replies.length - 1];
       index++;
+      return reply.toResponseBody();
+    };
+  }
+
+  /// Answers each request from [replies] in turn (the last entry repeating), but
+  /// parks the [holdAt]-th (1-based) one until [releaseBlocked].
+  ///
+  /// What a read/write race needs and neither [onSequence] nor [onBlocking] can
+  /// express: two operations on one path complete in the order the transport
+  /// answers them, so a test that wants the *later* request to answer first has
+  /// to hold one of them open.
+  void onSequenceHolding(
+    String pathFragment,
+    List<FakeReply> replies, {
+    required int holdAt,
+  }) {
+    final gate = Completer<void>();
+    _gates['$pathFragment@$holdAt'] = gate;
+    var arrived = 0;
+
+    _handlers[pathFragment] = (options) async {
+      final position = ++arrived;
+      final reply =
+          replies[position - 1 < replies.length
+              ? position - 1
+              : replies.length - 1];
+      if (position == holdAt) await gate.future;
       return reply.toResponseBody();
     };
   }
@@ -156,6 +232,13 @@ class FakeHttpAdapter implements HttpClientAdapter {
   ) async {
     requests.add(RecordedRequest.from(options));
 
+    for (final entry in _methodHandlers) {
+      if (options.method == entry.method &&
+          options.uri.toString().contains(entry.fragment)) {
+        return entry.handler(options);
+      }
+    }
+
     for (final entry in _handlers.entries) {
       if (options.uri.toString().contains(entry.key)) {
         return entry.value(options);
@@ -164,8 +247,8 @@ class FakeHttpAdapter implements HttpClientAdapter {
 
     throw StateError(
       'FakeHttpAdapter received an unscripted request: ${options.method} '
-      '${options.uri}. Register it with on(), onSequence(), onExpiring() or '
-      'onBlockingUntil().',
+      '${options.uri}. Register it with on(), onMethod(), onOffline(), '
+      'onSequence(), onExpiring() or onBlockingUntil().',
     );
   }
 

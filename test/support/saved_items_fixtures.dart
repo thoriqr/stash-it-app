@@ -55,4 +55,28 @@ class SavedItemsFixtures {
 
   /// An empty final page — what a user who has saved nothing receives.
   static Map<String, dynamic> emptyPage() => page();
+
+  /// The whole `201` body of `POST /saved-items`.
+  ///
+  /// **Exactly the four documented fields**, with no `domain`, `title`,
+  /// `platform`, `created_at` or nested `collection`: the backend's create
+  /// representation is deliberately minimal, and a fixture that added fields
+  /// would let a client that reads them pass against a body the server never
+  /// sends.
+  static Map<String, dynamic> created({
+    String id = '01a0f359-093b-737a-963a-80f7ca6768ed',
+    String url = 'https://example.com/articles/crdts-explained',
+    String collectionId = '01a0f359-093b-737a-963a-80f7ca6768ed',
+    String enrichmentStatus = 'pending',
+  }) => {
+    'data': {
+      'saved_item': {
+        'id': id,
+        'url': url,
+        'collection_id': collectionId,
+        'enrichment_status': enrichmentStatus,
+      },
+    },
+    'message': 'saved item created successfully',
+  };
 }

@@ -210,6 +210,18 @@ void main() {
       );
     });
 
+    test('INVALID_URL is the same variant as a validation error', () {
+      // Raised by the create route — a `400` after the body parsed, for a URL
+      // that is well formed JSON and still not usable. To a caller it means what
+      // `VALIDATION_ERROR` means: the input has to change. Mapping it anywhere
+      // else would make a correctable URL read as an unreadable reply, which is a
+      // different and wrong story.
+      expect(
+        mapApiFailure(badResponse(400, errorBody(ApiErrorCode.invalidUrl))),
+        isA<ApiFailureValidation>(),
+      );
+    });
+
     test('INTERNAL_SERVER_ERROR is a server fault', () {
       expect(
         mapApiFailure(

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:stash_it_app/app/feedback/app_feedback.dart';
+import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/app/network/network_providers.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
@@ -79,6 +81,19 @@ void main() {
   }
 
   setUp(() => adapter = FakeHttpAdapter());
+
+  /// What the URL field currently holds.
+  String fieldText(WidgetTester tester) =>
+      tester.widget<TextField>(find.byType(TextField)).controller!.text;
+
+  /// The filled button, found by **variant** rather than by label: `Save URL`'s
+  /// label is replaced by a spinner while a save is in flight.
+  AppButton saveButton(WidgetTester tester) => tester
+      .widgetList<AppButton>(find.byType(AppButton))
+      .firstWhere((button) => button.variant == AppButtonVariant.primary);
+
+  int postCount() =>
+      adapter.requests.where((request) => request.method == 'POST').length;
 
   group('loading', () {
     testWidgets('shows a skeleton while the listing is in flight', (
@@ -692,6 +707,283 @@ void main() {
             .onPressed,
         isNull,
       );
+    });
+
+    testWidgets('the field starts empty, so Save URL starts disabled', (
+      tester,
+    ) async {
+      // The prototype pre-filled this field with a demo value to make the
+      // enabled state visible. Now that the button submits, a pre-filled field
+      // would be a value the user never typed and might never look at.
+      useTallSurface(tester);
+      adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+
+      await pumpInbox(tester);
+      await tester.pumpAndSettle();
+
+      expect(fieldText(tester), isEmpty);
+      expect(
+        tester
+            .widget<AppButton>(find.widgetWithText(AppButton, 'Save URL'))
+            .onPressed,
+        isNull,
+      );
+
+      await tester.enterText(find.byType(TextField), 'https://example.com/new');
+      await tester.pumpAndSettle();
+
+      expect(fieldText(tester), 'https://example.com/new');
+      expect(
+        tester
+            .widget<AppButton>(find.widgetWithText(AppButton, 'Save URL'))
+            .onPressed,
+        isNotNull,
+      );
+    });
+
+    testWidgets('tapping Paste does not save anything', (tester) async {
+      // [D25]: pasting alone does not save. The clipboard is not wired yet, so
+      // the control does nothing at all — and the property that matters is that
+      // it does *not* submit.
+      useTallSurface(tester);
+      adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+
+      final container = await pumpInbox(tester);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Paste'));
+      await tester.pumpAndSettle();
+
+      expect(postCount(), 0);
+      expect(fieldText(tester), isEmpty);
+      expect(
+        container.read(feedbackProvider),
+        isNull,
+        reason: 'nothing happened, so there is nothing to announce',
+      );
+    });
+
+    testWidgets('a confirmed save says so, clears the field, and shows the item', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      const url = 'https://example.com/new';
+
+      adapter.onMethod(
+        'POST',
+        '/saved-items',
+        status: 201,
+        body: SavedItemsFixtures.created(url: url),
+      );
+      adapter.onSequence('/saved-items', [
+        FakeReply(200, SavedItemsFixtures.emptyPage()),
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [
+              SavedItemsFixtures.item(
+                id: 'new',
+                url: url,
+                title: 'Saved from the intake',
+              ),
+            ],
+          ),
+        ),
+      ]);
+
+      final container = await pumpInbox(tester);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), url);
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(AppButton, 'Save URL'));
+      await tester.pumpAndSettle();
+
+      expect(postCount(), 1);
+      expect(
+        fieldText(tester),
+        isEmpty,
+        reason: 'only a confirmed create clears',
+      );
+
+      final notice = container.read(feedbackProvider)!;
+      expect(notice.tone, FeedbackTone.success);
+      expect(notice.copy, 'Saved.');
+
+      // And the confirmation is only half of it: the list this screen is for has
+      // to show the row, which the head refresh brings in without discarding the
+      // page already loaded.
+      expect(find.text('Saved from the intake'), findsOneWidget);
+    });
+
+    testWidgets('a refused save keeps the value so it can be corrected', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      // Locally valid, so it is the server that refuses it — the copy has to be
+      // the server's, and the request has to have happened.
+      const url = 'https://example.com/broken';
+      adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+      adapter.onMethod(
+        'POST',
+        '/saved-items',
+        status: 400,
+        body: errorBody('INVALID_URL'),
+      );
+
+      final container = await pumpInbox(tester);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), url);
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(AppButton, 'Save URL'));
+      await tester.pumpAndSettle();
+
+      expect(
+        postCount(),
+        1,
+        reason: 'the local gate is a shape check, not the contract',
+      );
+      expect(
+        fieldText(tester),
+        url,
+        reason: 'the user has to be able to fix it and send it again',
+      );
+
+      final notice = container.read(feedbackProvider)!;
+      expect(notice.tone, FeedbackTone.danger);
+      expect(notice.copy, contains('Check the URL'));
+    });
+
+    testWidgets('a value that cannot be a URL is refused before any request', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+
+      final container = await pumpInbox(tester);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'example');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(AppButton, 'Save URL'));
+      await tester.pumpAndSettle();
+
+      expect(postCount(), 0, reason: 'nothing was sent to refuse');
+      expect(
+        fieldText(tester),
+        'example',
+        reason: 'the value is kept so the user can fix it',
+      );
+      expect(find.text('Saving…'), findsNothing);
+      expect(saveButton(tester).busy, isFalse);
+      expect(
+        saveButton(tester).onPressed,
+        isNotNull,
+        reason: 'and the button is ready for the corrected value',
+      );
+
+      final notice = container.read(feedbackProvider)!;
+      expect(notice.tone, FeedbackTone.danger);
+      expect(notice.copy, contains('http:// or https://'));
+    });
+
+    testWidgets('a corrected link is sent once after a local refusal', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      const url = 'https://example.com/new';
+
+      adapter.onMethod(
+        'POST',
+        '/saved-items',
+        status: 201,
+        body: SavedItemsFixtures.created(url: url),
+      );
+      adapter.onSequence('/saved-items', [
+        FakeReply(200, SavedItemsFixtures.emptyPage()),
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [
+              SavedItemsFixtures.item(
+                id: 'new',
+                url: url,
+                title: 'Saved from the intake',
+              ),
+            ],
+          ),
+        ),
+      ]);
+
+      final container = await pumpInbox(tester);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'example');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(AppButton, 'Save URL'));
+      await tester.pumpAndSettle();
+      expect(postCount(), 0);
+
+      await tester.enterText(find.byType(TextField), url);
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(AppButton, 'Save URL'));
+      await tester.pumpAndSettle();
+
+      expect(postCount(), 1);
+      expect(fieldText(tester), isEmpty);
+      expect(container.read(feedbackProvider)!.copy, 'Saved.');
+      expect(find.text('Saved from the intake'), findsOneWidget);
+    });
+
+    testWidgets('a save in flight is visible, and a second tap sends nothing', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      const url = 'https://example.com/new';
+
+      adapter.onMethod(
+        'GET',
+        '/saved-items',
+        body: SavedItemsFixtures.emptyPage(),
+      );
+      adapter.onBlocking(
+        '/saved-items',
+        FakeReply(201, SavedItemsFixtures.created(url: url)),
+      );
+
+      final container = await pumpInbox(tester);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), url);
+      await tester.pumpAndSettle();
+
+      // Two taps with no frame between them, which is the case the in-flight
+      // guard exists for: the second tap still sees an enabled button, because
+      // nothing has rebuilt yet.
+      await tester.tap(find.widgetWithText(AppButton, 'Save URL'));
+      await tester.tap(find.widgetWithText(AppButton, 'Save URL'));
+
+      // A *timed* pump, not a bare one. Riverpod hands provider-to-provider work
+      // to a zero-delay timer, so the request has not left the client yet when
+      // the frame that shows the busy button is drawn.
+      await tester.pump(Duration.zero);
+
+      expect(postCount(), 1, reason: 'one insert, and duplicates are allowed');
+      expect(find.text('Saving…'), findsOneWidget);
+      expect(saveButton(tester).busy, isTrue);
+      expect(
+        saveButton(tester).onPressed,
+        isNull,
+        reason: 'disabled while in flight, whatever the field holds',
+      );
+
+      adapter.releaseBlocked();
+      await tester.pumpAndSettle();
+
+      expect(postCount(), 1);
+      expect(fieldText(tester), isEmpty);
+      expect(container.read(feedbackProvider)!.copy, 'Saved.');
     });
   });
 }

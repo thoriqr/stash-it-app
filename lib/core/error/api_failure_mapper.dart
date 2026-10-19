@@ -107,6 +107,14 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.validationError:
       return ApiFailureValidation(body.fields);
 
+    // A `400` raised after the body passed validation: the URL is well formed
+    // JSON and still not a usable address. It means exactly what
+    // `VALIDATION_ERROR` means to a caller — the input has to change — and the
+    // user's action is the same, so it is the same variant rather than a second
+    // one with identical copy.
+    case ApiErrorCode.invalidUrl:
+      return ApiFailureValidation(body.fields);
+
     case ApiErrorCode.badRequest:
       return const ApiFailureMalformedRequest();
 

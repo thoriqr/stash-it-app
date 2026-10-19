@@ -4,9 +4,11 @@ import '../../../core/error/api_failure.dart';
 import '../../../core/error/api_failure_mapper.dart';
 import '../domain/saved_item_page.dart';
 import 'datasources/saved_items_api.dart';
+import 'models/create_saved_item_request.dart';
 import 'saved_item_mapper.dart';
 
-/// Reads of the Inbox listing, with failures already translated.
+/// Reads of the Inbox listing and the one write that feeds it, with failures
+/// already translated.
 ///
 /// The only layer that converts a [DioException] into an [ApiFailure], so
 /// presentation never learns that Dio exists (`AGENTS.md` §2, rule 4). Concrete
@@ -22,6 +24,42 @@ class SavedItemsRepository {
   /// deterministic under test. Production passes the default and never reads it
   /// back.
   final DateTime Function() now;
+
+  /// Saves [url], and confirms only that the server created the item.
+  ///
+  /// **Returns nothing on purpose.** The documented `201` carries exactly `id`,
+  /// `url`, `collection_id` and `enrichment_status` — not enough to build a
+  /// `SavedItemSummary`, and nothing in this milestone reads any of the four.
+  /// Returning the id would be a value with no consumer. The response type still
+  /// declares all four fields, so a change to the contract shows up as a decode
+  /// failure here rather than as a silent difference.
+  ///
+  /// **A `201` whose body does not decode is not a success.** The create handler
+  /// answers `201` only after the row committed, so the write landed — but this
+  /// method has no created item to report, and the caller must not claim a save
+  /// it cannot show. It throws [ApiFailureUnreadableResponse], which for a write
+  /// means *unestablished* rather than *failed* (see that variant).
+  ///
+  /// Throws [ApiFailure] for every refusal. The certainty of each variant is
+  /// **not** uniform, and the caller has to honour it (**D15**/**D16**):
+  /// [ApiFailureTransport] is uncertain, [ApiFailureUnreadableResponse] is
+  /// unestablished, and the rest are known not saved — a refused request never
+  /// reached the insert, and a `500` is a commit that did not happen.
+  Future<void> create({required String url}) async {
+    try {
+      await api.create(CreateSavedItemRequest(url: url));
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      // A `2xx` whose body does not match the documented shape. Dio only decodes
+      // a status that passed `validateStatus`, so this is a committed write with
+      // an unreadable representation, reported as unestablished rather than as a
+      // refusal.
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
 
   /// One page of recent saved items.
   ///

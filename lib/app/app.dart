@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:stash_it_app/app/feedback/feedback_host.dart';
 import 'package:stash_it_app/app/router/app_router.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 
@@ -26,12 +27,19 @@ class StashItApp extends ConsumerWidget {
       // Inside the builder, not around the MaterialApp: below it the app has a
       // `Theme` and a `MediaQuery` to read, and above the router so every route
       // inherits one treatment. See `skeleton_theme.dart`.
-      builder: (context, child) => SkeletonizerConfig(
-        data: appSkeletonizerConfig(
-          Theme.of(context).brightness,
-          reducedMotion: MediaQuery.disableAnimationsOf(context),
+      //
+      // `FeedbackHost` is the outermost of the two, so one notice serves every
+      // route — including sign-in, which sits outside the shell — and sits above
+      // the shell's navigation bar rather than inside a destination's Scaffold.
+      // See `feedback/feedback_host.dart` for why that position is where it is.
+      builder: (context, child) => FeedbackHost(
+        child: SkeletonizerConfig(
+          data: appSkeletonizerConfig(
+            Theme.of(context).brightness,
+            reducedMotion: MediaQuery.disableAnimationsOf(context),
+          ),
+          child: child ?? const SizedBox.shrink(),
         ),
-        child: child ?? const SizedBox.shrink(),
       ),
       // Watched rather than read: the router owns a listener on the auth state,
       // and `refreshListenable` needs that listener registered for the whole life

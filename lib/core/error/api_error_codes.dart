@@ -87,6 +87,19 @@ abstract final class ApiErrorCode {
   /// 400. Field-level validation failed. `httpx/bind.go:26`. Carries `fields[]`.
   static const String validationError = 'VALIDATION_ERROR';
 
+  // ---------------------------------------------------------------------------
+  // Saved items — `internal/api/saved_item/error_codes.go`.
+  // ---------------------------------------------------------------------------
+
+  /// 400. The submitted `url` parsed but is unusable: no host after parsing, or
+  /// an empty one after lowercasing. `saved_item/service.go` (`deriveDomain`).
+  ///
+  /// Raised **after** the body passed validation, so it is a sibling of
+  /// [validationError] rather than a replacement for it: the request was
+  /// well-formed and the value is still not an address anything can be saved
+  /// from. Emitted before the insert, so it is a known-not-saved outcome.
+  static const String invalidUrl = 'INVALID_URL';
+
   /// 500. `apperror.Internal`.
   static const String internalServerError = 'INTERNAL_SERVER_ERROR';
 
@@ -115,8 +128,10 @@ abstract final class ApiErrorCode {
   static const String loginRateLimitUnavailable =
       'LOGIN_RATE_LIMIT_UNAVAILABLE';
 
-  /// 503, **`Retry-After` present** — the one 503 that carries one. Namespace
-  /// `saved-item-create-user`, 60 per 10 minutes. `middleware/user_ratelimit.go`.
+  /// 429, **`Retry-After` present**. This authenticated user's budget for the
+  /// route is spent. Mounted on `POST /saved-items` (namespace
+  /// `saved-item-create-user`, 60 per 10 minutes) and on
+  /// `POST /saved-items/:id/enrich`. `middleware/user_ratelimit.go`.
   static const String userRateLimitExceeded = 'USER_RATE_LIMIT_EXCEEDED';
 
   /// 503, no `Retry-After`. The per-user limiter failed closed.

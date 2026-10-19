@@ -84,4 +84,31 @@ abstract final class AppMetrics {
 
   /// Gap between a slot's thumbnail and its text column.
   static const double slotGap = 12;
+
+  // ---- feedback note (`.ds-note`, `components.css`) ----
+  //
+  // These four are the component's own literals, not scale steps: `.ds-note`
+  // writes `9px 11px` for its padding and `6px`/`5px` for its mark, exactly as
+  // `.inv-slot` writes its own. The border widths are the scale's — 1 px, plus
+  // the note's 3 px leading edge.
+
+  /// Internal padding. The border is added outside it, so a bordered note's
+  /// content is inset by this plus [borderWidth] — and by
+  /// [noticeEdgeWidth] on the leading side.
+  static const EdgeInsets noticePadding = EdgeInsets.symmetric(
+    horizontal: 11,
+    vertical: 9,
+  );
+
+  /// The note's leading edge: 3 px of the tone's semantic colour, against the
+  /// 1 px `--*-border` hairline on the other three sides.
+  static const double noticeEdgeWidth = 3;
+
+  /// The mark's square: `--ds-note__mark` is 6 × 6.
+  static const double noticeMarkSize = 6;
+
+  /// Where the mark starts, measured from the first line's top — the CSS's
+  /// `margin-top: 5px`, which squares it to a line of note copy rather than to
+  /// the band's padding.
+  static const double noticeMarkTop = 5;
 }

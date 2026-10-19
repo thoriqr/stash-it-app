@@ -72,6 +72,78 @@ class SavedItems extends _$SavedItems {
     ref.invalidateSelf();
   }
 
+  /// Re-reads the newest page and **merges** it above what is already loaded.
+  ///
+  /// This is what follows a confirmed save, and it is not [retry]: invalidating
+  /// would discard every page the user has scrolled through and the cursor that
+  /// continues them, to display one new row at the top. The Inbox is a recent
+  /// history, so dropping the history to show its newest entry is the wrong
+  /// trade.
+  ///
+  /// **A reply is adopted as a whole.** The fetched page's rows go in front in
+  /// server order (no client sorting, **D4**), an id already present keeps its
+  /// existing position, and the never-negated facts the page carries —
+  /// `nextCursor`/`hasMore` — are preserved rather than replaced when the list
+  /// already had a continuation point. Its cursor still names the position after
+  /// the last row those pages fetched; adopting the new first page's cursor would
+  /// make the next [loadMore] re-fetch rows this list already holds.
+  ///
+  /// **Never throws, and never reports.** A save the server confirmed is not
+  /// turned into a failure by a listing read that did not arrive: the rows on
+  /// screen stay exactly as they were, which is a visibly stale list until the
+  /// user retries. That is a documented limitation, not an error state.
+  ///
+  /// **Concurrent callers are handled by [loadMore], not here.** A page may be in
+  /// flight while this runs; [loadMore] re-reads the state when it completes, so
+  /// neither operation discards the other's rows.
+  Future<void> refreshHead() async {
+    final loaded = switch (state) {
+      AsyncData(:final value) => value,
+      _ => null,
+    };
+
+    if (loaded == null) {
+      // Nothing is on screen, so there is nothing to preserve and no wrong
+      // cursor to keep. Invalidating re-runs `build`, which fetches page one —
+      // exactly the page this would have asked for — and that fetch happens
+      // *after* the save, so it includes the new item.
+      ref.invalidateSelf();
+      return;
+    }
+
+    final SavedItemPage head;
+    try {
+      head = await ref.read(savedItemsRepositoryProvider).list();
+    } catch (_) {
+      // ApiFailure or anything else. See the doc comment: the list is left as it
+      // is, and the confirmed save is not re-reported as a failure.
+      return;
+    }
+
+    if (!ref.mounted) return;
+
+    // Re-read rather than reuse `loaded`: a `loadMore` may have completed while
+    // this request was in flight, and merging into that snapshot would drop its
+    // rows. If the listing is no longer in a data state at all, a retry replaced
+    // it — this page belongs to the list the user is no longer looking at.
+    final latest = switch (state) {
+      AsyncData(:final value) => value,
+      _ => null,
+    };
+    if (latest == null) return;
+
+    state = AsyncData(
+      latest.copyWith(
+        items: _prepend(head.items, latest.items),
+        // A list that had more to load keeps its own continuation point; one
+        // that had none adopts the new page's, which is how a fully-loaded
+        // history learns that a save has pushed it past a page boundary.
+        nextCursor: latest.hasMore ? latest.nextCursor : head.nextCursor,
+        hasMore: latest.hasMore || head.hasMore,
+      ),
+    );
+  }
+
   /// Appends the next page.
   ///
   /// Does nothing when the listing has already ended, when a page is already in
@@ -102,11 +174,21 @@ class SavedItems extends _$SavedItems {
       final page = await ref
           .read(savedItemsRepositoryProvider)
           .list(cursor: cursor);
-      final merged = _append(current.items, page.items);
+
+      // Re-read rather than merge into `current`: `refreshHead` may have
+      // prepended newer rows while this page was in flight, and writing the
+      // snapshot back would silently drop them. If the listing has left its data
+      // state altogether, a retry replaced it, so this page belongs to a list the
+      // user is no longer looking at.
+      final latest = switch (state) {
+        AsyncData(:final value) => value,
+        _ => null,
+      };
+      if (latest == null) return;
 
       state = AsyncData(
-        current.copyWith(
-          items: merged,
+        latest.copyWith(
+          items: _append(latest.items, page.items),
           nextCursor: page.nextCursor,
           hasMore: page.hasMore,
           isLoadingMore: false,
@@ -115,8 +197,36 @@ class SavedItems extends _$SavedItems {
     } catch (_) {
       // ApiFailure or anything else. See the doc comment: the loaded rows stay,
       // and `isLoadingMore` is cleared so a later scroll can try again.
-      state = AsyncData(current.copyWith(isLoadingMore: false));
+      final latest = switch (state) {
+        AsyncData(:final value) => value,
+        _ => null,
+      };
+      if (latest == null) return;
+
+      state = AsyncData(latest.copyWith(isLoadingMore: false));
     }
+  }
+
+  /// Prepends [incoming] — a newer first page — above [existing], in the order
+  /// the server sent it, skipping any id already present.
+  ///
+  /// The counterpart of [_append] and needed for the same reason: a save that
+  /// landed between two fetches can appear both in the refreshed first page and
+  /// in an older page already on screen, and a duplicated row is a visible
+  /// defect. A row already present keeps its existing position instead of moving
+  /// to the head.
+  static List<SavedItemSummary> _prepend(
+    List<SavedItemSummary> incoming,
+    List<SavedItemSummary> existing,
+  ) {
+    final seen = {for (final item in existing) item.id};
+    final leading = <SavedItemSummary>[];
+
+    for (final item in incoming) {
+      if (seen.add(item.id)) leading.add(item);
+    }
+
+    return [...leading, ...existing];
   }
 
   /// Appends [incoming], skipping any id already present.

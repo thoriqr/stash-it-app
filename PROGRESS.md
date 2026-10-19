@@ -5,22 +5,30 @@ product behaviour lives in [`docs/product-discovery/`](./docs/product-discovery/
 Neither is duplicated here.
 
 **Status:** the application shell, the **approved design system v1**, the
-**authentication and network foundation**, and the **Saved Items API integration** are
-complete. Manual sign-in, secure credential storage, startup restoration, access-token
-attachment, single-flight renewal, session invalidation and logout all work and are tested.
-The Inbox now reads `GET /saved-items` over that same pipeline — loading, empty,
-error-with-retry and rows states, with cursor pagination. The refresh path's failure handling
-was hardened this iteration: a renewal that failed with anything other than a
-`SessionExpiredException` or a `DioException` used to leave the request's Dio error handler
-unresolved and the request hanging, and now fails in a controlled, classified way.
-**No other product feature is
-implemented**: Collections, Search and Profile data are not fetched, the Inbox intake is
-still visual only, and Registration, Google sign-in and password reset are not built.
+**authentication and network foundation**, the **Saved Items API integration**, the
+**app-wide feedback notice** and the **Save URL intake** are complete. Manual sign-in,
+secure credential storage, startup restoration, access-token attachment, single-flight
+renewal, session invalidation and logout all work and are tested. The Inbox reads
+`GET /saved-items` over that same pipeline — loading, empty, error-with-retry and rows
+states, with cursor pagination — and now **writes to it**: `POST /saved-items` from the URL
+field, one URL per confirmed tap, followed by a head refresh that keeps the pages already
+loaded. Every outcome is reported through one app-wide notice hosted above the router,
+drawn to the Feedback component in `docs/design-explorations/components.html`; the intake
+refuses a clearly invalid URL locally, before any request, and the server stays the
+authority for everything the client cannot decide. The
+refresh path's failure handling was hardened this iteration: a renewal that failed with
+anything other than a `SessionExpiredException` or a `DioException` used to leave the
+request's Dio error handler unresolved and the request hanging, and now fails in a
+controlled, classified way. **No other product feature is implemented**: Collections,
+Search and Profile data are not fetched, the intake's **Paste** action is still unwired
+(there is no clipboard dependency), and Registration, Google sign-in and password reset are
+not built.
 
 > **The Saved Items integration is complete for this iteration, not signed off.** It is
 > verified by the automated suite recorded below and by nothing else: no request has ever
-> left this machine, so the contract has been matched against Swagger and not against a
-> live backend, and the feature has not been reviewed on a device. Manual review is
+> left this machine, so the contracts — the listing from Swagger, the create from the
+> backend's Go source — have been matched against the backend repository and not against a
+> live backend, and neither feature has been reviewed on a device. Manual review is
 > expected to produce follow-up work.
 
 ---
@@ -151,11 +159,16 @@ model** — not a DTO. It holds the `title → URL → domain` fallback chain an
 loading, empty, error-with-retry and rows states. The mock data file and the mock-data notice
 are **deleted**; nothing in this screen is fabricated any more.
 
-**The intake is still visual only.** `lib/features/inbox/presentation/widgets/inbox_intake.dart`
-renders the URL field plus separate **Paste** and **Save URL** actions exactly as
-specified — Paste secondary, Save URL the screen's only filled button — but neither is
-wired. There is no clipboard package in `pubspec.yaml` and no submission. A visible
-control that does nothing is a deliberate gap: it cannot be mistaken for working intake.
+**The intake submits; Paste does not.**
+`lib/features/inbox/presentation/widgets/inbox_intake.dart` renders the URL field plus
+separate **Paste** and **Save URL** actions exactly as specified — Paste secondary, Save URL
+the screen's only filled button. **Save URL sends the field's value to `SaveUrl`**, which
+posts it once per tap and clears the field only on a confirmed create; a refusal leaves the
+text there to correct and send again. **Paste is still unwired**: there is no clipboard
+package in `pubspec.yaml` (`AGENTS.md` §4 lists it as a known gap), and a visible control
+that does nothing is a deliberate gap. The two actions stay visually distinct, which is what
+**D25** requires: pasting alone never saves, and this widget submits nothing without a tap
+on Save URL.
 
 **The contract, as implemented.** Read from `../stash-it-backend/docs/swagger.json`:
 
@@ -969,6 +982,235 @@ rendered pixels. `AppTokens.mockText` and `mockBorder` remain unused: they are d
 Collections and saved-items-by-collection inherit the treatment through `StashItApp`, but neither
 screen was built here.
 
+### App-wide feedback notice, and the Save URL intake
+
+**Two pieces, one milestone.** `lib/app/feedback/` is the notice every feature reports
+through, and `lib/features/saved_items/application/save_url_controller.dart` plus
+`inbox_intake.dart` are its first real caller — the Inbox's **Save URL**, over the verified
+`POST /saved-items`.
+
+**Why the notice is where it is.** It is hosted once in `MaterialApp.router`'s `builder`,
+above the router — the only position that serves every route (including sign-in, which is
+outside the shell), cannot be taken away by a route change, and sits above the shell's
+`NavigationBar`. A `SnackBar` docks to the bottom and measures `margin` from the docked
+edge, so a top position cannot be expressed; an `OverlayEntry` cannot be inserted above the
+router, because the `Navigator` creates the overlay *below* it. The file's doc comment
+carries the full argument.
+
+**`FeedbackTone` gained `uncertain`.** §6.5's fifth row shares the warning fill and border
+and differs only by a **hollow** mark, which is the one thing a colour table cannot show.
+`feedbackTreatment` therefore returns `(fill, border, mark, hollowMark)`, and the four tones
+are pairwise distinct as whole records — a test asserts exactly that in both brightnesses.
+`_SignInMessage`'s private two-tone band is untouched: it is a different widget, so the
+session-expired treatment recorded above is unchanged.
+
+**The mutation's state is "in flight", not "failed".** `SaveUrl` is
+`@Riverpod(keepAlive: true)` with `bool` state, and the *outcome* is deliberately not
+provider state: a failure published as `AsyncError` would be retried by Riverpod, and a
+retried `POST /saved-items` is a second insert — the backend has no idempotency key and
+duplicate URLs are allowed, so the duplicate would be silent and real. A second tap while
+one is in flight is **declined, not queued**, for the same reason; the guard holds in the
+same frame, because `submit` sets the flag synchronously before its first `await`.
+
+**Copy is a pure function of the variant.** `saveFeedbackFor(failure, sessionEnded:)`
+selects tone and wording on the `ApiFailure` subtype — never on `error.code` or
+`error.message` (**D22**) — and returns `null` to suppress. It is a free function in the
+controller file so the whole table is testable without a container. `sessionEnded` comes
+from `authStateProvider.isSignedOut`: when the session layer has already taken the failure
+over, nothing is published, because sign-in owns the one-time `sessionEndedMessage` and the
+mutation neither consumes that flag nor duplicates it.
+
+**Certainty is the part the tests defend.** Known refusals (`INVALID_URL`,
+`VALIDATION_ERROR`, `BAD_REQUEST`, `429`, `503`, `500`) are `danger`/`warning` with copy that
+says the save did not happen. `ApiFailureTransport` is `uncertain` and says "It may or may
+not have gone through". `ApiFailureRefreshUncertain` and `ApiFailureCredentialStorage` say
+the link **wasn't saved** — the `401` came from the guard before the handler ran and the
+request was never replayed — while keeping the session: neither may tell the user to sign in
+again, and both are `warning`, not `danger`.
+
+The `429` countdown uses `Retry-After` **only when the server sent one**; otherwise the copy
+says "Try again shortly" and contains no number at all. When present, the wait is rendered
+in the coarsest unit that does not understate it (59 s → seconds, 60 s → "1 minute", 3599 s
+→ "1 hour"), so rounding never promises a retry that is still refused.
+
+**The create contract, as implemented.** Read from `internal/api/saved_item/`:
+
+- Body is exactly `{ "url": … }`; the server binds `validate:"required,url,max=2048"`, the
+  domain is derived server-side, the item goes to the caller's Unsorted collection, and
+  metadata is left to enrichment.
+- The `201` body is exactly `data.saved_item: { id, url, collection_id, enrichment_status }`
+  and `message` — **no `meta`**, and none of `domain`, `title`, `description`, `image_url`,
+  `created_at`, `updated_at` or the nested `collection`. All four are `required` in the DTO,
+  so a body missing one is a decode failure rather than a defaulted value.
+- The route is mounted **`Auth` → per-user rate limit → handler**, and the handler answers
+  `201` only after the single autocommit insert; the enrichment enqueue that follows has its
+  failure logged and swallowed. A `401` or a limiter refusal therefore never reached the
+  insert, which is what makes the interceptor's one replay of this request safe.
+- It is consequently **not enough to build a `SavedItemSummary`** — the new row cannot be
+  synthesised — so `SavedItemsRepository.create` returns nothing, and the row arrives by
+  re-reading the listing.
+
+**After a confirmed save, only the head is refreshed.** `refreshHead()` fetches page one,
+prepends its rows in server order (**D4**), skips ids already present, and keeps the loaded
+pages' own cursor when the list already had a continuation point (adopting the new page's
+only when it had none), so the next `loadMore` does not re-fetch what is on screen.
+`loadMore()` and `refreshHead()` both **re-read the state when their response arrives**
+rather than merging into the snapshot they captured, so either completion order keeps both
+operations' rows. A failed refresh is swallowed: the confirmed `Saved.` notice stands and
+the list simply stays stale until the user retries (open item 8).
+
+**Two taxonomy fixes.** `INVALID_URL` was absent from `ApiErrorCode` and fell through the
+mapper into `ApiFailureUnreadableResponse` — a correctable URL reading as an unreadable
+reply. It is now `400` → `ApiFailureValidation`, the same variant `VALIDATION_ERROR` takes,
+because the user's action is identical. Separately, the comment on
+`USER_RATE_LIMIT_EXCEEDED` said `503`; the backend sends **`429` with `Retry-After`** (it
+is `USER_RATE_LIMIT_UNAVAILABLE` that is `503`), and the comment now says so.
+
+| Command | Result |
+| --- | --- |
+| `dart run build_runner build` | Built, **22 outputs** on the first run (the new `@freezed` models with their JSON, the `@RestApi` client and the new `@riverpod` provider); a re-run writes **0 outputs**, so generation is in sync |
+| `dart format` (24 touched files, listed explicitly) | `Formatted 24 files (8 changed)`; re-run `0 changed` |
+| `flutter analyze` | `No issues found!` (whole project) |
+| `flutter test test/app/feedback` | `All tests passed!` — **36 tests** |
+| `flutter test test/features/saved_items` | `All tests passed!` — **104 tests** |
+| `flutter test test/features/inbox/presentation/inbox_screen_test.dart` | `All tests passed!` — **24 tests** |
+| `flutter test` | `All tests passed!` — **358 tests** (was 305) |
+
+New coverage — **53 tests** added here, on top of the 32 notice tests Task 1 added
+(36 in `test/app/feedback/` now, including the uncertain tone):
+
+- **Copy table (15)** — every `ApiFailure` a save can produce, with its exact tone and
+  sentence; no countdown invented when `Retry-After` is absent; eight countdown-unit cases;
+  the two uncertain rows never claiming "not saved" and always sending the user to the
+  Inbox; held-session failures never asking for a sign-in; and the session layer's expiry
+  suppressed in all three combinations.
+- **Mutation (12)** — one POST per tap with exactly `{"url": …}`; the value trimmed; an empty
+  or whitespace value sending nothing and announcing nothing; a second submission declined
+  while one is in flight; a refusal returning `false` (so the field is kept); a `429` showing
+  the server's wait; a `201` whose body does not decode reported as **unconfirmed**, not as a
+  failure; an offline device reported as uncertain; a terminated session publishing nothing
+  while leaving `consumeSessionEnded()` true; an ambiguous renewal saying "wasn't saved" and
+  never "sign in"; a confirmed save refreshing page one without a cursor; and a failed refresh
+  not taking the confirmation with it.
+- **Head refresh (6)** — prepending with the loaded rows kept and the continuation point
+  preserved; adopting a cursor when the list had none; a failed refresh throwing nothing and
+  leaving the rows alone; invalidating when nothing is loaded; and **both race orderings**
+  between `loadMore()` and `refreshHead()`.
+- **Repository `create` (10)** — the POST body, the documented `201`, a `201` missing a field
+  or with `data: null` rejected as unreadable, `INVALID_URL`, the `429` header preserved, a
+  failed-closed limiter as a server error, `500`, an HTML gateway body, and a dropped
+  connection.
+- **Inbox intake (5)** — the field starts empty and Save URL starts disabled; Paste sends
+  nothing; a confirmed save publishes the success notice, clears the field and shows the new
+  row via the head refresh; a refusal keeps the value; and two taps in one frame send one
+  POST with the button busy and disabled.
+- **Mapper (1)** — `INVALID_URL` maps to `ApiFailureValidation`.
+
+Four things were checked rather than assumed:
+
+- Removing the `INVALID_URL` arm fails that test with `ApiFailureUnreadableResponse` — the
+  wrong story for a correctable URL.
+- Making `loadMore()` merge into its pre-request snapshot fails the first race test with
+  `['a', 'b']` — the row the refresh prepended is dropped.
+- Making `refreshHead()` merge into its pre-request snapshot fails the second with
+  `['new', 'a']` — the page that arrived meanwhile is dropped.
+- The countdown table caught a real pluralisation bug (`2 minute`) before it shipped.
+
+**Limitation — a `testWidgets` needs a *timed* pump for the request to leave.** Riverpod
+hands provider-to-provider work to a zero-delay timer, so after tapping Save a bare
+`await tester.pump()` draws the busy button while the POST has not reached the transport
+yet; `pump(Duration.zero)` is what runs it. Recorded because it cost a debugging round and
+will recur in any widget test that asserts on a request count.
+
+**Limitations, recorded rather than papered over.** The list can be stale (open item 8); an
+undecodable `2xx` cannot be told from an unreadable refusal (open item 7); there was no
+client-side URL validation when this shipped — **Q13** was open, so the server was the only
+judge (a local shape gate was added afterwards, see the correction below, and the server
+remains the judge for everything it cannot decide); the countdown copy is English with
+hand-rolled pluralisation (`flutter_localizations` is still absent, D20); and the two race
+tests force their orderings through a gated fake transport, so they exercise this client's
+merge logic rather than real network concurrency.
+
+**No device, emulator or live backend was involved.** No emulator was touched, no app was
+installed, and `flutter run` was never executed.
+
+### Feedback notice styling correction, and local URL validation
+
+**Two corrections to the milestone above, neither of which changes its plumbing.** The
+notice's drawn treatment did not match `docs/design-explorations/components.html`'s Feedback
+section, and the intake sent values the server could only refuse.
+
+**The yellow underline was `WidgetsApp`'s fallback style, not our typography.** The notice is
+hosted above the router, so it is the one text in the app with no `Material` ancestor.
+`MaterialApp` passes `WidgetsApp` a deliberate *error* text style for exactly that case
+(`material/app.dart`, `_errorTextStyle`): 48 px red monospace with a **double yellow
+underline**. `Text` merges its own style *over* the ambient one, so the band's face, size and
+colour were honoured while that underline and its yellow `decorationColor` survived — on every
+tone. A transparent `Material` now wraps the band: it installs `theme.textTheme.bodyMedium`
+as the ambient style and paints nothing, which is the SDK's own remedy for the fallback style.
+The regression test asserts on the **resolved** `TextSpan` the paragraph paints, not on the
+`Text` widget's own `style`, which never carried the decoration in the first place.
+
+**The band now follows `.ds-note`.** A 1 px `<tone>-border` hairline on three sides, a **3 px
+leading edge in the tone's own token**, `9 × 11` padding (the border sits outside it, as CSS
+does), a 6 × 6 mark at `margin-top: 5`, and a 2 px radius applied as a clip — `BoxBorder`
+refuses a radius on a border whose sides differ in colour, which this one deliberately does.
+Geometry lives in `AppMetrics.notice*` beside the other component metrics; colours still
+resolve through `AppTheme.tokensOf`, so both brightnesses are covered. The copy keeps
+`AppTypography.meta` — the specification's role for a state line — rather than the reference
+CSS's literal 12.5 px/1.45, which has no role in `design-system.md` §3. `_SignInMessage` is a
+separate widget on its own screen and was not touched.
+
+**Local URL validation** (`isSubmittableUrl`, `lib/features/saved_items/domain/saved_item_url.dart`)
+runs in `SaveUrl.submit` **before** the in-flight flag and before the repository, so a value
+that cannot be a URL never becomes a request. It trims; requires an absolute `http`/`https`
+URL; requires a host with no whitespace or control characters and no bare `%` once
+percent-escapes are decoded; and refuses a port above 65535. It makes **no network call**, has
+no allowlist, no dot requirement and **no length cap** — the server's `max=2048` stays its
+refusal because the copy for it is not a format complaint. A local refusal publishes the
+existing notice in `danger` with client-owned copy that never suggests the server answered,
+returns `false` (so the field keeps the value), and leaves the user able to correct it and
+submit again. A *server* refusal still round-trips and keeps the server-side sentence.
+
+**Verification actually run:**
+
+| Command | Result |
+| --- | --- |
+| `dart format` (10 touched files) | `Formatted 10 files (2 changed)`; re-run `0 changed` |
+| `flutter analyze` | `No issues found!` (whole project) |
+| `flutter test test/app/feedback` | `All tests passed!` — **40 tests** (was 36) |
+| `flutter test` on the domain, controller and Inbox files | `All tests passed!` — **104 tests** |
+| `flutter test` | `All tests passed!` — **415 tests** (was 358; **+57**) |
+
+New coverage:
+
+- **The local URL rule (49)** — 15 accepted shapes (paths, query, fragment, ports, IPv4,
+  IPv6, upper-case scheme, IDN, punycode, userinfo, an encoded space); 4 trim cases; 27
+  refusals (empty/whitespace, no scheme, no host, unsupported schemes, whitespace or a broken
+  escape in the host, an out-of-range port, an unterminated IPv6 literal, a non-URI); and 3
+  that pin what is left to the server (a single-label host, an unknown domain, a URL beyond
+  the 2048-byte cap).
+- **Notice rendering (3, plus 1 in the app tree)** — the mark is squared to the first line;
+  long copy wraps unclipped in light and dark; and the resolved-decoration regression, which
+  can only be asserted in the real app tree because the notice is the only text above the
+  router.
+- **Mutation (2)** — a value that cannot be a URL makes **zero** requests and publishes the
+  danger notice; a corrected value is then sent exactly once.
+- **Inbox intake (2)** — the local refusal keeps the field's value, leaves the button ready,
+  and sends nothing; a corrected link is sent once, clears the field and shows the new row.
+
+**Discrimination checked, not assumed:**
+
+- Replacing the transparent `Material` with a pass-through `DefaultTextStyle` fails the
+  regression test with `Actual: TextDecoration:<TextDecoration.underline>`.
+- Removing the local gate makes the controller test report `Actual: [Instance of
+  'RecordedRequest']` and the intake test `Actual: <1>` POST — the two assertions that
+  failed first are exactly the "no request" ones.
+
+**Limitation.** The local rule is a *shape* gate: it cannot decide reachability, domain
+acceptability or the server's length cap, and it deliberately does not try. Q13/§2.9 in the
+product record still read `[Open]`/`[Rec]` — see open item 9.
+
 ## Not implemented
 
 - Collections list, collection contents, deletion.
@@ -982,9 +1224,12 @@ screen was built here.
   refreshes only when it must uses 0.67 of the `refresh-ip` budget per 10 minutes,
   and `auth-sessions.md` names aggressive client retry as the assumption most likely
   to require that ceiling be raised.
-- Pending-URL queue and share intake. The URL field, Paste and Save URL are **rendered but
-  not wired** (D25 is approved but not built — it depends on clipboard and Q13; secure
-  storage now exists).
+- Pending-URL queue and share intake. **Save URL is wired** (`POST /saved-items`, manual
+  retry only, one URL per tap, with a local shape gate in front of it; the server still
+  decides everything the shape gate cannot); **Paste and the queue are not** — they depend on
+  the clipboard and on Q1/Q2/Q3, and secure storage now exists for the queue (V5). Q13's
+  validation-timing part is implemented for the intake but still reads `[Open]` in the product
+  record (open item 9).
 - Profile and account actions.
 - Localization. `flutter_localizations` is absent and there are no ARB files; every
   string is inline English, including the sign-in copy. D20 fixes Flutter as the
@@ -1040,6 +1285,27 @@ Carried from the discovery documents, plus what this milestone surfaced.
    writing a fresh pair against an in-flight clear — but it is a real inconsistency,
    not a settled policy. The interceptor fix above only guarantees such a request
    *completes*; it does not decide what the app should then believe.
+7. **`ApiFailureUnreadableResponse` does not establish a write's outcome.** On
+   `POST /saved-items` one variant covers both a non-2xx reply whose body could not be read
+   (*known not saved*) and a `201` whose body failed to decode (the insert **committed**).
+   Dio's transformer runs before `validateStatus`, so both arrive with no `response` and
+   nothing separates them. The save flow therefore reports the unestablished outcome
+   honestly — uncertain tone, copy that claims neither — but the taxonomy cannot say which
+   happened. A variant that separates them is the honest fix, and it would mean giving the
+   decoder the status it is not currently told; no copy claims "not saved" in either case
+   meanwhile.
+8. **A confirmed save whose head refresh fails leaves the Inbox stale.** The notice still
+   says `Saved.` and no error appears, because the create *was* confirmed and a read that did
+   not arrive must not be reported as a failed save. The row shows up on the next `retry()`
+   or a fresh visit, and nothing tells the user the list is behind. Whether it should is a
+   product question, not a plumbing one.
+9. **Q13 / §2.9 in `decisions.md` no longer describe the client's behaviour.** The intake now
+   refuses a clearly invalid URL before a request, on explicit instruction, while the product
+   record still marks **Q13** `[Open]` and the mirroring recommendation **§2.9** `[Rec]`.
+   `decisions.md` was deliberately **not** edited — a decision changes there, not in a
+   controller. Until it is recorded, treat the local gate's exact rule (shape only, no length
+   cap, no network probe) as **implemented on instruction**, not as an approved product
+   decision, and do not extend it (deduplication, domain rules) without the record saying so.
 
 ### Carried from the discovery documents
 
@@ -1113,6 +1379,9 @@ data can be fetched.
 - **Settle the count question first** (gap 2 above), so the DTO is written once.
 - The Inbox against `GET /saved-items` is **done** and no longer waits on the
   Collections DTO decision — it was built against the verified contract on its own.
+- **The save flow's leftovers are not Collections work**: **Paste** needs the clipboard
+  dependency (`AGENTS.md` §4), the **pending-URL queue** is D25/D7 and unbuilt, and the
+  Inbox still has no end-of-list boundary (a carried gap above).
 - Profile account data from `GET /users/me`, replacing the placeholder.
 
 Before any of that: retest manual sign-in on a device. The dependency cycle that
