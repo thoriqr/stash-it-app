@@ -819,6 +819,65 @@ unaffected, but the seam is a trap. Second, a `testWidgets` body runs in the fak
 The `_endSession` clear-failure inconsistency (open item 6 below) is unchanged and deliberately
 untouched — this work records nothing in that case.
 
+### `AuthRepository.refresh()` removed
+
+**Complete for this iteration.** `AuthRepository` had a `refresh()` that duplicated the backend
+call behind `SessionController`. It had **no production caller** — its only call sites were its own
+tests — and it was not safe to call. Compared with the path that actually renews, it omitted every
+step that makes renewal survivable:
+
+| | `AuthRepository.refresh()` (removed) | `SessionController._renew()` |
+| --- | --- | --- |
+| **Persists the rotated pair** | no — documented as "the caller's decision" | yes, all-or-nothing, **before** returning |
+| **Ends the session on a terminal code** | no — just throws `ApiFailureSessionEnded` | yes — `_endSession()` clears the store |
+| **Single-flight** | none — N callers, N presentations | one shared `Future` |
+| Token source | caller-supplied parameter | read from storage as renewal begins |
+| Ambiguous failure | surfaces as its own failure | wrapped as `ApiFailureRefreshUncertain` |
+
+The missing single-flight and persistence are not stylistic. The backend revokes the **whole
+session** on a second presentation of an already-spent refresh token, so a caller using the removed
+method would keep presenting the token it had just spent and lose the session on the next attempt —
+and two concurrent callers would do so immediately. Those are precisely the failures
+`SessionController` was built to prevent.
+
+Its provenance is documented rather than guessed. The pre-cycle-break graph was
+`appDio -> sessionController -> authRepository -> authApi -> appDio`, the only configuration in
+which `SessionController` would have called `repository.refresh(...)`. When that cycle was fixed,
+login and logout moved **to** `AuthState` while refresh was lifted **out of** the repository, and
+the method was left behind. Nothing in the code or the decision record ever claimed renewal was
+reachable through the repository; the graph line `authRepository -> authApi, refreshApi` recorded
+earlier in this document describes that milestone's graph, not an intended API.
+
+**Removal, not redirection.** `POST /saved-items` — the next planned feature — goes through
+`appDio` and inherits `AuthInterceptor`'s renew-and-replay at every layer, so it needs no refresh
+capability of its own. An absent method is a stronger guarantee than a comment on a live one, and
+this one carried a way to destroy a user's session by accident.
+
+Changed: `AuthRepository` (method, `refreshApi` field and constructor parameter, and the two
+imports it alone used); the `authRepositoryProvider` construction in `auth_state.dart`; the `refresh`
+group and its `refreshEnvelope`/`refreshDio` helpers in `auth_repository_test.dart`; and the
+`authRepositoryProvider` override in `bootstrap_test.dart`. `login` and `logout` tests are untouched.
+
+**Untouched, and confirmed still intact by search:** `RefreshApi`, `refreshApiProvider`,
+`refreshDio`, `RefreshRequest` and `SessionController._renew()`. `refreshApiProvider` still has one
+consumer — `SessionController` — and the repository's `refreshApi` field was its only other one.
+
+| Command | Result |
+| --- | --- |
+| `dart run build_runner build` | Built; a re-run writes **0 outputs**, so generation is in sync |
+| `dart format lib test` | `Formatted 106 files (0 changed)` |
+| `flutter analyze` | `No issues found!` (whole project) |
+| `flutter test` (`features/auth` + `app/bootstrap_test.dart`) | `All tests passed!` — **83 tests** |
+| `flutter test` | `All tests passed!` — **258 tests** (was 262; four refresh-repository tests removed) |
+
+**One incidental correction.** The rebuild rewrote the hash in `session_controller.g.dart`. That is
+**pre-existing drift, not a consequence of this change**: reverting every source edit and rebuilding
+against the committed sources reproduces it, which build_runner reports as `1 fixed`. Generated files
+are committed here (`.gitignore` ignores neither `*.g.dart` nor `*.freezed.dart`), so a hash written
+by an earlier session had gone stale.
+
+**No device, emulator or live backend was involved.**
+
 ## Not implemented
 
 - Collections list, collection contents, deletion.

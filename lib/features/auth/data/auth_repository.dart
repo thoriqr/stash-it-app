@@ -3,11 +3,9 @@ import 'package:dio/dio.dart';
 import '../../../core/error/api_failure.dart';
 import '../../../core/error/api_failure_mapper.dart';
 import 'datasources/auth_api.dart';
-import 'datasources/refresh_api.dart';
 import 'models/auth_tokens.dart';
 import 'models/auth_user.dart';
 import 'models/login_request.dart';
-import 'models/refresh_request.dart';
 
 /// The outcome of a successful sign-in.
 ///
@@ -26,11 +24,19 @@ class LoginOutcome {
 /// so a caller never has to know Dio exists (`AGENTS.md` §2, rule 4). It is a
 /// concrete class with no interface: there is one implementation, and
 /// `AGENTS.md` §2 explicitly declines interfaces for that case.
+///
+/// **Sign-in and sign-out only. Renewal is not here.** `SessionController`
+/// performs it directly against `refreshApi`, and has to: only that path
+/// coordinates concurrent renewals into one submission, reads the refresh token
+/// as renewal begins, persists the rotated pair before handing it back, and ends
+/// the session on a terminal refusal. A repository method could do none of those
+/// — the backend revokes the whole session on a second presentation of a spent
+/// token — so offering one here was a way to reach a session-destroying call by
+/// accident. An earlier version of this class did offer it and had no callers.
 class AuthRepository {
-  const AuthRepository({required this.authApi, required this.refreshApi});
+  const AuthRepository({required this.authApi});
 
   final AuthApi authApi;
-  final RefreshApi refreshApi;
 
   /// Signs in with an email and password, creating a new server session.
   ///
@@ -61,37 +67,6 @@ class AuthRepository {
           refreshToken: data.refreshToken,
         ),
         user: data.user,
-      );
-    } on DioException catch (error) {
-      throw mapApiFailure(error);
-    }
-  }
-
-  /// Exchanges a refresh token for a rotated pair.
-  ///
-  /// **Does not persist.** Persisting is the caller's decision, because the
-  /// caller is the one that must treat a failed write as a lost session.
-  ///
-  /// Throws [ApiFailureSessionEnded] for `REFRESH_TOKEN_INVALID`,
-  /// `SESSION_REVOKED` and `SESSION_EXPIRED`; those are the codes the backend
-  /// emits only after committing the revocation, so no caller should retry.
-  /// Every other failure — `503` from the failing-closed limiter, `429`,
-  /// `500`, or no response at all — surfaces as its own [ApiFailure] with the
-  /// refresh token left untouched.
-  Future<AuthTokens> refresh(String refreshToken) async {
-    try {
-      final response = await refreshApi.refresh(
-        RefreshRequest(refreshToken: refreshToken),
-      );
-      final data = response.data;
-
-      if (data == null) {
-        throw const ApiFailureUnreadableResponse();
-      }
-
-      return AuthTokens(
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
       );
     } on DioException catch (error) {
       throw mapApiFailure(error);

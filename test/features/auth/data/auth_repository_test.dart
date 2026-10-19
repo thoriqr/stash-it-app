@@ -4,7 +4,6 @@ import 'package:stash_it_app/core/error/api_error_codes.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/auth/data/auth_repository.dart';
 import 'package:stash_it_app/features/auth/data/datasources/auth_api.dart';
-import 'package:stash_it_app/features/auth/data/datasources/refresh_api.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 
 import '../../../support/fake_http.dart';
@@ -12,7 +11,6 @@ import '../../../support/fake_http.dart';
 void main() {
   late FakeHttpAdapter adapter;
   late Dio appDio;
-  late Dio refreshDio;
   late AuthRepository repository;
 
   setUp(() {
@@ -20,13 +18,8 @@ void main() {
 
     appDio = Dio(BaseOptions(baseUrl: 'https://api.test'))
       ..httpClientAdapter = adapter;
-    refreshDio = Dio(BaseOptions(baseUrl: 'https://api.test'))
-      ..httpClientAdapter = adapter;
 
-    repository = AuthRepository(
-      authApi: AuthApi(appDio),
-      refreshApi: RefreshApi(refreshDio),
-    );
+    repository = AuthRepository(authApi: AuthApi(appDio));
   });
 
   /// The exact envelope `POST /auth/login` returns on success.
@@ -41,12 +34,6 @@ void main() {
       },
     },
     'message': 'login successful',
-  };
-
-  /// The exact envelope `POST /auth/refresh` returns on success.
-  Map<String, dynamic> refreshEnvelope() => {
-    'data': {'access_token': 'access-2', 'refresh_token': 'refresh-2'},
-    'message': 'token refreshed successfully',
   };
 
   group('login', () {
@@ -155,64 +142,6 @@ void main() {
       await expectLater(
         repository.login(email: 'user@example.com', password: 'password123'),
         throwsA(isA<ApiFailureUnreadableResponse>()),
-      );
-    });
-  });
-
-  group('refresh', () {
-    test('decodes the rotated pair', () async {
-      adapter.on('/auth/refresh', body: refreshEnvelope());
-
-      final tokens = await repository.refresh('refresh-1');
-
-      expect(
-        tokens,
-        const AuthTokens(accessToken: 'access-2', refreshToken: 'refresh-2'),
-        reason: 'both tokens rotate; the old refresh token is spent',
-      );
-    });
-
-    test('sends only the refresh token', () async {
-      adapter.on('/auth/refresh', body: refreshEnvelope());
-
-      await repository.refresh('refresh-1');
-
-      expect(adapter.lastRequestTo('/auth/refresh')?.method, 'POST');
-    });
-
-    test('each terminal code ends the session', () async {
-      for (final code in ApiErrorCode.terminalRefresh) {
-        adapter = FakeHttpAdapter();
-        appDio.httpClientAdapter = adapter;
-        refreshDio.httpClientAdapter = adapter;
-        adapter.on('/auth/refresh', status: 401, body: errorBody(code));
-
-        final repository = AuthRepository(
-          authApi: AuthApi(appDio),
-          refreshApi: RefreshApi(refreshDio),
-        );
-
-        await expectLater(
-          repository.refresh('refresh-1'),
-          throwsA(
-            isA<ApiFailureSessionEnded>().having((f) => f.code, 'code', code),
-          ),
-        );
-      }
-    });
-
-    test('a 500 does not end the session', () async {
-      // The commit may not have succeeded, so the outcome is unknown rather than
-      // terminal. Ending the session here would sign the user out over a fault.
-      adapter.on(
-        '/auth/refresh',
-        status: 500,
-        body: errorBody(ApiErrorCode.internalServerError),
-      );
-
-      await expectLater(
-        repository.refresh('refresh-1'),
-        throwsA(isA<ApiFailureServerFault>()),
       );
     });
   });

@@ -37,10 +37,7 @@ enum AuthStatus {
 /// convert a Retrofit `@RestApi` type to code. See `auth_api_providers.dart`.
 final Provider<AuthRepository> authRepositoryProvider =
     Provider<AuthRepository>(
-      (ref) => AuthRepository(
-        authApi: ref.watch(authApiProvider),
-        refreshApi: ref.watch(refreshApiProvider),
-      ),
+      (ref) => AuthRepository(authApi: ref.watch(authApiProvider)),
     );
 
 /// The authentication state, and the operations that change it.

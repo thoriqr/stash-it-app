@@ -161,7 +161,7 @@ final class SessionControllerProvider
   }
 }
 
-String _$sessionControllerHash() => r'cd723931c14341595f54173a85dadb6210f89a46';
+String _$sessionControllerHash() => r'da07a9358d4588639710e0dcd686f7d3d0d84d44';
 
 /// Owns the credential pair, and is the only provider the API client depends on.
 ///

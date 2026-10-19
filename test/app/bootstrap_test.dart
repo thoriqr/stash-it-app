@@ -8,7 +8,6 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/auth_repository.dart';
 import 'package:stash_it_app/features/auth/data/datasources/auth_api.dart';
-import 'package:stash_it_app/features/auth/data/datasources/refresh_api.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 
 import '../support/fake_http.dart';
@@ -93,10 +92,8 @@ void main() {
           ),
           restoredTokensProvider.overrideWithValue(restored),
           authRepositoryProvider.overrideWith(
-            (ref) => AuthRepository(
-              authApi: AuthApi(ref.watch(appDioProvider)),
-              refreshApi: RefreshApi(ref.watch(refreshDioProvider)),
-            ),
+            (ref) =>
+                AuthRepository(authApi: AuthApi(ref.watch(appDioProvider))),
           ),
         ],
         // Stops Riverpod retrying a provider driven into an error state, which
