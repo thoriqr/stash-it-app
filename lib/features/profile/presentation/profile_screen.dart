@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
+import 'package:stash_it_app/core/error/api_failure_messages.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/profile/application/profile_controller.dart';
 import 'package:stash_it_app/features/profile/domain/user_profile.dart';
@@ -230,13 +231,10 @@ String _profileErrorMessage(Object error) => switch (error) {
   ApiFailureAuthRequired() => 'Sign in again to view your profile.',
   ApiFailureServerUnavailable() =>
     'Profile is temporarily unavailable. Try again shortly.',
-  ApiFailureServerFault() => 'We could not reach the server. Try again.',
-  ApiFailureRateLimited() => 'Too many attempts. Try again shortly.',
   ApiFailureTransport() => 'No connection. We could not load your profile.',
-  ApiFailureUnreadableResponse() ||
-  ApiFailureMalformedRequest() ||
-  ApiFailureValidation() => "We couldn't read the server's reply. Try again.",
-  _ => 'We could not load your profile. Try again.',
+  _ =>
+    genericReadFailureMessage(error) ??
+        'We could not load your profile. Try again.',
 };
 
 /// A section heading with the reference's rule running to the right edge.

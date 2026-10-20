@@ -246,4 +246,18 @@ void main() {
     expect(find.text('reader@example.com'), findsOneWidget);
     expect(find.text('Retry'), findsNothing);
   });
+
+  testWidgets('uses the shared read copy for a server fault', (tester) async {
+    await pumpProfile(
+      tester,
+      load: () async => throw const ApiFailureServerFault(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('We could not reach the server. Try again shortly.'),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(AppButton, 'Retry'), findsOneWidget);
+  });
 }

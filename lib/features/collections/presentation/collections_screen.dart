@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_theme.dart';
 import '../../../core/error/api_failure.dart';
+import '../../../core/error/api_failure_messages.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../application/collections_controller.dart';
 import '../application/collections_state.dart';
@@ -245,14 +246,10 @@ class _CollectionsError extends StatelessWidget {
     ApiFailureAuthRequired() => 'Sign in again to see your collections.',
     ApiFailureServerUnavailable() =>
       'Your collections are temporarily unavailable. Try again shortly.',
-    ApiFailureServerFault() =>
-      'We could not reach the server. Try again shortly.',
-    ApiFailureRateLimited() => 'Too many attempts. Try again shortly.',
-    ApiFailureUnreadableResponse() ||
-    ApiFailureMalformedRequest() ||
-    ApiFailureValidation() => "We couldn't read the server's reply. Try again.",
     ApiFailureTransport() =>
       'No connection to the server. We could not load your collections.',
-    _ => 'We could not load your collections. Try again.',
+    _ =>
+      genericReadFailureMessage(failure) ??
+          'We could not load your collections. Try again.',
   };
 }

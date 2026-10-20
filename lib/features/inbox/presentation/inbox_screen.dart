@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
+import 'package:stash_it_app/core/error/api_failure_messages.dart';
 import 'package:stash_it_app/features/inbox/presentation/widgets/inbox_intake.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_state.dart';
@@ -323,23 +324,17 @@ class _InboxError extends StatelessWidget {
     ApiFailureServerUnavailable() =>
       'Your saved items are temporarily unavailable. Try again shortly.',
 
-    ApiFailureServerFault() =>
-      'We could not reach the server. Try again shortly.',
-
-    ApiFailureRateLimited() => 'Too many attempts. Try again shortly.',
-
-    // An unparseable body or a shape this client does not understand. The backend
-    // prose is never shown, because it is not part of any contract.
-    ApiFailureUnreadableResponse() ||
-    ApiFailureMalformedRequest() ||
-    ApiFailureValidation() => "We couldn't read the server's reply. Try again.",
-
     // The one uncertain case, and it is uncertain about a *read*: the request may
     // have been served and the answer lost. Saying so is accurate and says
     // nothing about any item's fate.
     ApiFailureTransport() =>
       'No connection to the server. We could not load your saved items.',
 
-    _ => 'We could not load your saved items. Try again.',
+    // Rate limits, server faults, and unreadable/malformed outcomes have copy
+    // shared by every read screen. The backend prose is never shown, because it
+    // is not part of any contract.
+    _ =>
+      genericReadFailureMessage(failure) ??
+          'We could not load your saved items. Try again.',
   };
 }
