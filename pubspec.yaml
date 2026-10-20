@@ -52,6 +52,7 @@ dependencies:
   # 11.x requires Android minSdk 24, which is what `flutter.minSdkVersion`
   # already resolves to, and iOS 12 against this project's 13.0 target.
   flutter_secure_storage: ^11.2.0
+  intl: ^0.20.3
 
 dev_dependencies:
   flutter_test:

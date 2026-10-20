@@ -28,9 +28,29 @@ void main() {
     expect(profile.email, 'test@example.com');
     expect(profile.displayName, 'Test User');
     expect(profile.hasPasswordCredential, true);
+    expect(profile.createdAt, DateTime.utc(2026, 1, 1));
     expect(profile.identities.length, 2);
     expect(profile.identities[0].displayLabel, 'Google');
+    expect(profile.identities[0].linkedAt, DateTime.utc(2026, 1, 2));
     expect(profile.identities[1].displayLabel, 'Email & password');
+  });
+
+  test('never substitutes a date for an unparseable timestamp', () {
+    final profile = profileFrom(
+      UserResponse(
+        id: '123',
+        email: 'test@example.com',
+        displayName: 'Test User',
+        hasPasswordCredential: false,
+        createdAt: 'not-a-date',
+        identities: const [
+          UserIdentityResponse(provider: 'google', linkedAt: 'nope'),
+        ],
+      ),
+    );
+
+    expect(profile.createdAt, isNull);
+    expect(profile.identities.single.linkedAt, isNull);
   });
 
   test('maps unknown provider to capitalized label', () {

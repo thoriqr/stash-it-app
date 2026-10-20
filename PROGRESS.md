@@ -1,3 +1,28 @@
+## Profile refinement (2026-10-21)
+
+### Flutter implementation
+- Rebuilt `lib/features/profile/presentation/profile_screen.dart` against `docs/design-explorations/profile.html`: a full-bleed identity band (name, mono email, joined-date chip), ruled section labels, hairline account and identity rows, a compact empty-identities state, and a full-width secondary Sign out.
+- Display name gets a right-aligned row. The password row labels itself `Change password` or `Create password` from `has_password_credential` and carries the reference chevron. No password route, API, or flow exists: the row is a non-interactive visual placeholder with a TODO.
+- Sign out still calls `authStateProvider.notifier.signOut()`; no auth, session, or credential-cleanup behaviour changed.
+- Loading is a compact header spinner plus `Loading profile…` (not Skeletonizer); failure shows one safe message with Retry wired to `Profile.retry()`. Sign out stays available in both states, and the account/identity sections are hidden rather than filled with fabricated data.
+
+### Dates
+- Added `intl: ^0.20.3` via `flutter pub add intl` (promoted from a transitive dependency).
+- `lib/features/profile/presentation/profile_date.dart` converts both profile timestamps to the device's local timezone and formats them with `DateFormat('dd MMM yyyy')` (for example `07 Oct 2026`).
+- `UserProfile.createdAt` and `UserIdentity.linkedAt` are nullable. `profile_mapper.dart` uses `DateTime.tryParse` with no `DateTime.now()` fallback, so an unparseable timestamp is omitted instead of fabricated.
+- Identity rows show `linked dd MMM yyyy`; when no valid date exists, a snapshot email or name is shown only when it differs from the account value.
+
+### Verification
+- `dart format` applied to all changed Dart files.
+- `flutter analyze`: no issues found.
+- `flutter test test/features/profile`: 16 tests passed (mapper, date helper, Profile screen).
+- `flutter test`: 461 tests passed.
+- No device or emulator run was performed.
+
+### Remaining limitations
+- Password creation/change remains unimplemented by design; the row is a placeholder.
+- The new Profile copy is not localized. The app still has no l10n layer (existing gap, not introduced here).
+
 ## Collections list integration (2026-10-21)
 
 ### Verified backend contract (stash-it-backend)

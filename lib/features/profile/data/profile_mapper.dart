@@ -2,23 +2,25 @@ import '../domain/user_profile.dart';
 import 'models/user_profile_response.dart';
 
 UserIdentity identityFrom(UserIdentityResponse dto) {
-  final linkedAt = DateTime.tryParse(dto.linkedAt) ?? DateTime.now();
   return UserIdentity(
     provider: dto.provider,
-    linkedAt: linkedAt,
+    // Null, never `DateTime.now()`: an unreadable timestamp must be omitted,
+    // not presented as the day the profile happened to be opened.
+    linkedAt: DateTime.tryParse(dto.linkedAt),
     emailSnapshot: dto.emailSnapshot,
     displayNameSnapshot: dto.displayNameSnapshot,
   );
 }
 
 UserProfile profileFrom(UserResponse dto) {
-  final createdAt = DateTime.tryParse(dto.createdAt) ?? DateTime.now();
   return UserProfile(
     id: dto.id,
     email: dto.email,
     displayName: dto.displayName,
     hasPasswordCredential: dto.hasPasswordCredential,
-    createdAt: createdAt,
+    // See `identityFrom`. The domain keeps the failure as null so the UI can
+    // omit the date without inventing one.
+    createdAt: DateTime.tryParse(dto.createdAt),
     identities: dto.identities.map(identityFrom).toList(growable: false),
   );
 }

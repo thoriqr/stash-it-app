@@ -10,7 +10,12 @@ class UserIdentity {
   });
 
   final String provider;
-  final DateTime linkedAt;
+
+  /// Null when the API sent a value this client could not parse.
+  ///
+  /// The UI omits the date rather than substituting one.
+  final DateTime? linkedAt;
+
   final String? emailSnapshot;
   final String? displayNameSnapshot;
 
@@ -67,7 +72,12 @@ class UserProfile {
   final String email;
   final String displayName;
   final bool hasPasswordCredential;
-  final DateTime createdAt;
+
+  /// Null when the API sent a value this client could not parse.
+  ///
+  /// The UI omits the date rather than substituting one.
+  final DateTime? createdAt;
+
   final List<UserIdentity> identities;
 
   @override
