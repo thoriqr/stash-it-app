@@ -39,9 +39,10 @@ part of 'saved_items_controller.dart';
 /// one roughly 200 ms later, without the user having touched anything.
 ///
 /// Scoped to this provider deliberately: the session controller and the router
-/// keep Riverpod's default, and no global policy is changed. [SavedItems.retry] —
-/// which the Inbox's Retry button calls — remains the only way this listing is
-/// fetched again, which is the manual retry **D23** asks for.
+/// keep Riverpod's default, and no global policy is changed. [SavedItems.retry]
+/// remains the explicit recovery from a failed first load, and
+/// [SavedItems.refresh] is the manual pull-to-refresh path; neither is automatic,
+/// which is the manual retry **D23** asks for.
 
 @ProviderFor(SavedItems)
 final savedItemsProvider = SavedItemsProvider._();
@@ -77,9 +78,10 @@ final savedItemsProvider = SavedItemsProvider._();
 /// one roughly 200 ms later, without the user having touched anything.
 ///
 /// Scoped to this provider deliberately: the session controller and the router
-/// keep Riverpod's default, and no global policy is changed. [SavedItems.retry] —
-/// which the Inbox's Retry button calls — remains the only way this listing is
-/// fetched again, which is the manual retry **D23** asks for.
+/// keep Riverpod's default, and no global policy is changed. [SavedItems.retry]
+/// remains the explicit recovery from a failed first load, and
+/// [SavedItems.refresh] is the manual pull-to-refresh path; neither is automatic,
+/// which is the manual retry **D23** asks for.
 final class SavedItemsProvider
     extends $AsyncNotifierProvider<SavedItems, SavedItemsState> {
   /// The Inbox listing: the first page, and any page after it.
@@ -113,9 +115,10 @@ final class SavedItemsProvider
   /// one roughly 200 ms later, without the user having touched anything.
   ///
   /// Scoped to this provider deliberately: the session controller and the router
-  /// keep Riverpod's default, and no global policy is changed. [SavedItems.retry] —
-  /// which the Inbox's Retry button calls — remains the only way this listing is
-  /// fetched again, which is the manual retry **D23** asks for.
+  /// keep Riverpod's default, and no global policy is changed. [SavedItems.retry]
+  /// remains the explicit recovery from a failed first load, and
+  /// [SavedItems.refresh] is the manual pull-to-refresh path; neither is automatic,
+  /// which is the manual retry **D23** asks for.
   SavedItemsProvider._()
     : super(
         from: null,
@@ -135,7 +138,7 @@ final class SavedItemsProvider
   SavedItems create() => SavedItems();
 }
 
-String _$savedItemsHash() => r'4467c0eb146ecb26962ea069028b52fe961ce0df';
+String _$savedItemsHash() => r'd5d36a1968ee1860504fbd3c3a96c71a7ffc43fc';
 
 /// The Inbox listing: the first page, and any page after it.
 ///
@@ -168,9 +171,10 @@ String _$savedItemsHash() => r'4467c0eb146ecb26962ea069028b52fe961ce0df';
 /// one roughly 200 ms later, without the user having touched anything.
 ///
 /// Scoped to this provider deliberately: the session controller and the router
-/// keep Riverpod's default, and no global policy is changed. [SavedItems.retry] —
-/// which the Inbox's Retry button calls — remains the only way this listing is
-/// fetched again, which is the manual retry **D23** asks for.
+/// keep Riverpod's default, and no global policy is changed. [SavedItems.retry]
+/// remains the explicit recovery from a failed first load, and
+/// [SavedItems.refresh] is the manual pull-to-refresh path; neither is automatic,
+/// which is the manual retry **D23** asks for.
 
 abstract class _$SavedItems extends $AsyncNotifier<SavedItemsState> {
   FutureOr<SavedItemsState> build();
