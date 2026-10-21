@@ -50,6 +50,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _submitting = false;
   String? _message;
 
+  /// Whether the password is masked. The field starts obscured, and only this
+  /// screen controls it: the toggle is a view of the entered value, not a
+  /// change to it.
+  bool _obscurePassword = true;
+
   /// How [_message] is presented. Defaults to danger so every ordinary
   /// sign-in failure keeps the treatment it had before tones existed.
   _MessageTone _messageTone = _MessageTone.danger;
@@ -195,10 +200,29 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       label: 'Password',
                       controller: _passwordController,
                       enabled: !_submitting,
-                      obscureText: true,
+                      obscureText: _obscurePassword,
                       autofillHints: const [AutofillHints.password],
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _submit(),
+                      suffixIcon: IconButton(
+                        // Inline and inside the field: a separate control outside
+                        // would read as another form action. It only flips the
+                        // mask, so it can neither submit nor validate.
+                        onPressed: _submitting
+                            ? null
+                            : _togglePasswordVisibility,
+                        tooltip: _obscurePassword
+                            ? 'Show password'
+                            : 'Hide password',
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                        iconSize: AppMetrics.iconSize,
+                        color: tokens.textTertiary,
+                        padding: EdgeInsets.zero,
+                      ),
                       validator: (value) {
                         final password = value ?? '';
                         if (password.isEmpty) return 'Enter your password.';
@@ -234,6 +258,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         ),
       ),
     );
+  }
+
+  /// Shows or masks the entered password without touching its value.
+  ///
+  /// Deliberately not part of [_submit]: the control is an inspection aid, so
+  /// it never validates or posts the form.
+  void _togglePasswordVisibility() {
+    setState(() => _obscurePassword = !_obscurePassword);
   }
 
   /// Clears a failure message so the form can be corrected and resubmitted.

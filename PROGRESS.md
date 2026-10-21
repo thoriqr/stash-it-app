@@ -1,3 +1,21 @@
+## Sign-in field fixes (2026-10-22)
+
+### Flutter implementation
+- `AppField` now clears its own validation message as soon as that field is edited (`FormFieldState.clearError` via an internal `GlobalKey`). Editing Email does not touch Password's message, and validation still runs only on form submission with every existing rule and message unchanged.
+- `AppField` gained an optional `suffixIcon` (mutually exclusive with `onClear`). Sign-in uses it for an inline eye/eye-off `IconButton` with `Show password` / `Hide password` tooltips. The password stays obscured by default; the toggle does not submit, validate, or remove focus, and is disabled while the form is submitting.
+- **Cause of the green rectangle:** the focused-field halo was a spread `BoxShadow` on a `Container` wrapping the whole `TextFormField`. `InputDecorator` reserves the error message inside that box, so the shadow's fill extended behind the error text; only the focused Email field showed it. The halo now paints from a private focused `InputBorder` (`_AppFieldBorder`), whose rectangle is the input box alone. There is no accent halo on `focusedErrorBorder`; email and password errors share the same 2 px danger border and danger message.
+
+### Verification
+- `dart format` applied to the changed Dart files.
+- `flutter analyze`: no issues found.
+- Focused `flutter test` of `sign_in_screen_test.dart` and `app_field_test.dart`: 27 tests passed.
+- `flutter test`: 542 tests passed.
+- No app, device, or emulator run was performed.
+
+### Remaining limitations
+- `Show password` / `Hide password` are hardcoded English; the app still has no l10n layer.
+- The eye/eye-off glyphs are Material icons, matching the existing Material `Icons.search` / `Icons.close` usage.
+
 ## Inline clear controls (2026-10-21)
 
 ### Flutter implementation

@@ -124,6 +124,104 @@ void main() {
       );
     });
 
+    testWidgets('the password visibility toggle reveals and re-masks the value '
+        'without submitting or losing focus', (tester) async {
+      await pumpSignIn(tester);
+
+      final password = find.byType(TextFormField).at(1);
+      await tester.tap(password);
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<TextField>(find.byType(TextField).at(1)).obscureText,
+        isTrue,
+      );
+      expect(find.byTooltip('Show password'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Show password'));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<TextField>(find.byType(TextField).at(1)).obscureText,
+        isFalse,
+      );
+      expect(find.byTooltip('Hide password'), findsOneWidget);
+      expect(
+        tester
+            .widget<EditableText>(find.byType(EditableText).at(1))
+            .focusNode
+            .hasFocus,
+        isTrue,
+        reason: 'inspecting the password must not take focus off the field',
+      );
+
+      await tester.tap(find.byTooltip('Hide password'));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<TextField>(find.byType(TextField).at(1)).obscureText,
+        isTrue,
+      );
+      expect(find.byTooltip('Show password'), findsOneWidget);
+      expect(
+        adapter.requests,
+        isEmpty,
+        reason: 'the toggle is not a submit action',
+      );
+      expect(find.text('Enter your password.'), findsNothing);
+    });
+
+    testWidgets('an invalid field shows the danger treatment, with no accent '
+        'halo behind its message', (tester) async {
+      await pumpSignIn(tester);
+
+      await tester.tap(find.byType(TextFormField).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(AppButton, 'Sign in'));
+      await tester.pumpAndSettle();
+
+      final decorations = tester
+          .widgetList<TextField>(find.byType(TextField))
+          .map((field) => field.decoration!)
+          .toList();
+
+      expect(decorations, hasLength(2));
+      for (final decoration in decorations) {
+        expect(
+          decoration.errorText ?? decoration.error,
+          isNotNull,
+          reason: 'the field is in its validation-error state',
+        );
+        expect(decoration.errorStyle?.color, AppTokens.light.danger);
+        expect(
+          decoration.focusedErrorBorder?.borderSide.color,
+          AppTokens.light.danger,
+          reason: 'email and password share one error treatment',
+        );
+        expect(
+          decoration.focusedErrorBorder?.borderSide.width,
+          AppMetrics.borderWidthEmphasis,
+        );
+      }
+
+      // The halo used to be a spread shadow on a box wrapping the whole field,
+      // so it also tinted the error message below it. It now belongs to the
+      // focused border, whose rectangle is the input box alone.
+      expect(
+        find.ancestor(
+          of: find.byType(TextFormField),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is DecoratedBox &&
+                widget.decoration is BoxDecoration &&
+                (((widget.decoration as BoxDecoration).boxShadow?.isNotEmpty ??
+                    false)),
+          ),
+        ),
+        findsNothing,
+      );
+    });
+
     testWidgets('reads the tokens of the theme in force', (tester) async {
       tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
       addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
@@ -183,6 +281,64 @@ void main() {
       expect(
         find.text('Your password is at least 8 characters.'),
         findsOneWidget,
+      );
+      expect(adapter.requests, isEmpty);
+    });
+
+    testWidgets('editing the email clears only the email error', (
+      tester,
+    ) async {
+      await pumpSignIn(tester);
+
+      await tester.tap(find.widgetWithText(AppButton, 'Sign in'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Enter your email address.'), findsOneWidget);
+      expect(find.text('Enter your password.'), findsOneWidget);
+
+      await tester.enterText(
+        find.byType(TextFormField).at(0),
+        'reader@example.com',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Enter your email address.'), findsNothing);
+      expect(
+        find.text('Enter your password.'),
+        findsOneWidget,
+        reason: 'editing one field must not clear another field\'s message',
+      );
+    });
+
+    testWidgets('editing the password clears its own error, and submission '
+        'still validates the edited value', (tester) async {
+      await pumpSignIn(tester);
+
+      await tester.tap(find.widgetWithText(AppButton, 'Sign in'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Enter your email address.'), findsOneWidget);
+      expect(find.text('Enter your password.'), findsOneWidget);
+
+      // Deliberately still invalid: editing clears the displayed message
+      // immediately, and validation waits for the next submission.
+      await tester.enterText(find.byType(TextFormField).at(1), 'short');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Enter your password.'), findsNothing);
+      expect(
+        find.text('Enter your email address.'),
+        findsOneWidget,
+        reason: 'editing the password must not clear the email error',
+      );
+
+      await tester.tap(find.widgetWithText(AppButton, 'Sign in'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Your password is at least 8 characters.'),
+        findsOneWidget,
+        reason: 'clearing the message on edit must not relax validation',
       );
       expect(adapter.requests, isEmpty);
     });
