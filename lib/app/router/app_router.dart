@@ -9,6 +9,7 @@ import 'package:stash_it_app/features/collections/presentation/collections_scree
 import 'package:stash_it_app/features/inbox/presentation/inbox_screen.dart';
 import 'package:stash_it_app/features/profile/presentation/profile_screen.dart';
 import 'package:stash_it_app/features/search/presentation/search_screen.dart';
+import 'package:stash_it_app/features/settings/presentation/settings_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -80,6 +81,13 @@ final List<RouteBase> _routes = [
   GoRoute(
     path: AppRoutes.signIn,
     builder: (context, state) => const SignInScreen(),
+  ),
+  // A top-level route, not a shell branch: Settings is pushed above the shell
+  // and popped back to the destination that opened it. The redirect above still
+  // protects it like every route except sign-in.
+  GoRoute(
+    path: AppRoutes.settings,
+    builder: (context, state) => const SettingsScreen(),
   ),
   StatefulShellRoute.indexedStack(
     builder: (context, state, navigationShell) =>

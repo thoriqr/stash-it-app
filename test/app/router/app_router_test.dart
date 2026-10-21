@@ -11,6 +11,7 @@ void main() {
         AppRoutes.collections,
         AppRoutes.search,
         AppRoutes.profile,
+        AppRoutes.settings,
       ]) {
         expect(
           redirectFor(AuthStatus.signedOut, location),
@@ -37,6 +38,7 @@ void main() {
         AppRoutes.collections,
         AppRoutes.search,
         AppRoutes.profile,
+        AppRoutes.settings,
       ]) {
         expect(
           redirectFor(AuthStatus.signedIn, location),
@@ -59,7 +61,7 @@ void main() {
     });
   });
 
-  group('sign-in is not a destination', () {
+  group('secondary routes are not destinations', () {
     test('the four destinations are the shell branches', () {
       expect(
         [
@@ -76,6 +78,20 @@ void main() {
     test('sign-in is a separate route from the shell', () {
       expect(
         AppRoutes.signIn,
+        isNot(
+          anyElement([
+            AppRoutes.inbox,
+            AppRoutes.collections,
+            AppRoutes.search,
+            AppRoutes.profile,
+          ]),
+        ),
+      );
+    });
+
+    test('settings is a separate route from the shell', () {
+      expect(
+        AppRoutes.settings,
         isNot(
           anyElement([
             AppRoutes.inbox,

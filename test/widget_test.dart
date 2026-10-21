@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:stash_it_app/app/app.dart';
 import 'package:stash_it_app/app/network/network_providers.dart';
 import 'package:stash_it_app/app/router/app_router.dart';
+import 'package:stash_it_app/app/router/routes.dart';
 
 import 'support/fake_http.dart';
 import 'support/saved_items_fixtures.dart';
@@ -112,5 +113,82 @@ void main() {
 
     expect(selectedDestinationIndex(tester), 3);
     expect(currentPath(router), '/profile');
+  });
+
+  testWidgets('every destination exposes the Settings action', (tester) async {
+    final router = await pumpApp(tester);
+
+    for (final destination in const <(String, String)>[
+      ('Inbox', '/inbox'),
+      ('Collections', '/collections'),
+      ('Search', '/search'),
+      ('Profile', '/profile'),
+    ]) {
+      await tapDestination(tester, destination.$1);
+
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byTooltip('Settings'),
+        ),
+        findsOneWidget,
+        reason: '${destination.$1} should expose Settings',
+      );
+      expect(currentPath(router), destination.$2);
+    }
+  });
+
+  testWidgets('Settings opens above the shell and returns to the same state', (
+    tester,
+  ) async {
+    final router = await pumpApp(tester);
+
+    await tapDestination(tester, 'Search');
+    final field = find.byType(TextField);
+    await tester.enterText(field, 'flutter');
+    await tester.pump();
+
+    expect(tester.widget<TextField>(field).controller?.text, 'flutter');
+
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+
+    // `push` adds Settings above the shell. The browser location can still
+    // report the shell's base path, so assert the displayed route and that it
+    // can pop rather than relying on `currentConfiguration.uri`.
+    expect(router.canPop(), isTrue);
+    expect(find.widgetWithText(AppBar, 'SETTINGS'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byTooltip('Settings'), findsNothing);
+    expect(find.byTooltip('Back to Inbox'), findsNothing);
+    expect(find.byType(BackButton), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(currentPath(router), '/search');
+    expect(selectedDestinationIndex(tester), 2);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller?.text,
+      'flutter',
+    );
+  });
+
+  testWidgets('direct Settings entry falls back to the Inbox', (tester) async {
+    final router = await pumpApp(tester);
+
+    router.go(AppRoutes.settings);
+    await tester.pumpAndSettle();
+
+    expect(currentPath(router), AppRoutes.settings);
+    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byTooltip('Back to Inbox'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back to Inbox'));
+    await tester.pumpAndSettle();
+
+    expect(currentPath(router), AppRoutes.inbox);
+    expect(find.widgetWithText(AppBar, 'INBOX'), findsOneWidget);
+    expect(selectedDestinationIndex(tester), 0);
   });
 }

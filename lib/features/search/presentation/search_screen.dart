@@ -7,6 +7,7 @@ import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
+import 'package:stash_it_app/shared/widgets/destination_app_bar.dart';
 
 import '../application/search_controller.dart';
 import '../application/search_state.dart';
@@ -93,10 +94,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final state = ref.watch(searchProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        // Written uppercase at the call site: Flutter has no text-transform.
-        title: const Text('SEARCH'),
-      ),
+      appBar: const DestinationAppBar(title: 'SEARCH'),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

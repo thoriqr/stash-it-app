@@ -98,6 +98,18 @@ void main() {
     expect(find.text('Sign in to Stash It'), findsOneWidget);
   });
 
+  testWidgets('a signed-out user reaching /settings is redirected to sign-in', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      AuthStatus.signedOut,
+      initialLocation: AppRoutes.settings,
+    );
+
+    expect(find.text('Sign in to Stash It'), findsOneWidget);
+  });
+
   testWidgets('a signed-in user sees the shell', (tester) async {
     await pumpApp(tester, AuthStatus.signedIn);
 

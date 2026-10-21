@@ -9,6 +9,7 @@ import 'package:stash_it_app/features/saved_items/application/saved_items_state.
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_skeleton.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
+import 'package:stash_it_app/shared/widgets/destination_app_bar.dart';
 
 /// The Inbox destination (S7).
 ///
@@ -106,10 +107,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     final listing = ref.watch(savedItemsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        // Written uppercase at the call site: Flutter has no text-transform.
-        title: const Text('INBOX'),
-      ),
+      appBar: const DestinationAppBar(title: 'INBOX'),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

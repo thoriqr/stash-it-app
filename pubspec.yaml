@@ -53,6 +53,8 @@ dependencies:
   # already resolves to, and iOS 12 against this project's 13.0 target.
   flutter_secure_storage: ^11.2.0
   intl: ^0.20.3
+  # Non-sensitive UI preferences only. Credentials stay in secure storage.
+  shared_preferences: ^2.5.6
 
 dev_dependencies:
   flutter_test:

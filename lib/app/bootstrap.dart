@@ -3,24 +3,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // `Override` is not part of flutter_riverpod's main export surface in 3.4.x.
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/storage/secure_credential_store.dart';
 import '../features/auth/application/session_controller.dart';
+import '../features/settings/application/theme_mode_controller.dart';
+import '../features/settings/data/theme_preference_store.dart';
 import 'config/api_config.dart';
 
 /// Prepares everything the app needs before the first frame is built.
 ///
 /// Runs before `runApp` and returns the [ProviderScope] overrides the app needs,
-/// for one reason: **credential restoration is asynchronous** and a provider's
-/// `build` cannot be. Reading storage inside `bootstrap` is what lets
-/// [AuthState] be synchronous, and therefore what lets the router decide on the
+/// for one reason: **storage reads are asynchronous** and a provider's `build`
+/// cannot be. Reading them inside `bootstrap` is what lets [AuthState] and the
+/// theme choice be synchronous, and therefore what lets the router decide on the
 /// very first navigation whether to show the app or sign-in — with no flash of
 /// the wrong one and no `restoring` state threaded through every screen.
 ///
-/// Two things happen here and nowhere else:
+/// Three things happen here and nowhere else:
 ///
 /// - the platform binding is initialised, which any plugin channel requires;
-/// - stored credentials are read exactly once.
+/// - stored credentials are read exactly once;
+/// - the theme preference is read exactly once, before the first frame, so a
+///   saved Light or Dark choice is never briefly replaced by System.
 ///
 /// **No network request and no token validation.** The access token is a
 /// self-contained JWT whose expiry this client deliberately does not decode: a
@@ -47,8 +52,16 @@ Future<List<Override>> bootstrap() async {
   // container would hit the deliberate `UnimplementedError` its default carries.
   final restoredTokens = await credentialStore.read();
 
+  // A non-sensitive UI preference lives in shared preferences, not in the
+  // credential store. Reading it here, rather than inside a provider build,
+  // keeps the first frame synchronous and already themed.
+  final preferences = await SharedPreferences.getInstance();
+  final themeStore = ThemePreferenceStore(preferences);
+
   return [
     credentialStoreProvider.overrideWithValue(credentialStore),
     restoredTokensProvider.overrideWithValue(restoredTokens),
+    themePreferenceStoreProvider.overrideWithValue(themeStore),
+    initialThemeModeProvider.overrideWithValue(themeStore.read()),
   ];
 }

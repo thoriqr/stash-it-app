@@ -16,9 +16,9 @@ export 'skeleton_theme.dart';
 /// is derived from the tokens rather than being a second, parallel palette.
 ///
 /// **Theme selection.** `StashItApp` passes [light] and [dark] to `MaterialApp`
-/// and leaves `themeMode` at its default, so the **system brightness** chooses.
-/// There is no in-app theme switch, because none is specified — inventing one
-/// would be a product decision this milestone has not made.
+/// and supplies the mode chosen in Settings. On a fresh installation that mode is
+/// System, so the **system brightness** chooses exactly as it did before the
+/// setting existed; Light and Dark override it explicitly.
 abstract final class AppTheme {
   /// The approved light theme.
   static ThemeData light() => _theme(AppTokens.light, Brightness.light);

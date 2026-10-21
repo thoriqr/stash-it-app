@@ -14,6 +14,13 @@ abstract final class AppRoutes {
 
   static const String profile = '/profile';
 
+  /// App-wide preferences.
+  ///
+  /// **Not a fifth destination.** Settings is a full-screen secondary route
+  /// outside the shell, reached from each destination's app bar and popped back
+  /// to the same retained branch.
+  static const String settings = '/settings';
+
   /// Manual sign-in.
   ///
   /// **Not a fifth destination.** D1 fixes four bottom-navigation destinations

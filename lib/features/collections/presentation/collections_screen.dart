@@ -5,6 +5,7 @@ import '../../../app/theme/app_theme.dart';
 import '../../../core/error/api_failure.dart';
 import '../../../core/error/api_failure_messages.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/destination_app_bar.dart';
 import '../application/collections_controller.dart';
 import '../application/collections_state.dart';
 import 'widgets/collection_skeleton.dart';
@@ -75,7 +76,7 @@ class _CollectionsScreenState extends ConsumerState<CollectionsScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('COLLECTIONS')),
+      appBar: const DestinationAppBar(title: 'COLLECTIONS'),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

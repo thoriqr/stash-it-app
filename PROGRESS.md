@@ -1,3 +1,24 @@
+## Settings and theme preference (2026-10-22)
+
+### Flutter implementation
+- Added `/settings` as a top-level route outside `StatefulShellRoute`. It is not a fifth navigation destination: all four destinations expose one top-right gear action through the shared `DestinationAppBar`, which uses `context.push` so returning restores the same tab and retained branch state. The existing auth redirect protects `/settings`; a direct entry gets a `Back to Inbox` fallback, while a pushed entry keeps the ordinary back affordance.
+- Added `lib/features/settings/`: a `SETTINGS` app bar, an `APPEARANCE` group with mutually exclusive Light/Dark/System choices (`RadioGroup<ThemeMode>` plus `RadioListTile`), and a disabled Language row showing `Coming soon` with no chevron, selector or `onTap`. The screen uses existing themes and `AppTokens` only.
+- Added `shared_preferences: ^2.5.6` for this non-sensitive preference; the token pair remains in `SecureCredentialStore`. The key is `stash_it.settings.theme_mode`, the stored values are stable words (`light`, `dark`, `system`), and a missing or malformed value falls back to System.
+- `bootstrap` reads the preference before `runApp` and supplies the store and restored mode as overrides, so a saved choice is present on the first frame and a fresh install starts on System. `StashItApp` watches the keep-alive controller and updates `MaterialApp.router.themeMode` immediately without recreating the router or resetting navigation.
+- Selecting a theme applies it even if persistence fails; that case publishes the warning `Theme changed, but the preference could not be saved.` rather than reporting a saved preference.
+
+### Verification
+- `dart run build_runner build --delete-conflicting-outputs` completed; this build_runner version reported the flag as ignored. Generated `theme_mode_controller.g.dart`.
+- `dart format` applied to the changed Dart files.
+- `flutter analyze`: no issues found.
+- `flutter test`: 564 tests passed.
+- No app, device, or emulator run was performed.
+
+### Remaining limitations
+- Light-mode visual verification on a device is outstanding; the Settings layout and theme switching are covered by widget tests, not by a rendered on-device check. This follows the repository execution policy.
+- Theme persistence is covered with `shared_preferences`' in-memory test store; no on-device restart check was performed.
+- Settings copy and the Language placeholder are still hardcoded English. Language switching is not implemented or available.
+
 ## Sign-in field fixes (2026-10-22)
 
 ### Flutter implementation

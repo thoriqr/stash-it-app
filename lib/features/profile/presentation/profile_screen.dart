@@ -9,6 +9,7 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/profile/application/profile_controller.dart';
 import 'package:stash_it_app/features/profile/domain/user_profile.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
+import 'package:stash_it_app/shared/widgets/destination_app_bar.dart';
 
 import 'profile_date.dart';
 
@@ -35,7 +36,7 @@ class ProfileScreen extends ConsumerWidget {
     };
 
     return Scaffold(
-      appBar: AppBar(title: const Text('PROFILE')),
+      appBar: const DestinationAppBar(title: 'PROFILE'),
       body: ListView(
         padding: EdgeInsets.zero,
         children: [

@@ -5,6 +5,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:stash_it_app/app/feedback/feedback_host.dart';
 import 'package:stash_it_app/app/router/app_router.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/features/settings/application/theme_mode_controller.dart';
 
 /// The application widget.
 class StashItApp extends ConsumerWidget {
@@ -19,11 +20,17 @@ class StashItApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watched at the app root so a selection repaints every route immediately.
+    // The router is watched too, but its provider value does not change here:
+    // only `themeMode` does, so navigation state is not rebuilt from scratch.
+    final themeMode = ref.watch(themeModeControllerProvider);
+
     return MaterialApp.router(
       title: 'Stash It',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
+      themeMode: themeMode,
       // Inside the builder, not around the MaterialApp: below it the app has a
       // `Theme` and a `MediaQuery` to read, and above the router so every route
       // inherits one treatment. See `skeleton_theme.dart`.
