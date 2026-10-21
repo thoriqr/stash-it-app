@@ -167,6 +167,12 @@ class _DateChip extends StatelessWidget {
   }
 }
 
+/// The compact loading treatment inside the identity band.
+///
+/// The spinner and label form one content-sized block. It inherits the header's
+/// [AppMetrics.space4] horizontal inset, so it lines up with the loaded identity
+/// rather than introducing a second content grid. The 8 px gap matches the
+/// app's other spinner-label row; no placeholder account or identity rows.
 class _HeaderLoading extends StatelessWidget {
   const _HeaderLoading({required this.tokens});
 
@@ -175,6 +181,7 @@ class _HeaderLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
           width: 16,
@@ -184,10 +191,12 @@ class _HeaderLoading extends StatelessWidget {
             color: tokens.accent,
           ),
         ),
-        const SizedBox(width: AppMetrics.space3),
-        Text(
-          'Loading profile…',
-          style: AppTypography.body.copyWith(color: tokens.textSecondary),
+        const SizedBox(width: AppMetrics.space2),
+        Flexible(
+          child: Text(
+            'Loading profile…',
+            style: AppTypography.body.copyWith(color: tokens.textSecondary),
+          ),
         ),
       ],
     );
