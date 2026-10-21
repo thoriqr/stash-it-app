@@ -41,6 +41,7 @@ class AppField extends StatefulWidget {
     this.validator,
     this.errorText,
     this.prefixIcon,
+    this.onClear,
     super.key,
   });
 
@@ -92,6 +93,18 @@ class AppField extends StatefulWidget {
   /// lens, and the field is the control the icon belongs to. Absent by default,
   /// so every existing field renders exactly as it did.
   final IconData? prefixIcon;
+
+  /// An optional trailing clear action, rendered as a small `X` inside the
+  /// field.
+  ///
+  /// **The caller owns availability.** Pass `null` when there is nothing to
+  /// clear — an empty or whitespace-only value — or while clearing would
+  /// conflict with an in-flight action. The icon then disappears rather than
+  /// disabling into a state `design-system.md` §6.2 does not define.
+  ///
+  /// Absent by default, so every field that does not pass it renders exactly as
+  /// it did, including its 48 px geometry.
+  final VoidCallback? onClear;
 
   @override
   State<AppField> createState() => _AppFieldState();
@@ -185,6 +198,18 @@ class _AppFieldState extends State<AppField> {
                 minWidth: 36,
                 minHeight: AppMetrics.fieldHeight,
               ),
+              // A full 48 px tap target inside the field's own height, with the
+              // same 18 px glyph as the leading affordance.
+              suffixIcon: widget.onClear == null
+                  ? null
+                  : IconButton(
+                      onPressed: widget.onClear,
+                      tooltip: 'Clear',
+                      icon: const Icon(Icons.close),
+                      iconSize: AppMetrics.iconSize,
+                      color: tokens.textTertiary,
+                      padding: EdgeInsets.zero,
+                    ),
               // Vertical inset as well as horizontal. Without it the text run
               // sat flush against the top border and the field read as a bar.
               contentPadding: AppMetrics.fieldContentPadding,

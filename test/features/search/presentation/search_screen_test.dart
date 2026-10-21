@@ -67,13 +67,13 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('SEARCH'), findsOneWidget);
-      expect(find.text('Clear'), findsNothing);
+      expect(find.byIcon(Icons.close), findsNothing);
       expect(adapter.requests, isEmpty);
     });
   });
 
   group('submission', () {
-    testWidgets('typing alone sends no request but reveals Clear', (
+    testWidgets('typing alone sends no request but reveals the clear icon', (
       tester,
     ) async {
       await pumpSearch(tester);
@@ -82,7 +82,7 @@ void main() {
       await tester.pump();
 
       expect(adapter.requests, isEmpty);
-      expect(find.text('Clear'), findsOneWidget);
+      expect(find.byIcon(Icons.close), findsOneWidget);
       expect(find.text('Find something you saved'), findsOneWidget);
     });
 
@@ -344,35 +344,46 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('Clear resets and prevents a late answer from reappearing', (
-      tester,
-    ) async {
-      adapter.onBlocking(
-        '/search',
-        FakeReply(
-          200,
-          SearchFixtures.response(
-            savedItems: [SearchFixtures.savedItem(title: 'Stale Item')],
+    testWidgets(
+      'the clear icon resets and prevents a late answer from reappearing',
+      (tester) async {
+        adapter.onBlocking(
+          '/search',
+          FakeReply(
+            200,
+            SearchFixtures.response(
+              savedItems: [SearchFixtures.savedItem(title: 'Stale Item')],
+            ),
           ),
-        ),
-      );
-      await pumpSearch(tester);
+        );
+        await pumpSearch(tester);
 
-      await submit(tester, 'camera');
-      await tester.pump();
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        await submit(tester, 'camera');
+        await tester.pump();
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-      await tester.tap(find.text('Clear'));
-      await tester.pump();
-      expect(find.text('Find something you saved'), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
+        await tester.tap(find.byIcon(Icons.close));
+        await tester.pump();
+        expect(find.text('Find something you saved'), findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(find.byIcon(Icons.close), findsNothing);
+        expect(
+          tester.widget<TextField>(find.byType(TextField)).controller!.text,
+          isEmpty,
+        );
 
-      adapter.releaseBlocked();
-      await tester.pumpAndSettle();
+        adapter.releaseBlocked();
+        await tester.pumpAndSettle();
 
-      expect(find.text('Find something you saved'), findsOneWidget);
-      expect(find.text('Stale Item'), findsNothing);
-    });
+        expect(find.text('Find something you saved'), findsOneWidget);
+        expect(find.text('Stale Item'), findsNothing);
+        expect(
+          adapter.countFor('/search'),
+          1,
+          reason: 'clearing is not an empty search',
+        );
+      },
+    );
   });
 
   group('failure', () {

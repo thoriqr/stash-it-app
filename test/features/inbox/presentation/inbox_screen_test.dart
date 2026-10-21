@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -98,6 +99,31 @@ void main() {
 
   int postCount() =>
       adapter.requests.where((request) => request.method == 'POST').length;
+
+  /// Scripts Flutter's own platform clipboard for one test.
+  ///
+  /// `Clipboard.getData` is a method call on `SystemChannels.platform`, so the
+  /// test binding's mock handler exercises the real production call. No package
+  /// and no production seam are involved. `text: null` simulates an empty or
+  /// non-text clipboard; [error] simulates a platform refusal.
+  void mockClipboard(WidgetTester tester, {String? text, Object? error}) {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.getData') {
+          if (error != null) throw error;
+          return text == null ? null : <String, dynamic>{'text': text};
+        }
+        return null;
+      },
+    );
+    addTearDown(() {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      );
+    });
+  }
 
   group('loading', () {
     testWidgets('shows a skeleton while the listing is in flight', (
@@ -1009,6 +1035,48 @@ void main() {
       );
     });
 
+    testWidgets('the inline clear action empties the field without saving', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+
+      final container = await pumpInbox(tester);
+      await tester.pumpAndSettle();
+
+      // Nothing to clear, and whitespace is not a value.
+      expect(find.byIcon(Icons.close), findsNothing);
+      await tester.enterText(find.byType(TextField), '   ');
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.close), findsNothing);
+      expect(saveButton(tester).onPressed, isNull);
+
+      await tester.enterText(
+        find.byType(TextField),
+        'https://example.com/to-clear',
+      );
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.close), findsOneWidget);
+      expect(saveButton(tester).onPressed, isNotNull);
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      expect(fieldText(tester), isEmpty);
+      expect(find.byIcon(Icons.close), findsNothing);
+      expect(saveButton(tester).onPressed, isNull);
+      expect(
+        find.text('Paste fills the field. Save URL sends it.'),
+        findsOneWidget,
+      );
+      expect(postCount(), 0);
+      expect(
+        container.read(feedbackProvider),
+        isNull,
+        reason: 'clearing is not an outcome worth announcing',
+      );
+    });
+
     testWidgets('the field starts empty, so Save URL starts disabled', (
       tester,
     ) async {
@@ -1041,12 +1109,15 @@ void main() {
       );
     });
 
-    testWidgets('tapping Paste does not save anything', (tester) async {
-      // [D25]: pasting alone does not save. The clipboard is not wired yet, so
-      // the control does nothing at all — and the property that matters is that
-      // it does *not* submit.
+    testWidgets('Paste fills the field but does not save the URL', (
+      tester,
+    ) async {
+      // [D25]: pasting alone does not save. The clipboard is seeded so this
+      // proves the fill happened *and* that no POST followed it; with an empty
+      // clipboard the same assertions would pass without a working Paste.
       useTallSurface(tester);
       adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+      mockClipboard(tester, text: 'https://example.com/pasted');
 
       final container = await pumpInbox(tester);
       await tester.pumpAndSettle();
@@ -1054,14 +1125,206 @@ void main() {
       await tester.tap(find.text('Paste'));
       await tester.pumpAndSettle();
 
+      expect(fieldText(tester), 'https://example.com/pasted');
+      expect(
+        saveButton(tester).onPressed,
+        isNotNull,
+        reason: 'the pasted value makes the field submittable',
+      );
       expect(postCount(), 0);
-      expect(fieldText(tester), isEmpty);
       expect(
         container.read(feedbackProvider),
         isNull,
-        reason: 'nothing happened, so there is nothing to announce',
+        reason: 'pasting is not an outcome worth announcing',
       );
     });
+
+    for (final (label, text) in <(String, String?)>[
+      ('null', null),
+      ('empty', ''),
+      ('whitespace-only', '  \n\t '),
+    ]) {
+      testWidgets(
+        'Paste with $label clipboard content leaves the field alone',
+        (tester) async {
+          useTallSurface(tester);
+          adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+          mockClipboard(tester, text: text);
+
+          final container = await pumpInbox(tester);
+          await tester.pumpAndSettle();
+
+          await tester.enterText(
+            find.byType(TextField),
+            'https://example.com/typed',
+          );
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.text('Paste'));
+          await tester.pumpAndSettle();
+
+          expect(
+            fieldText(tester),
+            'https://example.com/typed',
+            reason: 'nothing was on the clipboard, so nothing was replaced',
+          );
+          expect(postCount(), 0);
+          expect(container.read(feedbackProvider), isNull);
+        },
+      );
+    }
+
+    testWidgets(
+      'a clipboard read failure changes nothing and is not reported',
+      (tester) async {
+        useTallSurface(tester);
+        adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+        mockClipboard(
+          tester,
+          error: PlatformException(code: 'clipboard', message: 'unavailable'),
+        );
+
+        final container = await pumpInbox(tester);
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Paste'));
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(fieldText(tester), isEmpty);
+        expect(postCount(), 0);
+        expect(
+          container.read(feedbackProvider),
+          isNull,
+          reason: 'Q13 leaves a clipboard-failure state undecided',
+        );
+      },
+    );
+
+    testWidgets('Paste does not validate; Save URL still refuses the text', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+      mockClipboard(tester, text: 'not a url');
+
+      final container = await pumpInbox(tester);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Paste'));
+      await tester.pumpAndSettle();
+
+      expect(
+        fieldText(tester),
+        'not a url',
+        reason: 'paste places the text it was given, without judging it',
+      );
+      expect(saveButton(tester).onPressed, isNotNull);
+      expect(postCount(), 0);
+      expect(container.read(feedbackProvider), isNull);
+
+      await tester.tap(find.widgetWithText(AppButton, 'Save URL'));
+      await tester.pumpAndSettle();
+
+      expect(
+        postCount(),
+        0,
+        reason: 'the local gate refuses it before the POST',
+      );
+      expect(fieldText(tester), 'not a url');
+      final notice = container.read(feedbackProvider)!;
+      expect(notice.tone, FeedbackTone.danger);
+      expect(notice.copy, contains('http:// or https://'));
+    });
+
+    testWidgets('Paste and clear are unavailable while a save is in flight', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      const url = 'https://example.com/in-flight';
+
+      adapter.onMethod(
+        'GET',
+        '/saved-items',
+        body: SavedItemsFixtures.emptyPage(),
+      );
+      adapter.onBlocking(
+        '/saved-items',
+        FakeReply(201, SavedItemsFixtures.created(url: url)),
+      );
+
+      final container = await pumpInbox(tester);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), url);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(AppButton, 'Save URL'));
+      await tester.pump(Duration.zero);
+
+      expect(
+        tester
+            .widget<AppButton>(find.widgetWithText(AppButton, 'Paste'))
+            .onPressed,
+        isNull,
+        reason: 'both actions are disabled while the POST is unresolved',
+      );
+      expect(
+        find.byIcon(Icons.close),
+        findsNothing,
+        reason: 'clearing must not race the submitted value',
+      );
+      expect(find.text('Saving…'), findsOneWidget);
+
+      adapter.releaseBlocked();
+      await tester.pumpAndSettle();
+
+      expect(postCount(), 1);
+      expect(fieldText(tester), isEmpty);
+      expect(container.read(feedbackProvider)!.copy, 'Saved.');
+    });
+
+    testWidgets(
+      'a save does not clear a value entered while it was in flight',
+      (tester) async {
+        useTallSurface(tester);
+        const submitted = 'https://example.com/submitted';
+        const newer = 'https://example.com/newer';
+
+        adapter.onMethod(
+          'GET',
+          '/saved-items',
+          body: SavedItemsFixtures.emptyPage(),
+        );
+        adapter.onBlocking(
+          '/saved-items',
+          FakeReply(201, SavedItemsFixtures.created(url: submitted)),
+        );
+
+        final container = await pumpInbox(tester);
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byType(TextField), submitted);
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(AppButton, 'Save URL'));
+        await tester.pump(Duration.zero);
+
+        await tester.enterText(find.byType(TextField), newer);
+        await tester.pump();
+
+        adapter.releaseBlocked();
+        await tester.pumpAndSettle();
+
+        expect(postCount(), 1);
+        expect(
+          fieldText(tester),
+          newer,
+          reason:
+              'the confirmation belongs to the submitted value, not this one',
+        );
+        expect(container.read(feedbackProvider)!.copy, 'Saved.');
+      },
+    );
 
     testWidgets('a confirmed save says so, clears the field, and shows the item', (
       tester,

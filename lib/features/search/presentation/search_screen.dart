@@ -76,6 +76,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     ref.read(searchProvider.notifier).submit(_queryController.text);
   }
 
+  /// Empties the field and returns to the quiet initial state.
+  ///
+  /// `clear` also invalidates an in-flight request, so a late answer cannot
+  /// restore results for a query the field no longer holds. It never submits:
+  /// an empty query is not a search.
   void _clear() {
     _queryController.clear();
     setState(() => _queryProblem = null);
@@ -106,36 +111,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               color: tokens.surface,
               border: Border(bottom: BorderSide(color: tokens.border)),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: AppField(
-                    controller: _queryController,
-                    placeholder: 'Search saved items and collections',
-                    prefixIcon: Icons.search,
-                    textInputAction: TextInputAction.search,
-                    onSubmitted: (_) => _submit(),
-                    onChanged: _onChanged,
-                    // The field takes the approved invalid border and message
-                    // treatment rather than a second copy rendered beside it.
-                    errorText: switch (_queryProblem) {
-                      final problem? => _problemCopy(problem),
-                      null => null,
-                    },
-                  ),
-                ),
-                if (_queryController.text.isNotEmpty) ...[
-                  const SizedBox(width: AppMetrics.space2),
-                  AppButton(
-                    label: 'Clear',
-                    variant: AppButtonVariant.secondary,
-                    small: true,
-                    block: false,
-                    onPressed: _clear,
-                  ),
-                ],
-              ],
+            // The field is the whole row now: the clear action lives inside it,
+            // on the same trailing edge Material gives a suffix action.
+            child: AppField(
+              controller: _queryController,
+              placeholder: 'Search saved items and collections',
+              prefixIcon: Icons.search,
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => _submit(),
+              onChanged: _onChanged,
+              // Non-empty, not non-blank: whitespace is still text the user can
+              // clear, and submitting it is already refused by the local gate.
+              onClear: _queryController.text.isNotEmpty ? _clear : null,
+              // The field takes the approved invalid border and message
+              // treatment rather than a second copy rendered beside it.
+              errorText: switch (_queryProblem) {
+                final problem? => _problemCopy(problem),
+                null => null,
+              },
             ),
           ),
           Expanded(child: _content(state)),

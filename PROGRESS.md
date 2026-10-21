@@ -1,3 +1,43 @@
+## Inline clear controls (2026-10-21)
+
+### Flutter implementation
+- `AppField` gained an optional `onClear` action. When supplied it renders an 18 px Material `Icons.close` suffix button with a 48 px tap target inside the field; when omitted every existing field is unchanged, including its 48 px height.
+- Inbox: the URL field shows the `X` only for non-whitespace text, and hides it while a save is in flight. `_clear` only empties the controller and rebuilds, so it never calls the save controller, sends a POST, or publishes feedback; the hint and Save URL state follow from the existing build.
+- Search: the separate `Clear` button is gone. The same inline `X` appears for any non-empty query and calls the existing `_clear`, which resets the submitted query/results and invalidates an in-flight request through `Search.clear()`. No request is sent for an empty query; keyboard submission, 2–128 validation, loading/error states and request-version guards are unchanged.
+
+### Verification
+- `dart format` applied to the six changed Dart files.
+- `flutter analyze`: no issues found.
+- Focused `flutter test` of `app_field_test.dart`, `search_screen_test.dart`, and `inbox_screen_test.dart`: 63 tests passed.
+- `flutter test`: 538 tests passed.
+- No app, device, or emulator run was performed.
+
+### Remaining limitations
+- The clear button's tooltip is the hardcoded English `Clear`; the app still has no localization layer.
+- The icon is Material's `Icons.close`, matching the existing Material `Icons.search` prefix; the design system's custom icon family does not define a clear glyph.
+- The Search design exploration still shows the former separate `Clear` button; the implementation now follows the requested inline pattern.
+
+## Inbox paste URL (2026-10-21)
+
+### Flutter implementation
+- `InboxIntake` Paste now reads `Clipboard.getData(Clipboard.kTextPlain)` from Flutter's built-in `package:flutter/services.dart`. No clipboard package, native code, or `pubspec` change was needed; `AGENTS.md` §4's "clipboard not in pubspec" note is incorrect and was left untouched because that file requires explicit authorization.
+- Non-empty clipboard text replaces the field's contents and places the caret at the end. `setState` updates the hint and Save URL's enabled state immediately. Null, empty, whitespace-only, non-text, and failed reads leave the field unchanged and publish no feedback.
+- Paste never validates, submits, calls `SaveUrl`, or publishes feedback. Invalid and unrelated text is placed as-is; the existing local gate in `SaveUrl.submit` still rejects it only when Save URL is pressed. Q13 remains open: no paste-time validation and no clipboard-failure/empty-state copy was added.
+- Paste is disabled while a save is in flight, matching the design exploration's Saving state.
+- `_save` now captures the submitted value and clears the field only if it still holds that value, so text entered while the POST is in flight is preserved.
+
+### Verification
+- `dart format` applied to the three changed Dart files.
+- `flutter analyze`: no issues found.
+- `flutter test test/features/inbox/presentation/inbox_screen_test.dart`: 39 tests passed.
+- `flutter test`: 536 tests passed.
+- No app, device, or emulator run was performed.
+
+### Remaining limitations
+- Paste replaces the field's contents; there is no confirmation or undo for overwriting an existing value.
+- Empty-clipboard and clipboard-read-failure behavior is silent by design (Q13 / `ux-discovery.md` §5); no copy exists for those states.
+- Clipboard coverage is widget-level through the `SystemChannels.platform` mock; no on-device iOS/Android clipboard check was performed.
+
 ## Search integration (2026-10-21)
 
 ### Verified backend contract (stash-it-backend)

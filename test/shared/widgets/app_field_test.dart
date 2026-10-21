@@ -14,6 +14,7 @@ void main() {
     WidgetTester tester, {
     bool mono = false,
     double width = 360,
+    VoidCallback? onClear,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -26,6 +27,7 @@ void main() {
                 label: 'Email',
                 controller: TextEditingController(text: 'reader@example.com'),
                 mono: mono,
+                onClear: onClear,
               ),
             ),
           ),
@@ -107,6 +109,28 @@ void main() {
       tester.getSize(find.byType(TextFormField)).height,
       AppMetrics.fieldHeight,
     );
+  });
+
+  testWidgets('a clear action fits inside the field without changing it', (
+    tester,
+  ) async {
+    var cleared = false;
+    await pumpField(tester, onClear: () => cleared = true);
+
+    expect(find.byIcon(Icons.close), findsOneWidget);
+    expect(
+      tester.getSize(find.byType(TextFormField)).height,
+      AppMetrics.fieldHeight,
+    );
+    expect(tester.takeException(), isNull);
+
+    final field = tester.getRect(find.byType(TextFormField));
+    final icon = tester.getRect(find.byIcon(Icons.close));
+    expect(field.contains(icon.center), isTrue);
+    expect(icon.center.dx, greaterThan(field.center.dx));
+
+    await tester.tap(find.byIcon(Icons.close));
+    expect(cleared, isTrue);
   });
 
   testWidgets('a label is optional, so a grouped field can omit it', (
