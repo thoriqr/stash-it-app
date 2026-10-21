@@ -121,6 +121,12 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.badRequest:
       return const ApiFailureMalformedRequest();
 
+    // The resource named by the request is gone, or is not this caller's. Only
+    // this verified code produces the variant: a bare 404 without a readable
+    // code stays an unreadable response.
+    case ApiErrorCode.resourceNotFound:
+      return ApiFailureNotFound(code: code);
+
     case ApiErrorCode.internalServerError:
       return const ApiFailureServerFault();
   }

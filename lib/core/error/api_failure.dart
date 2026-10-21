@@ -122,6 +122,26 @@ final class ApiFailureTransport extends ApiFailure {
   const ApiFailureTransport();
 }
 
+/// The named resource does not exist, or is not visible to this caller.
+///
+/// Produced **only** from the backend's verified `RESOURCE_NOT_FOUND` code, never
+/// from a bare `404`: a non-JSON `404` is [ApiFailureUnreadableResponse], because
+/// "the server answered 404" and "the server told us this resource is gone" are
+/// different claims.
+///
+/// **The backend deliberately uses the same response for an item owned by another
+/// user.** This variant therefore carries no reason, and no copy derived from it
+/// may say which of the two happened.
+///
+/// For a read this is *known not shown*: a reply arrived and the resource is not
+/// available to this caller. It says nothing about any write.
+final class ApiFailureNotFound extends ApiFailure {
+  const ApiFailureNotFound({required this.code});
+
+  /// The backend code, retained for logging and tests, never for display.
+  final String code;
+}
+
 /// The bearer guard refused the request, and any refresh that might have been
 /// possible has already been attempted.
 ///

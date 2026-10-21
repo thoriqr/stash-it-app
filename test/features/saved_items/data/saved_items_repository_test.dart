@@ -402,4 +402,127 @@ void main() {
       );
     });
   });
+
+  group('detail', () {
+    const id = '01a0f359-093b-737a-963a-80f7ca6768ed';
+    const path = '/saved-items/$id';
+
+    test('GETs one item by id and maps the sibling collection', () async {
+      adapter.onMethod(
+        'GET',
+        path,
+        body: SavedItemsFixtures.detail(
+          id: id,
+          title: 'One item',
+          collectionName: 'Wishlist',
+        ),
+      );
+
+      final item = await repository.getById(id);
+
+      expect(adapter.countFor(path), 1, reason: 'one read, no retry');
+      final request = adapter.lastRequestTo(path)!;
+      expect(request.method, 'GET');
+      expect(Uri.parse(request.path).path, path);
+      expect(
+        Uri.parse(request.path).hasQuery,
+        isFalse,
+        reason: 'the id is a path parameter, not query state',
+      );
+
+      expect(item.id, id);
+      expect(item.title, 'One item');
+      expect(
+        item.collectionName,
+        'Wishlist',
+        reason: 'the name comes from the sibling collection object',
+      );
+    });
+
+    test('maps the verified RESOURCE_NOT_FOUND to typed not-found', () async {
+      adapter.onMethod(
+        'GET',
+        path,
+        status: 404,
+        body: errorBody('RESOURCE_NOT_FOUND'),
+      );
+
+      final failure = await repository
+          .getById(id)
+          .then<Object?>((_) => null, onError: (Object e) => e);
+
+      expect(failure, isA<ApiFailureNotFound>());
+      expect(
+        (failure! as ApiFailureNotFound).code,
+        'RESOURCE_NOT_FOUND',
+        reason: 'retained for diagnosis, never displayed',
+      );
+    });
+
+    test('an unreadable 404 is unreadable, not not-found', () async {
+      // A gateway answering in HTML. The status alone is not evidence that the
+      // resource is gone; only the verified code is.
+      adapter.onMethod(
+        'GET',
+        path,
+        status: 404,
+        body: '<html><body>Not found</body></html>',
+      );
+
+      await expectLater(
+        repository.getById(id),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+
+    test('a 404 with an unrecognised code is not not-found', () async {
+      adapter.onMethod(
+        'GET',
+        path,
+        status: 404,
+        body: errorBody('SOMETHING_ELSE'),
+      );
+
+      await expectLater(
+        repository.getById(id),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+
+    test('a 200 whose body does not decode is unreadable', () async {
+      final body = SavedItemsFixtures.detail(id: id);
+      ((body['data'] as Map<String, dynamic>)['saved_item']
+              as Map<String, dynamic>)
+          .remove('created_at');
+      adapter.onMethod('GET', path, body: body);
+
+      await expectLater(
+        repository.getById(id),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+
+    test('a request that never arrives is transport', () async {
+      adapter.onOffline(path, method: 'GET');
+
+      await expectLater(
+        repository.getById(id),
+        throwsA(isA<ApiFailureTransport>()),
+      );
+    });
+
+    test('a 401 is an auth requirement', () async {
+      adapter.onMethod(
+        'GET',
+        path,
+        status: 401,
+        body: errorBody('INVALID_ACCESS_TOKEN'),
+      );
+
+      await expectLater(
+        repository.getById(id),
+        throwsA(isA<ApiFailureAuthRequired>()),
+      );
+    });
+  });
 }

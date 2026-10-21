@@ -87,6 +87,15 @@ abstract final class ApiErrorCode {
   /// 400. Field-level validation failed. `httpx/bind.go:26`. Carries `fields[]`.
   static const String validationError = 'VALIDATION_ERROR';
 
+  /// 404. `apperror.NotFound`'s default code. `saved_item/repository.go`
+  /// (`GetSavedItemByIDForUser`) uses it for a saved item that does not exist or
+  /// is owned by another user, so the two are deliberately indistinguishable and
+  /// the response cannot be used to enumerate IDs.
+  ///
+  /// **Never inferred from the status alone.** A `404` whose body is not a coded
+  /// error is an unreadable response, not a resource that is known to be gone.
+  static const String resourceNotFound = 'RESOURCE_NOT_FOUND';
+
   // ---------------------------------------------------------------------------
   // Saved items — `internal/api/saved_item/error_codes.go`.
   // ---------------------------------------------------------------------------

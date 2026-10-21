@@ -208,8 +208,15 @@ AppFeedback? saveFeedbackFor(ApiFailure failure, {required bool sessionEnded}) {
     // are known not saved: the limiter refuses before the handler runs, and a
     // `500` is a commit that did not happen. No countdown — no recovery time is
     // known. **D15 group C**, which covers both codes.
+    //
+    // `ApiFailureNotFound` is unreachable on `POST /saved-items` (the handler
+    // answers `201`, `400`, `401`, `429`, `500` or `503`). If a proxy ever
+    // produced it, the route itself is missing, so the existing known-not-saved
+    // copy is the honest reading; it is grouped here rather than given a
+    // misleading create-specific message.
     ApiFailureServerUnavailable() ||
-    ApiFailureServerFault() => const AppFeedback(
+    ApiFailureServerFault() ||
+    ApiFailureNotFound() => const AppFeedback(
       tone: FeedbackTone.danger,
       copy: "We couldn't save this link just now. Try again shortly.",
     ),

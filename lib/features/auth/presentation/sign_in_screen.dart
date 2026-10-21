@@ -358,7 +358,13 @@ String messageFor(ApiFailure failure) {
     ApiFailureServerFault() =>
       'We could not reach the server. Try again shortly.',
 
-    ApiFailureMalformedRequest() || ApiFailureUnreadableResponse() =>
+    // `ApiFailureNotFound` is unreachable on these routes: none of them answers
+    // `RESOURCE_NOT_FOUND`. It is grouped with the unreadable replies rather than
+    // given sign-in copy for an outcome sign-in cannot produce, and the closed
+    // taxonomy stays exhaustive.
+    ApiFailureNotFound() ||
+    ApiFailureMalformedRequest() ||
+    ApiFailureUnreadableResponse() =>
       "We couldn't read the server's reply. Try again.",
 
     // The one uncertain case. States plainly that the attempt is unconfirmed

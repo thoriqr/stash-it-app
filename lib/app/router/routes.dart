@@ -29,6 +29,25 @@ abstract final class AppRoutes {
   /// a session exists.
   static const String signIn = '/sign-in';
 
+  /// One saved item's detail screen (S10).
+  ///
+  /// **Not a fifth destination.** D1 fixes four bottom-navigation destinations;
+  /// this is a full-screen secondary route outside the shell, reached by pushing
+  /// from a row. Returning pops back to the destination that opened it with its
+  /// retained branch state. A direct entry with nothing beneath it falls back to
+  /// [inbox].
+  ///
+  /// The `:id` segment is the saved item's backend-issued UUID.
+  static const String savedItemDetailPattern = '/saved-items/:id';
+
+  /// The location of the detail screen for [id].
+  ///
+  /// A helper rather than string interpolation at the call site, so the route
+  /// shape has one owner. The id is URL-encoded defensively; backend ids are
+  /// UUIDs, which contain no characters that encoding changes.
+  static String savedItemDetail(String id) =>
+      '/saved-items/${Uri.encodeComponent(id)}';
+
   /// The destination the app opens on. The core loop is share → save → Inbox,
   /// so the Inbox is the entry point.
   static const String initial = inbox;

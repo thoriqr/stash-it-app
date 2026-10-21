@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/core/error/api_failure_messages.dart';
@@ -187,7 +189,14 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         separatorBuilder: (context, index) => const SizedBox(height: 9),
         itemBuilder: (context, index) {
           if (index >= state.items.length) return const _LoadingMoreRow();
-          return SavedItemRow(item: state.items[index]);
+          final item = state.items[index];
+          return SavedItemRow(
+            item: item,
+            // Pushed above the shell, so returning pops back to this branch with
+            // its scroll position and loaded pages intact. The detail reads the
+            // item again; it never trusts this row's copy as current.
+            onTap: () => context.push(AppRoutes.savedItemDetail(item.id)),
+          );
         },
       ),
     );

@@ -56,6 +56,54 @@ class SavedItemsFixtures {
   /// An empty final page — what a user who has saved nothing receives.
   static Map<String, dynamic> emptyPage() => page();
 
+  /// The whole `200` body of `GET /saved-items/{id}`.
+  ///
+  /// **The collection is a sibling of the item here**, not nested inside it as
+  /// the listing reports it. The item's twelve fields are otherwise identical, so
+  /// this reuses [item] and removes only the nested object rather than restating
+  /// the shape and letting the two drift.
+  ///
+  /// There is no `meta`: the route reads one item and has nothing to paginate.
+  static Map<String, dynamic> detail({
+    String id = '01a0f359-093b-737a-963a-80f7ca6768ed',
+    String url = 'https://example.com/articles/crdts-explained',
+    String? domain = 'example.com',
+    String? platform = 'web',
+    String? title = 'Understanding CRDTs',
+    String? description = 'Conflict-free replicated data types converge.',
+    String? imageUrl = 'https://example.com/og.png',
+    String collectionId = '01a0f359-093b-737a-963a-80f7ca6768ed',
+    String collectionName = 'Camera Gear',
+    String enrichmentStatus = 'completed',
+    String? lastEnrichedAt = '2026-10-02T10:31:00Z',
+    String createdAt = '2026-10-02T10:30:00Z',
+    String updatedAt = '2026-10-02T10:31:00Z',
+  }) {
+    final savedItem = item(
+      id: id,
+      url: url,
+      domain: domain,
+      platform: platform,
+      title: title,
+      description: description,
+      imageUrl: imageUrl,
+      collectionId: collectionId,
+      collectionName: collectionName,
+      enrichmentStatus: enrichmentStatus,
+      lastEnrichedAt: lastEnrichedAt,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    )..remove('collection');
+
+    return {
+      'data': {
+        'saved_item': savedItem,
+        'collection': {'id': collectionId, 'name': collectionName},
+      },
+      'message': 'saved item retrieved successfully',
+    };
+  }
+
   /// The whole `201` body of `POST /saved-items`.
   ///
   /// **Exactly the four documented fields**, with no `domain`, `title`,

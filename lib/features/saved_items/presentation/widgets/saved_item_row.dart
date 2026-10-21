@@ -1,10 +1,11 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
-import 'package:skeletonizer/skeletonizer.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
+
+import 'saved_item_collection_chip.dart';
+import 'saved_item_enrichment_state.dart';
+import 'saved_item_preview.dart';
 
 /// One saved item — the **inventory slot** of `design-system.md` §6.3.
 ///
@@ -64,7 +65,7 @@ class SavedItemRow extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _Thumbnail(hasPreviewImage: item.hasPreviewImage),
+                SavedItemPreview(hasPreviewImage: item.hasPreviewImage),
                 const SizedBox(width: AppMetrics.slotGap),
                 Expanded(
                   child: Column(
@@ -142,151 +143,6 @@ class SavedItemRow extends StatelessWidget {
   }
 }
 
-/// The reserved 56 px well.
-///
-/// A preview image is a 45° hatch: there is no image loading in this milestone,
-/// and a hatch says "an image belongs here" without pretending to show one. With
-/// no image the well is dashed and empty.
-///
-/// **The hatching is exempt from skeletonization.** `Skeletonizer` treats any
-/// childless render object — which is what a `CustomPaint` is — as a bone, so it
-/// would repaint the hatch's base fill with the shimmer gradient and then draw
-/// the solid bands over the top of it. `Skeleton.keep` paints the subtree
-/// through an ordinary context instead, so a skeletonized row shows the well
-/// exactly as a real row does. It costs nothing when not skeletonized: the
-/// annotation is inert outside a [Skeletonizer].
-class _Thumbnail extends StatelessWidget {
-  const _Thumbnail({required this.hasPreviewImage});
-
-  final bool hasPreviewImage;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = AppTheme.tokensOf(context);
-
-    final border = Border.all(
-      color: tokens.border,
-      width: AppMetrics.borderWidth,
-    );
-
-    if (hasPreviewImage) {
-      return Container(
-        width: AppMetrics.slotThumbSize,
-        height: AppMetrics.slotThumbSize,
-        decoration: BoxDecoration(
-          border: border,
-          borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Skeleton.keep(
-          child: CustomPaint(
-            painter: _HatchPainter(
-              first: tokens.slotHatch1,
-              second: tokens.slotHatch2,
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      width: AppMetrics.slotThumbSize,
-      height: AppMetrics.slotThumbSize,
-      decoration: BoxDecoration(
-        color: tokens.canvas,
-        border: Border.all(color: tokens.border, width: 1),
-        borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
-      ),
-      // A small dashed square, centred: the well reads as "nothing here yet".
-      alignment: Alignment.center,
-      child: SizedBox(
-        width: 9,
-        height: 9,
-        child: Skeleton.keep(
-          child: CustomPaint(
-            painter: _DashedSquarePainter(color: tokens.borderStrong),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The 45° hatch that stands in for a preview image: 4 px of one step, 5 px of
-/// the next, repeating.
-class _HatchPainter extends CustomPainter {
-  const _HatchPainter({required this.first, required this.second});
-
-  final Color first;
-  final Color second;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.fill
-      ..strokeWidth = 0;
-
-    canvas.drawRect(Offset.zero & size, paint..color = first);
-
-    // Clip to the well so the bands cannot bleed past its rounded corners.
-    canvas.save();
-    canvas.clipRect(Offset.zero & size);
-
-    paint.color = second;
-    paint.strokeWidth = 9;
-    paint.style = PaintingStyle.stroke;
-
-    // Bands run corner to corner, so the step is measured along the diagonal.
-    final span = math.sqrt(size.width * size.width + size.height * size.height);
-    for (var offset = -span; offset < span; offset += 9) {
-      canvas.drawLine(
-        Offset(offset, span),
-        Offset(offset + span, -span),
-        paint,
-      );
-    }
-
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_HatchPainter oldDelegate) =>
-      oldDelegate.first != first || oldDelegate.second != second;
-}
-
-/// The dashed square inside an empty well.
-class _DashedSquarePainter extends CustomPainter {
-  const _DashedSquarePainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = AppMetrics.borderWidth
-      ..color = color;
-
-    final path = Path()..addRect(Offset.zero & size);
-
-    // 3 on, 2 off.
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        canvas.drawPath(
-          metric.extractPath(distance, math.min(distance + 3, metric.length)),
-          paint,
-        );
-        distance += 5;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedSquarePainter oldDelegate) =>
-      oldDelegate.color != color;
-}
-
 /// Collection plus enrichment state.
 class _MetadataLine extends StatelessWidget {
   const _MetadataLine({required this.item, required this.onRetry});
@@ -299,9 +155,9 @@ class _MetadataLine extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        _CollectionChip(name: item.collectionName),
+        SavedItemCollectionChip(name: item.collectionName),
         const SizedBox(width: AppMetrics.space2),
-        Expanded(child: _EnrichmentState(item: item)),
+        Expanded(child: SavedItemEnrichmentState(item: item)),
         if (_showsRetry) ...[
           const SizedBox(width: AppMetrics.space1),
           AppButton(
@@ -320,129 +176,4 @@ class _MetadataLine extends StatelessWidget {
       onRetry != null &&
       (item.enrichmentStatus == EnrichmentStatus.pending ||
           item.enrichmentStatus == EnrichmentStatus.failed);
-}
-
-/// The item's current collection — the Inbox's stated reason for existing (D26).
-///
-/// The one place the accent fills a surface in a row, so collection identity
-/// reads immediately against the neutral metadata beside it.
-class _CollectionChip extends StatelessWidget {
-  const _CollectionChip({required this.name});
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = AppTheme.tokensOf(context);
-
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 140),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      decoration: BoxDecoration(
-        color: tokens.accentSoft,
-        border: Border.all(color: tokens.accentBorder),
-        borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(width: 5, height: 5, color: tokens.accent),
-          const SizedBox(width: 5),
-          Flexible(
-            child: Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTypography.label.copyWith(color: tokens.accent),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Restrained enrichment status.
-///
-/// A successful enrichment says nothing: when the item has metadata, the title,
-/// description and image already speak for it, so no state line is rendered. That
-/// keeps `completed`-with-metadata quiet and makes the two remaining states
-/// genuinely distinguishable.
-class _EnrichmentState extends StatelessWidget {
-  const _EnrichmentState({required this.item});
-
-  final SavedItemSummary item;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = AppTheme.tokensOf(context);
-
-    final lineStyle = AppTypography.meta.copyWith(color: tokens.textTertiary);
-
-    switch (item.enrichmentStatus) {
-      case EnrichmentStatus.pending:
-        return Row(
-          children: [
-            _StatePip(color: tokens.accent, filled: false),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                'Reading page…',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: lineStyle.copyWith(color: tokens.accent),
-              ),
-            ),
-          ],
-        );
-
-      case EnrichmentStatus.completed:
-        if (!item.hasNoMetadata) return const SizedBox.shrink();
-
-        // Success with nothing to show. Deliberately not styled as a problem.
-        return Text(
-          'No details on this page',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: lineStyle,
-        );
-
-      case EnrichmentStatus.failed:
-        return Row(
-          children: [
-            _StatePip(color: tokens.danger, filled: true),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                "Couldn't read this page",
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: lineStyle.copyWith(color: tokens.danger),
-              ),
-            ),
-          ],
-        );
-    }
-  }
-}
-
-/// Hollow while reading, filled when the read failed. Shape carries the
-/// distinction so colour is never the only signal.
-class _StatePip extends StatelessWidget {
-  const _StatePip({required this.color, required this.filled});
-
-  final Color color;
-  final bool filled;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 6,
-      height: 6,
-      decoration: BoxDecoration(
-        color: filled ? color : Colors.transparent,
-        border: filled ? null : Border.all(color: color, width: 1.4),
-      ),
-    );
-  }
 }

@@ -8,6 +8,7 @@ import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
 import 'package:stash_it_app/features/collections/presentation/collections_screen.dart';
 import 'package:stash_it_app/features/inbox/presentation/inbox_screen.dart';
 import 'package:stash_it_app/features/profile/presentation/profile_screen.dart';
+import 'package:stash_it_app/features/saved_items/presentation/saved_item_detail_screen.dart';
 import 'package:stash_it_app/features/search/presentation/search_screen.dart';
 import 'package:stash_it_app/features/settings/presentation/settings_screen.dart';
 
@@ -88,6 +89,18 @@ final List<RouteBase> _routes = [
   GoRoute(
     path: AppRoutes.settings,
     builder: (context, state) => const SettingsScreen(),
+  ),
+  // The saved-item detail, also outside the shell. It is not a fifth
+  // destination: it is pushed from a row and popped back to the destination that
+  // opened it. `createAppRouter` builds the same `_routes`, so tests exercise the
+  // same tree; only the production router adds the auth redirect.
+  //
+  // The id is a path parameter, not query state, so a detail location names one
+  // item and nothing else.
+  GoRoute(
+    path: AppRoutes.savedItemDetailPattern,
+    builder: (context, state) =>
+        SavedItemDetailScreen(itemId: state.pathParameters['id']!),
   ),
   StatefulShellRoute.indexedStack(
     builder: (context, state, navigationShell) =>

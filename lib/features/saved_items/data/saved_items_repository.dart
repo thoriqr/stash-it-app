@@ -3,8 +3,10 @@ import 'package:dio/dio.dart';
 import '../../../core/error/api_failure.dart';
 import '../../../core/error/api_failure_mapper.dart';
 import '../domain/saved_item_page.dart';
+import '../domain/saved_item_summary.dart';
 import 'datasources/saved_items_api.dart';
 import 'models/create_saved_item_request.dart';
+import 'saved_item_detail_mapper.dart';
 import 'saved_item_mapper.dart';
 
 /// Reads of the Inbox listing and the one write that feeds it, with failures
@@ -93,6 +95,36 @@ class SavedItemsRepository {
         nextCursor: meta.cursor.nextCursor,
         hasMore: meta.cursor.hasMore,
       );
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      // A `200` whose body does not match the documented shape. Retrofit decodes
+      // after Dio's transformer returns, so this never passes through Dio and
+      // `mapApiFailure` cannot see it.
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// One saved item, fresh from the server.
+  ///
+  /// **This is the only read the detail screen performs**, and it changes
+  /// nothing: the route starts no enrichment, fetches no page and moves no item.
+  /// The collection name comes from the response's sibling `collection` object.
+  ///
+  /// A missing item and one owned by another user both answer `404` with
+  /// `RESOURCE_NOT_FOUND`, which maps to [ApiFailureNotFound]. That variant says
+  /// only that the named resource is unavailable to this caller — the screen
+  /// must not claim which of the two happened.
+  ///
+  /// Throws [ApiFailure] for every refusal. A `200` whose body does not decode
+  /// is [ApiFailureUnreadableResponse], not not-found: a malformed reply is not
+  /// evidence that the item is gone.
+  Future<SavedItemSummary> getById(String id) async {
+    try {
+      final response = await api.getById(id);
+      return savedItemDetailFrom(response, now: now());
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError catch (error) {

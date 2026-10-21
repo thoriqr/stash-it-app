@@ -3,6 +3,7 @@ import 'package:retrofit/retrofit.dart';
 
 import '../models/create_saved_item_request.dart';
 import '../models/create_saved_item_response.dart';
+import '../models/get_saved_item_response.dart';
 import '../models/list_saved_items_response.dart';
 
 part 'saved_items_api.g.dart';
@@ -56,4 +57,18 @@ abstract class SavedItemsApi {
   /// omitted rather than sent empty.
   @GET('/saved-items')
   Future<ListSavedItemsResponse> list({@Query('cursor') String? cursor});
+
+  /// `GET /saved-items/{id}` — one saved item with the collection it is filed in.
+  ///
+  /// **Mounted as `Auth` only** (`saved_item/routes.go`): the route is not rate
+  /// limited, because it performs one indexed read and fetches nothing. Unlike
+  /// the enrich endpoint, opening an item never starts enrichment, writes
+  /// enrichment state, or moves the item between collections.
+  ///
+  /// The body carries the complete item and its collection as **siblings**, not
+  /// as the listing's nested object, and no `meta`. A missing item and one owned
+  /// by another user both answer the same `404 RESOURCE_NOT_FOUND`, so the
+  /// client cannot tell the two apart and must not say which happened.
+  @GET('/saved-items/{id}')
+  Future<GetSavedItemResponse> getById(@Path('id') String id);
 }
