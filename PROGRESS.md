@@ -1,3 +1,36 @@
+## Search integration (2026-10-21)
+
+### Verified backend contract (stash-it-backend)
+- Route: `GET /search`, authenticated, behind the per-user limiter (`search-user`, 30/min). The only parameter is `q`; there is no limit, cursor, page or sort.
+- Success: `{"data": {"saved_items": [...], "collections": [...]}, "message": "..."}`; no `meta`. Both arrays are always present, and an empty result is a successful `200`.
+- Saved item: `id`, nullable `title`, `url`, nullable `domain`, nullable `image_url`, `enrichment_status`, nested `collection {id, name}`, `created_at`. No description, platform, image dimensions, counts or score.
+- Collection: `id` and `name` only. The service returns at most 20 saved items (default) and 5 collections; there is no truncation flag, so the client cannot state that more results exist.
+- Errors: `INVALID_SEARCH_QUERY` (400), the three 401s, `USER_RATE_LIMIT_EXCEEDED` (429 with `Retry-After`), `USER_RATE_LIMIT_UNAVAILABLE` (503), `INTERNAL_SERVER_ERROR`.
+
+### Flutter implementation
+- Added `lib/features/search/`: data (`SearchApi` over `appDio`, Freezed `SearchResponse` DTOs, `search_mapper.dart`, `SearchRepository`, providers), domain (`SearchCollection`, `SearchResults`, `search_query.dart`), application (`SearchState` Freezed union, `Search` notifier), presentation (`SearchScreen`, `SearchCollectionRow`).
+- Search has its own minimal DTOs. It neither reuses `ListedSavedItemResponse`/`CollectionSummary` nor declares a field the endpoint does not return; collection results carry only `id` and `name`, and nullable saved-item metadata stays explicit.
+- `Search` performs no request in `build`. Only the keyboard Search action submits; typing never does. The query is trimmed and checked against 2-128 Unicode runes locally before the request, and the controller repeats the guard.
+- `Clear` appears whenever the input is non-empty. It resets the screen, clears the field and advances the request version, so a late answer cannot repopulate a cleared screen. A request version also discards superseded answers when a newer submission wins.
+- Results render Collections first, then Saved Items, each in the server's order. An empty group is omitted; both empty shows the query-specific zero state. Initial, loading, results, zero and failure are distinct. Loading is a compact `CircularProgressIndicator`, not Skeletonizer.
+- Reused `SavedItemRow` with `onTap` and `onRetry` null: results have no per-item action, chevron, mutation or navigation. Search maps only fields the response actually carries; description stays null, while the item id and the nested collection id are preserved.
+- Added `INVALID_SEARCH_QUERY` to `ApiErrorCode` and mapped it to `ApiFailureValidation`; Search gives it query-specific validation copy. Backend `message` is never displayed. Automatic Riverpod retries are disabled for Search, and a failed request is retried only by the explicit Retry action, which resubmits the failed query once.
+- Shared additions: optional `prefixIcon` and `errorText` on `AppField` (existing fields unchanged); `enrichmentStatusFrom` and `savedTimeLabelFrom` extracted to `saved_item_display_mapper.dart`, with the Inbox mapper delegating to them unchanged; `SavedItemSummary` now carries the nested `collectionId`, set by both mappers and never rendered.
+
+### Verification
+- `dart run build_runner build --delete-conflicting-outputs` completed (the flag is ignored by this build_runner version).
+- `dart format` applied to all changed Dart files.
+- `flutter analyze`: no issues found.
+- Focused Search, saved-items, Inbox and error-mapper tests: 289 passed.
+- `flutter test`: 529 tests passed.
+- No app, device, or emulator run was performed.
+
+### Remaining limitations
+- Search copy is English-only; the app still has no l10n layer.
+- Results are capped at 20 saved items and 5 collections by the backend, and the response carries no truncation metadata. The client therefore shows no cap note rather than asserting that more results exist.
+- Search rows and collection rows are non-interactive because no collection-contents or saved-item detail destination routes exist yet.
+- The per-user Search budget is 30 requests per minute; the screen does not pre-empt the limit, and a 429 is shown as a rate-limit failure with the server's `Retry-After`.
+
 ## Profile refinement (2026-10-21)
 
 ### Flutter implementation

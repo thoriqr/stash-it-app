@@ -107,6 +107,20 @@ abstract final class ApiErrorCode {
   static const String serviceUnavailable = 'SERVICE_UNAVAILABLE';
 
   // ---------------------------------------------------------------------------
+  // Search — `internal/api/search/error_codes.go`.
+  // ---------------------------------------------------------------------------
+
+  /// 400. The submitted `q` was blank after trimming, shorter than 2 runes, or
+  /// longer than 128 runes. `search/service.go` (`normalizeQuery`).
+  ///
+  /// **Search's own validation code, not `VALIDATION_ERROR`.** The request type
+  /// carries no `validate` tag on purpose, so the service owns these rules and
+  /// reports them under this code. It means exactly what `VALIDATION_ERROR`
+  /// means to a caller — the input has to change — and is mapped to the same
+  /// failure variant rather than falling into the unreadable-response bucket.
+  static const String invalidSearchQuery = 'INVALID_SEARCH_QUERY';
+
+  // ---------------------------------------------------------------------------
   // Rate limiting — `internal/middleware/ratelimit.go`,
   // `internal/middleware/user_ratelimit.go`, and the login feature's own codes.
   // ---------------------------------------------------------------------------
@@ -130,8 +144,9 @@ abstract final class ApiErrorCode {
 
   /// 429, **`Retry-After` present**. This authenticated user's budget for the
   /// route is spent. Mounted on `POST /saved-items` (namespace
-  /// `saved-item-create-user`, 60 per 10 minutes) and on
-  /// `POST /saved-items/:id/enrich`. `middleware/user_ratelimit.go`.
+  /// `saved-item-create-user`, 60 per 10 minutes), on
+  /// `POST /saved-items/:id/enrich`, and on `GET /search` (namespace
+  /// `search-user`, 30 per minute). `middleware/user_ratelimit.go`.
   static const String userRateLimitExceeded = 'USER_RATE_LIMIT_EXCEEDED';
 
   /// 503, no `Retry-After`. The per-user limiter failed closed.

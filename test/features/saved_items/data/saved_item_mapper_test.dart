@@ -20,6 +20,7 @@ void main() {
     String? imageUrl = 'https://example.com/og.png',
     String enrichmentStatus = 'completed',
     String createdAt = '2026-10-02T10:30:00Z',
+    String collectionId = 'collection-1',
     String collectionName = 'Camera Gear',
   }) => ListedSavedItemResponse.fromJson(
     SavedItemsFixtures.item(
@@ -28,6 +29,7 @@ void main() {
       imageUrl: imageUrl,
       enrichmentStatus: enrichmentStatus,
       createdAt: createdAt,
+      collectionId: collectionId,
       collectionName: collectionName,
     ),
   );
@@ -120,11 +122,14 @@ void main() {
   });
 
   group('collection', () {
-    test('takes the name from the nested collection object', () {
-      expect(
-        savedItemFrom(dto(collectionName: 'Wishlist'), now: now).collectionName,
-        'Wishlist',
+    test('keeps the id and name from the nested collection object', () {
+      final item = savedItemFrom(
+        dto(collectionId: 'collection-9', collectionName: 'Wishlist'),
+        now: now,
       );
+
+      expect(item.collectionId, 'collection-9');
+      expect(item.collectionName, 'Wishlist');
     });
   });
 

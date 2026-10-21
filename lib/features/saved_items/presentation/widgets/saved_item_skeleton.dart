@@ -44,6 +44,7 @@ class SavedItemSkeleton extends StatelessWidget {
 /// fill it.
 const SavedItemSummary _placeholder = SavedItemSummary(
   id: 'skeleton',
+  collectionId: 'skeleton',
   url: 'https://example.com/articles/quiet-mornings',
   collectionName: 'Unsorted',
   enrichmentStatus: EnrichmentStatus.pending,

@@ -8,19 +8,21 @@
 /// metadata was found (D17 [Confirmed]).
 enum EnrichmentStatus { pending, completed, failed }
 
-/// One saved item as the Inbox row presents it.
+/// One saved item as the Inbox and Search rows present it.
 ///
-/// **The presentation model, not a DTO.** It is built by
-/// `saved_item_mapper.dart` from a `ListedSavedItemResponse`, so the wire shape
-/// and the display shape stay separate: a backend field cannot silently become a
+/// **The presentation model, not a DTO.** It is built by `saved_item_mapper.dart`
+/// for the Inbox and by `search_mapper.dart` for Search, so the wire shape and
+/// the display shape stay separate: a backend field cannot silently become a
 /// rendering rule. It carries no HTTP concern and no serialization.
 ///
-/// Fields mirror what a row needs to render. **Nothing is inferred**: a missing
-/// title stays missing here and is resolved by [displayTitle], not filled in
-/// with a placeholder the model invents.
+/// Fields mirror what a row needs to render, plus the collection id a future
+/// destination would need. **Nothing is inferred**: a missing title stays missing
+/// here and is resolved by [displayTitle], not filled in with a placeholder the
+/// model invents.
 class SavedItemSummary {
   const SavedItemSummary({
     required this.id,
+    required this.collectionId,
     required this.url,
     required this.collectionName,
     required this.enrichmentStatus,
@@ -32,6 +34,14 @@ class SavedItemSummary {
 
   /// The item's id, exactly as the backend sent it.
   final String id;
+
+  /// The id of the collection the item belongs to **now**.
+  ///
+  /// Carried exactly as the backend sent it. The row renders the collection's
+  /// name, but keeping the id lets a future collection-contents route open the
+  /// item's current collection without fetching the item again. It is never
+  /// used to identify Unsorted: that is `system_key`, from `GET /collections`.
+  final String collectionId;
 
   /// The saved URL, exactly as the page supplied it.
   final String url;

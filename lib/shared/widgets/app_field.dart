@@ -3,9 +3,10 @@ import 'package:stash_it_app/app/theme/app_theme.dart';
 
 /// The approved input set — `design-system.md` §6.2.
 ///
-/// Exists because **two** screens need it: sign-in takes an email and a password,
-/// and the Inbox intake takes a URL. All three carry a visible label above the
-/// field, which Material's own decoration puts *inside* it instead.
+/// Exists because several screens need it: sign-in takes an email and a
+/// password, the Inbox intake takes a URL, and Search takes a query. The
+/// credential and URL fields carry a visible label above the field, which
+/// Material's own decoration puts *inside* it instead.
 ///
 /// Every state the specification calls out is represented, and each maps to one
 /// token:
@@ -38,6 +39,8 @@ class AppField extends StatefulWidget {
     this.onSubmitted,
     this.onChanged,
     this.validator,
+    this.errorText,
+    this.prefixIcon,
     super.key,
   });
 
@@ -73,6 +76,22 @@ class AppField extends StatefulWidget {
   /// is rendered below the field in the danger colour with a 2 px danger border,
   /// which is the specification's invalid treatment.
   final String? Function(String?)? validator;
+
+  /// An error to display without a [Form].
+  ///
+  /// For a screen that validates on submission rather than on every keystroke:
+  /// the Search query is checked against the backend's bounds only when the user
+  /// submits, and the message must disappear as soon as they edit. Sharing the
+  /// same decoration path as [validator] gives the field the approved invalid
+  /// border and message instead of a second, bespoke treatment.
+  final String? errorText;
+
+  /// An optional leading icon, inside the field.
+  ///
+  /// The Search field is the only consumer: `design-system.md` §5 gives it a
+  /// lens, and the field is the control the icon belongs to. Absent by default,
+  /// so every existing field renders exactly as it did.
+  final IconData? prefixIcon;
 
   @override
   State<AppField> createState() => _AppFieldState();
@@ -153,6 +172,19 @@ class _AppFieldState extends State<AppField> {
               hintStyle: AppTypography.body.copyWith(
                 color: tokens.textTertiary,
               ),
+              prefixIcon: widget.prefixIcon == null
+                  ? null
+                  : Icon(
+                      widget.prefixIcon,
+                      size: AppMetrics.iconSize,
+                      color: tokens.textTertiary,
+                    ),
+              // The default 48 px slot pushes the text too far from the icon for
+              // this field's compact search affordance.
+              prefixIconConstraints: const BoxConstraints(
+                minWidth: 36,
+                minHeight: AppMetrics.fieldHeight,
+              ),
               // Vertical inset as well as horizontal. Without it the text run
               // sat flush against the top border and the field read as a bar.
               contentPadding: AppMetrics.fieldContentPadding,
@@ -167,6 +199,7 @@ class _AppFieldState extends State<AppField> {
               disabledBorder: _border(tokens.disabledBorder),
               errorStyle: AppTypography.meta.copyWith(color: tokens.danger),
               errorMaxLines: 2,
+              errorText: widget.errorText,
             ),
           ),
         ),

@@ -222,6 +222,19 @@ void main() {
       );
     });
 
+    test('INVALID_SEARCH_QUERY is actionable input, not an unreadable reply', () {
+      // Search owns its query rules and reports them under this code rather
+      // than VALIDATION_ERROR. The caller's action is still "change the input",
+      // so it maps to the same variant. Leaving it unmapped would show the
+      // unreadable-response copy for a query the user can simply correct.
+      final failure = mapApiFailure(
+        badResponse(400, errorBody(ApiErrorCode.invalidSearchQuery)),
+      );
+
+      expect(failure, isA<ApiFailureValidation>());
+      expect(failure, isNot(isA<ApiFailureUnreadableResponse>()));
+    });
+
     test('INTERNAL_SERVER_ERROR is a server fault', () {
       expect(
         mapApiFailure(

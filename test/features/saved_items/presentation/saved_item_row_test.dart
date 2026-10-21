@@ -30,6 +30,7 @@ SavedItemSummary itemWith({
 }) {
   return SavedItemSummary(
     id: 'test',
+    collectionId: 'collection-test',
     url: url,
     collectionName: collection,
     enrichmentStatus: status,

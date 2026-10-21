@@ -113,6 +113,9 @@ ApiFailure mapApiFailure(DioException error) {
     // user's action is the same, so it is the same variant rather than a second
     // one with identical copy.
     case ApiErrorCode.invalidUrl:
+    // Search's own query rule. Same reasoning: a correctable input, not an
+    // unreadable reply.
+    case ApiErrorCode.invalidSearchQuery:
       return ApiFailureValidation(body.fields);
 
     case ApiErrorCode.badRequest:

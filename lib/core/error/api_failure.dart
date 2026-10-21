@@ -73,7 +73,8 @@ sealed class ApiFailureRequest extends ApiFailure {
   const ApiFailureRequest();
 }
 
-/// `VALIDATION_ERROR`, and `INVALID_URL` — a URL that parses but names nothing.
+/// `VALIDATION_ERROR`, `INVALID_URL`, and `INVALID_SEARCH_QUERY` — an input that
+/// parses but names nothing usable, or is outside its documented bounds.
 ///
 /// The fields carry field-level detail for diagnosis; they are not rendered
 /// verbatim.
