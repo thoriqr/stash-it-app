@@ -104,6 +104,50 @@ class SavedItemsFixtures {
     };
   }
 
+  /// The whole `200` body of `PUT /saved-items/{id}/collection`.
+  ///
+  /// **No `meta`**, and `data.saved_item` deliberately omits `description`,
+  /// `image_url`, `enrichment_status` and `last_enriched_at`: the move neither
+  /// reads nor writes enrichment. [collectionCreated] and [alreadyInCollection]
+  /// are mutually exclusive in the contract; a test can still pass an impossible
+  /// pair to check that the client does not turn it into a false create claim.
+  static Map<String, dynamic> moved({
+    String savedItemId = '01a0f359-093b-737a-963a-80f7ca6768ed',
+    String url = 'https://example.com/articles/crdts-explained',
+    String? domain = 'example.com',
+    String? platform = 'web',
+    String? title = 'Understanding CRDTs',
+    String collectionId = '01a0f359-093b-737a-963a-80f7ca6768ed',
+    String collectionName = 'Wishlist',
+    bool collectionCreated = false,
+    bool alreadyInCollection = false,
+    String createdAt = '2026-10-02T10:30:00Z',
+    String updatedAt = '2026-10-02T10:31:00Z',
+  }) => {
+    'data': {
+      'collection': {
+        'id': collectionId,
+        'name': collectionName,
+        'type': 'user',
+        'created_at': createdAt,
+        'updated_at': updatedAt,
+      },
+      'saved_item': {
+        'id': savedItemId,
+        'url': url,
+        'domain': domain,
+        'platform': platform,
+        'title': title,
+        'collection_id': collectionId,
+        'created_at': createdAt,
+        'updated_at': updatedAt,
+      },
+      'collection_created': collectionCreated,
+      'already_in_collection': alreadyInCollection,
+    },
+    'message': 'saved item moved into collection successfully',
+  };
+
   /// The whole `201` body of `POST /saved-items`.
   ///
   /// **Exactly the four documented fields**, with no `domain`, `title`,

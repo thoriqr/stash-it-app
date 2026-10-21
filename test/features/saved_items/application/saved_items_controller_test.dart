@@ -9,6 +9,7 @@ import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_state.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 
 import '../../../support/fake_http.dart';
 import '../../../support/saved_items_fixtures.dart';
@@ -422,6 +423,77 @@ void main() {
         isNull,
         reason: 'a pagination failure is not a manual refresh',
       );
+    });
+  });
+
+  group('in-place collection update', () {
+    test('changes only the matching row and keeps list state', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      scriptPages([
+        SavedItemsFixtures.page(
+          items: [
+            SavedItemsFixtures.item(id: 'a', collectionName: 'Camera Gear'),
+            SavedItemsFixtures.item(id: 'b', collectionName: 'Camera Gear'),
+            SavedItemsFixtures.item(id: 'c', collectionName: 'Camera Gear'),
+          ],
+          nextCursor: 'cursor-2',
+          hasMore: true,
+        ),
+      ]);
+      await container.read(savedItemsProvider.future);
+
+      container
+          .read(savedItemsProvider.notifier)
+          .applyCollection(
+            savedItemId: 'b',
+            collectionId: 'wishlist-id',
+            collectionName: 'Wishlist',
+          );
+
+      final state = stateOf(container);
+      expect(state.items.map((item) => item.id), ['a', 'b', 'c']);
+      expect(state.items[0].collectionName, 'Camera Gear');
+      expect(state.items[1].collectionId, 'wishlist-id');
+      expect(state.items[1].collectionName, 'Wishlist');
+      expect(state.items[2].collectionName, 'Camera Gear');
+      expect(
+        state.items[1].title,
+        'Understanding CRDTs',
+        reason: 'a move is not an enrichment and must not rewrite the row',
+      );
+      expect(state.items[1].enrichmentStatus, EnrichmentStatus.completed);
+      expect(state.nextCursor, 'cursor-2');
+      expect(state.hasMore, isTrue);
+      expect(state.isLoadingMore, isFalse);
+      expect(
+        adapter.countFor('/saved-items'),
+        1,
+        reason: 'the row update is local, not another listing read',
+      );
+    });
+
+    test('does nothing when the row is not loaded', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      scriptPages([
+        SavedItemsFixtures.page(items: [SavedItemsFixtures.item(id: 'a')]),
+      ]);
+      await container.read(savedItemsProvider.future);
+      final before = stateOf(container);
+
+      container
+          .read(savedItemsProvider.notifier)
+          .applyCollection(
+            savedItemId: 'not-loaded',
+            collectionId: 'wishlist-id',
+            collectionName: 'Wishlist',
+          );
+
+      expect(stateOf(container), before);
+      expect(adapter.countFor('/saved-items'), 1);
     });
   });
 

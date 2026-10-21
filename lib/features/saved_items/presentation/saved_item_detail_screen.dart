@@ -10,6 +10,7 @@ import 'package:stash_it_app/features/saved_items/application/saved_item_detail_
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
+import 'widgets/move_to_collection_sheet.dart';
 import 'widgets/saved_item_collection_chip.dart';
 import 'widgets/saved_item_enrichment_state.dart';
 import 'widgets/saved_item_preview.dart';
@@ -22,10 +23,11 @@ import 'widgets/saved_item_preview.dart';
 /// position intact; a direct entry with nothing beneath it falls back to
 /// [AppRoutes.inbox].
 ///
-/// **Opening this screen reads and nothing else.** The only request is the GET
-/// behind [savedItemDetailProvider]. Viewing never enriches, extracts, polls,
-/// refreshes in the background, moves or deletes — the disabled control near the
-/// bottom is deliberately inert.
+/// **Opening this screen only reads.** The only request a visit makes by itself is
+/// the GET behind [savedItemDetailProvider]. Viewing never enriches, extracts,
+/// polls, refreshes in the background, or deletes. The explicit **Move to a
+/// collection** action below issues one `PUT` only after the user chooses a
+/// destination; the enrichment control beside it is deliberately inert.
 ///
 /// The three content states are the wireframe's C1, C2 and C3:
 /// - C1: metadata available; title, source, collection, status and description.
@@ -58,7 +60,11 @@ class SavedItemDetailScreen extends ConsumerWidget {
               ),
       ),
       body: switch (detail) {
-        AsyncData(:final value) => _DetailBody(item: value),
+        AsyncData(:final value) => _DetailBody(
+          item: value,
+          onMoveToCollection: () =>
+              showMoveToCollectionSheet(context, item: value),
+        ),
         AsyncError(:final error, :final isLoading) when !isLoading =>
           error is ApiFailureNotFound
               ? _NotFound(onBack: () => _leave(context))
@@ -89,9 +95,13 @@ class SavedItemDetailScreen extends ConsumerWidget {
 
 /// C1 and C2: the item's real content, in the wireframe's order.
 class _DetailBody extends StatelessWidget {
-  const _DetailBody({required this.item});
+  const _DetailBody({required this.item, this.onMoveToCollection});
 
   final SavedItemSummary item;
+
+  /// Null in the skeleton and in every non-data state, which is what keeps the
+  /// action out of the loading, generic-error and C3 screens.
+  final VoidCallback? onMoveToCollection;
 
   @override
   Widget build(BuildContext context) {
@@ -168,6 +178,21 @@ class _DetailBody extends StatelessWidget {
             color: tokens.border,
           ),
           const SizedBox(height: AppMetrics.space4),
+          if (onMoveToCollection != null) ...[
+            Text(
+              'ACTIONS',
+              style: AppTypography.sectionLabel.copyWith(
+                color: tokens.textTertiary,
+              ),
+            ),
+            const SizedBox(height: AppMetrics.space3),
+            AppButton(
+              label: 'Move to a collection',
+              variant: AppButtonVariant.secondary,
+              onPressed: onMoveToCollection,
+            ),
+            const SizedBox(height: AppMetrics.space6),
+          ],
           _EnrichmentAction(tokens: tokens),
         ],
       ),

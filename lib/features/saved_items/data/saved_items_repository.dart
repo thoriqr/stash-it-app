@@ -2,15 +2,18 @@ import 'package:dio/dio.dart';
 
 import '../../../core/error/api_failure.dart';
 import '../../../core/error/api_failure_mapper.dart';
+import '../domain/move_to_collection_result.dart';
 import '../domain/saved_item_page.dart';
 import '../domain/saved_item_summary.dart';
 import 'datasources/saved_items_api.dart';
 import 'models/create_saved_item_request.dart';
+import 'models/move_to_collection_request.dart';
+import 'move_to_collection_mapper.dart';
 import 'saved_item_detail_mapper.dart';
 import 'saved_item_mapper.dart';
 
-/// Reads of the Inbox listing and the one write that feeds it, with failures
-/// already translated.
+/// Reads of the Inbox listing and detail, and the writes this milestone exposes,
+/// with failures already translated.
 ///
 /// The only layer that converts a [DioException] into an [ApiFailure], so
 /// presentation never learns that Dio exists (`AGENTS.md` §2, rule 4). Concrete
@@ -57,6 +60,47 @@ class SavedItemsRepository {
       // a status that passed `validateStatus`, so this is a committed write with
       // an unreadable representation, reported as unestablished rather than as a
       // refusal.
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Moves one saved item into the named collection, creating it if needed.
+  ///
+  /// **Sends a name, never an id.** The backend trims, matches case-insensitively
+  /// and creates-or-reuses the collection atomically, so this client must not
+  /// resolve a collection first. The caller trims the submitted value but must
+  /// preserve its casing; the server's stored casing is what
+  /// [MoveToCollectionResult.collectionName] reports.
+  ///
+  /// **A `200` whose body does not decode is unestablished, not failed.** The
+  /// write may have committed and only its representation be unreadable, so this
+  /// throws [ApiFailureUnreadableResponse] and the caller must reconcile rather
+  /// than claim the item did not move. The same applies to [ApiFailureTransport].
+  ///
+  /// [ApiFailureNotFound] is the route's own `SAVED_ITEM_NOT_FOUND`: the item is
+  /// missing or belongs to another user, and the client cannot tell which.
+  /// [ApiFailureCollectionNameReserved] means the name is held by a system
+  /// collection; the response does not identify it.
+  ///
+  /// Throws [ApiFailure] for every refusal.
+  Future<MoveToCollectionResult> moveToCollection({
+    required String savedItemId,
+    required String collectionName,
+  }) async {
+    try {
+      final response = await api.moveToCollection(
+        savedItemId,
+        MoveToCollectionRequest(collectionName: collectionName),
+      );
+      return moveToCollectionResultFrom(response);
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      // A `200` whose body does not match the documented shape. Retrofit decodes
+      // after Dio's transformer returns, so this never passes through Dio and
+      // `mapApiFailure` cannot see it.
       throw mapDecodeFailure(error);
     } on FormatException catch (error) {
       throw mapDecodeFailure(error);

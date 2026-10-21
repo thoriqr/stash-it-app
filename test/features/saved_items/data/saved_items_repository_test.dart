@@ -403,6 +403,162 @@ void main() {
     });
   });
 
+  group('move to collection', () {
+    const id = '01a0f359-093b-737a-963a-80f7ca6768ed';
+    const path = '/saved-items/$id/collection';
+
+    test('PUTs the name and decodes the stored result', () async {
+      adapter.onMethod(
+        'PUT',
+        path,
+        body: SavedItemsFixtures.moved(
+          savedItemId: id,
+          collectionName: 'Reading List',
+          collectionCreated: true,
+        ),
+      );
+
+      final result = await repository.moveToCollection(
+        savedItemId: id,
+        collectionName: 'Reading List',
+      );
+
+      final request = adapter.lastRequestTo(path)!;
+      expect(request.method, 'PUT');
+      expect(adapter.countFor(path), 1, reason: 'one explicit write');
+      expect(request.body, {'collection_name': 'Reading List'});
+      expect(
+        (request.body as Map<String, dynamic>).containsKey('collection_id'),
+        isFalse,
+        reason: 'the contract resolves a name; it has no id field',
+      );
+
+      expect(result.collectionName, 'Reading List');
+      expect(result.collectionCreated, isTrue);
+      expect(result.alreadyInCollection, isFalse);
+    });
+
+    test(
+      'accepts already_in_collection without treating it as a conflict',
+      () async {
+        adapter.onMethod(
+          'PUT',
+          path,
+          body: SavedItemsFixtures.moved(
+            savedItemId: id,
+            collectionName: 'Wishlist',
+            alreadyInCollection: true,
+          ),
+        );
+
+        final result = await repository.moveToCollection(
+          savedItemId: id,
+          collectionName: 'wishlist',
+        );
+
+        expect(adapter.countFor(path), 1);
+        expect(result.alreadyInCollection, isTrue);
+        expect(result.collectionName, 'Wishlist');
+      },
+    );
+
+    test('maps INVALID_COLLECTION_NAME to validation', () async {
+      adapter.onMethod(
+        'PUT',
+        path,
+        status: 400,
+        body: errorBody('INVALID_COLLECTION_NAME'),
+      );
+
+      await expectLater(
+        repository.moveToCollection(savedItemId: id, collectionName: 'bad'),
+        throwsA(isA<ApiFailureValidation>()),
+      );
+    });
+
+    test('maps COLLECTION_NAME_RESERVED to its own conflict', () async {
+      adapter.onMethod(
+        'PUT',
+        path,
+        status: 409,
+        body: errorBody('COLLECTION_NAME_RESERVED'),
+      );
+
+      final failure = await repository
+          .moveToCollection(savedItemId: id, collectionName: 'Unsorted')
+          .then<Object?>((_) => null, onError: (Object error) => error);
+
+      expect(failure, isA<ApiFailureCollectionNameReserved>());
+      expect(
+        (failure! as ApiFailureCollectionNameReserved).code,
+        'COLLECTION_NAME_RESERVED',
+        reason: 'diagnosis only; no system collection is named',
+      );
+    });
+
+    test('maps SAVED_ITEM_NOT_FOUND to not-found, not unreadable', () async {
+      adapter.onMethod(
+        'PUT',
+        path,
+        status: 404,
+        body: errorBody('SAVED_ITEM_NOT_FOUND'),
+      );
+
+      final failure = await repository
+          .moveToCollection(savedItemId: id, collectionName: 'Wishlist')
+          .then<Object?>((_) => null, onError: (Object error) => error);
+
+      expect(failure, isA<ApiFailureNotFound>());
+      expect((failure! as ApiFailureNotFound).code, 'SAVED_ITEM_NOT_FOUND');
+    });
+
+    test('a 200 whose body does not decode is unreadable', () async {
+      // The status passed validation, so the write may have committed. The
+      // repository reports an unestablished representation, never a known
+      // failure, and the caller reconciles.
+      final body = SavedItemsFixtures.moved();
+      (body['data'] as Map<String, dynamic>).remove('collection');
+      adapter.onMethod('PUT', path, body: body);
+
+      await expectLater(
+        repository.moveToCollection(
+          savedItemId: id,
+          collectionName: 'Wishlist',
+        ),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+
+    test('a request that never arrives is transport', () async {
+      adapter.onOffline(path, method: 'PUT');
+
+      await expectLater(
+        repository.moveToCollection(
+          savedItemId: id,
+          collectionName: 'Wishlist',
+        ),
+        throwsA(isA<ApiFailureTransport>()),
+      );
+    });
+
+    test('a 500 maps to a server fault at the boundary', () async {
+      adapter.onMethod(
+        'PUT',
+        path,
+        status: 500,
+        body: errorBody('INTERNAL_SERVER_ERROR'),
+      );
+
+      await expectLater(
+        repository.moveToCollection(
+          savedItemId: id,
+          collectionName: 'Wishlist',
+        ),
+        throwsA(isA<ApiFailureServerFault>()),
+      );
+    });
+  });
+
   group('detail', () {
     const id = '01a0f359-093b-737a-963a-80f7ca6768ed';
     const path = '/saved-items/$id';

@@ -116,16 +116,25 @@ ApiFailure mapApiFailure(DioException error) {
     // Search's own query rule. Same reasoning: a correctable input, not an
     // unreadable reply.
     case ApiErrorCode.invalidSearchQuery:
+    // The move endpoint's collection-name rule. Same reasoning again: the name
+    // is well formed JSON and still outside its documented bounds.
+    case ApiErrorCode.invalidCollectionName:
       return ApiFailureValidation(body.fields);
 
     case ApiErrorCode.badRequest:
       return const ApiFailureMalformedRequest();
 
     // The resource named by the request is gone, or is not this caller's. Only
-    // this verified code produces the variant: a bare 404 without a readable
+    // these verified codes produce the variant: a bare 404 without a readable
     // code stays an unreadable response.
     case ApiErrorCode.resourceNotFound:
+    case ApiErrorCode.savedItemNotFound:
       return ApiFailureNotFound(code: code);
+
+    // A name already held by a system collection. Well formed, but not a
+    // destination: the user has to choose another name.
+    case ApiErrorCode.collectionNameReserved:
+      return ApiFailureCollectionNameReserved(code: code);
 
     case ApiErrorCode.internalServerError:
       return const ApiFailureServerFault();

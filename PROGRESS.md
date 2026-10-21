@@ -1,3 +1,28 @@
+## Move to collection (2026-10-22)
+
+### Flutter implementation
+- Added the detail screen's `ACTIONS` section between the detail divider and `ENRICHMENT`: one secondary `AppButton` labelled `Move to a collection`, shown only for loaded detail data. Loading, generic read errors and C3 omit the section; `pending` and `failed` keep it.
+- Added the picker as a modal bottom sheet (`showModalBottomSheet`, `isScrollControlled`, safe area): `Currently in <name>` context, the current collection excluded by id and never selectable, every collection returned by `GET /collections` (including system collections; nothing filtered by type, name, or `isUnsorted`), a new-collection field, and one primary action. The primary reads `Move to <stored name>` for a trimmed case-insensitive match against the loaded list, `Already in <name>` (disabled) for the current name, and `Create <trimmed name>` otherwise. `INVALID_COLLECTION_NAME` and `COLLECTION_NAME_RESERVED` stay inline with the sheet and input open; the reserved copy is `That collection name is reserved. Choose a different name.` and names no system collection. While a request is in flight, rows, field, Retry, close/dismiss and the primary are disabled and one compact indicator shows.
+- Added `MoveDestinations` as a separate auto-dispose provider over `CollectionsRepository` with `sort=name`; it follows every page, dedupes by id preserving order, keeps every returned collection including system collections, and treats `has_more == true` with a null cursor as unreadable. Opening the sheet never touches `collectionsProvider`, and reopening fetches a fresh snapshot. A failed destinations load still allows create-by-name while disclosing that existing collections could not load and the server decides conflicts.
+- Added `PUT /saved-items/{id}/collection` end to end: a name-only Freezed request (never a collection id), Freezed response DTOs for the no-`meta` envelope (`data.collection`, `data.saved_item`, `data.collection_created`, `data.already_in_collection`, `message`) and a mapper to `MoveToCollectionResult`; the response is never decoded as the full detail shape. `SavedItemsRepository.moveToCollection` maps the route's failures.
+- Extended the error taxonomy with `ApiFailureNotFound` (verified `RESOURCE_NOT_FOUND` and `SAVED_ITEM_NOT_FOUND`), `ApiFailureValidation` (existing `VALIDATION_ERROR` and the move route's `INVALID_COLLECTION_NAME`) and `ApiFailureCollectionNameReserved` (`COLLECTION_NAME_RESERVED`). No existing mapping changed.
+- Added the keep-alive `moveToCollectionProvider` notifier with synchronous duplicate-submission guarding and one PUT per explicit action. Confirmed moves refetch detail, update the Inbox row in place (`SavedItemSummary.copyWithCollection` / `SavedItems.applyCollection`, never `refreshHead`) and fall back to the PUT collection when that read fails; `already_in_collection` is a no-op that publishes `Already in <name>.`, and only a confirmed non-already move invalidates `collectionsProvider`. Transport, `5xx`, unavailable and unreadable-200 outcomes are unconfirmed: they refetch detail, publish `We couldn't confirm the move. Check the item's collection.`, and are never replayed. `SAVED_ITEM_NOT_FOUND` invalidates detail to C3 and publishes `This item is no longer available.` Feedback copy uses the stored name: `Moved to ...` / `Created ... and moved the item.`
+- Added the name-shape rule in `features/collections/domain/collection_name.dart`: trimming, blank rejection, 100-rune maximum and case-insensitive comparison for the label. Uniqueness stays backend-owned; no new dependency, API client, repository or endpoint was added, and `collections` does not import `saved_items`.
+
+### Verification
+- `dart run build_runner build --delete-conflicting-outputs` completed for the new Freezed, Retrofit and Riverpod sources.
+- `dart format` applied to the changed Dart files.
+- `flutter analyze`: no issues found.
+- Focused move destinations, picker sheet, detail screen and mutation controller tests: 54 passed.
+- `flutter test`: 686 tests passed.
+- No app, device, or emulator run was performed.
+
+### Remaining limitations
+- The sheet's copy (`Move to a collection`, `Currently in ...`, helper text, inline errors) is hardcoded English; the app still has no l10n layer.
+- An unconfirmed move is reconciled once by reading the item; there is no automatic replay, consistent with D23/D24.
+- Collection counts refresh only after the post-move detail read settles, because the confirmed-move reconciliation runs unawaited behind the sheet's immediate close.
+- No on-device keyboard, drag, or back-gesture check of the sheet was performed.
+
 ## Saved item detail (2026-10-22)
 
 ### Flutter implementation
@@ -5,7 +30,7 @@
 - Added `/saved-items/:id` as a top-level route outside `StatefulShellRoute`. It is not a fifth destination: Inbox rows `context.push` it, returning pops to the Inbox with its scroll position and pages intact, and a direct entry gets a `Back to Inbox` fallback. The existing auth redirect protects the route (covered against the production router).
 - Added an auto-dispose `savedItemDetailProvider(id)` with `retry: _neverRetry`, so a failed read is not retried automatically. The screen's explicit Retry invalidates the provider and issues exactly one fresh GET.
 - Added the detail screen with the wireframe's C1, C2 and C3 states: full metadata; `pending`/`failed` with the item kept visible; and a neutral not-found state with no Retry. A completed item with no metadata says `No details on this page`, not an error. Loading shows the real layout under `Skeletonizer`; every other failure gets feature copy and Retry.
-- Added `ApiErrorCode.resourceNotFound` and `ApiFailureNotFound`, mapped **only** from the verified `RESOURCE_NOT_FOUND`. An unreadable or uncoded 404 remains `ApiFailureUnreadableResponse`, and the two screens are distinct.
+- Added `ApiErrorCode.resourceNotFound` and `ApiFailureNotFound`, mapped initially from the verified `RESOURCE_NOT_FOUND`; the move endpoint's `SAVED_ITEM_NOT_FOUND` now also maps to it (see the section above). An unreadable or uncoded 404 remains `ApiFailureUnreadableResponse`, and the two screens are distinct.
 - The one enrichment control is deliberately inert: `onPressed: null`, label `Re-read page`, caption `Not available in this version.` Opening the detail never enriches, extracts, polls, refreshes in the background, moves, deletes, or loads a remote image.
 - Extracted `SavedItemPreview`, `SavedItemCollectionChip` and `SavedItemEnrichmentState` from `SavedItemRow` so the row and detail share one preview, chip and status treatment; the row's rendering and behaviour are unchanged. Search rows remain non-interactive.
 
@@ -20,7 +45,7 @@
 ### Remaining limitations
 - Detail copy, including `Re-read page` and `Not available in this version.`, is English-only; the app still has no l10n layer.
 - Enrichment is intentionally unavailable in this iteration. The control is visual only and issues no request; no enrich endpoint is wired.
-- Move to collection, Delete, Open original page, and remote `image_url` loading are deliberately excluded. `url_launcher` was not added.
+- Delete, Open original page, and remote `image_url` loading are deliberately excluded. Move to collection is now implemented; see the section above. `url_launcher` was not added.
 - A non-UUID or otherwise rejected id answers `BAD_REQUEST`, which the screen reports as a retryable generic error, not as not-found. The route is normally reached with server-issued UUIDs.
 - The not-found copy names both possibilities (deleted or another account) because the backend deliberately returns the same `RESOURCE_NOT_FOUND` for both.
 - The detail always reads fresh: there is no warm-start cache or Inbox prefetch, so revisiting an item costs another GET.

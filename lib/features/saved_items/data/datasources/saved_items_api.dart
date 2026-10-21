@@ -5,6 +5,8 @@ import '../models/create_saved_item_request.dart';
 import '../models/create_saved_item_response.dart';
 import '../models/get_saved_item_response.dart';
 import '../models/list_saved_items_response.dart';
+import '../models/move_to_collection_request.dart';
+import '../models/move_to_collection_response.dart';
 
 part 'saved_items_api.g.dart';
 
@@ -57,6 +59,32 @@ abstract class SavedItemsApi {
   /// omitted rather than sent empty.
   @GET('/saved-items')
   Future<ListSavedItemsResponse> list({@Query('cursor') String? cursor});
+
+  /// `PUT /saved-items/{id}/collection` — file an item into a collection by
+  /// name, creating that collection when it does not exist.
+  ///
+  /// **Mounted as `Auth` only** (`collection/routes.go`): the route has no rate
+  /// limiter. A `401` therefore comes from the guard before any write. Other
+  /// failures are classified by [ApiFailure]; the mutation treats a `5xx`, a
+  /// transport failure and an unreadable success body as unestablished, because
+  /// none of them proves the write did not land.
+  ///
+  /// **The destination is a name, never an id.** The backend resolves the name
+  /// case-insensitively with surrounding whitespace ignored, creates a user
+  /// collection when needed, and reuses an existing one otherwise. Sending an id
+  /// would be a different, unsupported request.
+  ///
+  /// A repeated request for the collection the item is already in answers `200`
+  /// with `already_in_collection: true`, writes nothing and leaves `updated_at`
+  /// unchanged. A name held by a system collection answers
+  /// `COLLECTION_NAME_RESERVED`; it is never filed into a system collection.
+  ///
+  /// The body has no `meta`; see [MoveToCollectionResponse] for the exact shape.
+  @PUT('/saved-items/{id}/collection')
+  Future<MoveToCollectionResponse> moveToCollection(
+    @Path('id') String id,
+    @Body() MoveToCollectionRequest request,
+  );
 
   /// `GET /saved-items/{id}` — one saved item with the collection it is filed in.
   ///

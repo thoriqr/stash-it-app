@@ -6,12 +6,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
+import 'package:stash_it_app/features/collections/data/collections_providers.dart';
+import 'package:stash_it_app/features/collections/domain/collection_page.dart';
+import 'package:stash_it_app/features/collections/domain/collection_summary.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_item_detail_provider.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 import 'package:stash_it_app/features/saved_items/presentation/saved_item_detail_screen.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
+import '../../../support/fake_collections_repository.dart';
 import '../../../support/fake_saved_items_repository.dart';
 
 /// The detail screen's three content states, its loading and error states, and
@@ -42,6 +46,22 @@ void main() {
     savedTimeLabel: 'Saved 1 hour ago',
   );
 
+  CollectionSummary collection({
+    String id = 'wishlist-id',
+    String name = 'Wishlist',
+    String type = 'user',
+    String? systemKey,
+  }) => CollectionSummary(
+    id: id,
+    name: name,
+    type: type,
+    isUnsorted: systemKey == 'unsorted',
+    savedItemsCount: 0,
+    savedItemsCountOverflow: false,
+    createdAt: DateTime.utc(2026, 10, 1),
+    updatedAt: DateTime.utc(2026, 10, 1),
+  );
+
   /// Pumps the screen with one scripted outcome per call to `getById`.
   ///
   /// Settles because every outcome other than [Completer.future] completes
@@ -50,15 +70,28 @@ void main() {
   Future<FakeSavedItemsRepository> pumpScreen(
     WidgetTester tester, {
     required List<Object> results,
+    FakeCollectionsRepository? collections,
   }) async {
     final repository = FakeSavedItemsRepository(detailResults: results);
+    final collectionsRepository =
+        collections ??
+        FakeCollectionsRepository(
+          results: const [
+            CollectionPage(items: [], nextCursor: null, hasMore: false),
+          ],
+        );
 
     await tester.pumpWidget(
       ProviderScope(
         // Riverpod 3 retries failed providers by default, which would turn an
         // error case into a slow, repeated request in this widget test.
         retry: (_, _) => null,
-        overrides: [savedItemsRepositoryProvider.overrideWithValue(repository)],
+        overrides: [
+          savedItemsRepositoryProvider.overrideWithValue(repository),
+          collectionsRepositoryProvider.overrideWithValue(
+            collectionsRepository,
+          ),
+        ],
         child: MaterialApp(
           theme: AppTheme.light(),
           home: const SavedItemDetailScreen(itemId: id),
@@ -140,17 +173,50 @@ void main() {
       expect(text.overflow, isNull);
     });
 
-    testWidgets('offers no move, delete or open-original action', (
+    testWidgets('offers Move to a collection but no delete or open-original', (
       tester,
     ) async {
-      // Deliberately excluded from this iteration. The screen has no collection
-      // picker, no delete affordance and no URL launcher, so none of their
-      // labels can appear.
       await pumpScreen(tester, results: [itemWith()]);
 
-      expect(find.text('Move to collection'), findsNothing);
+      expect(find.text('ACTIONS'), findsOneWidget);
+      final move = tester.widget<AppButton>(
+        find.widgetWithText(AppButton, 'Move to a collection'),
+      );
+      expect(move.onPressed, isNotNull);
+      expect(move.variant, AppButtonVariant.secondary);
+
       expect(find.text('Delete this item'), findsNothing);
       expect(find.text('Open original page'), findsNothing);
+    });
+
+    testWidgets('opens the picker with the current collection as context', (
+      tester,
+    ) async {
+      await pumpScreen(
+        tester,
+        results: [itemWith(collection: 'Camera Gear')],
+        collections: FakeCollectionsRepository(
+          results: [
+            CollectionPage(
+              items: [collection(id: 'wishlist-id', name: 'Wishlist')],
+              nextCursor: null,
+              hasMore: false,
+            ),
+          ],
+        ),
+      );
+
+      await tester.tap(find.text('Move to a collection'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Currently in Camera Gear'), findsOneWidget);
+      expect(find.text('YOUR COLLECTIONS'), findsOneWidget);
+      expect(find.text('Wishlist'), findsOneWidget);
+      expect(
+        find.text('Camera Gear'),
+        findsOneWidget,
+        reason: 'the current collection is context, not a destination row',
+      );
     });
 
     for (final empty in <String?>[null, '', '   ']) {
@@ -206,8 +272,11 @@ void main() {
       expect(find.text('Reading page…'), findsOneWidget);
       expect(find.text('Re-read page'), findsOneWidget);
       expect(find.text('Not available in this version.'), findsOneWidget);
-
-      // No blocking spinner, because this screen did not start the read.
+      expect(
+        find.text('Move to a collection'),
+        findsOneWidget,
+        reason: 'enrichment state does not remove the move action',
+      );
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(repository.detailCalls, 1);
     });
@@ -225,6 +294,11 @@ void main() {
       expect(find.text('Understanding CRDTs'), findsOneWidget);
       expect(find.text("Couldn't read this page"), findsOneWidget);
       expect(find.text('No details on this page'), findsNothing);
+      expect(
+        find.text('Move to a collection'),
+        findsOneWidget,
+        reason: 'failure is an enrichment state, not a missing item',
+      );
       // Failure is a status, not a blocking operation.
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
@@ -269,6 +343,8 @@ void main() {
       );
       expect(skeleton, findsOneWidget);
       expect(find.widgetWithText(AppBar, 'ITEM'), findsOneWidget);
+      expect(find.text('Move to a collection'), findsNothing);
+      expect(find.text('ACTIONS'), findsNothing);
       // The screen does not fall back to a bare centred spinner.
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
@@ -297,6 +373,12 @@ void main() {
         findsNothing,
         reason: 'there is no item to enrich',
       );
+      expect(
+        find.text('Move to a collection'),
+        findsNothing,
+        reason: 'there is no loaded item to move',
+      );
+      expect(find.text('ACTIONS'), findsNothing);
     });
   });
 
@@ -341,6 +423,8 @@ void main() {
 
         expect(find.text('This item is no longer available'), findsNothing);
         expect(find.text('Back to Inbox'), findsNothing);
+        expect(find.text('Move to a collection'), findsNothing);
+        expect(find.text('ACTIONS'), findsNothing);
       });
     }
 

@@ -235,6 +235,53 @@ void main() {
       expect(failure, isNot(isA<ApiFailureUnreadableResponse>()));
     });
 
+    test('INVALID_COLLECTION_NAME is actionable input', () {
+      // The move route's own name rule. A blank or over-long name is well formed
+      // JSON and still unusable, so the caller must correct the field rather than
+      // read it as an unreadable reply.
+      final failure = mapApiFailure(
+        badResponse(400, errorBody(ApiErrorCode.invalidCollectionName)),
+      );
+
+      expect(failure, isA<ApiFailureValidation>());
+      expect(failure, isNot(isA<ApiFailureUnreadableResponse>()));
+    });
+
+    test('COLLECTION_NAME_RESERVED is its own conflict', () {
+      // Well formed, but held by a system collection. A validation variant would
+      // tell the user to correct the name's shape; this one tells them to choose
+      // a different name without claiming which system collection owns it.
+      final failure = mapApiFailure(
+        badResponse(409, errorBody(ApiErrorCode.collectionNameReserved)),
+      );
+
+      expect(failure, isA<ApiFailureCollectionNameReserved>());
+      expect(
+        (failure as ApiFailureCollectionNameReserved).code,
+        ApiErrorCode.collectionNameReserved,
+      );
+    });
+
+    test('SAVED_ITEM_NOT_FOUND is the move route\'s not-found', () {
+      final failure = mapApiFailure(
+        badResponse(404, errorBody(ApiErrorCode.savedItemNotFound)),
+      );
+
+      expect(failure, isA<ApiFailureNotFound>());
+      expect(
+        (failure as ApiFailureNotFound).code,
+        ApiErrorCode.savedItemNotFound,
+        reason: 'retained for diagnosis, never displayed',
+      );
+    });
+
+    test('a 404 with an unrecognised code is not the move not-found', () {
+      expect(
+        mapApiFailure(badResponse(404, errorBody('SOMETHING_ELSE'))),
+        isA<ApiFailureUnreadableResponse>(),
+      );
+    });
+
     test('INTERNAL_SERVER_ERROR is a server fault', () {
       expect(
         mapApiFailure(

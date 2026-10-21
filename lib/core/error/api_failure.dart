@@ -73,8 +73,9 @@ sealed class ApiFailureRequest extends ApiFailure {
   const ApiFailureRequest();
 }
 
-/// `VALIDATION_ERROR`, `INVALID_URL`, and `INVALID_SEARCH_QUERY` — an input that
-/// parses but names nothing usable, or is outside its documented bounds.
+/// `VALIDATION_ERROR`, `INVALID_URL`, `INVALID_SEARCH_QUERY`, and
+/// `INVALID_COLLECTION_NAME` — an input that parses but names nothing usable,
+/// or is outside its documented bounds.
 ///
 /// The fields carry field-level detail for diagnosis; they are not rendered
 /// verbatim.
@@ -82,6 +83,23 @@ final class ApiFailureValidation extends ApiFailureRequest {
   const ApiFailureValidation(this.fields);
 
   final List<ApiErrorField> fields;
+}
+
+/// `COLLECTION_NAME_RESERVED` — the requested collection name is held by a
+/// system collection, so it cannot be used as a destination.
+///
+/// Kept distinct from [ApiFailureValidation] because the user's next action is
+/// different: the name is well formed, it simply cannot be chosen. The client
+/// does **not** know which system collection owns the name, so no copy derived
+/// from this variant may claim one.
+///
+/// **[D15] Known not moved.** The backend refuses before creating or moving
+/// anything.
+final class ApiFailureCollectionNameReserved extends ApiFailure {
+  const ApiFailureCollectionNameReserved({required this.code});
+
+  /// The backend code, retained for logging and tests, never for display.
+  final String code;
 }
 
 /// `BAD_REQUEST`. The body was unparseable.
@@ -124,17 +142,21 @@ final class ApiFailureTransport extends ApiFailure {
 
 /// The named resource does not exist, or is not visible to this caller.
 ///
-/// Produced **only** from the backend's verified `RESOURCE_NOT_FOUND` code, never
-/// from a bare `404`: a non-JSON `404` is [ApiFailureUnreadableResponse], because
-/// "the server answered 404" and "the server told us this resource is gone" are
+/// Produced **only** from the backend's verified not-found codes, never from a
+/// bare `404`: a non-JSON `404` is [ApiFailureUnreadableResponse], because "the
+/// server answered 404" and "the server told us this resource is gone" are
 /// different claims.
+///
+/// Two routes use different codes for the same conclusion:
+/// `RESOURCE_NOT_FOUND` from `GET /saved-items/{id}`, and
+/// `SAVED_ITEM_NOT_FOUND` from `PUT /saved-items/{id}/collection`.
 ///
 /// **The backend deliberately uses the same response for an item owned by another
 /// user.** This variant therefore carries no reason, and no copy derived from it
 /// may say which of the two happened.
 ///
 /// For a read this is *known not shown*: a reply arrived and the resource is not
-/// available to this caller. It says nothing about any write.
+/// available to this caller. For the move write it is *known not moved*.
 final class ApiFailureNotFound extends ApiFailure {
   const ApiFailureNotFound({required this.code});
 

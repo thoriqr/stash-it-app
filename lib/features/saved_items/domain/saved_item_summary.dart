@@ -79,6 +79,34 @@ class SavedItemSummary {
   /// It does not define the list order; nothing here sorts by it. **[D4]**
   final String? savedTimeLabel;
 
+  /// The same item, filed in a different collection.
+  ///
+  /// **The collection is the only thing replaced.** Every other field — title,
+  /// description, enrichment state, preview flag and the saved-time label — comes
+  /// from the read that produced this model and stays untouched. A move is not a
+  /// re-enrichment, so replacing those fields with values from a write response
+  /// (which deliberately omits them) would discard facts the user can still see.
+  ///
+  /// The caller supplies the **stored** name exactly as the server reported it.
+  /// Nothing here infers, trims or re-cases it, and nothing checks it against
+  /// `Unsorted` or any other display name (**D2**).
+  SavedItemSummary copyWithCollection({
+    required String collectionId,
+    required String collectionName,
+  }) {
+    return SavedItemSummary(
+      id: id,
+      collectionId: collectionId,
+      url: url,
+      collectionName: collectionName,
+      enrichmentStatus: enrichmentStatus,
+      title: title,
+      description: description,
+      hasPreviewImage: hasPreviewImage,
+      savedTimeLabel: savedTimeLabel,
+    );
+  }
+
   /// `true` when enrichment produced no usable metadata at all.
   ///
   /// D8 [Confirmed]: this is a normal, successful state and must never be presented

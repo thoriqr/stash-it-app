@@ -116,6 +116,35 @@ abstract final class ApiErrorCode {
   static const String serviceUnavailable = 'SERVICE_UNAVAILABLE';
 
   // ---------------------------------------------------------------------------
+  // Collections — `internal/api/collection/error_codes.go`.
+  // ---------------------------------------------------------------------------
+
+  /// 400. The submitted collection name was blank after trimming, or longer
+  /// than 100 runes. `collection/service.go` (`normalizeCollectionName`).
+  ///
+  /// Emitted by `PUT /saved-items/{id}/collection`. The route owns this name
+  /// rule, so it is a sibling of [validationError] and is mapped to the same
+  /// failure variant: the input has to change.
+  static const String invalidCollectionName = 'INVALID_COLLECTION_NAME';
+
+  /// 409. The submitted collection name is already held by a **system**
+  /// collection, including Unsorted. `collection/repository.go`
+  /// (`createOrGetUserCollection`).
+  ///
+  /// The move endpoint only ever files into a user collection, so a name held by
+  /// a system collection cannot be used as a destination. The client must not
+  /// guess which system collection caused the refusal.
+  static const String collectionNameReserved = 'COLLECTION_NAME_RESERVED';
+
+  /// 404. The saved item does not exist or belongs to another user.
+  /// `collection/repository.go` (`PutSavedItemIntoUserCollection`).
+  ///
+  /// **The move endpoint's own not-found code**, distinct from
+  /// [resourceNotFound] used by the reads. Both deliberately make an item that
+  /// does not exist and one owned by another user indistinguishable.
+  static const String savedItemNotFound = 'SAVED_ITEM_NOT_FOUND';
+
+  // ---------------------------------------------------------------------------
   // Search — `internal/api/search/error_codes.go`.
   // ---------------------------------------------------------------------------
 

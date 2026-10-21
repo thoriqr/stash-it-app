@@ -256,6 +256,65 @@ class SavedItems extends _$SavedItems {
     );
   }
 
+  /// Rewrites one loaded row's collection in place, without changing its
+  /// position or the list's continuation point.
+  ///
+  /// This is the Inbox half of a confirmed move. [refreshHead] cannot do it: it
+  /// skips ids already present, so the moved row would keep its stale collection
+  /// chip while a duplicate row was avoided. Replacing the whole list would throw
+  /// away pages the user has loaded and the cursor that continues them.
+  ///
+  /// **Only fields the move changed are replaced.** The rest of the row comes
+  /// from the read that produced it; a move neither enriches nor re-titles.
+  /// Cursor, `hasMore` and `isLoadingMore` are preserved exactly.
+  ///
+  /// **No row is invented.** If the id is not among the loaded rows, this does
+  /// nothing. Adding a row would move an item the Inbox has not fetched into a
+  /// position the server did not give it.
+  ///
+  /// **Not a network operation and not announced.** The caller has already
+  /// confirmed the move and publishes its own feedback; a stale or empty list is
+  /// not an error here.
+  void applyCollection({
+    required String savedItemId,
+    required String collectionId,
+    required String collectionName,
+  }) {
+    final current = switch (state) {
+      AsyncData(:final value) => value,
+      _ => null,
+    };
+    if (current == null) return;
+
+    var found = false;
+    final items = <SavedItemSummary>[];
+    for (final item in current.items) {
+      if (item.id != savedItemId) {
+        items.add(item);
+        continue;
+      }
+
+      found = true;
+      if (item.collectionId == collectionId &&
+          item.collectionName == collectionName) {
+        items.add(item);
+      } else {
+        items.add(
+          item.copyWithCollection(
+            collectionId: collectionId,
+            collectionName: collectionName,
+          ),
+        );
+      }
+    }
+
+    if (!found) return;
+
+    // Freezed's equality makes this a no-op when the row already matched, so a
+    // repeated "already in collection" success does not notify listeners.
+    state = AsyncData(current.copyWith(items: items));
+  }
+
   /// Appends the next page.
   ///
   /// Does nothing when the listing has already ended, when a page is already in
