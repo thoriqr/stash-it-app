@@ -11,7 +11,7 @@ part 'move_collection_picker_controller.g.dart';
 /// Riverpod's automatic retry, refused for the picker read.
 ///
 /// A failed page is shown with an explicit Retry. Retrying silently would hide
-/// the failure from the user and can make a load-more tap look ignored.
+/// the failure from the user and can make an automatic page load look stalled.
 Duration? _neverRetry(int retryCount, Object error) => null;
 
 /// Loaded state for the full Move to a collection picker.
@@ -28,9 +28,10 @@ abstract class MoveCollectionPickerState with _$MoveCollectionPickerState {
 
 /// Cursor-paginated collection browser for the Move to a collection flow.
 ///
-/// **One page at a time, on demand.** The main sheet loads only its bounded
-/// preview; this controller starts with one page and follows `next_cursor` only
-/// when the user asks for more. Nothing here sweeps every page eagerly.
+/// **One page at a time, as the list reaches its end.** The main sheet loads only
+/// its bounded preview; this controller starts with one page and follows
+/// `next_cursor` as the picker scrolls near the bottom. Nothing here sweeps every
+/// page eagerly, and the footer's Retry is the only manual pagination control.
 ///
 /// **The collections listing has no name filter.** A typed name can therefore
 /// only be compared with collections the client has already fetched. Discovering
@@ -47,7 +48,7 @@ class MoveCollectionPicker extends _$MoveCollectionPicker {
   static const int _pageSize = 20;
 
   /// Cursors already consumed successfully. A server that repeats a cursor is
-  /// treated as a failed page instead of causing an unbounded load-more loop.
+  /// treated as a failed page instead of causing an unbounded pagination loop.
   final Set<String> _loadedCursors = {};
 
   @override
@@ -61,13 +62,56 @@ class MoveCollectionPicker extends _$MoveCollectionPicker {
     return _stateFrom(page);
   }
 
-  /// Loads the next page, if one exists and no load is already running.
+  /// Loads the next page as the list approaches its end.
+  ///
+  /// Called by the picker's scroll listener, so it must be cheap to call
+  /// repeatedly: the guards below are the throttle. It **refuses after a failed
+  /// page** — only [retryLoadMore] may resume that cursor — which is what stops a
+  /// scroll notification from re-issuing a request that just failed.
   Future<void> loadMore() async {
+    final current = _currentState;
+    if (current == null ||
+        !current.hasMore ||
+        current.isLoadingMore ||
+        current.loadMoreFailed) {
+      return;
+    }
+
+    await _requestNextPage(current);
+  }
+
+  /// Retries the page that failed, using the same cursor.
+  ///
+  /// The only path that may resume paging after a failure, and the only reason
+  /// the footer exists. It intentionally does not require
+  /// [MoveCollectionPickerState.loadMoreFailed]: the footer is the only caller and
+  /// it is rendered from that flag, while the in-flight guard is what actually
+  /// prevents a repeated tap from stacking requests.
+  ///
+  /// Loaded rows are never discarded. On success the page is appended, the cursor
+  /// metadata advances, and automatic pagination resumes; on another failure the
+  /// footer error returns.
+  Future<void> retryLoadMore() async {
     final current = _currentState;
     if (current == null || !current.hasMore || current.isLoadingMore) return;
 
+    await _requestNextPage(current);
+  }
+
+  /// Fetches [current]'s `next_cursor` page and appends it.
+  ///
+  /// A missing cursor, or one this walk already consumed, cannot be continued:
+  /// that is reported once as a failed page rather than requested again, which is
+  /// what stops an automatic walk from looping on a server that does not advance.
+  Future<void> _requestNextPage(MoveCollectionPickerState current) async {
     final cursor = current.nextCursor;
-    if (cursor == null || cursor.isEmpty || !_loadedCursors.add(cursor)) {
+
+    if (cursor == null || cursor.isEmpty) {
+      state = AsyncData(current.copyWith(loadMoreFailed: true));
+      return;
+    }
+
+    if (!_loadedCursors.add(cursor)) {
       state = AsyncData(current.copyWith(loadMoreFailed: true));
       return;
     }

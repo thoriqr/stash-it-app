@@ -98,7 +98,8 @@ void main() {
     expect(repository.cursors, [null, 'page-2']);
   });
 
-  test('a failed next page keeps the loaded rows and can be retried', () async {
+  test('a failed next page keeps the loaded rows, and only the footer Retry '
+      'resumes its cursor', () async {
     final repository = FakeCollectionsRepository(
       results: [
         page(
@@ -119,15 +120,33 @@ void main() {
     addTearDown(subscription.close);
 
     await container.read(moveCollectionPickerProvider.future);
-    await container.read(moveCollectionPickerProvider.notifier).loadMore();
+    final notifier = container.read(moveCollectionPickerProvider.notifier);
+
+    await notifier.loadMore();
 
     final failed = container.read(moveCollectionPickerProvider).requireValue;
     expect(failed.items.map((item) => item.id), ['alpha']);
     expect(failed.hasMore, isTrue);
+    expect(failed.nextCursor, 'page-2');
     expect(failed.isLoadingMore, isFalse);
     expect(failed.loadMoreFailed, isTrue);
 
-    await container.read(moveCollectionPickerProvider.notifier).loadMore();
+    // A scroll notification that arrives after the failure must not re-send it.
+    await notifier.loadMore();
+    await notifier.loadMore();
+
+    expect(
+      repository.listCalls,
+      2,
+      reason:
+          'loadMore refuses a failed page; only retryLoadMore may resume it',
+    );
+    expect(
+      container.read(moveCollectionPickerProvider).requireValue.loadMoreFailed,
+      isTrue,
+    );
+
+    await notifier.retryLoadMore();
 
     final recovered = container.read(moveCollectionPickerProvider).requireValue;
     expect(recovered.items.map((item) => item.id), ['alpha', 'beta']);
@@ -135,6 +154,187 @@ void main() {
     expect(recovered.loadMoreFailed, isFalse);
     expect(repository.cursors, [null, 'page-2', 'page-2']);
   });
+
+  test('repeated Retry taps do not stack page requests', () async {
+    final repository = FakeCollectionsRepository(
+      results: [
+        page(
+          [collection(id: 'alpha', name: 'Alpha')],
+          nextCursor: 'page-2',
+          hasMore: true,
+        ),
+        const ApiFailureServerFault(),
+        page([collection(id: 'beta', name: 'Beta')]),
+      ],
+    );
+    final container = makeContainer(repository);
+    addTearDown(container.dispose);
+    final subscription = container.listen(
+      moveCollectionPickerProvider,
+      (_, _) {},
+    );
+    addTearDown(subscription.close);
+
+    await container.read(moveCollectionPickerProvider.future);
+    final notifier = container.read(moveCollectionPickerProvider.notifier);
+    await notifier.loadMore();
+
+    await Future.wait([notifier.retryLoadMore(), notifier.retryLoadMore()]);
+
+    expect(repository.listCalls, 3);
+    expect(repository.cursors, [null, 'page-2', 'page-2']);
+    final state = container.read(moveCollectionPickerProvider).requireValue;
+    expect(state.items.map((item) => item.id), ['alpha', 'beta']);
+    expect(state.loadMoreFailed, isFalse);
+  });
+
+  test('a successful retry updates the cursor metadata and lets automatic '
+      'pagination resume', () async {
+    final repository = FakeCollectionsRepository(
+      results: [
+        page(
+          [collection(id: 'alpha', name: 'Alpha')],
+          nextCursor: 'page-2',
+          hasMore: true,
+        ),
+        const ApiFailureServerFault(),
+        page(
+          [
+            // Already loaded on page one; the append must not duplicate it.
+            collection(id: 'alpha', name: 'Alpha'),
+            collection(id: 'beta', name: 'Beta'),
+          ],
+          nextCursor: 'page-3',
+          hasMore: true,
+        ),
+        page([collection(id: 'gamma', name: 'Gamma')]),
+      ],
+    );
+    final container = makeContainer(repository);
+    addTearDown(container.dispose);
+    final subscription = container.listen(
+      moveCollectionPickerProvider,
+      (_, _) {},
+    );
+    addTearDown(subscription.close);
+
+    await container.read(moveCollectionPickerProvider.future);
+    final notifier = container.read(moveCollectionPickerProvider.notifier);
+    await notifier.loadMore();
+    await notifier.retryLoadMore();
+
+    final resumed = container.read(moveCollectionPickerProvider).requireValue;
+    expect(resumed.items.map((item) => item.id), ['alpha', 'beta']);
+    expect(resumed.nextCursor, 'page-3');
+    expect(resumed.hasMore, isTrue);
+    expect(resumed.isLoadingMore, isFalse);
+    expect(resumed.loadMoreFailed, isFalse);
+
+    // What the picker's scroll listener does once the list reaches its end again.
+    await notifier.loadMore();
+
+    final last = container.read(moveCollectionPickerProvider).requireValue;
+    expect(last.items.map((item) => item.id), ['alpha', 'beta', 'gamma']);
+    expect(last.hasMore, isFalse);
+    expect(last.nextCursor, isNull);
+    expect(repository.cursors, [null, 'page-2', 'page-2', 'page-3']);
+  });
+
+  test(
+    'a repeated cursor fails the page and cannot start a request loop',
+    () async {
+      final repository = FakeCollectionsRepository(
+        results: [
+          page(
+            [collection(id: 'alpha', name: 'Alpha')],
+            nextCursor: 'page-2',
+            hasMore: true,
+          ),
+          page(
+            [collection(id: 'beta', name: 'Beta')],
+            nextCursor: 'page-2',
+            hasMore: true,
+          ),
+        ],
+      );
+      final container = makeContainer(repository);
+      addTearDown(container.dispose);
+      final subscription = container.listen(
+        moveCollectionPickerProvider,
+        (_, _) {},
+      );
+      addTearDown(subscription.close);
+
+      await container.read(moveCollectionPickerProvider.future);
+      final notifier = container.read(moveCollectionPickerProvider.notifier);
+
+      await notifier.loadMore();
+      expect(
+        container
+            .read(moveCollectionPickerProvider)
+            .requireValue
+            .items
+            .map((item) => item.id),
+        ['alpha', 'beta'],
+      );
+
+      // The server answered with the cursor it was given: asking again would return
+      // the same page forever.
+      await notifier.loadMore();
+      await notifier.loadMore();
+      await notifier.retryLoadMore();
+
+      expect(
+        repository.listCalls,
+        2,
+        reason: 'a consumed cursor is never requested again',
+      );
+      expect(
+        container
+            .read(moveCollectionPickerProvider)
+            .requireValue
+            .loadMoreFailed,
+        isTrue,
+      );
+    },
+  );
+
+  test(
+    'a later page with has_more but no cursor stops the automatic walk',
+    () async {
+      final repository = FakeCollectionsRepository(
+        results: [
+          page(
+            [collection(id: 'alpha', name: 'Alpha')],
+            nextCursor: 'page-2',
+            hasMore: true,
+          ),
+          page([collection(id: 'beta', name: 'Beta')], hasMore: true),
+        ],
+      );
+      final container = makeContainer(repository);
+      addTearDown(container.dispose);
+      final subscription = container.listen(
+        moveCollectionPickerProvider,
+        (_, _) {},
+      );
+      addTearDown(subscription.close);
+
+      await container.read(moveCollectionPickerProvider.future);
+      final notifier = container.read(moveCollectionPickerProvider.notifier);
+
+      await notifier.loadMore();
+
+      final failed = container.read(moveCollectionPickerProvider).requireValue;
+      expect(failed.items.map((item) => item.id), ['alpha']);
+      expect(failed.loadMoreFailed, isTrue);
+
+      await notifier.loadMore();
+      await notifier.loadMore();
+
+      expect(repository.listCalls, 2);
+    },
+  );
 
   test(
     'an initial error stays visible until the provider is retried',
