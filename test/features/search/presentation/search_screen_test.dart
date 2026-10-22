@@ -255,7 +255,7 @@ void main() {
       expect(find.byIcon(Icons.chevron_right), findsNothing);
     });
 
-    testWidgets('saved rows offer no Retry and are not tappable', (
+    testWidgets('saved rows offer no Retry but are wired to the detail route', (
       tester,
     ) async {
       useTallSurface(tester);
@@ -285,14 +285,12 @@ void main() {
       expect(find.text('Retry'), findsNothing);
       expect(find.byIcon(Icons.chevron_right), findsNothing);
 
-      final rowInkWells = tester.widgetList<InkWell>(
-        find.descendant(
-          of: find.byType(SavedItemRow),
-          matching: find.byType(InkWell),
-        ),
-      );
-      expect(rowInkWells, isNotEmpty);
-      expect(rowInkWells.every((inkWell) => inkWell.onTap == null), isTrue);
+      // The route-level test in `test/app/search_navigation_test.dart` verifies
+      // where a tap goes. Here the row must simply carry a tap handler while
+      // still offering no enrichment action.
+      final rows = tester.widgetList<SavedItemRow>(find.byType(SavedItemRow));
+      expect(rows, isNotEmpty);
+      expect(rows.every((row) => row.onTap != null), isTrue);
 
       // The shared row still reports the two states accurately; Search has not
       // suppressed the enrichment wording, only the action.

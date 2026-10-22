@@ -6,8 +6,9 @@
 /// that model requires values Search never sends, and reusing it would force
 /// this feature to invent them.
 ///
-/// [id] is retained for a future navigation destination. No route exists yet,
-/// and this feature adds none.
+/// [id] names the collection's existing detail destination
+/// (`/collections/:id`). Search carries it through untouched; it never reads the
+/// collection again or reconstructs it from the name.
 class SearchCollection {
   const SearchCollection({required this.id, required this.name});
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/core/error/api_failure_messages.dart';
@@ -250,7 +252,14 @@ class _SearchResults extends StatelessWidget {
         if (collections.isNotEmpty) ...[
           const _GroupHeading('COLLECTIONS'),
           for (final collection in collections)
-            SearchCollectionRow(collection: collection),
+            SearchCollectionRow(
+              collection: collection,
+              // Pushed above the shell, so returning pops back to Search with
+              // the query and results intact. The detail reads the collection
+              // again by id; it never trusts this row's name as current.
+              onTap: () =>
+                  context.push(AppRoutes.collectionDetail(collection.id)),
+            ),
         ],
         if (savedItems.isNotEmpty) ...[
           if (collections.isNotEmpty) const SizedBox(height: AppMetrics.space4),
@@ -258,9 +267,11 @@ class _SearchResults extends StatelessWidget {
           for (var index = 0; index < savedItems.length; index++) ...[
             SavedItemRow(
               item: savedItems[index],
-              // There is no saved-item detail route yet, so the row must not
-              // look tappable and must not promise a destination.
-              onTap: null,
+              // The same route the Inbox pushes, above the shell. Search's
+              // query state stays mounted while the detail is on top, and the
+              // detail re-reads the item by this id.
+              onTap: () =>
+                  context.push(AppRoutes.savedItemDetail(savedItems[index].id)),
               // Search has no enrichment retry action. The row's own state
               // wording still reports pending and failed accurately.
               onRetry: null,
