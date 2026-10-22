@@ -1,3 +1,36 @@
+## Collection detail screen (2026-10-23)
+
+This section supersedes the "Collection detail screen and mutations not
+implemented" note in the Collections list integration entry below.
+
+### Verified backend contract (stash-it-backend)
+- `GET /collections/{id}/saved-items`, `middleware.Auth` only, **no rate limiter**.
+- Envelope `{data: {collection: {id, name}, saved_items: [...]}, message, meta: {cursor: {has_more, next_cursor}}}`. **The collection is a sibling of the rows**, so the items carry no nested `collection` — unlike `GET /saved-items`.
+- Optional `limit` (default 20, max 50) and `cursor` (max 512 bytes); no `sort`. Ordering `created_at DESC, id DESC`. No total count. An empty collection is a `200` with `[]`.
+- Errors: `BAD_REQUEST`, `INVALID_CURSOR`, `VALIDATION_ERROR`, the three 401s, `COLLECTION_NOT_FOUND` (404, shared by a missing and a foreign collection), `INTERNAL_SERVER_ERROR`.
+
+### Flutter implementation
+- New screen at `lib/features/saved_items/presentation/collection_saved_items_screen.dart`, owned by `saved_items`; `collections` only navigates to it. Reached by `context.push(AppRoutes.collectionDetail(id))` from a collection tile.
+- Route `/collections/:id` is a **top-level route outside the `StatefulShellRoute`**, on the same pattern as the saved-item detail: plain `COLLECTION` app bar with no Settings action, no bottom navigation, and a pop that returns to the Collections branch with its sort choice and scroll position. A direct entry with nothing beneath it falls back to `/collections`. The two-segment path cannot shadow the `/collections` branch.
+- The header is `data.collection.name` from this response, never the tile's name. While page one loads it is a skeleton placeholder inside `ExcludeSemantics`; a settled failure shows no name at all.
+- Rows reuse `SavedItemRow` with `showCollectionChip: false` — a new parameter defaulting to `true`, so the Inbox is unchanged — and no `onRetry`. Every row pushes the existing saved-item detail route with its id; there is no second detail route. Loading reuses `SavedItemSkeletonList` (same `showCollectionChip` pass-through), so the placeholder is the real row. No new skeleton system and no centred spinner.
+- `CollectionSavedItems` is an auto-dispose family notifier keyed by collection id with `refresh`, `retry`, `loadMore` and `retryLoadMore`. First page, refresh and retry replace the list; pages append in server order and are de-duplicated by id. Automatic paging fires within 320 logical px of the maximum scroll extent.
+- Load-more failure is an explicit `loadMoreFailed` flag rather than an error state: loaded rows stay, a footer says so and offers Retry, and scrolling cannot resume the failed cursor. Retry sends the same cursor, refuses a concurrent request, and automatic paging resumes on success. A consumed-cursor set and a `has_more`-without-cursor guard stop a malformed response from looping.
+- Pull-to-refresh resets pages and cursor. A failed refresh keeps the rows and publishes one `FeedbackTone.uncertain` notice; a failed refresh with nothing loaded becomes an error state. A page in flight when the list is replaced is dropped by a list-version guard.
+- Empty success is `Nothing saved here yet`: neutral, no Retry, still refreshable. `COLLECTION_NOT_FOUND` maps to `ApiFailureNotFound` and renders `This collection is no longer available` with a way back to Collections and no Retry. Every other failure offers Retry. No backend `message` is rendered anywhere.
+
+### Verification
+- `dart run build_runner build --delete-conflicting-outputs` — wrote 35 outputs (the flag itself is reported as removed and ignored).
+- `dart format` on the changed Dart files; `flutter analyze` — no issues found.
+- 71 focused tests passed: `collection_saved_items_response_test.dart`, `api_failure_mapper_test.dart`, the new controller suite (23), the new screen suite (8) and the new navigation suite (2).
+- 64 regression tests passed: saved-item row, Inbox screen, router and saved-item detail navigation.
+- No app or emulator run. Nothing staged or committed.
+
+### Remaining limitations
+- No item count is shown; the endpoint reports no total, and none is invented.
+- A server that repeats a cursor makes the footer Retry unusable, because the same cursor is refused. Recovery is pull-to-refresh. This is deliberate: retrying an unadvanced cursor would loop.
+- `_LoadingMoreRow` is a small duplicate of the Inbox's private footer rather than a promotion with a single consumer.
+
 ## Collection preview and paginated picker (2026-10-23)
 
 This section supersedes the destination-loading and close-control details in the

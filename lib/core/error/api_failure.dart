@@ -153,13 +153,14 @@ final class ApiFailureTransport extends ApiFailure {
 /// server answered 404" and "the server told us this resource is gone" are
 /// different claims.
 ///
-/// Two routes use different codes for the same conclusion:
-/// `RESOURCE_NOT_FOUND` from `GET /saved-items/{id}`, and
-/// `SAVED_ITEM_NOT_FOUND` from `PUT /saved-items/{id}/collection`.
+/// Three routes use different codes for the same conclusion:
+/// `RESOURCE_NOT_FOUND` from `GET /saved-items/{id}`, `SAVED_ITEM_NOT_FOUND`
+/// from `PUT /saved-items/{id}/collection`, and `COLLECTION_NOT_FOUND` from the
+/// collection's saved-items listing.
 ///
-/// **The backend deliberately uses the same response for an item owned by another
-/// user.** This variant therefore carries no reason, and no copy derived from it
-/// may say which of the two happened.
+/// **The backend deliberately uses the same response for a resource owned by
+/// another user.** This variant therefore carries no reason, and no copy derived
+/// from it may say which of the two happened.
 ///
 /// For a read this is *known not shown*: a reply arrived and the resource is not
 /// available to this caller. For the move write it is *known not moved*.

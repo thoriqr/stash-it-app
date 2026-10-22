@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/router/routes.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/error/api_failure.dart';
 import '../../../core/error/api_failure_messages.dart';
@@ -166,7 +168,11 @@ class _CollectionsScreenState extends ConsumerState<CollectionsScreen> {
               ),
             );
           }
-          return CollectionTile(item: state.items[index]);
+          return CollectionTile(
+            item: state.items[index],
+            onTap: () =>
+                context.push(AppRoutes.collectionDetail(state.items[index].id)),
+          );
         },
       ),
     );

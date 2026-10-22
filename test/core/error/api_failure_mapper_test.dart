@@ -285,6 +285,23 @@ void main() {
       );
     });
 
+    test('COLLECTION_NOT_FOUND is the collection listing\'s not-found', () {
+      // A missing collection and another user's collection share this code, so
+      // the variant must not be used to say which happened. Without the mapping
+      // it would land in the unreadable bucket and offer a retry that cannot
+      // succeed.
+      final failure = mapApiFailure(
+        badResponse(404, errorBody(ApiErrorCode.collectionNotFound)),
+      );
+
+      expect(failure, isA<ApiFailureNotFound>());
+      expect(
+        (failure as ApiFailureNotFound).code,
+        ApiErrorCode.collectionNotFound,
+        reason: 'retained for diagnosis, never displayed',
+      );
+    });
+
     test('a 404 with an unrecognised code is not the move not-found', () {
       expect(
         mapApiFailure(badResponse(404, errorBody('SOMETHING_ELSE'))),

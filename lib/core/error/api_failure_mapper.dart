@@ -133,8 +133,14 @@ ApiFailure mapApiFailure(DioException error) {
     // The resource named by the request is gone, or is not this caller's. Only
     // these verified codes produce the variant: a bare 404 without a readable
     // code stays an unreadable response.
+    //
+    // `COLLECTION_NOT_FOUND` is the collection read's own code. Without this arm
+    // it would fall through to the unreadable bucket, and a collection that is
+    // gone would be reported as a reply this client could not read — which is
+    // both false and offers a retry that cannot succeed.
     case ApiErrorCode.resourceNotFound:
     case ApiErrorCode.savedItemNotFound:
+    case ApiErrorCode.collectionNotFound:
       return ApiFailureNotFound(code: code);
 
     // A `create` request whose name is already held by one of the user's

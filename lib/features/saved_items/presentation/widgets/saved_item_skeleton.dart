@@ -18,11 +18,22 @@ import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_ite
 /// [SkeletonizerConfig] for every route, so a Collections list or a saved-item
 /// listing that arrives later inherits the same treatment without restating it.
 class SavedItemSkeleton extends StatelessWidget {
-  const SavedItemSkeleton({super.key});
+  const SavedItemSkeleton({super.key, this.showCollectionChip = true});
+
+  /// Passed through to [SavedItemRow] so the placeholder matches the rows that
+  /// will replace it. A listing of one collection hides the chip, and a skeleton
+  /// that kept it would be describing a card with an extra element in its
+  /// metadata line — the exact drift this widget exists to prevent.
+  final bool showCollectionChip;
 
   @override
   Widget build(BuildContext context) {
-    return const Skeletonizer(child: SavedItemRow(item: _placeholder));
+    return Skeletonizer(
+      child: SavedItemRow(
+        item: _placeholder,
+        showCollectionChip: showCollectionChip,
+      ),
+    );
   }
 }
 
@@ -58,7 +69,11 @@ const SavedItemSummary _placeholder = SavedItemSummary(
 
 /// A block of skeleton rows, for the Inbox's loading state.
 class SavedItemSkeletonList extends StatelessWidget {
-  const SavedItemSkeletonList({super.key, this.count = 4});
+  const SavedItemSkeletonList({
+    super.key,
+    this.count = 4,
+    this.showCollectionChip = true,
+  });
 
   /// How many placeholder rows to draw.
   ///
@@ -66,6 +81,9 @@ class SavedItemSkeletonList extends StatelessWidget {
   /// own height is a second layout rule, and four rows already fill the space
   /// before the real rows arrive.
   final int count;
+
+  /// Passed through to every [SavedItemSkeleton]; see [SavedItemSkeleton].
+  final bool showCollectionChip;
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +96,8 @@ class SavedItemSkeletonList extends StatelessWidget {
       ),
       itemCount: count,
       separatorBuilder: (context, index) => const SizedBox(height: 9),
-      itemBuilder: (context, index) => const SavedItemSkeleton(),
+      itemBuilder: (context, index) =>
+          SavedItemSkeleton(showCollectionChip: showCollectionChip),
     );
   }
 }

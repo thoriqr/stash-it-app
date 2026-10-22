@@ -77,6 +77,37 @@ class _SavedItemsApi implements SavedItemsApi {
   }
 
   @override
+  Future<ListCollectionSavedItemsResponse> listInCollection(
+    String id, {
+    String? cursor,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{r'cursor': cursor};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<ListCollectionSavedItemsResponse>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/collections/${id}/saved-items',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late ListCollectionSavedItemsResponse _value;
+    try {
+      _value = ListCollectionSavedItemsResponse.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options, response: _result);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
   Future<MoveToCollectionResponse> moveToCollection(
     String id,
     MoveToCollectionRequest request,

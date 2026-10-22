@@ -26,7 +26,13 @@ import 'saved_item_preview.dart';
 /// [Rec] in the discovery documents and needs native-speaker review before it is
 /// treated as approved.
 class SavedItemRow extends StatelessWidget {
-  const SavedItemRow({super.key, required this.item, this.onTap, this.onRetry});
+  const SavedItemRow({
+    super.key,
+    required this.item,
+    this.onTap,
+    this.onRetry,
+    this.showCollectionChip = true,
+  });
 
   final SavedItemSummary item;
 
@@ -35,6 +41,15 @@ class SavedItemRow extends StatelessWidget {
   /// Shown for `pending` and `failed`. D8 [Confirmed]: retry is available on both,
   /// because a stuck item has no other recourse.
   final VoidCallback? onRetry;
+
+  /// Whether the metadata line names the item's collection.
+  ///
+  /// True wherever a listing spans collections, which is what the chip is for
+  /// (**D26**). A listing of **one** collection passes false: every row would
+  /// carry the same name, and the screen says it once, in its header. Hidden
+  /// rather than blanked, so the metadata line starts at the enrichment state
+  /// instead of holding an empty slot.
+  final bool showCollectionChip;
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +145,11 @@ class SavedItemRow extends StatelessWidget {
                         ),
                       ],
                       const SizedBox(height: AppMetrics.space2),
-                      _MetadataLine(item: item, onRetry: onRetry),
+                      _MetadataLine(
+                        item: item,
+                        onRetry: onRetry,
+                        showCollectionChip: showCollectionChip,
+                      ),
                     ],
                   ),
                 ),
@@ -145,18 +164,25 @@ class SavedItemRow extends StatelessWidget {
 
 /// Collection plus enrichment state.
 class _MetadataLine extends StatelessWidget {
-  const _MetadataLine({required this.item, required this.onRetry});
+  const _MetadataLine({
+    required this.item,
+    required this.onRetry,
+    required this.showCollectionChip,
+  });
 
   final SavedItemSummary item;
   final VoidCallback? onRetry;
+  final bool showCollectionChip;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SavedItemCollectionChip(name: item.collectionName),
-        const SizedBox(width: AppMetrics.space2),
+        if (showCollectionChip) ...[
+          SavedItemCollectionChip(name: item.collectionName),
+          const SizedBox(width: AppMetrics.space2),
+        ],
         Expanded(child: SavedItemEnrichmentState(item: item)),
         if (_showsRetry) ...[
           const SizedBox(width: AppMetrics.space1),

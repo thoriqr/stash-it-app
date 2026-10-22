@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
+import '../models/collection_saved_items_response.dart';
 import '../models/create_saved_item_request.dart';
 import '../models/create_saved_item_response.dart';
 import '../models/get_saved_item_response.dart';
@@ -59,6 +60,35 @@ abstract class SavedItemsApi {
   /// omitted rather than sent empty.
   @GET('/saved-items')
   Future<ListSavedItemsResponse> list({@Query('cursor') String? cursor});
+
+  /// `GET /collections/{id}/saved-items` — one collection's saved items, newest
+  /// first.
+  ///
+  /// **Mounted as `Auth` only** (`collection/routes.go`): the route has no rate
+  /// limiter, so there is no budget variant to anticipate and no `Retry-After` to
+  /// read.
+  ///
+  /// **The collection is reported once, in `data.collection`**, because this
+  /// listing is scoped to one collection. That is the opposite of
+  /// [list]'s shape, where every row names its own collection because the page
+  /// spans them.
+  ///
+  /// **`limit` is deliberately not sent**, for the same reason as [list]: the
+  /// documented default is 20 and the cap is 50, and the server enforces both.
+  /// Restating a cap the client does not own would be a second place for it to be
+  /// wrong.
+  ///
+  /// **[cursor] is opaque and is passed back exactly as received.** Null means
+  /// "start at the newest item", which is why the query parameter is omitted
+  /// rather than sent empty.
+  ///
+  /// Read-only: viewing a collection never enriches anything, never organizes and
+  /// never writes.
+  @GET('/collections/{id}/saved-items')
+  Future<ListCollectionSavedItemsResponse> listInCollection(
+    @Path('id') String id, {
+    @Query('cursor') String? cursor,
+  });
 
   /// `PUT /saved-items/{id}/collection` — file an item into a collection by
   /// name, with the caller stating whether the name selects an existing

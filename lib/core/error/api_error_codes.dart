@@ -155,6 +155,18 @@ abstract final class ApiErrorCode {
   /// does not exist and one owned by another user indistinguishable.
   static const String savedItemNotFound = 'SAVED_ITEM_NOT_FOUND';
 
+  /// 404. The collection does not exist or belongs to another user.
+  /// `collection/error_codes.go` (`CodeCollectionNotFound`), raised by
+  /// `GetCollectionByIDForUser` and reported by `DELETE /collections/{id}` and by
+  /// the collection's saved-items listing.
+  ///
+  /// Both cases share this one code and message on purpose, so the response never
+  /// discloses whether an id exists. It is what lets the collection detail screen
+  /// tell **an empty collection** (a `200` whose `saved_items` is `[]`) apart from
+  /// **a collection this caller cannot read** — a distinction that cannot be made
+  /// from the status alone.
+  static const String collectionNotFound = 'COLLECTION_NOT_FOUND';
+
   // ---------------------------------------------------------------------------
   // Search — `internal/api/search/error_codes.go`.
   // ---------------------------------------------------------------------------

@@ -2,10 +2,12 @@ import 'package:dio/dio.dart';
 
 import '../../../core/error/api_failure.dart';
 import '../../../core/error/api_failure_mapper.dart';
+import '../domain/collection_saved_items_page.dart';
 import '../domain/move_to_collection_intent.dart';
 import '../domain/move_to_collection_result.dart';
 import '../domain/saved_item_page.dart';
 import '../domain/saved_item_summary.dart';
+import 'collection_saved_items_mapper.dart';
 import 'datasources/saved_items_api.dart';
 import 'models/create_saved_item_request.dart';
 import 'models/move_to_collection_request.dart';
@@ -151,6 +153,64 @@ class SavedItemsRepository {
       throw mapApiFailure(error);
     } on TypeError catch (error) {
       // A `200` whose body does not match the documented shape. Retrofit decodes
+      // after Dio's transformer returns, so this never passes through Dio and
+      // `mapApiFailure` cannot see it.
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// One page of one collection's saved items.
+  ///
+  /// **The collection name comes from the response**, never from the tile that
+  /// opened the screen, so a rename between reading the collection list and
+  /// opening the collection cannot show a stale name.
+  ///
+  /// [cursor] is passed to the server **unchanged** and is never parsed: the
+  /// contract states a cursor records a position rather than an item, and its
+  /// encoding is not part of the API surface. Null starts at the newest item.
+  ///
+  /// A collection that does not exist and one owned by another user both answer
+  /// `404 COLLECTION_NOT_FOUND`, which maps to [ApiFailureNotFound]. That variant
+  /// says only that the named resource is unavailable to this caller — the screen
+  /// must not claim which of the two happened — and it is what keeps an empty
+  /// collection (`200` with `saved_items: []`) from being mistaken for a missing
+  /// one.
+  ///
+  /// Throws [ApiFailure] on any refusal. A `200` whose body does not decode is
+  /// [ApiFailureUnreadableResponse], not not-found: a malformed reply is not
+  /// evidence that the collection is gone.
+  Future<CollectionSavedItemsPage> listInCollection(
+    String collectionId, {
+    String? cursor,
+  }) async {
+    try {
+      final response = await api.listInCollection(collectionId, cursor: cursor);
+
+      // `meta` is absent on no documented response to this route, and
+      // `meta.cursor` is the only place `has_more` and the next cursor appear. A
+      // response without it cannot be paginated safely, so it is reported
+      // unreadable rather than silently treated as a single complete page — that
+      // would hide pages the user can reach.
+      final meta = response.meta;
+      if (meta == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+
+      final data = response.data;
+
+      return CollectionSavedItemsPage(
+        collectionId: data.collection.id,
+        collectionName: data.collection.name,
+        items: collectionSavedItemsFrom(data, now: now()),
+        nextCursor: meta.cursor.nextCursor,
+        hasMore: meta.cursor.hasMore,
+      );
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      // A `2xx` whose body does not match the documented shape. Retrofit decodes
       // after Dio's transformer returns, so this never passes through Dio and
       // `mapApiFailure` cannot see it.
       throw mapDecodeFailure(error);

@@ -48,6 +48,29 @@ abstract final class AppRoutes {
   static String savedItemDetail(String id) =>
       '/saved-items/${Uri.encodeComponent(id)}';
 
+  /// One collection's saved items (the collection detail screen).
+  ///
+  /// **Not a fifth destination.** D1 fixes four bottom-navigation destinations;
+  /// this is a full-screen secondary route outside the shell, reached by pushing
+  /// from a collection tile. Returning pops back to the Collections destination
+  /// with its retained branch state — its sort choice and scroll position. A
+  /// direct entry with nothing beneath it falls back to [collections].
+  ///
+  /// **Two segments, so it cannot shadow the Collections branch.** [collections]
+  /// matches `/collections` exactly; `/collections/:id` is one segment longer, so
+  /// the two never compete.
+  ///
+  /// The `:id` segment is the collection's backend-issued UUID.
+  static const String collectionDetailPattern = '/collections/:id';
+
+  /// The location of the detail screen for the collection named [id].
+  ///
+  /// A helper rather than string interpolation at the call site, so the route
+  /// shape has one owner. The id is URL-encoded defensively; backend ids are
+  /// UUIDs, which contain no characters that encoding changes.
+  static String collectionDetail(String id) =>
+      '/collections/${Uri.encodeComponent(id)}';
+
   /// The destination the app opens on. The core loop is share → save → Inbox,
   /// so the Inbox is the entry point.
   static const String initial = inbox;
