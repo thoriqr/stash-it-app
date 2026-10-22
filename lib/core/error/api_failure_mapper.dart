@@ -121,7 +121,13 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.invalidCollectionName:
       return ApiFailureValidation(body.fields);
 
+    // The body could not be parsed at all, or parsed without stating which
+    // operation the move endpoint should run. Both are client defects with no
+    // user-correctable field, so they share the standard malformed-request
+    // handling. `INVALID_COLLECTION_INTENT` in particular must not fall through
+    // to a duplicate-name conflict.
     case ApiErrorCode.badRequest:
+    case ApiErrorCode.invalidCollectionIntent:
       return const ApiFailureMalformedRequest();
 
     // The resource named by the request is gone, or is not this caller's. Only
@@ -131,10 +137,11 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.savedItemNotFound:
       return ApiFailureNotFound(code: code);
 
-    // A name already held by a system collection. Well formed, but not a
-    // destination: the user has to choose another name.
-    case ApiErrorCode.collectionNameReserved:
-      return ApiFailureCollectionNameReserved(code: code);
+    // A `create` request whose name is already held by one of the user's
+    // collections. Well formed, but not available as a new name: the user has to
+    // choose another one. The backend wrote nothing.
+    case ApiErrorCode.collectionNameAlreadyExists:
+      return ApiFailureCollectionNameAlreadyExists(code: code);
 
     case ApiErrorCode.internalServerError:
       return const ApiFailureServerFault();

@@ -10,17 +10,19 @@ import 'package:stash_it_app/features/collections/data/collections_providers.dar
 import 'package:stash_it_app/features/collections/domain/collection_page.dart';
 import 'package:stash_it_app/features/collections/domain/collection_summary.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
+import 'package:stash_it_app/features/saved_items/domain/move_to_collection_intent.dart';
 import 'package:stash_it_app/features/saved_items/domain/move_to_collection_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/presentation/widgets/collection_destination_row.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/move_to_collection_sheet.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_collections_repository.dart';
 import '../../../support/fake_saved_items_repository.dart';
 
-/// The picker sheet: context, destinations, the two submission paths, the
-/// inline name failures, the single in-flight indicator, and a fresh snapshot
+/// The move sheet: bounded preview, browse path, the two submission paths, the
+/// inline name failures, the single in-flight indicator, and a fresh preview
 /// each time it opens.
 void main() {
   const itemId = 'item-1';
@@ -56,8 +58,11 @@ void main() {
     updatedAt: DateTime.utc(2026, 10, 1),
   );
 
-  CollectionPage page(List<CollectionSummary> items) =>
-      CollectionPage(items: items, nextCursor: null, hasMore: false);
+  CollectionPage page(
+    List<CollectionSummary> items, {
+    String? nextCursor,
+    bool hasMore = false,
+  }) => CollectionPage(items: items, nextCursor: nextCursor, hasMore: hasMore);
 
   MoveToCollectionResult moved({
     String collectionId = 'collection-wishlist',
@@ -73,7 +78,12 @@ void main() {
   _Harness makeHarness({
     required List<Object> pages,
     List<Object> moveResults = const [],
-    Future<MoveToCollectionResult> Function(String, String)? onMove,
+    Future<MoveToCollectionResult> Function(
+      String,
+      String,
+      MoveToCollectionIntent,
+    )?
+    onMove,
   }) {
     final saved = FakeSavedItemsRepository(
       detailResults: [
@@ -118,7 +128,7 @@ void main() {
   }
 
   Future<void> closePicker(WidgetTester tester) async {
-    await tester.tap(find.byIcon(Icons.close));
+    await tester.tapAt(const Offset(8, 8));
     await tester.pumpAndSettle();
   }
 
@@ -128,13 +138,16 @@ void main() {
   }
 
   AppButton primaryButton(WidgetTester tester) {
-    // When no destination error is showing, the sheet has exactly one
-    // AppButton: the submission button.
-    return tester.widget<AppButton>(find.byType(AppButton));
+    return tester.widget<AppButton>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AppButton && widget.variant == AppButtonVariant.primary,
+      ),
+    );
   }
 
-  testWidgets('shows every returned collection, including system collections, '
-      'but never the current collection as a row', (tester) async {
+  testWidgets('shows the returned preview, including system collections, but '
+      'never the current collection as a row', (tester) async {
     final harness = makeHarness(
       pages: [
         page([
@@ -175,6 +188,175 @@ void main() {
     expect(find.text('GitHub'), findsOneWidget);
     expect(find.text('YouTube'), findsOneWidget);
     expect(find.text('Wishlist'), findsOneWidget);
+  });
+
+  testWidgets('shows at most five preview rows and opens the paginated picker '
+      'for everything beyond them', (tester) async {
+    final six = [
+      collection(id: 'alpha-id', name: 'Alpha'),
+      collection(id: 'beta-id', name: 'Beta'),
+      collection(id: 'gamma-id', name: 'Gamma'),
+      collection(id: 'delta-id', name: 'Delta'),
+      collection(id: 'epsilon-id', name: 'Epsilon'),
+      collection(id: 'zeta-id', name: 'Zeta'),
+    ];
+    final harness = makeHarness(
+      pages: [page(six), page(six)],
+      moveResults: [moved(collectionId: 'zeta-id', collectionName: 'Zeta')],
+    );
+
+    await pumpHost(tester, harness);
+    await openPicker(tester);
+
+    for (final name in ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon']) {
+      expect(
+        find.widgetWithText(CollectionDestinationRow, name),
+        findsOneWidget,
+      );
+    }
+    expect(
+      find.widgetWithText(CollectionDestinationRow, 'Zeta'),
+      findsNothing,
+      reason: 'the sixth preview row belongs behind Browse all collections',
+    );
+
+    final browse = find.widgetWithText(AppButton, 'Browse all collections');
+    expect(browse, findsOneWidget);
+    await tester.ensureVisible(browse);
+    await tester.tap(browse);
+    await tester.pumpAndSettle();
+
+    expect(find.text('All collections'), findsOneWidget);
+    expect(
+      find.widgetWithText(CollectionDestinationRow, 'Zeta'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.widgetWithText(CollectionDestinationRow, 'Zeta'));
+    await tester.pumpAndSettle();
+
+    expect(harness.saved.moveRequests, [
+      (
+        savedItemId: itemId,
+        collectionName: 'Zeta',
+        intent: MoveToCollectionIntent.existing,
+      ),
+    ]);
+    expect(find.byType(MoveToCollectionSheet), findsNothing);
+    expect(harness.collections.limits, [6, 20]);
+    expect(harness.collections.cursors, [null, null]);
+  });
+
+  testWidgets('a typed name can match a loaded collection hidden behind the '
+      'five visible rows', (tester) async {
+    final six = [
+      collection(id: 'alpha-id', name: 'Alpha'),
+      collection(id: 'beta-id', name: 'Beta'),
+      collection(id: 'gamma-id', name: 'Gamma'),
+      collection(id: 'delta-id', name: 'Delta'),
+      collection(id: 'epsilon-id', name: 'Epsilon'),
+      collection(id: 'zeta-id', name: 'Zeta'),
+    ];
+    final harness = makeHarness(
+      pages: [page(six)],
+      moveResults: [moved(collectionId: 'zeta-id', collectionName: 'Zeta')],
+    );
+
+    await pumpHost(tester, harness);
+    await openPicker(tester);
+    await typeName(tester, 'Zeta');
+
+    expect(find.widgetWithText(CollectionDestinationRow, 'Zeta'), findsNothing);
+    expect(primaryButton(tester).label, 'Move to Zeta');
+    expect(
+      find.widgetWithText(AppButton, 'Browse all collections'),
+      findsOneWidget,
+      reason: 'the sixth loaded collection still needs a visible browse path',
+    );
+
+    final submit = find.widgetWithText(AppButton, 'Move to Zeta');
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pumpAndSettle();
+
+    expect(harness.saved.moveRequests, [
+      (
+        savedItemId: itemId,
+        collectionName: 'Zeta',
+        intent: MoveToCollectionIntent.existing,
+      ),
+    ]);
+    expect(find.byType(MoveToCollectionSheet), findsNothing);
+  });
+
+  testWidgets('a typed non-match keeps create but offers a browse path to a '
+      'collection outside the preview', (tester) async {
+    final harness = makeHarness(
+      pages: [
+        page([
+          collection(id: 'alpha-id', name: 'Alpha'),
+          collection(id: 'beta-id', name: 'Beta'),
+        ]),
+        page([
+          collection(id: 'alpha-id', name: 'Alpha'),
+          collection(id: 'zeta-id', name: 'Zeta'),
+        ]),
+      ],
+      moveResults: [moved(collectionId: 'zeta-id', collectionName: 'Zeta')],
+    );
+
+    await pumpHost(tester, harness);
+    await openPicker(tester);
+    await typeName(tester, 'Zeta');
+
+    expect(primaryButton(tester).label, 'Create Zeta');
+    final browse = find.widgetWithText(AppButton, 'Browse all collections');
+    expect(browse, findsOneWidget);
+
+    await tester.tap(browse);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(CollectionDestinationRow, 'Zeta'));
+    await tester.pumpAndSettle();
+
+    expect(harness.saved.moveRequests, [
+      (
+        savedItemId: itemId,
+        collectionName: 'Zeta',
+        intent: MoveToCollectionIntent.existing,
+      ),
+    ]);
+    expect(find.byType(MoveToCollectionSheet), findsNothing);
+  });
+
+  testWidgets('the grab handle replaces close and barrier plus system back '
+      'still dismiss the sheet', (tester) async {
+    final harness = makeHarness(pages: [page([])]);
+
+    await pumpHost(tester, harness);
+    await openPicker(tester);
+
+    expect(find.byIcon(Icons.close), findsNothing);
+    final sheet = tester.widget<BottomSheet>(
+      find.byWidgetPredicate((widget) => widget is BottomSheet),
+    );
+    expect(sheet.showDragHandle, isTrue);
+    expect(sheet.enableDrag, isTrue);
+    expect(
+      Theme.of(
+        tester.element(find.byType(MoveToCollectionSheet)),
+      ).bottomSheetTheme.dragHandleColor,
+      AppTokens.light.borderStrong,
+    );
+
+    await closePicker(tester);
+    expect(find.byType(MoveToCollectionSheet), findsNothing);
+
+    await openPicker(tester);
+    expect(find.byType(MoveToCollectionSheet), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(MoveToCollectionSheet), findsNothing);
   });
 
   testWidgets('a system collection other than the current one is selectable '
@@ -231,7 +413,11 @@ void main() {
 
     expect(harness.saved.moveCalls, 1);
     expect(harness.saved.moveRequests, [
-      (savedItemId: itemId, collectionName: 'GitHub'),
+      (
+        savedItemId: itemId,
+        collectionName: 'GitHub',
+        intent: MoveToCollectionIntent.existing,
+      ),
     ]);
     expect(find.byType(MoveToCollectionSheet), findsNothing);
   });
@@ -282,6 +468,33 @@ void main() {
     expect(primaryButton(tester).onPressed, isNull);
   });
 
+  testWidgets('a typed name matching a loaded collection moves with existing '
+      'intent', (tester) async {
+    final harness = makeHarness(
+      pages: [
+        page([collection(id: 'wishlist-id', name: 'Wishlist')]),
+      ],
+      moveResults: [moved(collectionName: 'Wishlist')],
+    );
+
+    await pumpHost(tester, harness);
+    await openPicker(tester);
+    await typeName(tester, 'wishLIST');
+
+    await tester.tap(find.widgetWithText(AppButton, 'Move to Wishlist'));
+    await tester.pumpAndSettle();
+
+    expect(harness.saved.moveCalls, 1);
+    expect(harness.saved.moveRequests, [
+      (
+        savedItemId: itemId,
+        collectionName: 'wishLIST',
+        intent: MoveToCollectionIntent.existing,
+      ),
+    ]);
+    expect(find.byType(MoveToCollectionSheet), findsNothing);
+  });
+
   testWidgets('a name over 100 runes is rejected inline before submission', (
     tester,
   ) async {
@@ -314,7 +527,11 @@ void main() {
 
     expect(harness.saved.moveCalls, 1);
     expect(harness.saved.moveRequests, [
-      (savedItemId: itemId, collectionName: 'Wishlist'),
+      (
+        savedItemId: itemId,
+        collectionName: 'Wishlist',
+        intent: MoveToCollectionIntent.existing,
+      ),
     ]);
     expect(find.byType(MoveToCollectionSheet), findsNothing);
   });
@@ -338,19 +555,23 @@ void main() {
 
     expect(harness.saved.moveCalls, 1);
     expect(harness.saved.moveRequests, [
-      (savedItemId: itemId, collectionName: 'Reading List'),
+      (
+        savedItemId: itemId,
+        collectionName: 'Reading List',
+        intent: MoveToCollectionIntent.create,
+      ),
     ]);
     expect(find.byType(MoveToCollectionSheet), findsNothing);
   });
 
-  testWidgets('a reserved name keeps the sheet and the input open', (
+  testWidgets('a duplicate create name keeps the sheet and the input open', (
     tester,
   ) async {
     final harness = makeHarness(
       pages: [page([])],
       moveResults: [
-        const ApiFailureCollectionNameReserved(
-          code: ApiErrorCode.collectionNameReserved,
+        const ApiFailureCollectionNameAlreadyExists(
+          code: ApiErrorCode.collectionNameAlreadyExists,
         ),
       ],
     );
@@ -364,12 +585,18 @@ void main() {
 
     expect(find.byType(MoveToCollectionSheet), findsOneWidget);
     expect(
-      find.text('That collection name is reserved. Choose a different name.'),
+      find.text(
+        'That collection name is already taken. Choose a different name.',
+      ),
       findsOneWidget,
     );
     final field = tester.widget<TextFormField>(find.byType(TextFormField));
     expect(field.controller?.text, 'Unsorted');
     expect(harness.saved.moveCalls, 1);
+    expect(
+      harness.saved.moveRequests.single.intent,
+      MoveToCollectionIntent.create,
+    );
   });
 
   testWidgets('a server-rejected name keeps the sheet and the input open', (
@@ -407,7 +634,7 @@ void main() {
           collection(id: 'reading-id', name: 'Reading List'),
         ]),
       ],
-      onMove: (_, _) => completer.future,
+      onMove: (_, _, _) => completer.future,
     );
 
     await pumpHost(tester, harness);
@@ -425,10 +652,20 @@ void main() {
     final field = tester.widget<TextFormField>(find.byType(TextFormField));
     expect(field.enabled, isFalse);
 
-    final close = tester.widget<IconButton>(
-      find.widgetWithIcon(IconButton, Icons.close),
+    expect(find.byIcon(Icons.close), findsNothing);
+    final sheet = tester.widget<BottomSheet>(
+      find.byWidgetPredicate((widget) => widget is BottomSheet),
     );
-    expect(close.onPressed, isNull);
+    expect(sheet.showDragHandle, isTrue);
+    expect(sheet.enableDrag, isTrue);
+
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(
+      find.byType(MoveToCollectionSheet),
+      findsOneWidget,
+      reason: 'system back cannot dismiss an in-flight move',
+    );
 
     final readingRow = tester.widget<InkWell>(
       find.ancestor(
@@ -461,12 +698,7 @@ void main() {
     await openPicker(tester);
 
     expect(find.text("We couldn't load your collections."), findsOneWidget);
-    expect(
-      find.textContaining(
-        'The server decides whether that name already exists.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.textContaining('If the name is already taken'), findsOneWidget);
     expect(find.widgetWithText(AppButton, 'Retry'), findsOneWidget);
 
     await typeName(tester, 'Reading List');
@@ -475,6 +707,10 @@ void main() {
 
     expect(harness.saved.moveCalls, 1);
     expect(harness.saved.moveRequests.single.collectionName, 'Reading List');
+    expect(
+      harness.saved.moveRequests.single.intent,
+      MoveToCollectionIntent.create,
+    );
     expect(find.byType(MoveToCollectionSheet), findsNothing);
   });
 

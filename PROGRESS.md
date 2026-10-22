@@ -1,3 +1,53 @@
+## Collection preview and paginated picker (2026-10-23)
+
+This section supersedes the destination-loading and close-control details in the
+move-to-collection sections below. The `collection_intent` and duplicate-name
+behaviour is unchanged.
+
+### Flutter implementation
+- The main Move to a collection sheet now renders at most five other collections. It reads one `GET /collections?sort=name&limit=6` page: six slots cover five visible rows plus the current collection when the server returns it. It does not follow `next_cursor`. `Browse all collections` appears when the loaded page is longer than five or reports `has_more`, and also when a typed name matches no loaded collection.
+- Added an auto-dispose `MoveCollectionPicker` controller over the existing `CollectionsRepository`. It loads `sort=name&limit=20` one cursor page at a time, appends in server order, de-duplicates by id, and exposes initial-load errors, a load-more failure with retry, loading-more state, and the empty state. It never pre-fetches every page. The current collection is excluded by id; system collections are kept.
+- `Browse all collections` opens a dedicated modal picker with the same centred grab handle, a `Load more collections` footer while `has_more` is true, and a visible Retry for either page failure. A selected collection is returned to the main sheet and sent through the existing `existing` move path, so row taps, typed matches, and picker selection share one operation. A typed non-match still offers `create`; it is never silently converted into `existing`.
+- Removed the top-right X from the main sheet. Both sheets use Flutter's `showDragHandle` and default `enableDrag`/`isDismissible` behaviour; `AppTheme.bottomSheetTheme` paints the handle with `borderStrong`. No custom gesture system was added. `PopScope(canPop: !busy)` still prevents system back while a move is in flight, and modal barrier dismissal continues to work when the sheet is not busy.
+- **Lookup limitation:** `GET /collections` exposes only `sort`, `limit`, and the opaque `cursor`. It has no name or search filter. A typed name is therefore matched only against collections already loaded by the sheet, and an efficient global existence check is not possible from this endpoint. The separate `GET /search` route can match collection names, but it is a capped, relevance-ranked mixed result, not an exact or complete collection lookup; it was not used here. The paginated picker is the discovery path. If a name exists outside the loaded preview, `create` remains available and the backend's `409 COLLECTION_NAME_ALREADY_EXISTS` remains the authority; the sheet stays open, preserves the name, and shows the existing duplicate-name copy. No backend endpoint or contract was added.
+
+### Verification
+- `dart run build_runner build --delete-conflicting-outputs`: completed; this build_runner reported the flag as ignored and wrote 7 outputs.
+- `dart format` applied to the changed and new Dart sources and tests.
+- `flutter analyze`: no issues found.
+- Focused preview and picker controller tests: 9 passed.
+- Focused move sheet and collection picker widget tests: 21 passed.
+- `test/app/theme/app_theme_test.dart`: 15 passed.
+- No full test suite, app run, device, or emulator operation was performed.
+
+### Remaining limitations
+- Picker copy (`All collections`, `Load more collections`, page errors) and the revised sheet helper remain hardcoded English; the app still has no l10n layer.
+- `Load more collections` is an explicit footer action rather than an infinite-scroll trigger. This keeps the next network request user-initiated and the footer reachable by keyboard and screen readers.
+- No on-device drag, keyboard, or back-gesture check was performed.
+
+## Collection intent and duplicate names (2026-10-23)
+
+This section supersedes the move-to-collection error and request details in the
+2026-10-22 section below. The backend now requires `collection_intent` and no
+longer emits `COLLECTION_NAME_RESERVED`.
+
+### Flutter implementation
+- `PUT /saved-items/{id}/collection` now sends the required `collection_intent` with `collection_name`. `MoveToCollectionIntent` owns the exact wire values: `existing` when the user taps a destination row or types a name matching a loaded collection, and `create` when the typed name matches nothing. The request still sends no collection id, and response handling for `collection_created` / `already_in_collection` is unchanged.
+- Replaced the stale `COLLECTION_NAME_RESERVED` / `ApiFailureCollectionNameReserved` mapping with `COLLECTION_NAME_ALREADY_EXISTS` / `ApiFailureCollectionNameAlreadyExists`. A duplicate create attempt keeps the sheet open, preserves the typed name and shows `That collection name is already taken. Choose a different name.`; the controller returns `MoveToCollectionNameAlreadyExists`, publishes no success, and does not reconcile the item.
+- `INVALID_COLLECTION_INTENT` maps to `ApiFailureMalformedRequest` and follows the existing unexpected-request path, `Something went wrong sending that name. Try again.` It is never presented as a duplicate-name error, and no server message is displayed.
+
+### Verification
+- `dart run build_runner build --delete-conflicting-outputs` completed; this build_runner reported the flag as ignored and regenerated the request Freezed/JSON output.
+- `dart format` applied to the changed Dart files.
+- `flutter analyze`: no issues found.
+- Focused move, mapper, save-url and sign-in message tests: 143 passed.
+- `test/features/auth/presentation/sign_in_screen_test.dart`: 20 passed.
+- No app, device, or emulator run was performed.
+
+### Remaining limitations
+- The sheet copy remains hardcoded English; the app still has no l10n layer.
+- `INVALID_COLLECTION_INTENT` indicates a client defect. It gets the standard malformed-request feedback and closes the sheet; the local intent mapping is covered by tests, so this should be unreachable from the shipped client.
+
 ## Move to collection (2026-10-22)
 
 ### Flutter implementation

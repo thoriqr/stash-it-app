@@ -64,6 +64,9 @@ abstract final class AppTheme {
         ),
         shape: Border(bottom: BorderSide(color: tokens.border)),
       ),
+      bottomSheetTheme: BottomSheetThemeData(
+        dragHandleColor: tokens.borderStrong,
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: tokens.surface,
         surfaceTintColor: Colors.transparent,

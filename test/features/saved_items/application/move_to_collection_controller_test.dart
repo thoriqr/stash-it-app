@@ -17,6 +17,7 @@ import 'package:stash_it_app/features/saved_items/application/saved_item_detail_
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_state.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
+import 'package:stash_it_app/features/saved_items/domain/move_to_collection_intent.dart';
 import 'package:stash_it_app/features/saved_items/domain/move_to_collection_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
@@ -67,7 +68,12 @@ void main() {
     List<Object>? detailResults,
     List<Object> moveResults = const [],
     List<Object>? collectionResults,
-    Future<MoveToCollectionResult> Function(String, String)? onMove,
+    Future<MoveToCollectionResult> Function(
+      String,
+      String,
+      MoveToCollectionIntent,
+    )?
+    onMove,
   }) {
     final saved = FakeSavedItemsRepository(
       listPage:
@@ -116,7 +122,7 @@ void main() {
 
   group('a confirmed move', () {
     test(
-      'trims the name, sends one name-only PUT, and publishes the copy',
+      'trims the name, forwards the intent, and publishes the copy',
       () async {
         final harness = makeHarness(
           detailResults: [
@@ -130,12 +136,20 @@ void main() {
 
         final outcome = await harness.container
             .read(moveToCollectionProvider.notifier)
-            .submit(savedItemId: itemId, collectionName: '  Wishlist  ');
+            .submit(
+              savedItemId: itemId,
+              collectionName: '  Wishlist  ',
+              intent: MoveToCollectionIntent.existing,
+            );
 
         expect(outcome, isA<MoveToCollectionSucceeded>());
         expect(harness.saved.moveCalls, 1);
         expect(harness.saved.moveRequests, [
-          (savedItemId: itemId, collectionName: 'Wishlist'),
+          (
+            savedItemId: itemId,
+            collectionName: 'Wishlist',
+            intent: MoveToCollectionIntent.existing,
+          ),
         ]);
         expect(
           noticeOf(harness.container)?.copy,
@@ -188,9 +202,17 @@ void main() {
 
       final outcome = await harness.container
           .read(moveToCollectionProvider.notifier)
-          .submit(savedItemId: itemId, collectionName: 'reading list');
+          .submit(
+            savedItemId: itemId,
+            collectionName: 'reading list',
+            intent: MoveToCollectionIntent.create,
+          );
 
       expect(outcome, isA<MoveToCollectionSucceeded>());
+      expect(
+        harness.saved.moveRequests.single.intent,
+        MoveToCollectionIntent.create,
+      );
       expect(
         noticeOf(harness.container)?.copy,
         'Created Reading List and moved the item.',
@@ -215,7 +237,11 @@ void main() {
 
         await harness.container
             .read(moveToCollectionProvider.notifier)
-            .submit(savedItemId: itemId, collectionName: 'Wishlist');
+            .submit(
+              savedItemId: itemId,
+              collectionName: 'Wishlist',
+              intent: MoveToCollectionIntent.existing,
+            );
 
         await untilCalled(() => harness.saved.detailCalls == 1);
         await untilCalled(
@@ -250,7 +276,11 @@ void main() {
 
         final outcome = await harness.container
             .read(moveToCollectionProvider.notifier)
-            .submit(savedItemId: itemId, collectionName: 'wishlist');
+            .submit(
+              savedItemId: itemId,
+              collectionName: 'wishlist',
+              intent: MoveToCollectionIntent.existing,
+            );
 
         expect(outcome, isA<MoveToCollectionSucceeded>());
         expect(noticeOf(harness.container)?.copy, 'Already in Wishlist.');
@@ -289,7 +319,11 @@ void main() {
 
         await harness.container
             .read(moveToCollectionProvider.notifier)
-            .submit(savedItemId: itemId, collectionName: 'Wishlist');
+            .submit(
+              savedItemId: itemId,
+              collectionName: 'Wishlist',
+              intent: MoveToCollectionIntent.existing,
+            );
 
         expect(noticeOf(harness.container)?.copy, 'Already in Wishlist.');
         expect(harness.saved.detailCalls, 0);
@@ -308,7 +342,7 @@ void main() {
             nextCursor: null,
             hasMore: false,
           ),
-          onMove: (_, _) => completer.future,
+          onMove: (_, _, _) => completer.future,
         );
         addTearDown(harness.container.dispose);
 
@@ -318,12 +352,14 @@ void main() {
         final first = notifier.submit(
           savedItemId: itemId,
           collectionName: 'Wishlist',
+          intent: MoveToCollectionIntent.existing,
         );
 
         expect(harness.container.read(moveToCollectionProvider), isTrue);
         final second = await notifier.submit(
           savedItemId: itemId,
           collectionName: 'Other',
+          intent: MoveToCollectionIntent.create,
         );
 
         expect(second, isA<MoveToCollectionIgnored>());
@@ -342,7 +378,11 @@ void main() {
 
       final outcome = await harness.container
           .read(moveToCollectionProvider.notifier)
-          .submit(savedItemId: itemId, collectionName: '   ');
+          .submit(
+            savedItemId: itemId,
+            collectionName: '   ',
+            intent: MoveToCollectionIntent.create,
+          );
 
       expect(outcome, isA<MoveToCollectionNameInvalid>());
       expect(
@@ -359,7 +399,11 @@ void main() {
 
       final outcome = await harness.container
           .read(moveToCollectionProvider.notifier)
-          .submit(savedItemId: itemId, collectionName: 'a' * 101);
+          .submit(
+            savedItemId: itemId,
+            collectionName: 'a' * 101,
+            intent: MoveToCollectionIntent.create,
+          );
 
       expect(outcome, isA<MoveToCollectionNameInvalid>());
       expect(
@@ -381,7 +425,11 @@ void main() {
 
         final outcome = await harness.container
             .read(moveToCollectionProvider.notifier)
-            .submit(savedItemId: itemId, collectionName: 'Wishlist');
+            .submit(
+              savedItemId: itemId,
+              collectionName: 'Wishlist',
+              intent: MoveToCollectionIntent.create,
+            );
 
         expect(outcome, isA<MoveToCollectionNameInvalid>());
         expect((outcome as MoveToCollectionNameInvalid).problem, isNull);
@@ -390,24 +438,61 @@ void main() {
       },
     );
 
+    test('COLLECTION_NAME_ALREADY_EXISTS keeps the create flow open', () async {
+      final harness = makeHarness(
+        moveResults: [
+          const ApiFailureCollectionNameAlreadyExists(
+            code: ApiErrorCode.collectionNameAlreadyExists,
+          ),
+        ],
+      );
+      addTearDown(harness.container.dispose);
+
+      final outcome = await harness.container
+          .read(moveToCollectionProvider.notifier)
+          .submit(
+            savedItemId: itemId,
+            collectionName: 'Unsorted',
+            intent: MoveToCollectionIntent.create,
+          );
+
+      expect(outcome, isA<MoveToCollectionNameAlreadyExists>());
+      expect(
+        noticeOf(harness.container),
+        isNull,
+        reason: 'the duplicate is shown inline beside the preserved name',
+      );
+      expect(
+        harness.saved.detailCalls,
+        0,
+        reason: 'a known-not-moved refusal has nothing to reconcile',
+      );
+    });
+  });
+
+  group('unexpected request failures', () {
     test(
-      'COLLECTION_NAME_RESERVED keeps the sheet open with no guessed owner',
+      'INVALID_COLLECTION_INTENT is a malformed request, not a duplicate name',
       () async {
         final harness = makeHarness(
-          moveResults: [
-            const ApiFailureCollectionNameReserved(
-              code: ApiErrorCode.collectionNameReserved,
-            ),
-          ],
+          moveResults: [const ApiFailureMalformedRequest()],
         );
         addTearDown(harness.container.dispose);
 
         final outcome = await harness.container
             .read(moveToCollectionProvider.notifier)
-            .submit(savedItemId: itemId, collectionName: 'Unsorted');
+            .submit(
+              savedItemId: itemId,
+              collectionName: 'Wishlist',
+              intent: MoveToCollectionIntent.create,
+            );
 
-        expect(outcome, isA<MoveToCollectionNameReserved>());
-        expect(noticeOf(harness.container), isNull);
+        expect(outcome, isA<MoveToCollectionFailed>());
+        expect(
+          noticeOf(harness.container)?.copy,
+          'Something went wrong sending that name. Try again.',
+        );
+        expect(noticeOf(harness.container)?.tone, FeedbackTone.danger);
         expect(harness.saved.detailCalls, 0);
       },
     );
@@ -436,7 +521,11 @@ void main() {
 
       final outcome = await harness.container
           .read(moveToCollectionProvider.notifier)
-          .submit(savedItemId: itemId, collectionName: 'Wishlist');
+          .submit(
+            savedItemId: itemId,
+            collectionName: 'Wishlist',
+            intent: MoveToCollectionIntent.existing,
+          );
 
       expect(outcome, isA<MoveToCollectionItemNotFound>());
       expect(
@@ -477,7 +566,11 @@ void main() {
 
         final outcome = await harness.container
             .read(moveToCollectionProvider.notifier)
-            .submit(savedItemId: itemId, collectionName: 'Wishlist');
+            .submit(
+              savedItemId: itemId,
+              collectionName: 'Wishlist',
+              intent: MoveToCollectionIntent.existing,
+            );
 
         expect(outcome, isA<MoveToCollectionUnconfirmed>());
         expect(
@@ -521,7 +614,11 @@ void main() {
 
       final outcome = await harness.container
           .read(moveToCollectionProvider.notifier)
-          .submit(savedItemId: itemId, collectionName: 'Wishlist');
+          .submit(
+            savedItemId: itemId,
+            collectionName: 'Wishlist',
+            intent: MoveToCollectionIntent.existing,
+          );
 
       expect(outcome, isA<MoveToCollectionFailed>());
       expect(noticeOf(harness.container)?.copy, contains('30 seconds'));
@@ -543,7 +640,11 @@ void main() {
 
         final outcome = await harness.container
             .read(moveToCollectionProvider.notifier)
-            .submit(savedItemId: itemId, collectionName: 'Wishlist');
+            .submit(
+              savedItemId: itemId,
+              collectionName: 'Wishlist',
+              intent: MoveToCollectionIntent.existing,
+            );
 
         expect(outcome, isA<MoveToCollectionFailed>());
         expect(

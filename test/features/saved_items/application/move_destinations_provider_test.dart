@@ -6,14 +6,15 @@ import 'package:stash_it_app/features/collections/application/collections_contro
 import 'package:stash_it_app/features/collections/data/collections_providers.dart';
 import 'package:stash_it_app/features/collections/data/collections_repository.dart';
 import 'package:stash_it_app/features/collections/data/datasources/collections_api.dart';
+import 'package:stash_it_app/features/collections/domain/collection_page.dart';
 import 'package:stash_it_app/features/saved_items/application/move_destinations_provider.dart';
 
 import '../../collections/data/collections_fixtures.dart';
 import '../../../support/fake_http.dart';
 
-/// The picker snapshot: `sort=name`, every page, de-duplication, system
-/// collections included, and a hard stop when a page claims more but supplies no
-/// cursor.
+/// The bounded main-sheet preview: `sort=name`, one page with the six-item
+/// fetch limit, no eager pagination, and a hard stop when a page claims more
+/// but supplies no cursor.
 void main() {
   late FakeHttpAdapter adapter;
   late ProviderContainer container;
@@ -35,12 +36,12 @@ void main() {
   tearDown(() => container.dispose());
 
   /// A subscription keeps the auto-dispose provider alive across the awaits.
-  ProviderSubscription<AsyncValue<List<dynamic>>> listen() {
+  ProviderSubscription<AsyncValue<CollectionPage>> listen() {
     return container.listen(moveDestinationsProvider, (_, _) {});
   }
 
   test(
-    'reads sort=name, follows every page, and preserves server order',
+    'reads one bespoke preview page with sort=name and never follows it',
     () async {
       adapter.onSequence('/collections', [
         FakeReply(
@@ -55,6 +56,9 @@ void main() {
               ),
               CollectionsFixtures.collection(id: 'c1', name: 'Alpha'),
               CollectionsFixtures.collection(id: 'c2', name: 'Beta'),
+              CollectionsFixtures.collection(id: 'c3', name: 'Gamma'),
+              CollectionsFixtures.collection(id: 'c4', name: 'Delta'),
+              CollectionsFixtures.collection(id: 'c5', name: 'Epsilon'),
             ],
             nextCursor: 'next-page',
             hasMore: true,
@@ -64,14 +68,7 @@ void main() {
           200,
           CollectionsFixtures.page(
             collections: [
-              CollectionsFixtures.collection(id: 'c2', name: 'Beta'),
-              CollectionsFixtures.collection(id: 'c3', name: 'Gamma'),
-              CollectionsFixtures.collection(
-                id: 'system-2',
-                name: 'Saved',
-                type: 'system',
-                systemKey: 'saved',
-              ),
+              CollectionsFixtures.collection(id: 'c6', name: 'Zeta'),
             ],
           ),
         ),
@@ -80,46 +77,33 @@ void main() {
       final subscription = listen();
       addTearDown(subscription.close);
 
-      final destinations = await container.read(
-        moveDestinationsProvider.future,
-      );
+      final preview = await container.read(moveDestinationsProvider.future);
 
-      expect(destinations.map((collection) => collection.id), [
+      expect(preview.items.map((collection) => collection.id), [
         'system-1',
         'c1',
         'c2',
         'c3',
-        'system-2',
+        'c4',
+        'c5',
       ]);
       expect(
-        destinations.map((collection) => collection.name),
-        ['Unsorted', 'Alpha', 'Beta', 'Gamma', 'Saved'],
+        preview.items.map((collection) => collection.name),
+        ['Unsorted', 'Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon'],
         reason: 'the provider never sorts again; this is the server page order',
       );
       expect(
-        destinations
-            .where((collection) => collection.type == 'system')
-            .map((collection) => collection.name),
-        ['Unsorted', 'Saved'],
+        preview.items.first.type,
+        'system',
         reason: 'system collections are displayed, never filtered out',
       );
-      expect(
-        destinations.every((collection) => collection.type == 'user'),
-        isFalse,
-      );
-      expect(adapter.countFor('/collections'), 2);
-      expect(
-        adapter.requests.map(
-          (request) => Uri.parse(request.path).queryParameters['sort'],
-        ),
-        ['name', 'name'],
-      );
-      expect(
-        adapter.requests.map(
-          (request) => Uri.parse(request.path).queryParameters['cursor'],
-        ),
-        [null, 'next-page'],
-      );
+      expect(preview.hasMore, isTrue);
+      expect(preview.nextCursor, 'next-page');
+      expect(adapter.countFor('/collections'), 1);
+      final query = Uri.parse(adapter.requests.single.path).queryParameters;
+      expect(query['sort'], 'name');
+      expect(query['limit'], '$moveDestinationsFetchLimit');
+      expect(query['cursor'], isNull);
     },
   );
 
@@ -165,14 +149,14 @@ void main() {
     expect(container.read(moveDestinationsProvider), isA<AsyncError>());
 
     container.invalidate(moveDestinationsProvider);
-    final destinations = await container.read(moveDestinationsProvider.future);
+    final preview = await container.read(moveDestinationsProvider.future);
 
-    expect(destinations.single.name, 'Alpha');
+    expect(preview.items.single.name, 'Alpha');
     expect(adapter.countFor('/collections'), 2);
   });
 
   test(
-    'opening the picker does not mutate the Collections screen state',
+    'opening the preview does not mutate the Collections screen state',
     () async {
       adapter.onSequence('/collections', [
         FakeReply(
@@ -181,8 +165,6 @@ void main() {
             collections: [
               CollectionsFixtures.collection(id: 'screen', name: 'Screen'),
             ],
-            nextCursor: 'screen-next',
-            hasMore: true,
           ),
         ),
         FakeReply(
@@ -198,15 +180,13 @@ void main() {
       final screen = await container.read(collectionsProvider.future);
       final subscription = listen();
       addTearDown(subscription.close);
-      final destinations = await container.read(
-        moveDestinationsProvider.future,
-      );
+      final preview = await container.read(moveDestinationsProvider.future);
 
-      expect(destinations.single.name, 'Picker');
+      expect(preview.items.single.name, 'Picker');
       expect(
         container.read(collectionsProvider).requireValue,
         screen,
-        reason: 'the picker never advances or collapses the screen provider',
+        reason: 'the preview never advances or collapses the screen provider',
       );
       expect(
         adapter.requests.map(
@@ -214,6 +194,7 @@ void main() {
         ),
         ['newest', 'name'],
       );
+      expect(adapter.countFor('/collections'), 2);
     },
   );
 }

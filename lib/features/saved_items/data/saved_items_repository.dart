@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../core/error/api_failure.dart';
 import '../../../core/error/api_failure_mapper.dart';
+import '../domain/move_to_collection_intent.dart';
 import '../domain/move_to_collection_result.dart';
 import '../domain/saved_item_page.dart';
 import '../domain/saved_item_summary.dart';
@@ -66,13 +67,15 @@ class SavedItemsRepository {
     }
   }
 
-  /// Moves one saved item into the named collection, creating it if needed.
+  /// Moves one saved item into the named collection.
   ///
-  /// **Sends a name, never an id.** The backend trims, matches case-insensitively
-  /// and creates-or-reuses the collection atomically, so this client must not
-  /// resolve a collection first. The caller trims the submitted value but must
-  /// preserve its casing; the server's stored casing is what
-  /// [MoveToCollectionResult.collectionName] reports.
+  /// **Sends a name and an intent, never an id.** [intent] states whether the
+  /// name is a destination the user selected ([MoveToCollectionIntent.existing])
+  /// or a new collection they named ([MoveToCollectionIntent.create]). The
+  /// backend resolves the name case-insensitively and atomically either way;
+  /// this client must not resolve a collection first. The caller trims the
+  /// submitted value but must preserve its casing; the server's stored casing is
+  /// what [MoveToCollectionResult.collectionName] reports.
   ///
   /// **A `200` whose body does not decode is unestablished, not failed.** The
   /// write may have committed and only its representation be unreadable, so this
@@ -81,18 +84,23 @@ class SavedItemsRepository {
   ///
   /// [ApiFailureNotFound] is the route's own `SAVED_ITEM_NOT_FOUND`: the item is
   /// missing or belongs to another user, and the client cannot tell which.
-  /// [ApiFailureCollectionNameReserved] means the name is held by a system
-  /// collection; the response does not identify it.
+  /// [ApiFailureCollectionNameAlreadyExists] is the `create` intent's `409`: the
+  /// name is already held by one of the user's collections, so nothing was
+  /// created or moved. The `existing` intent reuses that collection instead.
   ///
   /// Throws [ApiFailure] for every refusal.
   Future<MoveToCollectionResult> moveToCollection({
     required String savedItemId,
     required String collectionName,
+    required MoveToCollectionIntent intent,
   }) async {
     try {
       final response = await api.moveToCollection(
         savedItemId,
-        MoveToCollectionRequest(collectionName: collectionName),
+        MoveToCollectionRequest(
+          collectionName: collectionName,
+          collectionIntent: intent.wireValue,
+        ),
       );
       return moveToCollectionResultFrom(response);
     } on DioException catch (error) {

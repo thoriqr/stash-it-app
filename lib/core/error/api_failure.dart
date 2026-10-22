@@ -85,24 +85,30 @@ final class ApiFailureValidation extends ApiFailureRequest {
   final List<ApiErrorField> fields;
 }
 
-/// `COLLECTION_NAME_RESERVED` — the requested collection name is held by a
-/// system collection, so it cannot be used as a destination.
+/// `COLLECTION_NAME_ALREADY_EXISTS` — the caller asked to create a collection
+/// and the submitted name is already held by one of their collections.
 ///
-/// Kept distinct from [ApiFailureValidation] because the user's next action is
-/// different: the name is well formed, it simply cannot be chosen. The client
-/// does **not** know which system collection owns the name, so no copy derived
-/// from this variant may claim one.
+/// Kept distinct from [ApiFailureValidation] because the name's shape is valid;
+/// the conflict is ownership, and the only correction is a different name. The
+/// client does not know whether the owner is a system or user collection, and no
+/// copy derived from this variant may claim one.
 ///
 /// **[D15] Known not moved.** The backend refuses before creating or moving
-/// anything.
-final class ApiFailureCollectionNameReserved extends ApiFailure {
-  const ApiFailureCollectionNameReserved({required this.code});
+/// anything, so there is nothing to reconcile.
+final class ApiFailureCollectionNameAlreadyExists extends ApiFailure {
+  const ApiFailureCollectionNameAlreadyExists({required this.code});
 
   /// The backend code, retained for logging and tests, never for display.
   final String code;
 }
 
-/// `BAD_REQUEST`. The body was unparseable.
+/// `BAD_REQUEST`, or `INVALID_COLLECTION_INTENT`. The body was unparseable, or
+/// parsed without stating a supported operation.
+///
+/// `INVALID_COLLECTION_INTENT` belongs here rather than with the name failures:
+/// the request did not say whether it selected a destination or asked for a new
+/// collection, so there is no name for the user to correct and the client is at
+/// fault. It must never be presented as a duplicate-name conflict.
 final class ApiFailureMalformedRequest extends ApiFailureRequest {
   const ApiFailureMalformedRequest();
 }

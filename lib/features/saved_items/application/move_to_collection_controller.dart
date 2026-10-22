@@ -10,6 +10,7 @@ import 'package:stash_it_app/features/collections/domain/collection_name.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_item_detail_provider.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
+import 'package:stash_it_app/features/saved_items/domain/move_to_collection_intent.dart';
 import 'package:stash_it_app/features/saved_items/domain/move_to_collection_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 
@@ -43,10 +44,11 @@ final class MoveToCollectionNameInvalid extends MoveToCollectionOutcome {
   final CollectionNameProblem? problem;
 }
 
-/// The name is held by a system collection. The server does not say which one,
-/// and no client copy may guess.
-final class MoveToCollectionNameReserved extends MoveToCollectionOutcome {
-  const MoveToCollectionNameReserved();
+/// The name is already held by one of the user's collections, and the request
+/// asked to create it. Nothing was created or moved; the sheet keeps the input
+/// so the user can choose another name.
+final class MoveToCollectionNameAlreadyExists extends MoveToCollectionOutcome {
+  const MoveToCollectionNameAlreadyExists();
 }
 
 /// `SAVED_ITEM_NOT_FOUND`. The item is gone or belongs to another user; the
@@ -90,12 +92,19 @@ class MoveToCollection extends _$MoveToCollection {
 
   /// Moves [savedItemId] into [collectionName], or creates that collection.
   ///
+  /// [intent] states which operation the name means:
+  /// [MoveToCollectionIntent.existing] selects a destination, while
+  /// [MoveToCollectionIntent.create] asks for a new collection and refuses a
+  /// name that is already taken. The name alone cannot answer this, so it is
+  /// required rather than inferred.
+  ///
   /// The submitted name is trimmed once and sent with its casing intact. Name
   /// shape is checked here so an impossible value never becomes a request;
   /// uniqueness is **not** checked, because only the backend can answer it.
   Future<MoveToCollectionOutcome> submit({
     required String savedItemId,
     required String collectionName,
+    required MoveToCollectionIntent intent,
   }) async {
     if (state) return const MoveToCollectionIgnored();
 
@@ -108,7 +117,11 @@ class MoveToCollection extends _$MoveToCollection {
     try {
       final result = await ref
           .read(savedItemsRepositoryProvider)
-          .moveToCollection(savedItemId: savedItemId, collectionName: name);
+          .moveToCollection(
+            savedItemId: savedItemId,
+            collectionName: name,
+            intent: intent,
+          );
 
       // The notifier is app-level, so this only guards a torn-down container.
       if (!ref.mounted) return MoveToCollectionSucceeded(result);
@@ -221,8 +234,8 @@ class MoveToCollection extends _$MoveToCollection {
       case ApiFailureValidation():
         return const MoveToCollectionNameInvalid(null);
 
-      case ApiFailureCollectionNameReserved():
-        return const MoveToCollectionNameReserved();
+      case ApiFailureCollectionNameAlreadyExists():
+        return const MoveToCollectionNameAlreadyExists();
 
       case ApiFailureNotFound():
         _publish(

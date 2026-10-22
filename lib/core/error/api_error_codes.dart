@@ -127,14 +127,25 @@ abstract final class ApiErrorCode {
   /// failure variant: the input has to change.
   static const String invalidCollectionName = 'INVALID_COLLECTION_NAME';
 
-  /// 409. The submitted collection name is already held by a **system**
-  /// collection, including Unsorted. `collection/repository.go`
-  /// (`createOrGetUserCollection`).
+  /// 400. `collection_intent` was absent, or was neither `existing` nor
+  /// `create`. `collection/service.go` (`PutSavedItem`).
   ///
-  /// The move endpoint only ever files into a user collection, so a name held by
-  /// a system collection cannot be used as a destination. The client must not
-  /// guess which system collection caused the refusal.
-  static const String collectionNameReserved = 'COLLECTION_NAME_RESERVED';
+  /// Nothing is defaulted because the two intents have opposite outcomes for a
+  /// name that is already taken. A well-formed client never produces this, so it
+  /// is a client defect with no name for the user to correct; it maps to the
+  /// standard malformed-request handling, never to a duplicate-name conflict.
+  static const String invalidCollectionIntent = 'INVALID_COLLECTION_INTENT';
+
+  /// 409. The caller asked to create a collection and the submitted name is
+  /// already held by one of the user's collections. `collection/repository.go`
+  /// (`createNewUserCollection`), decided by the same unique index that enforces
+  /// case-insensitive, whitespace-trimmed uniqueness.
+  ///
+  /// Only the `create` intent can produce it. Under `existing` the name is a
+  /// destination and is reused instead. The backend reports it before creating
+  /// or moving anything, so this is a known-not-moved refusal.
+  static const String collectionNameAlreadyExists =
+      'COLLECTION_NAME_ALREADY_EXISTS';
 
   /// 404. The saved item does not exist or belongs to another user.
   /// `collection/repository.go` (`PutSavedItemIntoUserCollection`).

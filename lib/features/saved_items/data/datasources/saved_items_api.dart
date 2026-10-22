@@ -61,7 +61,8 @@ abstract class SavedItemsApi {
   Future<ListSavedItemsResponse> list({@Query('cursor') String? cursor});
 
   /// `PUT /saved-items/{id}/collection` — file an item into a collection by
-  /// name, creating that collection when it does not exist.
+  /// name, with the caller stating whether the name selects an existing
+  /// destination or asks for a new collection.
   ///
   /// **Mounted as `Auth` only** (`collection/routes.go`): the route has no rate
   /// limiter. A `401` therefore comes from the guard before any write. Other
@@ -70,14 +71,16 @@ abstract class SavedItemsApi {
   /// none of them proves the write did not land.
   ///
   /// **The destination is a name, never an id.** The backend resolves the name
-  /// case-insensitively with surrounding whitespace ignored, creates a user
-  /// collection when needed, and reuses an existing one otherwise. Sending an id
-  /// would be a different, unsupported request.
+  /// case-insensitively with surrounding whitespace ignored. `collection_intent`
+  /// is required and has no default: `existing` reuses a collection of either
+  /// type that holds the name (and keeps the create-or-get fallback), while
+  /// `create` asks for a new collection and refuses a name already held by one
+  /// of the user's collections with `COLLECTION_NAME_ALREADY_EXISTS`. An absent
+  /// or unknown intent answers `400 INVALID_COLLECTION_INTENT`.
   ///
   /// A repeated request for the collection the item is already in answers `200`
   /// with `already_in_collection: true`, writes nothing and leaves `updated_at`
-  /// unchanged. A name held by a system collection answers
-  /// `COLLECTION_NAME_RESERVED`; it is never filed into a system collection.
+  /// unchanged.
   ///
   /// The body has no `meta`; see [MoveToCollectionResponse] for the exact shape.
   @PUT('/saved-items/{id}/collection')

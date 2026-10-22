@@ -2,20 +2,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/features/saved_items/data/move_to_collection_mapper.dart';
 import 'package:stash_it_app/features/saved_items/data/models/move_to_collection_request.dart';
 import 'package:stash_it_app/features/saved_items/data/models/move_to_collection_response.dart';
+import 'package:stash_it_app/features/saved_items/domain/move_to_collection_intent.dart';
 
 import '../../../support/saved_items_fixtures.dart';
 
-/// The move DTOs and mapper: the exact envelope, the name-only request, and the
-/// three facts callers act on.
+/// The move DTOs and mapper: the exact envelope, the intent-and-name request,
+/// and the three facts callers act on.
 void main() {
   group('request', () {
-    test('serializes exactly collection_name, never an id', () {
+    test('serializes exactly the name and the intent, never an id', () {
       final json = const MoveToCollectionRequest(
         collectionName: 'Reading List',
+        collectionIntent: 'create',
       ).toJson();
 
-      expect(json, {'collection_name': 'Reading List'});
+      expect(json, {
+        'collection_name': 'Reading List',
+        'collection_intent': 'create',
+      });
       expect(json.containsKey('collection_id'), isFalse);
+    });
+
+    test('the domain intents serialize to the exact backend values', () {
+      expect(MoveToCollectionIntent.existing.wireValue, 'existing');
+      expect(MoveToCollectionIntent.create.wireValue, 'create');
     });
   });
 

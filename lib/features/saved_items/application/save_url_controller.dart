@@ -211,13 +211,14 @@ AppFeedback? saveFeedbackFor(ApiFailure failure, {required bool sessionEnded}) {
     //
     // `ApiFailureNotFound` is unreachable on `POST /saved-items` (the handler
     // answers `201`, `400`, `401`, `429`, `500` or `503`), and so is the
-    // move-route's `ApiFailureCollectionNameReserved`. If a proxy ever produced
-    // either, the existing known-not-saved copy is the honest reading; they are
-    // grouped here rather than given a misleading create-specific message.
+    // move-route's `ApiFailureCollectionNameAlreadyExists`. If a proxy ever
+    // produced either, the existing known-not-saved copy is the honest reading;
+    // they are grouped here rather than given a misleading create-specific
+    // message.
     ApiFailureServerUnavailable() ||
     ApiFailureServerFault() ||
     ApiFailureNotFound() ||
-    ApiFailureCollectionNameReserved() => const AppFeedback(
+    ApiFailureCollectionNameAlreadyExists() => const AppFeedback(
       tone: FeedbackTone.danger,
       copy: "We couldn't save this link just now. Try again shortly.",
     ),

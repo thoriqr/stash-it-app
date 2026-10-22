@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:stash_it_app/features/saved_items/data/datasources/saved_items_api.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_repository.dart';
+import 'package:stash_it_app/features/saved_items/domain/move_to_collection_intent.dart';
 import 'package:stash_it_app/features/saved_items/domain/move_to_collection_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
@@ -41,6 +42,7 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   final Future<MoveToCollectionResult> Function(
     String savedItemId,
     String collectionName,
+    MoveToCollectionIntent intent,
   )?
   onMove;
 
@@ -52,7 +54,10 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   final List<String> detailIds = [];
 
   /// What was submitted to [moveToCollection], in order.
-  final List<({String savedItemId, String collectionName})> moveRequests = [];
+  final List<
+    ({String savedItemId, String collectionName, MoveToCollectionIntent intent})
+  >
+  moveRequests = [];
 
   @override
   Future<SavedItemPage> list({String? cursor}) async {
@@ -78,15 +83,17 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   Future<MoveToCollectionResult> moveToCollection({
     required String savedItemId,
     required String collectionName,
+    required MoveToCollectionIntent intent,
   }) async {
     moveCalls++;
     moveRequests.add((
       savedItemId: savedItemId,
       collectionName: collectionName,
+      intent: intent,
     ));
 
     final handler = onMove;
-    if (handler != null) return handler(savedItemId, collectionName);
+    if (handler != null) return handler(savedItemId, collectionName, intent);
 
     if (moveResults.isEmpty) {
       throw StateError('FakeSavedItemsRepository has no move result scripted');

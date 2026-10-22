@@ -20,6 +20,9 @@ class FakeCollectionsRepository extends CollectionsRepository {
   /// The sort values passed to [list], in order.
   final List<String?> sorts = [];
 
+  /// The limit values passed to [list], in order.
+  final List<int?> limits = [];
+
   /// The cursor values passed to [list], in order.
   final List<String?> cursors = [];
 
@@ -30,6 +33,7 @@ class FakeCollectionsRepository extends CollectionsRepository {
     String? cursor,
   }) async {
     sorts.add(sort);
+    limits.add(limit);
     cursors.add(cursor);
     listCalls++;
 

@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MoveToCollectionRequest {
 
-@JsonKey(name: 'collection_name') String get collectionName;
+@JsonKey(name: 'collection_name') String get collectionName;@JsonKey(name: 'collection_intent') String get collectionIntent;
 /// Create a copy of MoveToCollectionRequest
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,20 +30,20 @@ $MoveToCollectionRequestCopyWith<MoveToCollectionRequest> get copyWith => _$Move
 @override
 bool operator ==(Object other) {
   final _this = this as MoveToCollectionRequest;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MoveToCollectionRequest&&(identical(other.collectionName, _this.collectionName) || other.collectionName == _this.collectionName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MoveToCollectionRequest&&(identical(other.collectionName, _this.collectionName) || other.collectionName == _this.collectionName)&&(identical(other.collectionIntent, _this.collectionIntent) || other.collectionIntent == _this.collectionIntent));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as MoveToCollectionRequest;
-  return Object.hash(runtimeType,_this.collectionName);
+  return Object.hash(runtimeType,_this.collectionName,_this.collectionIntent);
 }
 
 @override
 String toString() {
   final _this = this as MoveToCollectionRequest;
-  return 'MoveToCollectionRequest(collectionName: ${_this.collectionName})';
+  return 'MoveToCollectionRequest(collectionName: ${_this.collectionName}, collectionIntent: ${_this.collectionIntent})';
 }
 
 
@@ -54,7 +54,7 @@ abstract mixin class $MoveToCollectionRequestCopyWith<$Res>  {
   factory $MoveToCollectionRequestCopyWith(MoveToCollectionRequest value, $Res Function(MoveToCollectionRequest) _then) = _$MoveToCollectionRequestCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'collection_name') String collectionName
+@JsonKey(name: 'collection_name') String collectionName,@JsonKey(name: 'collection_intent') String collectionIntent
 });
 
 
@@ -71,9 +71,10 @@ class _$MoveToCollectionRequestCopyWithImpl<$Res>
 
 /// Create a copy of MoveToCollectionRequest
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? collectionName = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? collectionName = null,Object? collectionIntent = null,}) {
   return _then(MoveToCollectionRequest(
 collectionName: null == collectionName ? _self.collectionName : collectionName // ignore: cast_nullable_to_non_nullable
+as String,collectionIntent: null == collectionIntent ? _self.collectionIntent : collectionIntent // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }
@@ -159,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'collection_name')  String collectionName)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'collection_name')  String collectionName, @JsonKey(name: 'collection_intent')  String collectionIntent)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MoveToCollectionRequest() when $default != null:
-return $default(_that.collectionName);case _:
+return $default(_that.collectionName,_that.collectionIntent);case _:
   return orElse();
 
 }
@@ -180,10 +181,10 @@ return $default(_that.collectionName);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'collection_name')  String collectionName)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'collection_name')  String collectionName, @JsonKey(name: 'collection_intent')  String collectionIntent)  $default,) {final _that = this;
 switch (_that) {
 case _MoveToCollectionRequest():
-return $default(_that.collectionName);case _:
+return $default(_that.collectionName,_that.collectionIntent);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +201,10 @@ return $default(_that.collectionName);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'collection_name')  String collectionName)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'collection_name')  String collectionName, @JsonKey(name: 'collection_intent')  String collectionIntent)?  $default,) {final _that = this;
 switch (_that) {
 case _MoveToCollectionRequest() when $default != null:
-return $default(_that.collectionName);case _:
+return $default(_that.collectionName,_that.collectionIntent);case _:
   return null;
 
 }
@@ -215,10 +216,11 @@ return $default(_that.collectionName);case _:
 @JsonSerializable()
 
 class _MoveToCollectionRequest implements MoveToCollectionRequest {
-  const _MoveToCollectionRequest({@JsonKey(name: 'collection_name') required this.collectionName});
+  const _MoveToCollectionRequest({@JsonKey(name: 'collection_name') required this.collectionName, @JsonKey(name: 'collection_intent') required this.collectionIntent});
   factory _MoveToCollectionRequest.fromJson(Map<String, dynamic> json) => _$MoveToCollectionRequestFromJson(json);
 
 @override@JsonKey(name: 'collection_name') final  String collectionName;
+@override@JsonKey(name: 'collection_intent') final  String collectionIntent;
 
 /// Create a copy of MoveToCollectionRequest
 /// with the given fields replaced by the non-null parameter values.
@@ -233,18 +235,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MoveToCollectionRequest&&(identical(other.collectionName, collectionName) || other.collectionName == collectionName));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MoveToCollectionRequest&&(identical(other.collectionName, collectionName) || other.collectionName == collectionName)&&(identical(other.collectionIntent, collectionIntent) || other.collectionIntent == collectionIntent));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,collectionName);
+    return Object.hash(runtimeType,collectionName,collectionIntent);
 }
 
 @override
 String toString() {
-    return 'MoveToCollectionRequest(collectionName: $collectionName)';
+    return 'MoveToCollectionRequest(collectionName: $collectionName, collectionIntent: $collectionIntent)';
 }
 
 
@@ -255,7 +257,7 @@ abstract mixin class _$MoveToCollectionRequestCopyWith<$Res> implements $MoveToC
   factory _$MoveToCollectionRequestCopyWith(_MoveToCollectionRequest value, $Res Function(_MoveToCollectionRequest) _then) = __$MoveToCollectionRequestCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'collection_name') String collectionName
+@JsonKey(name: 'collection_name') String collectionName,@JsonKey(name: 'collection_intent') String collectionIntent
 });
 
 
@@ -272,9 +274,10 @@ class __$MoveToCollectionRequestCopyWithImpl<$Res>
 
 /// Create a copy of MoveToCollectionRequest
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? collectionName = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? collectionName = null,Object? collectionIntent = null,}) {
   return _then(_MoveToCollectionRequest(
 collectionName: null == collectionName ? _self.collectionName : collectionName // ignore: cast_nullable_to_non_nullable
+as String,collectionIntent: null == collectionIntent ? _self.collectionIntent : collectionIntent // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }

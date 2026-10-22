@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/saved_items/data/datasources/saved_items_api.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_repository.dart';
+import 'package:stash_it_app/features/saved_items/domain/move_to_collection_intent.dart';
 
 import '../../../support/fake_http.dart';
 import '../../../support/saved_items_fixtures.dart';
@@ -407,7 +408,7 @@ void main() {
     const id = '01a0f359-093b-737a-963a-80f7ca6768ed';
     const path = '/saved-items/$id/collection';
 
-    test('PUTs the name and decodes the stored result', () async {
+    test('PUTs the name and intent and decodes the stored result', () async {
       adapter.onMethod(
         'PUT',
         path,
@@ -421,12 +422,16 @@ void main() {
       final result = await repository.moveToCollection(
         savedItemId: id,
         collectionName: 'Reading List',
+        intent: MoveToCollectionIntent.create,
       );
 
       final request = adapter.lastRequestTo(path)!;
       expect(request.method, 'PUT');
       expect(adapter.countFor(path), 1, reason: 'one explicit write');
-      expect(request.body, {'collection_name': 'Reading List'});
+      expect(request.body, {
+        'collection_name': 'Reading List',
+        'collection_intent': 'create',
+      });
       expect(
         (request.body as Map<String, dynamic>).containsKey('collection_id'),
         isFalse,
@@ -436,6 +441,28 @@ void main() {
       expect(result.collectionName, 'Reading List');
       expect(result.collectionCreated, isTrue);
       expect(result.alreadyInCollection, isFalse);
+    });
+
+    test('serializes the existing intent exactly', () async {
+      adapter.onMethod(
+        'PUT',
+        path,
+        body: SavedItemsFixtures.moved(
+          savedItemId: id,
+          collectionName: 'YouTube',
+        ),
+      );
+
+      await repository.moveToCollection(
+        savedItemId: id,
+        collectionName: 'YouTube',
+        intent: MoveToCollectionIntent.existing,
+      );
+
+      expect(adapter.lastRequestTo(path)!.body, {
+        'collection_name': 'YouTube',
+        'collection_intent': 'existing',
+      });
     });
 
     test(
@@ -454,6 +481,7 @@ void main() {
         final result = await repository.moveToCollection(
           savedItemId: id,
           collectionName: 'wishlist',
+          intent: MoveToCollectionIntent.existing,
         );
 
         expect(adapter.countFor(path), 1);
@@ -471,28 +499,36 @@ void main() {
       );
 
       await expectLater(
-        repository.moveToCollection(savedItemId: id, collectionName: 'bad'),
+        repository.moveToCollection(
+          savedItemId: id,
+          collectionName: 'bad',
+          intent: MoveToCollectionIntent.create,
+        ),
         throwsA(isA<ApiFailureValidation>()),
       );
     });
 
-    test('maps COLLECTION_NAME_RESERVED to its own conflict', () async {
+    test('maps COLLECTION_NAME_ALREADY_EXISTS to its own conflict', () async {
       adapter.onMethod(
         'PUT',
         path,
         status: 409,
-        body: errorBody('COLLECTION_NAME_RESERVED'),
+        body: errorBody('COLLECTION_NAME_ALREADY_EXISTS'),
       );
 
       final failure = await repository
-          .moveToCollection(savedItemId: id, collectionName: 'Unsorted')
+          .moveToCollection(
+            savedItemId: id,
+            collectionName: 'Unsorted',
+            intent: MoveToCollectionIntent.create,
+          )
           .then<Object?>((_) => null, onError: (Object error) => error);
 
-      expect(failure, isA<ApiFailureCollectionNameReserved>());
+      expect(failure, isA<ApiFailureCollectionNameAlreadyExists>());
       expect(
-        (failure! as ApiFailureCollectionNameReserved).code,
-        'COLLECTION_NAME_RESERVED',
-        reason: 'diagnosis only; no system collection is named',
+        (failure! as ApiFailureCollectionNameAlreadyExists).code,
+        'COLLECTION_NAME_ALREADY_EXISTS',
+        reason: 'diagnosis only; no owning collection is named',
       );
     });
 
@@ -505,7 +541,11 @@ void main() {
       );
 
       final failure = await repository
-          .moveToCollection(savedItemId: id, collectionName: 'Wishlist')
+          .moveToCollection(
+            savedItemId: id,
+            collectionName: 'Wishlist',
+            intent: MoveToCollectionIntent.existing,
+          )
           .then<Object?>((_) => null, onError: (Object error) => error);
 
       expect(failure, isA<ApiFailureNotFound>());
@@ -524,6 +564,7 @@ void main() {
         repository.moveToCollection(
           savedItemId: id,
           collectionName: 'Wishlist',
+          intent: MoveToCollectionIntent.existing,
         ),
         throwsA(isA<ApiFailureUnreadableResponse>()),
       );
@@ -536,6 +577,7 @@ void main() {
         repository.moveToCollection(
           savedItemId: id,
           collectionName: 'Wishlist',
+          intent: MoveToCollectionIntent.existing,
         ),
         throwsA(isA<ApiFailureTransport>()),
       );
@@ -553,6 +595,7 @@ void main() {
         repository.moveToCollection(
           savedItemId: id,
           collectionName: 'Wishlist',
+          intent: MoveToCollectionIntent.existing,
         ),
         throwsA(isA<ApiFailureServerFault>()),
       );

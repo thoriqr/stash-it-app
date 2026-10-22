@@ -8,7 +8,7 @@ part of 'move_destinations_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Every collection the current item can be moved into.
+/// The bounded destination preview for the main Move to a collection sheet.
 ///
 /// **A separate, auto-dispose snapshot — not `collectionsProvider`.** The
 /// Collections screen is keep-alive, has its own sort and pages, and silently
@@ -18,23 +18,23 @@ part of 'move_destinations_provider.dart';
 /// fetches `sort=name` from page one, and is discarded when the sheet closes, so
 /// reopening it always asks the server again.
 ///
-/// **All pages are followed.** The contract's default limit is 20 and its cap is
-/// 50; a picker that stopped at the first page would omit destinations. A
-/// `has_more: true` with no cursor is unreadable rather than complete, because
-/// continuing is impossible and stopping would silently hide collections.
+/// **Only one page is read.** The main sheet shows at most five rows and offers
+/// `Browse all collections` when this page has more. The separate, paginated
+/// picker follows `next_cursor` on demand; this provider must never fetch every
+/// collection just to populate a bounded preview.
 ///
-/// Rows are de-duplicated by id in the server's order. The server already sorts
-/// by name; this provider does not sort again (**D4**).
+/// A `has_more: true` with no cursor is unreadable rather than complete, because
+/// the sheet cannot tell whether `Browse all collections` can continue.
 ///
-/// **Every returned collection is kept, including system collections.** The
-/// picker is a view of `GET /collections`; nothing here filters by `type`, name,
-/// or `system_key` (**D2**). The current collection is excluded by id in the
-/// sheet, because it is context rather than a destination.
+/// The server already sorts by name; this provider does not sort again (**D4**).
+/// Every returned collection is kept, including system collections; the current
+/// collection is excluded by id in the sheet because it is context, not a
+/// destination (**D2**).
 
 @ProviderFor(moveDestinations)
 final moveDestinationsProvider = MoveDestinationsProvider._();
 
-/// Every collection the current item can be moved into.
+/// The bounded destination preview for the main Move to a collection sheet.
 ///
 /// **A separate, auto-dispose snapshot — not `collectionsProvider`.** The
 /// Collections screen is keep-alive, has its own sort and pages, and silently
@@ -44,30 +44,28 @@ final moveDestinationsProvider = MoveDestinationsProvider._();
 /// fetches `sort=name` from page one, and is discarded when the sheet closes, so
 /// reopening it always asks the server again.
 ///
-/// **All pages are followed.** The contract's default limit is 20 and its cap is
-/// 50; a picker that stopped at the first page would omit destinations. A
-/// `has_more: true` with no cursor is unreadable rather than complete, because
-/// continuing is impossible and stopping would silently hide collections.
+/// **Only one page is read.** The main sheet shows at most five rows and offers
+/// `Browse all collections` when this page has more. The separate, paginated
+/// picker follows `next_cursor` on demand; this provider must never fetch every
+/// collection just to populate a bounded preview.
 ///
-/// Rows are de-duplicated by id in the server's order. The server already sorts
-/// by name; this provider does not sort again (**D4**).
+/// A `has_more: true` with no cursor is unreadable rather than complete, because
+/// the sheet cannot tell whether `Browse all collections` can continue.
 ///
-/// **Every returned collection is kept, including system collections.** The
-/// picker is a view of `GET /collections`; nothing here filters by `type`, name,
-/// or `system_key` (**D2**). The current collection is excluded by id in the
-/// sheet, because it is context rather than a destination.
+/// The server already sorts by name; this provider does not sort again (**D4**).
+/// Every returned collection is kept, including system collections; the current
+/// collection is excluded by id in the sheet because it is context, not a
+/// destination (**D2**).
 
 final class MoveDestinationsProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<CollectionSummary>>,
-          List<CollectionSummary>,
-          FutureOr<List<CollectionSummary>>
+          AsyncValue<CollectionPage>,
+          CollectionPage,
+          FutureOr<CollectionPage>
         >
-    with
-        $FutureModifier<List<CollectionSummary>>,
-        $FutureProvider<List<CollectionSummary>> {
-  /// Every collection the current item can be moved into.
+    with $FutureModifier<CollectionPage>, $FutureProvider<CollectionPage> {
+  /// The bounded destination preview for the main Move to a collection sheet.
   ///
   /// **A separate, auto-dispose snapshot — not `collectionsProvider`.** The
   /// Collections screen is keep-alive, has its own sort and pages, and silently
@@ -77,18 +75,18 @@ final class MoveDestinationsProvider
   /// fetches `sort=name` from page one, and is discarded when the sheet closes, so
   /// reopening it always asks the server again.
   ///
-  /// **All pages are followed.** The contract's default limit is 20 and its cap is
-  /// 50; a picker that stopped at the first page would omit destinations. A
-  /// `has_more: true` with no cursor is unreadable rather than complete, because
-  /// continuing is impossible and stopping would silently hide collections.
+  /// **Only one page is read.** The main sheet shows at most five rows and offers
+  /// `Browse all collections` when this page has more. The separate, paginated
+  /// picker follows `next_cursor` on demand; this provider must never fetch every
+  /// collection just to populate a bounded preview.
   ///
-  /// Rows are de-duplicated by id in the server's order. The server already sorts
-  /// by name; this provider does not sort again (**D4**).
+  /// A `has_more: true` with no cursor is unreadable rather than complete, because
+  /// the sheet cannot tell whether `Browse all collections` can continue.
   ///
-  /// **Every returned collection is kept, including system collections.** The
-  /// picker is a view of `GET /collections`; nothing here filters by `type`, name,
-  /// or `system_key` (**D2**). The current collection is excluded by id in the
-  /// sheet, because it is context rather than a destination.
+  /// The server already sorts by name; this provider does not sort again (**D4**).
+  /// Every returned collection is kept, including system collections; the current
+  /// collection is excluded by id in the sheet because it is context, not a
+  /// destination (**D2**).
   MoveDestinationsProvider._()
     : super(
         from: null,
@@ -105,14 +103,14 @@ final class MoveDestinationsProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<CollectionSummary>> $createElement(
+  $FutureProviderElement<CollectionPage> $createElement(
     $ProviderPointer pointer,
   ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<List<CollectionSummary>> create(Ref ref) {
+  FutureOr<CollectionPage> create(Ref ref) {
     return moveDestinations(ref);
   }
 }
 
-String _$moveDestinationsHash() => r'9beea6e81de681cc0b6e2ea5efea796fd80d55f6';
+String _$moveDestinationsHash() => r'59e9428e04f57ed00abda585db7c4728152143f4';

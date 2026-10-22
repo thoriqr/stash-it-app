@@ -247,19 +247,29 @@ void main() {
       expect(failure, isNot(isA<ApiFailureUnreadableResponse>()));
     });
 
-    test('COLLECTION_NAME_RESERVED is its own conflict', () {
-      // Well formed, but held by a system collection. A validation variant would
-      // tell the user to correct the name's shape; this one tells them to choose
-      // a different name without claiming which system collection owns it.
+    test('COLLECTION_NAME_ALREADY_EXISTS is its own conflict', () {
+      // Well formed, but the create flow cannot take a name another collection
+      // holds. A validation variant would describe the shape; this one says the
+      // name is unavailable without claiming which collection owns it.
       final failure = mapApiFailure(
-        badResponse(409, errorBody(ApiErrorCode.collectionNameReserved)),
+        badResponse(409, errorBody(ApiErrorCode.collectionNameAlreadyExists)),
       );
 
-      expect(failure, isA<ApiFailureCollectionNameReserved>());
+      expect(failure, isA<ApiFailureCollectionNameAlreadyExists>());
       expect(
-        (failure as ApiFailureCollectionNameReserved).code,
-        ApiErrorCode.collectionNameReserved,
+        (failure as ApiFailureCollectionNameAlreadyExists).code,
+        ApiErrorCode.collectionNameAlreadyExists,
       );
+    });
+
+    test('INVALID_COLLECTION_INTENT is malformed, never a name conflict', () {
+      final failure = mapApiFailure(
+        badResponse(400, errorBody(ApiErrorCode.invalidCollectionIntent)),
+      );
+
+      expect(failure, isA<ApiFailureMalformedRequest>());
+      expect(failure, isNot(isA<ApiFailureCollectionNameAlreadyExists>()));
+      expect(failure, isNot(isA<ApiFailureValidation>()));
     });
 
     test('SAVED_ITEM_NOT_FOUND is the move route\'s not-found', () {
