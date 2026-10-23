@@ -45,6 +45,7 @@ void main() {
       expect(mapped.title, 'Understanding CRDTs');
       expect(mapped.collectionName, 'Camera Gear');
       expect(mapped.enrichmentStatus, EnrichmentStatus.completed);
+      expect(mapped.imageUrl, 'https://example.com/og.png');
       expect(mapped.hasPreviewImage, isTrue);
       expect(mapped.savedTimeLabel, 'Saved 1 hour ago');
     });
@@ -72,16 +73,18 @@ void main() {
       expect(withEmptyUrl.displayTitle, isEmpty);
     });
 
-    test('null and blank image URLs mean no preview', () {
-      expect(
-        searchSavedItemFrom(item(imageUrl: null), now: now).hasPreviewImage,
-        isFalse,
-      );
-      expect(
-        searchSavedItemFrom(item(imageUrl: '   '), now: now).hasPreviewImage,
-        isFalse,
-      );
-    });
+    test(
+      'null and blank image URLs are carried through but mean no preview',
+      () {
+        final missing = searchSavedItemFrom(item(imageUrl: null), now: now);
+        expect(missing.imageUrl, isNull);
+        expect(missing.hasPreviewImage, isFalse);
+
+        final blank = searchSavedItemFrom(item(imageUrl: '   '), now: now);
+        expect(blank.imageUrl, '   ');
+        expect(blank.hasPreviewImage, isFalse);
+      },
+    );
 
     test('a completed item with no metadata is a normal success', () {
       final mapped = searchSavedItemFrom(

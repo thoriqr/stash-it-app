@@ -40,9 +40,10 @@ SavedItemSummary savedItemDetailFrom(
     // URL and renders it as neutral copy, never as a fault.
     title: item.title,
     description: item.description,
-    // The contract sends a URL or `null`. An empty string is not a usable image
-    // and would claim a preview the item does not have.
-    hasPreviewImage: item.imageUrl != null && item.imageUrl!.trim().isNotEmpty,
+    // The contract sends a URL or `null`. An empty string is not a usable image,
+    // but the value is carried through untouched: `SavedItemSummary` derives
+    // `hasPreviewImage` from it and the preview decides whether to load it.
+    imageUrl: item.imageUrl,
     savedTimeLabel: savedTimeLabelFrom(item.createdAt, now),
   );
 }

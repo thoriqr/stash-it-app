@@ -40,9 +40,10 @@ List<SavedItemSummary> collectionSavedItemsFrom(
         title: item.title,
         description: item.description,
         // The contract sends a URL or `null`. An empty string is not a usable
-        // image and would render a slot that claims to have one.
-        hasPreviewImage:
-            item.imageUrl != null && item.imageUrl!.trim().isNotEmpty,
+        // image, but the value is carried through untouched: `SavedItemSummary`
+        // derives `hasPreviewImage` from it and the preview decides whether to
+        // load it.
+        imageUrl: item.imageUrl,
         savedTimeLabel: savedTimeLabelFrom(item.createdAt, now),
       ),
   ];

@@ -80,7 +80,10 @@ class SavedItemRow extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SavedItemPreview(hasPreviewImage: item.hasPreviewImage),
+                SavedItemPreview(
+                  imageUrl: item.imageUrl,
+                  enrichmentStatus: item.enrichmentStatus,
+                ),
                 const SizedBox(width: AppMetrics.slotGap),
                 Expanded(
                   child: Column(

@@ -13,6 +13,7 @@ import 'package:stash_it_app/features/saved_items/application/saved_item_detail_
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 import 'package:stash_it_app/features/saved_items/presentation/saved_item_detail_screen.dart';
+import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_preview.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_collections_repository.dart';
@@ -30,7 +31,7 @@ void main() {
   SavedItemSummary itemWith({
     String? title = 'Understanding CRDTs',
     String? description = 'Conflict-free replicated data types converge.',
-    bool hasPreviewImage = false,
+    String? imageUrl,
     EnrichmentStatus status = EnrichmentStatus.completed,
     String collection = 'Camera Gear',
     String url = 'https://example.com/articles/crdts-explained',
@@ -42,7 +43,7 @@ void main() {
     enrichmentStatus: status,
     title: title,
     description: description,
-    hasPreviewImage: hasPreviewImage,
+    imageUrl: imageUrl,
     savedTimeLabel: 'Saved 1 hour ago',
   );
 
@@ -106,10 +107,7 @@ void main() {
     testWidgets(
       'renders title, source, collection, description and the control',
       (tester) async {
-        final repository = await pumpScreen(
-          tester,
-          results: [itemWith(hasPreviewImage: true)],
-        );
+        final repository = await pumpScreen(tester, results: [itemWith()]);
 
         expect(find.widgetWithText(AppBar, 'ITEM'), findsOneWidget);
         expect(find.text('Understanding CRDTs'), findsOneWidget);
@@ -136,25 +134,21 @@ void main() {
       },
     );
 
-    testWidgets('reserves the preview with a hatch and loads no remote image', (
-      tester,
-    ) async {
-      await pumpScreen(tester, results: [itemWith(hasPreviewImage: true)]);
+    testWidgets('the wide preview shows the neutral well when none was '
+        'reported', (tester) async {
+      await pumpScreen(tester, results: [itemWith()]);
 
+      final preview = tester.widget<SavedItemPreview>(
+        find.byType(SavedItemPreview),
+      );
+      expect(preview.width, double.infinity);
+      expect(preview.height, 110);
       expect(
-        find.byWidgetPredicate(
-          (widget) =>
-              widget is CustomPaint &&
-              widget.painter.runtimeType.toString().contains('Hatch'),
-        ),
+        find.byKey(SavedItemPreview.unavailablePlaceholderKey),
         findsOneWidget,
-        reason: 'the existing preview treatment, not a remote image',
+        reason: 'a missing image is routine, not an error',
       );
-      expect(
-        find.byType(Image),
-        findsNothing,
-        reason: 'this iteration does not fetch image_url',
-      );
+      expect(find.byType(Image), findsNothing);
     });
 
     testWidgets('renders the full description without truncating it', (
@@ -276,6 +270,11 @@ void main() {
       // The fallback chain renders the URL; a missing title is not an error.
       expect(find.text(item.url), findsOneWidget);
       expect(find.text('Reading page…'), findsOneWidget);
+      expect(
+        find.byKey(SavedItemPreview.pendingPlaceholderKey),
+        findsOneWidget,
+        reason: 'the wide band reports the same pending state as a row',
+      );
       expect(find.text('Re-read page'), findsOneWidget);
       expect(find.text('Not available in this version.'), findsOneWidget);
       expect(
@@ -351,6 +350,9 @@ void main() {
       expect(find.widgetWithText(AppBar, 'ITEM'), findsOneWidget);
       expect(find.text('Move to a collection'), findsNothing);
       expect(find.text('ACTIONS'), findsNothing);
+      // The placeholder item carries no URL, so the skeleton never creates a
+      // network image request.
+      expect(find.byType(Image), findsNothing);
       // The screen does not fall back to a bare centred spinner.
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });

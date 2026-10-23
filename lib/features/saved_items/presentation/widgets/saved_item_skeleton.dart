@@ -48,8 +48,9 @@ class SavedItemSkeleton extends StatelessWidget {
 ///   empty;
 /// * [EnrichmentStatus.pending], the state whose metadata line is the widest —
 ///   chip, pip and wording — without borrowing the failure colour;
-/// * `hasPreviewImage: true`, because the hatch is how the well actually looks,
-///   and [SavedItemRow] keeps its custom painting out of skeletonization.
+/// * **no `imageUrl`**, because a skeleton is not an item and must never issue
+///   a network image request. `pending` already renders the hatch (plus its
+///   static pip), so the reserved well keeps the shape a real one occupies.
 ///
 /// `id` is never rendered; the model requires one and this one exists only to
 /// fill it.
@@ -63,7 +64,6 @@ const SavedItemSummary _placeholder = SavedItemSummary(
   description:
       'A description long enough to fill the two-line clamp, so the placeholder '
       'keeps the height a real row occupies.',
-  hasPreviewImage: true,
   savedTimeLabel: 'Saved just now',
 );
 

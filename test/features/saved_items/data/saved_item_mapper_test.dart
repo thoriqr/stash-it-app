@@ -65,21 +65,45 @@ void main() {
       expect(item.hasNoMetadata, isTrue);
     });
 
-    test('image_url drives the thumbnail, and null means no image', () {
-      expect(savedItemFrom(dto(), now: now).hasPreviewImage, isTrue);
-      expect(
-        savedItemFrom(dto(imageUrl: null), now: now).hasPreviewImage,
-        isFalse,
-      );
+    test('image_url is carried through verbatim, and null stays null', () {
+      final item = savedItemFrom(dto(), now: now);
+
+      expect(item.imageUrl, 'https://example.com/og.png');
+      expect(item.hasPreviewImage, isTrue);
+
+      final none = savedItemFrom(dto(imageUrl: null), now: now);
+      expect(none.imageUrl, isNull);
+      expect(none.hasPreviewImage, isFalse);
     });
 
-    test('an empty image_url is treated as no image', () {
-      // The contract sends a URL or null. An empty string is not a usable image
-      // and must not render a slot that claims to have one.
-      expect(
-        savedItemFrom(dto(imageUrl: '   '), now: now).hasPreviewImage,
-        isFalse,
+    test('a blank image_url is preserved but is not a preview', () {
+      // The contract sends a URL or null. The mapper does not normalise a blank
+      // value into null — it passes on what arrived — and the derived flag is
+      // what stops a slot claiming to have an image.
+      final empty = savedItemFrom(dto(imageUrl: ''), now: now);
+      expect(empty.imageUrl, '');
+      expect(empty.hasPreviewImage, isFalse);
+
+      final whitespace = savedItemFrom(dto(imageUrl: '   '), now: now);
+      expect(whitespace.imageUrl, '   ');
+      expect(whitespace.hasPreviewImage, isFalse);
+    });
+
+    test('an image URL never changes what metadata was found', () {
+      // `hasNoMetadata` answers "did enrichment find anything?", not "did the
+      // image render?". A reported URL is metadata even if it never loads.
+      final withImage = savedItemFrom(
+        dto(title: null, description: null),
+        now: now,
       );
+      expect(withImage.hasPreviewImage, isTrue);
+      expect(withImage.hasNoMetadata, isFalse);
+
+      final without = savedItemFrom(
+        dto(title: null, description: null, imageUrl: null),
+        now: now,
+      );
+      expect(without.hasNoMetadata, isTrue);
     });
   });
 

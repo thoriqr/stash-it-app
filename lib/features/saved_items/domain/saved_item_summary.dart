@@ -28,7 +28,7 @@ class SavedItemSummary {
     required this.enrichmentStatus,
     this.title,
     this.description,
-    this.hasPreviewImage = false,
+    this.imageUrl,
     this.savedTimeLabel,
   });
 
@@ -61,12 +61,29 @@ class SavedItemSummary {
   /// Page-derived description excerpt. `null` when unavailable.
   final String? description;
 
-  /// Whether a preview image exists for this item.
+  /// The preview image URL exactly as the response reported it.
   ///
-  /// Derived from the response's `image_url`: a URL means one, `null` (or an
-  /// empty string) means none. There is no image loading in this milestone, so
-  /// the row draws a placeholder either way.
-  final bool hasPreviewImage;
+  /// **Preserved verbatim, including `null` and a blank string.** `image_url` is
+  /// third-party content the backend does not own or guarantee
+  /// (`decisions` §2.12), so the client keeps the value it received and lets the
+  /// preview decide whether it is renderable. Nothing here fetches, resolves or
+  /// derives it from the page URL.
+  ///
+  /// An image that fails to load does **not** change this field: the failure is a
+  /// rendering outcome, not a fact about the item, and rewriting the URL would
+  /// make [hasNoMetadata] claim enrichment found nothing when it did.
+  final String? imageUrl;
+
+  /// Whether the response reported a usable preview image URL.
+  ///
+  /// Derived from [imageUrl]: a non-blank value means one, `null` or whitespace
+  /// means none. This answers "did enrichment report an image?", never "did it
+  /// load?" — an unreachable image is still a reported one, and the preview
+  /// handles that separately.
+  bool get hasPreviewImage {
+    final value = imageUrl?.trim();
+    return value != null && value.isNotEmpty;
+  }
 
   /// A pre-formatted saved-time string, such as `Saved 12 min ago`.
   ///
@@ -82,7 +99,7 @@ class SavedItemSummary {
   /// The same item, filed in a different collection.
   ///
   /// **The collection is the only thing replaced.** Every other field — title,
-  /// description, enrichment state, preview flag and the saved-time label — comes
+  /// description, enrichment state, preview URL and the saved-time label — comes
   /// from the read that produced this model and stays untouched. A move is not a
   /// re-enrichment, so replacing those fields with values from a write response
   /// (which deliberately omits them) would discard facts the user can still see.
@@ -102,7 +119,7 @@ class SavedItemSummary {
       enrichmentStatus: enrichmentStatus,
       title: title,
       description: description,
-      hasPreviewImage: hasPreviewImage,
+      imageUrl: imageUrl,
       savedTimeLabel: savedTimeLabel,
     );
   }

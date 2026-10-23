@@ -35,9 +35,10 @@ SavedItemSummary searchSavedItemFrom(
     // `/search` does not return a description. Null is the honest value: it
     // means "nothing to display", never "the page had none".
     description: null,
-    // The contract sends a URL or null. An empty string is not a usable image
-    // and must not render a slot that claims to have one.
-    hasPreviewImage: dto.imageUrl != null && dto.imageUrl!.trim().isNotEmpty,
+    // The contract sends a URL or null. An empty string is not a usable image,
+    // but the value is carried through untouched: `SavedItemSummary` derives
+    // `hasPreviewImage` from it and the preview decides whether to load it.
+    imageUrl: dto.imageUrl,
     savedTimeLabel: savedTimeLabelFrom(dto.createdAt, now),
   );
 }

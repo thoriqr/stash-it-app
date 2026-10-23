@@ -1,4 +1,24 @@
-## Delete collection (2026-10-24)
+## Saved item image rendering (2026-10-24)
+
+### Flutter implementation
+- `SavedItemSummary` carries `imageUrl` exactly as the response reported it, including `null`, an empty string and whitespace. `hasPreviewImage` is now a getter derived from that value and answers only "did enrichment report an image?" — never "did it load?". `copyWithCollection` carries the URL across a move, so a collection move can no longer erase a preview. `hasNoMetadata` keeps its semantics: a reported image still counts as metadata, and a failed image load changes no model field.
+- All four mappers pass `image_url` through untouched: Inbox listing, collection contents, Search and saved-item detail. No DTO or generated file changed.
+- `SavedItemPreview` owns the entire matrix in one place. `pending` draws the existing 45° hatch with the hollow accent pip and starts no request, even if an anomalous URL is present. A non-pending item with a null, blank, malformed, relative or non-`http(s)` URL draws the existing neutral dashed well, with no resolution against `Uri.base`. A valid URL renders the network image; a load or decode failure falls back to the same dashed well. No spinner, shimmer, polling, broken-image icon or new token was added.
+- `Image.network` keeps the hatch through `frameBuilder` until the first frame and handles failures through `errorBuilder`. The well keeps its reserved size, hairline border, radius and clipping in every state, so no state shifts the row. Decode size is bounded on one axis only — `cacheWidth` for a finite width, otherwise `cacheHeight` — so thumbnails do not decode a full-size source and the aspect ratio is not distorted.
+- `SavedItemRow` and the saved-item detail band pass `imageUrl` and `enrichmentStatus`. The row and detail skeletons carry no URL, so a skeleton cannot issue an image request; their reserved dimensions and `Skeleton.keep` treatment are unchanged.
+- `SavedItemPreview.pendingPlaceholderKey` and `SavedItemPreview.unavailablePlaceholderKey` identify the placeholder subtrees for tests. No test asserts on a painter type.
+
+### Verification
+- `dart format` on the changed Dart files; `flutter analyze` — no issues found.
+- Focused suites passed: `saved_item_preview_test.dart` (22, including a real 1×1 PNG served through a fake `HttpOverrides` transport and both light and dark themes), `saved_item_summary_test.dart` (11), `saved_item_row_test.dart` (13), `saved_item_detail_screen_test.dart` (21), and the four mapper/move-preservation suites (57).
+- `flutter test` — 867 passed.
+- No app, device, or emulator run. Nothing staged or committed.
+
+### Remaining limitations
+- A `pending` item's preview changes only when its data is fetched again — pull-to-refresh on a listing, or reopening the detail. There is no polling, timer, background refresh or lifecycle-resume check, so the placeholder correctly stays put until then.
+- The preview has no retry action of its own. A failed image remains the neutral well until the screen is rebuilt from a fresh read.
+- A source that blocks hotlinks is indistinguishable from a page that never had an image; both use the same placeholder by design.
+
 
 ### Verified backend contract (stash-it-backend)
 - `DELETE /collections/{id}` is unchanged in shape but both dispositions are now used: `{saved_items_action: "delete"|"move", target_collection_id}`. `delete` requires a null or omitted target; `move` requires a target that is not the source. `UNSORTED_COLLECTION_PROTECTED` is decided by `system_key`, so Unsorted is a valid destination and never a valid source. The write is one transaction: either the items are moved and the collection removed, or nothing changes.

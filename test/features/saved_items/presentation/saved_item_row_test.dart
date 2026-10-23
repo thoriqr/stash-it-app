@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_preview.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
 
 /// Wraps [SavedItemRow] in the minimum Material host it needs.
@@ -22,7 +24,7 @@ Widget host(
 SavedItemSummary itemWith({
   String? title,
   String? description,
-  bool hasPreviewImage = false,
+  String? imageUrl,
   EnrichmentStatus status = EnrichmentStatus.completed,
   String collection = 'Unsorted',
   String? savedTimeLabel,
@@ -36,7 +38,7 @@ SavedItemSummary itemWith({
     enrichmentStatus: status,
     title: title,
     description: description,
-    hasPreviewImage: hasPreviewImage,
+    imageUrl: imageUrl,
     savedTimeLabel: savedTimeLabel,
   );
 }
@@ -140,50 +142,84 @@ void main() {
       expect(pendingRetries, 2);
     });
 
-    testWidgets('a preview image is drawn as a hatch, a missing one as an empty '
-        'well', (tester) async {
-      // The specification reserves the thumbnail space in both cases so rows
-      // never shift, and draws the two states differently rather than colouring
-      // a missing image as a problem.
-      String wellOf(SavedItemSummary item) {
-        final painters = tester.widgetList<CustomPaint>(
-          find.descendant(
-            of: find.byType(SavedItemRow),
-            matching: find.byType(CustomPaint),
+    testWidgets('the row hands the URL and enrichment state to the shared '
+        'preview', (tester) async {
+      // The row decides layout, not image state. Both values travel untouched,
+      // so every screen built on this row renders the same matrix through the
+      // one widget that owns it.
+      await tester.pumpWidget(
+        host(
+          itemWith(
+            imageUrl: 'https://example.com/og.png',
+            status: EnrichmentStatus.failed,
           ),
-        );
-        return painters.map((p) => p.painter.runtimeType.toString()).join(',');
-      }
-
-      await tester.pumpWidget(host(itemWith(hasPreviewImage: true)));
-      final withImage = wellOf(itemWith(hasPreviewImage: true));
-
-      await tester.pumpWidget(host(itemWith()));
-      final withoutImage = wellOf(itemWith());
-
-      expect(withImage, contains('Hatch'));
-      expect(withoutImage, contains('DashedSquare'));
-      expect(
-        withImage == withoutImage,
-        isFalse,
-        reason: 'the two states must be distinguishable',
+        ),
       );
+
+      final preview = tester.widget<SavedItemPreview>(
+        find.byType(SavedItemPreview),
+      );
+      expect(preview.imageUrl, 'https://example.com/og.png');
+      expect(preview.enrichmentStatus, EnrichmentStatus.failed);
     });
 
-    testWidgets('the thumbnail space is reserved whether or not one exists', (
+    testWidgets('a pending thumbnail reserves the space without fetching it', (
+      tester,
+    ) async {
+      // Pending takes precedence over the URL. An anomalous URL on a pending
+      // item must not become a request issued from inside a list.
+      await tester.pumpWidget(
+        host(
+          itemWith(
+            imageUrl: 'https://example.com/og.png',
+            status: EnrichmentStatus.pending,
+          ),
+        ),
+      );
+
+      expect(
+        find.byKey(SavedItemPreview.pendingPlaceholderKey),
+        findsOneWidget,
+      );
+      expect(find.byType(Image), findsNothing);
+    });
+
+    testWidgets('no reported image leaves the neutral well, not a failure', (
       tester,
     ) async {
       // A missing preview is routine: no error, no retry, and the slot keeps its
-      // width so a list of mixed items does not reflow.
-      Future<double> slotHeightFor(SavedItemSummary item) async {
-        await tester.pumpWidget(host(item));
-        return tester.getSize(find.byType(SavedItemRow)).height;
+      // size so a list of mixed items does not reflow.
+      await tester.pumpWidget(host(itemWith(imageUrl: null)));
+
+      expect(
+        find.byKey(SavedItemPreview.unavailablePlaceholderKey),
+        findsOneWidget,
+      );
+      expect(find.text('Retry'), findsNothing);
+    });
+
+    testWidgets('the preview slot keeps its size in every placeholder state', (
+      tester,
+    ) async {
+      final rowHeights = <double>[];
+
+      for (final status in EnrichmentStatus.values) {
+        // No URL: each state is measured on its placeholder, so no case in this
+        // test reaches the network.
+        await tester.pumpWidget(host(itemWith(imageUrl: null, status: status)));
+
+        final slot = tester.getSize(find.byType(SavedItemPreview));
+        expect(slot.width, AppMetrics.slotThumbSize);
+        expect(slot.height, AppMetrics.slotThumbSize);
+
+        rowHeights.add(tester.getSize(find.byType(SavedItemRow)).height);
       }
 
-      final withImage = await slotHeightFor(itemWith(hasPreviewImage: true));
-      final withoutImage = await slotHeightFor(itemWith());
-
-      expect(withImage, withoutImage);
+      expect(
+        rowHeights.toSet(),
+        hasLength(1),
+        reason: 'placeholder state never changes the height of a row',
+      );
     });
 
     testWidgets('long titles and sources truncate instead of overflowing', (
@@ -199,7 +235,6 @@ void main() {
             url:
                 'https://engineering.example.dev/posts/'
                 'a-very-long-path-segment-that-keeps-going-and-going',
-            hasPreviewImage: true,
           ),
           width: 320,
         ),
@@ -261,7 +296,6 @@ void main() {
                 'https://engineering.example.dev/posts/'
                 'a-very-long-path-segment-that-keeps-going-and-going',
             savedTimeLabel: 'Saved 2 days ago',
-            hasPreviewImage: true,
           ),
           width: 320,
         ),

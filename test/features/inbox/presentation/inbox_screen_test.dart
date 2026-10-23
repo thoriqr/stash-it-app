@@ -333,14 +333,15 @@ void main() {
 
       // `Skeletonizer` treats a childless `CustomPaint` as a bone, which would
       // repaint the hatch's base fill with the shimmer gradient and then draw the
-      // solid bands over the top of it. `Skeleton.keep` is the exemption, and it
-      // only exists here because the integration required it.
+      // solid bands over the top of it. `Skeleton.keep` is the exemption: the
+      // hatch and the pending item's hollow pip are each kept out of the
+      // shimmer, so the placeholder well looks like the real pending one.
       expect(
         find.descendant(
           of: find.byType(SavedItemSkeleton).first,
           matching: find.byWidgetPredicate((widget) => widget is Skeleton),
         ),
-        findsOneWidget,
+        findsNWidgets(2),
       );
 
       adapter.releaseBlocked();

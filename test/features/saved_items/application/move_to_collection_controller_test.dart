@@ -47,7 +47,7 @@ void main() {
     enrichmentStatus: EnrichmentStatus.completed,
     title: title,
     description: 'Conflict-free replicated data types converge.',
-    hasPreviewImage: true,
+    imageUrl: 'https://example.com/og.png',
     savedTimeLabel: 'Saved 2 hr ago',
   );
 
@@ -177,6 +177,12 @@ void main() {
           inboxOf(harness.container).items.single.title,
           'Understanding CRDTs',
           reason: 'a move does not rewrite the rest of the row',
+        );
+        expect(
+          inboxOf(harness.container).items.single.imageUrl,
+          'https://example.com/og.png',
+          reason:
+              'the move response omits image_url, so the read value must stay',
         );
         await untilCalled(() => harness.collections.listCalls == 2);
       },

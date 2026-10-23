@@ -254,11 +254,12 @@ class _DetailBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // The preview well is the row's, widened. The remote image is not
-          // loaded in this iteration: a hatch still reserves the space and says
-          // an image belongs here without pretending to show one.
+          // The preview well is the row's, widened. The same widget decides the
+          // pending, unavailable and loaded states here, so the detail cannot
+          // drift from the row.
           SavedItemPreview(
-            hasPreviewImage: item.hasPreviewImage,
+            imageUrl: item.imageUrl,
+            enrichmentStatus: item.enrichmentStatus,
             width: double.infinity,
             height: 110,
           ),
@@ -424,7 +425,9 @@ class _DetailSkeleton extends StatelessWidget {
                 'A description long enough to show the shape of the detail '
                 'layout while the item is being read. It wraps across several '
                 'lines, as a real description can.',
-            hasPreviewImage: true,
+            // No `imageUrl`: a skeleton is not an item and must never issue a
+            // network image request. `completed` with no image is a real state,
+            // and the well reserves the same space either way.
           ),
         ),
       ),

@@ -124,11 +124,19 @@ void main() {
     });
   });
 
-  group('preview flag', () {
-    test('a URL means a preview, null and whitespace mean none', () {
+  group('preview URL', () {
+    test('is carried through verbatim, and null stays null', () {
+      expect(detail().imageUrl, 'https://example.com/og.png');
       expect(detail().hasPreviewImage, isTrue);
+
+      expect(detail(imageUrl: null).imageUrl, isNull);
       expect(detail(imageUrl: null).hasPreviewImage, isFalse);
+    });
+
+    test('a blank URL is preserved but is not a preview', () {
+      expect(detail(imageUrl: '').imageUrl, '');
       expect(detail(imageUrl: '').hasPreviewImage, isFalse);
+      expect(detail(imageUrl: '   ').imageUrl, '   ');
       expect(detail(imageUrl: '   ').hasPreviewImage, isFalse);
     });
   });

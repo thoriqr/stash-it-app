@@ -26,9 +26,10 @@ SavedItemSummary savedItemFrom(
     // and colours it as neutral copy, never as a fault.
     title: dto.title,
     description: dto.description,
-    // The contract sends a URL or `null`. An empty string is not a usable image
-    // and would render a slot that claims to have one.
-    hasPreviewImage: dto.imageUrl != null && dto.imageUrl!.trim().isNotEmpty,
+    // The contract sends a URL or `null`. An empty string is not a usable image,
+    // but the value is carried through untouched: `SavedItemSummary` derives
+    // `hasPreviewImage` from it and the preview decides whether to load it.
+    imageUrl: dto.imageUrl,
     savedTimeLabel: savedTimeLabelFrom(dto.createdAt, now),
   );
 }
