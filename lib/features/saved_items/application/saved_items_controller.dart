@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
 import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_enrichment_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 
@@ -346,6 +347,55 @@ class SavedItems extends _$SavedItems {
 
     // Freezed's equality makes this a no-op when the row already matched, so a
     // repeated "already in collection" success does not notify listeners.
+    state = AsyncData(current.copyWith(items: items));
+  }
+
+  /// Replaces one loaded row's enrichment fields in place.
+  ///
+  /// This is the Inbox half of a confirmed re-read. [refreshHead] cannot do it:
+  /// the row is already present, so a merge would skip it and leave stale
+  /// metadata on screen. Replacing the whole list would throw away pages the user
+  /// has loaded and the cursor that continues them.
+  ///
+  /// **Only the four fields a re-read can change are replaced**, through
+  /// [SavedItemSummary.copyWithEnrichment]: title, description, preview URL and
+  /// enrichment status. The collection, URL, saved-time label and position come
+  /// from the read that produced the row. An explicit null in [result] clears an
+  /// older value, exactly as the server's write does.
+  ///
+  /// **No row is invented.** If the id is not among the loaded rows, this does
+  /// nothing: inserting one would place an item the Inbox has not fetched into a
+  /// position the server did not give it. Cursor, `hasMore`, `isLoadingMore` and
+  /// every tombstone are preserved untouched — enrichment changes no membership
+  /// and ends no page.
+  ///
+  /// **Not a network operation and not announced.** The caller publishes the
+  /// re-read's own feedback.
+  void applyEnrichment(SavedItemEnrichmentResult result) {
+    final current = _currentState;
+    if (current == null) return;
+
+    var found = false;
+    final items = <SavedItemSummary>[];
+    for (final item in current.items) {
+      if (item.id != result.savedItemId) {
+        items.add(item);
+        continue;
+      }
+
+      found = true;
+      items.add(
+        item.copyWithEnrichment(
+          title: result.title,
+          description: result.description,
+          imageUrl: result.imageUrl,
+          enrichmentStatus: result.enrichmentStatus,
+        ),
+      );
+    }
+
+    if (!found) return;
+
     state = AsyncData(current.copyWith(items: items));
   }
 

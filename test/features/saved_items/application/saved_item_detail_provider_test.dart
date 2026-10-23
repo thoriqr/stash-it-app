@@ -5,6 +5,8 @@ import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_item_detail_provider.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_enrichment_result.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 
 import '../../../support/fake_http.dart';
 import '../../../support/saved_items_fixtures.dart';
@@ -171,6 +173,188 @@ void main() {
         isA<AsyncData<Object?>>(),
         reason: 'the recovered item replaces the error',
       );
+    });
+  });
+
+  group('applying a confirmed re-read', () {
+    SavedItemEnrichmentResult result({
+      String savedItemId = id,
+      EnrichmentStatus status = EnrichmentStatus.completed,
+      String? title = 'Re-read title',
+      String? description = 'Re-read description.',
+      String? imageUrl = 'https://example.com/new.png',
+    }) => SavedItemEnrichmentResult(
+      savedItemId: savedItemId,
+      enrichmentStatus: status,
+      title: title,
+      description: description,
+      imageUrl: imageUrl,
+    );
+
+    /// Loads the detail, then keeps it alive while the test patches it.
+    Future<ProviderContainer> loaded() async {
+      final container = makeContainer();
+      adapter.onMethod(
+        'GET',
+        path,
+        body: SavedItemsFixtures.detail(
+          id: id,
+          title: 'Old title',
+          description: 'Old description.',
+          imageUrl: 'https://example.com/old.png',
+          enrichmentStatus: 'pending',
+          collectionId: 'collection-42',
+          collectionName: 'Wishlist',
+        ),
+      );
+
+      final provider = savedItemDetailProvider(id);
+      final subscription = container.listen(provider, (_, _) {});
+      addTearDown(subscription.close);
+
+      await container.read(provider.future);
+      return container;
+    }
+
+    test('replaces the four fields without issuing a request', () async {
+      final container = await loaded();
+
+      container
+          .read(savedItemDetailProvider(id).notifier)
+          .applyEnrichment(result());
+
+      final item = container.read(savedItemDetailProvider(id)).value!;
+      expect(item.title, 'Re-read title');
+      expect(item.description, 'Re-read description.');
+      expect(item.imageUrl, 'https://example.com/new.png');
+      expect(item.enrichmentStatus, EnrichmentStatus.completed);
+      expect(
+        adapter.countFor(path),
+        1,
+        reason: 'the POST already returned the complete post-attempt item',
+      );
+    });
+
+    test('keeps the identity and collection the write cannot change', () async {
+      final container = await loaded();
+      final before = container.read(savedItemDetailProvider(id)).value!;
+
+      container
+          .read(savedItemDetailProvider(id).notifier)
+          .applyEnrichment(result());
+
+      final after = container.read(savedItemDetailProvider(id)).value!;
+      expect(after.id, before.id);
+      expect(after.url, before.url);
+      expect(after.collectionId, 'collection-42');
+      expect(
+        after.collectionName,
+        'Wishlist',
+        reason: 'the enrich response carries no collection name to replace it',
+      );
+      expect(after.savedTimeLabel, before.savedTimeLabel);
+    });
+
+    test('an explicit null clears the previous value', () async {
+      final container = await loaded();
+
+      container
+          .read(savedItemDetailProvider(id).notifier)
+          .applyEnrichment(
+            result(title: null, description: null, imageUrl: null),
+          );
+
+      final item = container.read(savedItemDetailProvider(id)).value!;
+      expect(item.title, isNull);
+      expect(item.description, isNull);
+      expect(item.imageUrl, isNull);
+      expect(
+        item.hasNoMetadata,
+        isTrue,
+        reason: 'a completed attempt that found nothing is the empty state',
+      );
+    });
+
+    test('a failed attempt is applied as recorded', () async {
+      final container = await loaded();
+
+      container
+          .read(savedItemDetailProvider(id).notifier)
+          .applyEnrichment(
+            result(
+              status: EnrichmentStatus.failed,
+              title: 'Kept from the previous read',
+              description: null,
+              imageUrl: null,
+            ),
+          );
+
+      final item = container.read(savedItemDetailProvider(id)).value!;
+      expect(item.enrichmentStatus, EnrichmentStatus.failed);
+      expect(item.title, 'Kept from the previous read');
+      expect(item.hasNoMetadata, isFalse);
+    });
+
+    test('a result for another item is ignored', () async {
+      final container = await loaded();
+
+      container
+          .read(savedItemDetailProvider(id).notifier)
+          .applyEnrichment(result(savedItemId: 'another-item'));
+
+      final item = container.read(savedItemDetailProvider(id)).value!;
+      expect(item.title, 'Old title');
+      expect(item.enrichmentStatus, EnrichmentStatus.pending);
+    });
+
+    test('a patch before the read completes is a no-op', () async {
+      final container = makeContainer();
+      adapter.onMethod(
+        'GET',
+        path,
+        body: SavedItemsFixtures.detail(id: id, title: 'From the read'),
+      );
+
+      final provider = savedItemDetailProvider(id);
+      final subscription = container.listen(provider, (_, _) {});
+      addTearDown(subscription.close);
+
+      // The notifier exists and its build is in flight, so there is nothing to
+      // patch yet. This must stay silent rather than throwing or fabricating data.
+      container.read(provider.notifier).applyEnrichment(result());
+
+      final item = await container.read(provider.future);
+      expect(item.title, 'From the read');
+      expect(adapter.countFor(path), 1);
+    });
+
+    test('a failed read is not replaced by a re-read result', () async {
+      final container = makeContainer();
+      adapter.onMethod(
+        'GET',
+        path,
+        status: 500,
+        body: errorBody('INTERNAL_SERVER_ERROR'),
+      );
+
+      final provider = savedItemDetailProvider(id);
+      final subscription = container.listen(provider, (_, _) {});
+      addTearDown(subscription.close);
+
+      await expectLater(
+        container.read(provider.future),
+        throwsA(isA<ApiFailureServerFault>()),
+      );
+
+      container.read(provider.notifier).applyEnrichment(result());
+
+      final state = container.read(provider);
+      expect(
+        state,
+        isA<AsyncError<SavedItemSummary>>(),
+        reason: 'no data was loaded, so there was no row to patch',
+      );
+      expect(adapter.countFor(path), 1);
     });
   });
 

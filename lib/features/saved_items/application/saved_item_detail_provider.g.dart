@@ -15,14 +15,18 @@ part of 'saved_item_detail_provider.dart';
 /// outlive the route. This is the opposite of `savedItemsProvider`, which is
 /// keep-alive because the Inbox is a retained destination.
 ///
-/// The provider performs the GET in [build] because opening the detail is
-/// precisely the read the screen exists for. The route is not rate limited, so a
-/// visit costs one indexed read and nothing else.
+/// The GET happens in [build] because opening the detail is precisely the read the
+/// screen exists for. The route is not rate limited, so a visit costs one indexed
+/// read and nothing else.
 ///
-/// **This request never enriches anything.** It is a plain read; the enrichment
-/// endpoint is not called by this feature.
+/// **A notifier rather than a plain `FutureProvider` for one reason:**
+/// [applyEnrichment] has to replace the loaded value in place after a confirmed
+/// re-read. Invalidating the provider instead would issue a second GET for
+/// information the POST already returned, and a failed follow-up would replace a
+/// successful re-read with the screen's error state. The notifier keeps the
+/// completed POST authoritative.
 
-@ProviderFor(savedItemDetail)
+@ProviderFor(SavedItemDetail)
 final savedItemDetailProvider = SavedItemDetailFamily._();
 
 /// One saved item, read fresh from `GET /saved-items/{id}`.
@@ -32,21 +36,18 @@ final savedItemDetailProvider = SavedItemDetailFamily._();
 /// outlive the route. This is the opposite of `savedItemsProvider`, which is
 /// keep-alive because the Inbox is a retained destination.
 ///
-/// The provider performs the GET in [build] because opening the detail is
-/// precisely the read the screen exists for. The route is not rate limited, so a
-/// visit costs one indexed read and nothing else.
+/// The GET happens in [build] because opening the detail is precisely the read the
+/// screen exists for. The route is not rate limited, so a visit costs one indexed
+/// read and nothing else.
 ///
-/// **This request never enriches anything.** It is a plain read; the enrichment
-/// endpoint is not called by this feature.
-
+/// **A notifier rather than a plain `FutureProvider` for one reason:**
+/// [applyEnrichment] has to replace the loaded value in place after a confirmed
+/// re-read. Invalidating the provider instead would issue a second GET for
+/// information the POST already returned, and a failed follow-up would replace a
+/// successful re-read with the screen's error state. The notifier keeps the
+/// completed POST authoritative.
 final class SavedItemDetailProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<SavedItemSummary>,
-          SavedItemSummary,
-          FutureOr<SavedItemSummary>
-        >
-    with $FutureModifier<SavedItemSummary>, $FutureProvider<SavedItemSummary> {
+    extends $AsyncNotifierProvider<SavedItemDetail, SavedItemSummary> {
   /// One saved item, read fresh from `GET /saved-items/{id}`.
   ///
   /// **Auto-dispose, not keep-alive.** The detail is transient screen state, like
@@ -54,12 +55,16 @@ final class SavedItemDetailProvider
   /// outlive the route. This is the opposite of `savedItemsProvider`, which is
   /// keep-alive because the Inbox is a retained destination.
   ///
-  /// The provider performs the GET in [build] because opening the detail is
-  /// precisely the read the screen exists for. The route is not rate limited, so a
-  /// visit costs one indexed read and nothing else.
+  /// The GET happens in [build] because opening the detail is precisely the read the
+  /// screen exists for. The route is not rate limited, so a visit costs one indexed
+  /// read and nothing else.
   ///
-  /// **This request never enriches anything.** It is a plain read; the enrichment
-  /// endpoint is not called by this feature.
+  /// **A notifier rather than a plain `FutureProvider` for one reason:**
+  /// [applyEnrichment] has to replace the loaded value in place after a confirmed
+  /// re-read. Invalidating the provider instead would issue a second GET for
+  /// information the POST already returned, and a failed follow-up would replace a
+  /// successful re-read with the screen's error state. The notifier keeps the
+  /// completed POST authoritative.
   SavedItemDetailProvider._({
     required SavedItemDetailFamily super.from,
     required String super.argument,
@@ -83,15 +88,7 @@ final class SavedItemDetailProvider
 
   @$internal
   @override
-  $FutureProviderElement<SavedItemSummary> $createElement(
-    $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<SavedItemSummary> create(Ref ref) {
-    final argument = this.argument as String;
-    return savedItemDetail(ref, argument);
-  }
+  SavedItemDetail create() => SavedItemDetail();
 
   @override
   bool operator ==(Object other) {
@@ -104,7 +101,7 @@ final class SavedItemDetailProvider
   }
 }
 
-String _$savedItemDetailHash() => r'9f67b4fb2cc37321011ffe8abaa2f31408d1e8a6';
+String _$savedItemDetailHash() => r'47a13e4a393027abc32abe724ab80ea1266649e8';
 
 /// One saved item, read fresh from `GET /saved-items/{id}`.
 ///
@@ -113,15 +110,26 @@ String _$savedItemDetailHash() => r'9f67b4fb2cc37321011ffe8abaa2f31408d1e8a6';
 /// outlive the route. This is the opposite of `savedItemsProvider`, which is
 /// keep-alive because the Inbox is a retained destination.
 ///
-/// The provider performs the GET in [build] because opening the detail is
-/// precisely the read the screen exists for. The route is not rate limited, so a
-/// visit costs one indexed read and nothing else.
+/// The GET happens in [build] because opening the detail is precisely the read the
+/// screen exists for. The route is not rate limited, so a visit costs one indexed
+/// read and nothing else.
 ///
-/// **This request never enriches anything.** It is a plain read; the enrichment
-/// endpoint is not called by this feature.
+/// **A notifier rather than a plain `FutureProvider` for one reason:**
+/// [applyEnrichment] has to replace the loaded value in place after a confirmed
+/// re-read. Invalidating the provider instead would issue a second GET for
+/// information the POST already returned, and a failed follow-up would replace a
+/// successful re-read with the screen's error state. The notifier keeps the
+/// completed POST authoritative.
 
 final class SavedItemDetailFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<SavedItemSummary>, String> {
+    with
+        $ClassFamilyOverride<
+          SavedItemDetail,
+          AsyncValue<SavedItemSummary>,
+          SavedItemSummary,
+          FutureOr<SavedItemSummary>,
+          String
+        > {
   SavedItemDetailFamily._()
     : super(
         retry: _neverRetry,
@@ -138,16 +146,60 @@ final class SavedItemDetailFamily extends $Family
   /// outlive the route. This is the opposite of `savedItemsProvider`, which is
   /// keep-alive because the Inbox is a retained destination.
   ///
-  /// The provider performs the GET in [build] because opening the detail is
-  /// precisely the read the screen exists for. The route is not rate limited, so a
-  /// visit costs one indexed read and nothing else.
+  /// The GET happens in [build] because opening the detail is precisely the read the
+  /// screen exists for. The route is not rate limited, so a visit costs one indexed
+  /// read and nothing else.
   ///
-  /// **This request never enriches anything.** It is a plain read; the enrichment
-  /// endpoint is not called by this feature.
+  /// **A notifier rather than a plain `FutureProvider` for one reason:**
+  /// [applyEnrichment] has to replace the loaded value in place after a confirmed
+  /// re-read. Invalidating the provider instead would issue a second GET for
+  /// information the POST already returned, and a failed follow-up would replace a
+  /// successful re-read with the screen's error state. The notifier keeps the
+  /// completed POST authoritative.
 
   SavedItemDetailProvider call(String id) =>
       SavedItemDetailProvider._(argument: id, from: this);
 
   @override
   String toString() => r'savedItemDetailProvider';
+}
+
+/// One saved item, read fresh from `GET /saved-items/{id}`.
+///
+/// **Auto-dispose, not keep-alive.** The detail is transient screen state, like
+/// Search results: it is keyed by the item id, belongs to one visit, and must not
+/// outlive the route. This is the opposite of `savedItemsProvider`, which is
+/// keep-alive because the Inbox is a retained destination.
+///
+/// The GET happens in [build] because opening the detail is precisely the read the
+/// screen exists for. The route is not rate limited, so a visit costs one indexed
+/// read and nothing else.
+///
+/// **A notifier rather than a plain `FutureProvider` for one reason:**
+/// [applyEnrichment] has to replace the loaded value in place after a confirmed
+/// re-read. Invalidating the provider instead would issue a second GET for
+/// information the POST already returned, and a failed follow-up would replace a
+/// successful re-read with the screen's error state. The notifier keeps the
+/// completed POST authoritative.
+
+abstract class _$SavedItemDetail extends $AsyncNotifier<SavedItemSummary> {
+  late final _$args = ref.$arg as String;
+  String get id => _$args;
+
+  FutureOr<SavedItemSummary> build(String id);
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref =
+        this.ref as $Ref<AsyncValue<SavedItemSummary>, SavedItemSummary>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<SavedItemSummary>, SavedItemSummary>,
+              AsyncValue<SavedItemSummary>,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, () => build(_$args));
+  }
 }

@@ -4,6 +4,7 @@ import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/collection_saved_items_page.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_enrichment_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 
 import 'collection_saved_items_state.dart';
@@ -255,6 +256,51 @@ class CollectionSavedItems extends _$CollectionSavedItems {
     if (current == null || !current.hasMore || current.isLoadingMore) return;
 
     await _requestNextPage(current);
+  }
+
+  /// Replaces one loaded row's enrichment fields in place.
+  ///
+  /// This is the collection-contents half of a confirmed re-read. The row is
+  /// already present, so a refresh would discard pages the user has walked
+  /// through and reset the cursor; a merge would skip the id and leave the old
+  /// metadata. Only the four fields in [result] are replaced, through
+  /// [SavedItemSummary.copyWithEnrichment], including clearing a value the page
+  /// no longer provides.
+  ///
+  /// **The collection's name, cursor, `hasMore`, `isLoadingMore`,
+  /// `loadMoreFailed` and every tombstone are preserved exactly.** Enrichment
+  /// changes no membership and ends no page, and it must not paper over a failed
+  /// cursor by pretending the listing is healthy.
+  ///
+  /// **No row is invented and nothing is resurrected.** A missing id — including
+  /// one removed locally — is a silent no-op. The caller publishes the re-read's
+  /// own feedback.
+  void applyEnrichment(SavedItemEnrichmentResult result) {
+    final current = _currentState;
+    if (current == null) return;
+
+    var found = false;
+    final items = <SavedItemSummary>[];
+    for (final item in current.items) {
+      if (item.id != result.savedItemId) {
+        items.add(item);
+        continue;
+      }
+
+      found = true;
+      items.add(
+        item.copyWithEnrichment(
+          title: result.title,
+          description: result.description,
+          imageUrl: result.imageUrl,
+          enrichmentStatus: result.enrichmentStatus,
+        ),
+      );
+    }
+
+    if (!found) return;
+
+    state = AsyncData(current.copyWith(items: items));
   }
 
   /// Removes one confirmed-deleted row in place.

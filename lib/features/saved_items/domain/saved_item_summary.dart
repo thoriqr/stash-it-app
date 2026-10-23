@@ -124,6 +124,37 @@ class SavedItemSummary {
     );
   }
 
+  /// The same item, with the four fields a re-read can change replaced.
+  ///
+  /// **Replacement, not merging.** Every parameter is `required` and nullable, so
+  /// an explicit `null` **clears** the old value. That is deliberate: a successful
+  /// extraction writes exactly what the page provided, including NULL, and
+  /// retaining an older title would show metadata the page no longer has.
+  ///
+  /// **The item's identity and the write's non-facts are preserved.** The id,
+  /// URL, domain, platform, collection id and name, and the saved-time label all
+  /// come from the read that produced this model. Enrichment never moves an item
+  /// or changes when it was saved, and the enrich response carries no collection
+  /// name to replace the one on screen.
+  SavedItemSummary copyWithEnrichment({
+    required String? title,
+    required String? description,
+    required String? imageUrl,
+    required EnrichmentStatus enrichmentStatus,
+  }) {
+    return SavedItemSummary(
+      id: id,
+      collectionId: collectionId,
+      url: url,
+      collectionName: collectionName,
+      enrichmentStatus: enrichmentStatus,
+      title: title,
+      description: description,
+      imageUrl: imageUrl,
+      savedTimeLabel: savedTimeLabel,
+    );
+  }
+
   /// `true` when enrichment produced no usable metadata at all.
   ///
   /// D8 [Confirmed]: this is a normal, successful state and must never be presented

@@ -5,6 +5,7 @@ import 'package:stash_it_app/features/saved_items/data/datasources/saved_items_a
 import 'package:stash_it_app/features/saved_items/data/saved_items_repository.dart';
 import 'package:stash_it_app/features/saved_items/domain/move_to_collection_intent.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_delete_result.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 
 import '../../../support/fake_http.dart';
 import '../../../support/saved_items_fixtures.dart';
@@ -722,6 +723,169 @@ void main() {
       await expectLater(
         repository.getById(id),
         throwsA(isA<ApiFailureAuthRequired>()),
+      );
+    });
+  });
+
+  group('enrich', () {
+    const id = '01a0f359-093b-737a-963a-80f7ca6768ed';
+    const path = '/saved-items/$id/enrich';
+
+    test('POSTs the id and sends no body or query', () async {
+      adapter.onMethod('POST', path, body: SavedItemsFixtures.enriched(id: id));
+
+      await repository.enrich(id);
+
+      final request = adapter.lastRequestTo(path)!;
+      expect(request.method, 'POST');
+      expect(adapter.countFor(path), 1, reason: 'one request, no retry');
+      expect(
+        Uri.parse(request.path).hasQuery,
+        isFalse,
+        reason: 'the id is the whole input and it is a path parameter',
+      );
+      expect(
+        request.body,
+        isNull,
+        reason: 'the page to fetch is the URL already stored on the server',
+      );
+    });
+
+    test('decodes the four fields the write can change', () async {
+      adapter.onMethod(
+        'POST',
+        path,
+        body: SavedItemsFixtures.enriched(
+          id: id,
+          title: 'A better title',
+          description: 'A better description.',
+          imageUrl: 'https://example.com/better.png',
+        ),
+      );
+
+      final result = await repository.enrich(id);
+
+      expect(result.savedItemId, id);
+      expect(result.title, 'A better title');
+      expect(result.description, 'A better description.');
+      expect(result.imageUrl, 'https://example.com/better.png');
+      expect(result.enrichmentStatus, EnrichmentStatus.completed);
+    });
+
+    test('a 200 reporting failed is a result, not a thrown failure', () async {
+      // The endpoint records an unreadable page as enrichment state. Only the
+      // item being missing and a refused request are non-2xx.
+      adapter.onMethod(
+        'POST',
+        path,
+        body: SavedItemsFixtures.enriched(
+          id: id,
+          enrichmentStatus: 'failed',
+          title: 'Kept from the previous read',
+        ),
+      );
+
+      final result = await repository.enrich(id);
+
+      expect(result.enrichmentStatus, EnrichmentStatus.failed);
+      expect(
+        result.title,
+        'Kept from the previous read',
+        reason: 'a failed attempt preserves the metadata already stored',
+      );
+    });
+
+    test('maps SAVED_ITEM_NOT_FOUND to typed not-found', () async {
+      adapter.onMethod(
+        'POST',
+        path,
+        status: 404,
+        body: errorBody('SAVED_ITEM_NOT_FOUND'),
+      );
+
+      final failure = await repository
+          .enrich(id)
+          .then<Object?>((_) => null, onError: (Object e) => e);
+
+      expect(failure, isA<ApiFailureNotFound>());
+      expect((failure! as ApiFailureNotFound).code, 'SAVED_ITEM_NOT_FOUND');
+    });
+
+    test('keeps the Retry-After the server sent on a spent budget', () async {
+      adapter.onMethod(
+        'POST',
+        path,
+        status: 429,
+        body: errorBody('USER_RATE_LIMIT_EXCEEDED'),
+        headers: {
+          'retry-after': ['90'],
+        },
+      );
+
+      final failure = await repository
+          .enrich(id)
+          .then<Object?>((_) => null, onError: (Object e) => e);
+
+      expect(failure, isA<ApiFailureRateLimited>());
+      expect(
+        (failure! as ApiFailureRateLimited).retryAfter,
+        const Duration(seconds: 90),
+        reason: "the countdown is the server's, never a client guess",
+      );
+    });
+
+    test(
+      'a limiter that failed closed is unavailable, not a spent budget',
+      () async {
+        adapter.onMethod(
+          'POST',
+          path,
+          status: 503,
+          body: errorBody('USER_RATE_LIMIT_UNAVAILABLE'),
+        );
+
+        await expectLater(
+          repository.enrich(id),
+          throwsA(isA<ApiFailureServerUnavailable>()),
+        );
+      },
+    );
+
+    test('a 200 whose body does not decode is unreadable', () async {
+      // The attempt may well have been recorded; only its representation is
+      // missing, so this may not be reported as a known failure.
+      final body = SavedItemsFixtures.enriched(id: id);
+      ((body['data'] as Map<String, dynamic>)['saved_item']
+              as Map<String, dynamic>)
+          .remove('enrichment_status');
+      adapter.onMethod('POST', path, body: body);
+
+      await expectLater(
+        repository.enrich(id),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+
+    test('a 500 from the write is a server fault', () async {
+      adapter.onMethod(
+        'POST',
+        path,
+        status: 500,
+        body: errorBody('INTERNAL_SERVER_ERROR'),
+      );
+
+      await expectLater(
+        repository.enrich(id),
+        throwsA(isA<ApiFailureServerFault>()),
+      );
+    });
+
+    test('a request that never arrives is transport', () async {
+      adapter.onOffline(path, method: 'POST');
+
+      await expectLater(
+        repository.enrich(id),
+        throwsA(isA<ApiFailureTransport>()),
       );
     });
   });

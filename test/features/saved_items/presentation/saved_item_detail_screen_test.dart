@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:stash_it_app/app/feedback/app_feedback.dart';
+import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/collections/data/collections_providers.dart';
@@ -11,6 +13,7 @@ import 'package:stash_it_app/features/collections/domain/collection_page.dart';
 import 'package:stash_it_app/features/collections/domain/collection_summary.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_item_detail_provider.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_enrichment_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 import 'package:stash_it_app/features/saved_items/presentation/saved_item_detail_screen.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_preview.dart';
@@ -19,8 +22,8 @@ import 'package:stash_it_app/shared/widgets/app_button.dart';
 import '../../../support/fake_collections_repository.dart';
 import '../../../support/fake_saved_items_repository.dart';
 
-/// The detail screen's three content states, its loading and error states, and
-/// the one control that is deliberately inert.
+/// The detail screen's content states, its loading and error states, and the one
+/// explicit write it offers.
 ///
 /// The screen reads the provider, which reads the repository. Overriding the
 /// repository (rather than the provider) exercises the real screen → provider
@@ -71,9 +74,15 @@ void main() {
   Future<FakeSavedItemsRepository> pumpScreen(
     WidgetTester tester, {
     required List<Object> results,
+    List<Object> enrichResults = const [],
+    Future<SavedItemEnrichmentResult> Function(String id)? onEnrich,
     FakeCollectionsRepository? collections,
   }) async {
-    final repository = FakeSavedItemsRepository(detailResults: results);
+    final repository = FakeSavedItemsRepository(
+      detailResults: results,
+      enrichResults: enrichResults,
+      onEnrich: onEnrich,
+    );
     final collectionsRepository =
         collections ??
         FakeCollectionsRepository(
@@ -121,10 +130,14 @@ void main() {
           findsOneWidget,
         );
 
-        // The disabled control exists and says why it cannot be used.
+        // The enrichment action is available, not inert.
         expect(find.text('ENRICHMENT'), findsOneWidget);
-        expect(find.text('Re-read page'), findsOneWidget);
-        expect(find.text('Not available in this version.'), findsOneWidget);
+        final reRead = tester.widget<AppButton>(
+          find.widgetWithText(AppButton, 'Re-read page'),
+        );
+        expect(reRead.onPressed, isNotNull);
+        expect(reRead.busy, isFalse);
+        expect(find.text('Not available in this version.'), findsNothing);
 
         // No raw enum value and no backend message.
         expect(find.text('completed'), findsNothing);
@@ -234,25 +247,187 @@ void main() {
     }
   });
 
-  group('the enrichment control is inert', () {
-    testWidgets('has no callback and issues no request when tapped', (
-      tester,
-    ) async {
-      final repository = await pumpScreen(tester, results: [itemWith()]);
+  group('re-read page', () {
+    /// The button carrying a label, found by its widget field rather than by
+    /// text: the label is not in the tree while the button is busy.
+    AppButton buttonLabelled(WidgetTester tester, String label) => tester
+        .widgetList<AppButton>(find.byType(AppButton))
+        .firstWhere((button) => button.label == label);
 
-      final button = tester.widget<AppButton>(
-        find.widgetWithText(AppButton, 'Re-read page'),
+    ProviderContainer containerOf(WidgetTester tester) =>
+        ProviderScope.containerOf(
+          tester.element(find.byType(SavedItemDetailScreen)),
+          listen: false,
+        );
+
+    SavedItemEnrichmentResult completed({String? title = 'Re-read title'}) =>
+        SavedItemEnrichmentResult(
+          savedItemId: id,
+          enrichmentStatus: EnrichmentStatus.completed,
+          title: title,
+          description: 'Re-read description.',
+          imageUrl: 'https://example.com/new.png',
+        );
+
+    for (final status in EnrichmentStatus.values) {
+      testWidgets('is enabled for a ${status.name} item', (tester) async {
+        await pumpScreen(
+          tester,
+          results: [
+            itemWith(
+              title: status == EnrichmentStatus.completed
+                  ? 'Understanding CRDTs'
+                  : null,
+              description: null,
+              status: status,
+            ),
+          ],
+        );
+
+        final button = buttonLabelled(tester, 'Re-read page');
+        expect(button.onPressed, isNotNull);
+        expect(button.busy, isFalse);
+        expect(find.text('Reading the page…'), findsNothing);
+        expect(find.text('Not available in this version.'), findsNothing);
+        expect(containerOf(tester).read(feedbackProvider), isNull);
+      });
+    }
+
+    testWidgets('issues one POST and no second GET', (tester) async {
+      final repository = await pumpScreen(
+        tester,
+        results: [itemWith(status: EnrichmentStatus.failed)],
+        enrichResults: [completed()],
       );
-      expect(button.onPressed, isNull, reason: 'no callback');
 
       await tester.tap(find.text('Re-read page'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
+      expect(repository.enrichCalls, 1);
+      expect(repository.enrichIds, [id]);
       expect(
         repository.detailCalls,
         1,
-        reason: 'tapping a disabled control cannot start a read',
+        reason: 'the POST already returned the complete item',
       );
+      expect(find.text('Re-read title'), findsOneWidget);
+      expect(find.text('Re-read description.'), findsOneWidget);
+    });
+
+    testWidgets(
+      'shows progress, keeps the item visible and blocks the other writes',
+      (tester) async {
+        final gate = Completer<SavedItemEnrichmentResult>();
+        final repository = await pumpScreen(
+          tester,
+          results: [
+            itemWith(
+              title: null,
+              description: null,
+              status: EnrichmentStatus.pending,
+            ),
+          ],
+          onEnrich: (_) => gate.future,
+        );
+
+        await tester.tap(find.text('Re-read page'));
+        await tester.pump();
+
+        expect(repository.enrichCalls, 1);
+        expect(buttonLabelled(tester, 'Re-read page').busy, isTrue);
+        expect(find.text('Reading the page…'), findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+        // The item stays on screen, and the server's pending status is not
+        // replaced by a guess while the attempt runs.
+        expect(find.text('Reading page…'), findsOneWidget);
+        expect(find.text('No details on this page'), findsNothing);
+        expect(
+          find.byKey(SavedItemPreview.pendingPlaceholderKey),
+          findsOneWidget,
+        );
+
+        expect(
+          tester
+              .widget<AppButton>(
+                find.widgetWithText(AppButton, 'Move to a collection'),
+              )
+              .onPressed,
+          isNull,
+          reason: 'a second item-level write is not started mid-re-read',
+        );
+        expect(
+          tester
+              .widget<AppButton>(
+                find.widgetWithText(AppButton, 'Delete this item'),
+              )
+              .onPressed,
+          isNull,
+        );
+
+        gate.complete(completed());
+        await tester.pumpAndSettle();
+
+        expect(find.text('Reading the page…'), findsNothing);
+        expect(buttonLabelled(tester, 'Re-read page').busy, isFalse);
+        expect(buttonLabelled(tester, 'Re-read page').onPressed, isNotNull);
+        expect(
+          tester
+              .widget<AppButton>(
+                find.widgetWithText(AppButton, 'Move to a collection'),
+              )
+              .onPressed,
+          isNotNull,
+        );
+        expect(find.text('Re-read title'), findsOneWidget);
+        expect(repository.detailCalls, 1);
+      },
+    );
+
+    testWidgets('a completed re-read publishes one success notice', (
+      tester,
+    ) async {
+      await pumpScreen(
+        tester,
+        results: [itemWith()],
+        enrichResults: [completed()],
+      );
+
+      await tester.tap(find.text('Re-read page'));
+      await tester.pumpAndSettle();
+
+      final notice = containerOf(tester).read(feedbackProvider)!;
+      expect(notice.copy, 'Page re-read.');
+      expect(notice.tone, FeedbackTone.success);
+    });
+
+    testWidgets('a failed extraction keeps the item and publishes a failure', (
+      tester,
+    ) async {
+      await pumpScreen(
+        tester,
+        results: [itemWith(title: 'Old title', description: null)],
+        enrichResults: [
+          SavedItemEnrichmentResult(
+            savedItemId: id,
+            enrichmentStatus: EnrichmentStatus.failed,
+            title: 'Old title',
+          ),
+        ],
+      );
+
+      await tester.tap(find.text('Re-read page'));
+      await tester.pumpAndSettle();
+
+      final notice = containerOf(tester).read(feedbackProvider)!;
+      expect(notice.copy, "Couldn't read this page.");
+      expect(notice.tone, FeedbackTone.danger);
+      expect(
+        find.text('Old title'),
+        findsOneWidget,
+        reason: 'a failed attempt preserves the metadata already stored',
+      );
+      expect(find.text("Couldn't read this page"), findsOneWidget);
     });
   });
 
@@ -276,7 +451,13 @@ void main() {
         reason: 'the wide band reports the same pending state as a row',
       );
       expect(find.text('Re-read page'), findsOneWidget);
-      expect(find.text('Not available in this version.'), findsOneWidget);
+      expect(
+        tester
+            .widget<AppButton>(find.widgetWithText(AppButton, 'Re-read page'))
+            .onPressed,
+        isNotNull,
+        reason: 'a pending item is exactly what a re-read is for',
+      );
       expect(
         find.text('Move to a collection'),
         findsOneWidget,
@@ -331,7 +512,9 @@ void main() {
         ProviderScope(
           retry: (_, _) => null,
           overrides: [
-            savedItemDetailProvider.overrideWith((ref, _) => never.future),
+            savedItemDetailProvider.overrideWithBuild(
+              (ref, notifier) => never.future,
+            ),
           ],
           child: MaterialApp(
             theme: AppTheme.light(),

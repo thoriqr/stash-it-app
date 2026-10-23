@@ -6,6 +6,7 @@ import '../domain/collection_saved_items_page.dart';
 import '../domain/move_to_collection_intent.dart';
 import '../domain/move_to_collection_result.dart';
 import '../domain/saved_item_delete_result.dart';
+import '../domain/saved_item_enrichment_result.dart';
 import '../domain/saved_item_page.dart';
 import '../domain/saved_item_summary.dart';
 import 'collection_saved_items_mapper.dart';
@@ -15,6 +16,7 @@ import 'models/move_to_collection_request.dart';
 import 'move_to_collection_mapper.dart';
 import 'saved_item_deletion_mapper.dart';
 import 'saved_item_detail_mapper.dart';
+import 'saved_item_enrichment_mapper.dart';
 import 'saved_item_mapper.dart';
 
 /// Reads of the Inbox listing and detail, and the writes this milestone exposes,
@@ -274,6 +276,48 @@ class SavedItemsRepository {
     try {
       final response = await api.getById(id);
       return savedItemDetailFrom(response, now: now());
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      // A `200` whose body does not match the documented shape. Retrofit decodes
+      // after Dio's transformer returns, so this never passes through Dio and
+      // `mapApiFailure` cannot see it.
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Re-reads one saved item's source page and reports what the attempt changed.
+  ///
+  /// **Exactly one synchronous request.** The endpoint fetches and extracts the
+  /// page before answering, so there is no job id, no queue and nothing to poll;
+  /// this method issues one POST and returns. [ApiFailure] covers every request
+  /// that produced no usable answer — nothing here retries.
+  ///
+  /// **A `200` is not the same as a successful extraction.** The response's
+  /// `enrichment_status` is the outcome: `completed` may still carry a null
+  /// title, and `failed` preserves whatever metadata the item already had.
+  /// [SavedItemEnrichmentResult] reports that status rather than a flag of this
+  /// method's invention.
+  ///
+  /// [ApiFailureNotFound] is the route's `SAVED_ITEM_NOT_FOUND`: the item is
+  /// missing or belongs to another user, and the client cannot tell which. It can
+  /// also be answered when the item is deleted while the attempt is running,
+  /// because the final write then matches no row.
+  ///
+  /// A `429` or `503` from the per-user limiter is a refusal that ran before the
+  /// handler: no page was fetched and no state was written. A `500` comes from the
+  /// handler's database write and leaves the item as it was, but it carries no
+  /// representation of the item, so callers must not treat it as a re-read.
+  ///
+  /// Throws [ApiFailure] for every refusal. A `200` whose body does not decode is
+  /// [ApiFailureUnreadableResponse]: the attempt may well have been recorded, but
+  /// this client has no result to apply, and must not claim one.
+  Future<SavedItemEnrichmentResult> enrich(String id) async {
+    try {
+      final response = await api.enrich(id);
+      return savedItemEnrichmentFrom(response);
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError catch (error) {

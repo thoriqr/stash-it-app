@@ -5,6 +5,7 @@ import 'package:stash_it_app/features/saved_items/domain/collection_saved_items_
 import 'package:stash_it_app/features/saved_items/domain/move_to_collection_intent.dart';
 import 'package:stash_it_app/features/saved_items/domain/move_to_collection_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_delete_result.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_enrichment_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 
@@ -19,16 +20,19 @@ import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart
 /// [detailResults] is read in order, with the last entry repeating, so a test can
 /// script "fail, then succeed" without counting calls by hand — the same shape
 /// as [FakeHttpAdapter.onSequence]. An entry is either a [SavedItemSummary] or an
-/// error to throw. [moveResults], [deleteResults] and [collectionResults] follow
-/// the same rule.
+/// error to throw. [moveResults], [deleteResults], [enrichResults] and
+/// [collectionResults] follow the same rule.
 class FakeSavedItemsRepository extends SavedItemsRepository {
   FakeSavedItemsRepository({
     SavedItemPage? listPage,
+    this.onList,
     required this.detailResults,
     this.moveResults = const [],
     this.onMove,
     this.deleteResults = const [],
     this.onDelete,
+    this.enrichResults = const [],
+    this.onEnrich,
     this.collectionResults = const [],
     this.onListInCollection,
   }) : assert(detailResults.isNotEmpty, 'provide at least one detail result'),
@@ -38,6 +42,10 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
        super(api: SavedItemsApi(Dio()));
 
   final SavedItemPage listPage;
+
+  /// An optional handler for one Inbox page, used to hold a load-more open while
+  /// a test asserts the state it leaves behind.
+  final Future<SavedItemPage> Function(String? cursor)? onList;
 
   /// A `SavedItemSummary` to return, or an error to throw.
   final List<Object> detailResults;
@@ -59,6 +67,16 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   /// rather than a silent success, so a test that forgot to script it fails
   /// loudly.
   final List<Object> deleteResults;
+
+  /// A [SavedItemEnrichmentResult] to return, or an error to throw.
+  ///
+  /// Empty means the re-read is not scripted; reaching it is then a `StateError`
+  /// rather than a silent success.
+  final List<Object> enrichResults;
+
+  /// An optional handler for one re-read, used to hold the POST open while a test
+  /// asserts the in-flight state.
+  final Future<SavedItemEnrichmentResult> Function(String id)? onEnrich;
 
   /// An optional handler for one saved-item delete, used to hold the request
   /// open while a test asserts the in-flight UI.
@@ -86,6 +104,7 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   int detailCalls = 0;
   int moveCalls = 0;
   int deleteCalls = 0;
+  int enrichCalls = 0;
   int collectionCalls = 0;
 
   /// The ids passed to [getById], in order.
@@ -93,6 +112,9 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
 
   /// The ids passed to [delete], in order.
   final List<String> deleteIds = [];
+
+  /// The ids passed to [enrich], in order.
+  final List<String> enrichIds = [];
 
   /// The collection ids passed to [listInCollection], in order.
   final List<String> collectionIds = [];
@@ -109,6 +131,10 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   @override
   Future<SavedItemPage> list({String? cursor}) async {
     listCalls++;
+
+    final handler = onList;
+    if (handler != null) return handler(cursor);
+
     return listPage;
   }
 
@@ -179,6 +205,29 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
             : moveResults.length - 1];
 
     if (result is MoveToCollectionResult) return result;
+    throw result;
+  }
+
+  @override
+  Future<SavedItemEnrichmentResult> enrich(String id) async {
+    enrichCalls++;
+    enrichIds.add(id);
+
+    final handler = onEnrich;
+    if (handler != null) return handler(id);
+
+    if (enrichResults.isEmpty) {
+      throw StateError(
+        'FakeSavedItemsRepository has no enrich result scripted',
+      );
+    }
+
+    final result =
+        enrichResults[enrichCalls - 1 < enrichResults.length
+            ? enrichCalls - 1
+            : enrichResults.length - 1];
+
+    if (result is SavedItemEnrichmentResult) return result;
     throw result;
   }
 

@@ -1,12 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 
-/// The presentation model's image-related rules.
+/// The presentation model's image and re-read rules.
 ///
 /// `hasPreviewImage` answers one question only — did the response report an
 /// image? — and `copyWithCollection` must not lose the answer when an item is
-/// moved. Those two facts are what let the preview widget own every rendering
-/// decision without the model drifting underneath it.
+/// moved. `copyWithEnrichment` is the other half: a confirmed re-read replaces
+/// exactly four fields and must not lose identity, collection or saved time.
+/// Those facts are what let the preview widget and the caches update in place
+/// without the model drifting underneath them.
 void main() {
   SavedItemSummary summary({
     String? title = 'Understanding CRDTs',
@@ -96,6 +98,113 @@ void main() {
         ).hasNoMetadata,
         isFalse,
       );
+    });
+  });
+
+  group('copyWithEnrichment', () {
+    test('replaces the four fields the write decided', () {
+      final original = summary(status: EnrichmentStatus.pending);
+
+      final reRead = original.copyWithEnrichment(
+        title: 'Re-read title',
+        description: 'Re-read description.',
+        imageUrl: 'https://example.com/new.png',
+        enrichmentStatus: EnrichmentStatus.completed,
+      );
+
+      expect(reRead.title, 'Re-read title');
+      expect(reRead.description, 'Re-read description.');
+      expect(reRead.imageUrl, 'https://example.com/new.png');
+      expect(reRead.enrichmentStatus, EnrichmentStatus.completed);
+      expect(reRead.hasPreviewImage, isTrue);
+    });
+
+    test('keeps the identity, collection and saved time', () {
+      final original = summary(imageUrl: 'https://example.com/old.png');
+
+      final reRead = original.copyWithEnrichment(
+        title: 'Re-read title',
+        description: 'Re-read description.',
+        imageUrl: 'https://example.com/new.png',
+        enrichmentStatus: EnrichmentStatus.completed,
+      );
+
+      expect(reRead.id, original.id);
+      expect(reRead.url, original.url);
+      expect(reRead.collectionId, original.collectionId);
+      expect(reRead.collectionName, original.collectionName);
+      expect(reRead.savedTimeLabel, original.savedTimeLabel);
+    });
+
+    test('an explicit null clears the previous value', () {
+      final original = summary(
+        title: 'Old title',
+        description: 'Old description.',
+        imageUrl: 'https://example.com/old.png',
+      );
+
+      final reRead = original.copyWithEnrichment(
+        title: null,
+        description: null,
+        imageUrl: null,
+        enrichmentStatus: EnrichmentStatus.completed,
+      );
+
+      expect(
+        reRead.title,
+        isNull,
+        reason:
+            'a page that no longer provides a title must not keep the old one',
+      );
+      expect(reRead.description, isNull);
+      expect(reRead.imageUrl, isNull);
+      expect(reRead.hasPreviewImage, isFalse);
+      expect(reRead.hasNoMetadata, isTrue);
+    });
+
+    test('a failed attempt keeps the metadata it was given', () {
+      final original = summary(title: 'Old title');
+
+      final reRead = original.copyWithEnrichment(
+        title: 'Old title',
+        description: null,
+        imageUrl: null,
+        enrichmentStatus: EnrichmentStatus.failed,
+      );
+
+      expect(reRead.enrichmentStatus, EnrichmentStatus.failed);
+      expect(reRead.title, 'Old title');
+      expect(
+        reRead.hasNoMetadata,
+        isFalse,
+        reason: 'the empty-metadata claim belongs to completed only',
+      );
+    });
+
+    test('a previously missing title can be filled', () {
+      final original = summary(title: null, status: EnrichmentStatus.failed);
+
+      final reRead = original.copyWithEnrichment(
+        title: 'Finally found',
+        description: null,
+        imageUrl: null,
+        enrichmentStatus: EnrichmentStatus.completed,
+      );
+
+      expect(reRead.title, 'Finally found');
+      expect(reRead.enrichmentStatus, EnrichmentStatus.completed);
+    });
+
+    test('a blank image is carried verbatim and is not a preview', () {
+      final reRead = summary().copyWithEnrichment(
+        title: null,
+        description: null,
+        imageUrl: '   ',
+        enrichmentStatus: EnrichmentStatus.completed,
+      );
+
+      expect(reRead.imageUrl, '   ');
+      expect(reRead.hasPreviewImage, isFalse);
     });
   });
 

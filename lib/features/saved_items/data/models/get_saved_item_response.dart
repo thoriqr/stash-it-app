@@ -5,7 +5,8 @@ import 'listed_saved_item.dart';
 part 'get_saved_item_response.freezed.dart';
 part 'get_saved_item_response.g.dart';
 
-/// `data.saved_item` of a successful `GET /saved-items/{id}`.
+/// `data.saved_item` of a successful `GET /saved-items/{id}`, and of a successful
+/// `POST /saved-items/{id}/enrich`.
 ///
 /// ```json
 /// {
@@ -22,6 +23,12 @@ part 'get_saved_item_response.g.dart';
 /// its collection as siblings, while the listing puts the collection inside each
 /// row because that listing spans every collection. Sharing one type would force
 /// one of the two shapes to carry a field it cannot always fill.
+///
+/// **Both routes carry this identical object.** The Go `SavedItemResponse` of the
+/// enrich endpoint is field-for-field the same struct the detail endpoint returns,
+/// so the enrich envelope reuses this type (see `enrich_saved_item_response.dart`)
+/// rather than declaring a second copy that could drift. Neither route nests a
+/// collection: only the detail response adds one, as a sibling of this object.
 ///
 /// **Every documented field is declared**, including the ones presentation does
 /// not read (`domain`, `platform`, `last_enriched_at`, `updated_at`). A DTO that

@@ -7,6 +7,7 @@ import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/core/error/api_failure_messages.dart';
 import 'package:stash_it_app/features/saved_items/application/delete_saved_item_controller.dart';
+import 'package:stash_it_app/features/saved_items/application/enrich_saved_item_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_item_detail_provider.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
@@ -27,9 +28,11 @@ import 'widgets/saved_item_preview.dart';
 ///
 /// **Opening this screen only reads.** The only request a visit makes by itself is
 /// the GET behind [savedItemDetailProvider]. Viewing never enriches, extracts,
-/// polls, refreshes in the background, moves, or deletes. The explicit **Move to
-/// a collection** action issues one `PUT` only after the user chooses a
-/// destination; the enrichment control beside it is deliberately inert.
+/// polls, refreshes in the background, moves, or deletes. **Re-read page** issues
+/// one synchronous `POST` only when the user presses it, and its `200` is applied
+/// directly — there is no follow-up GET, no polling and no automatic retry. **Move
+/// to a collection** issues one `PUT` only after the user chooses a destination.
+/// Those three writes are independent: none of them runs on its own.
 ///
 /// **Delete is explicit and confirmed.** The danger action below Move opens the
 /// first confirmation dialog. Only a confirmed choice issues
@@ -66,6 +69,7 @@ class SavedItemDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(savedItemDetailProvider(itemId));
     final deleting = ref.watch(deleteSavedItemProvider);
+    final enriching = ref.watch(enrichSavedItemProvider);
     final canPop = Navigator.of(context).canPop();
 
     return Scaffold(
@@ -86,9 +90,12 @@ class SavedItemDetailScreen extends ConsumerWidget {
         AsyncData(:final value) => _DetailBody(
           item: value,
           deleting: deleting,
+          enriching: enriching,
           onMoveToCollection: () =>
               showMoveToCollectionSheet(context, item: value),
           onDelete: () => _confirmDelete(context, ref, value),
+          onReRead: () =>
+              ref.read(enrichSavedItemProvider.notifier).enrich(value),
         ),
         AsyncError(:final error, :final isLoading) when !isLoading =>
           error is ApiFailureNotFound
@@ -222,7 +229,9 @@ class _DetailBody extends StatelessWidget {
     required this.item,
     this.onMoveToCollection,
     this.onDelete,
+    this.onReRead,
     this.deleting = false,
+    this.enriching = false,
   });
 
   final SavedItemSummary item;
@@ -235,9 +244,18 @@ class _DetailBody extends StatelessWidget {
   /// [onMoveToCollection].
   final VoidCallback? onDelete;
 
+  /// Null in the skeleton and every non-data state, so neither can start a
+  /// re-read. Only loaded detail data supplies it.
+  final VoidCallback? onReRead;
+
   /// A destructive request is in flight. Both actions are disabled, and the
   /// delete control shows its own progress rather than leaving a dead button.
   final bool deleting;
+
+  /// A re-read is in flight. The item stays visible, the re-read control shows
+  /// its own progress, and both item-level mutations are disabled until it
+  /// finishes. The enrichment status is **not** changed optimistically.
+  final bool enriching;
 
   @override
   Widget build(BuildContext context) {
@@ -327,7 +345,7 @@ class _DetailBody extends StatelessWidget {
               AppButton(
                 label: 'Move to a collection',
                 variant: AppButtonVariant.secondary,
-                onPressed: deleting ? null : onMoveToCollection,
+                onPressed: deleting || enriching ? null : onMoveToCollection,
               ),
               if (onDelete != null) const SizedBox(height: AppMetrics.space2),
             ],
@@ -336,11 +354,15 @@ class _DetailBody extends StatelessWidget {
                 label: 'Delete this item',
                 variant: AppButtonVariant.danger,
                 busy: deleting,
-                onPressed: deleting ? null : onDelete,
+                onPressed: deleting || enriching ? null : onDelete,
               ),
             const SizedBox(height: AppMetrics.space6),
           ],
-          _EnrichmentAction(tokens: tokens),
+          _EnrichmentAction(
+            tokens: tokens,
+            onReRead: onReRead,
+            enriching: enriching,
+          ),
         ],
       ),
     );
@@ -359,17 +381,32 @@ class _DetailBody extends StatelessWidget {
   }
 }
 
-/// The one deliberately disabled control on this screen.
+/// The one write that changes what the item itself shows.
 ///
-/// It has **no callback** (`onPressed: null`) and therefore cannot issue a
-/// request, let alone enrich. The caption is what makes that understandable: a
-/// bare disabled "Re-read page" would leave the user guessing whether the app is
-/// busy or broken, and the wireframe's "Reading the page…" would falsely claim an
-/// enrichment this iteration never starts.
+/// **Available for all three enrichment states.** A `pending` item was never
+/// read, a `failed` one could not be read, and a `completed` one may have changed
+/// since — the user decides when to try again, and none of the three states makes
+/// the action meaningless.
+///
+/// **The callback is only suppliable from loaded detail data.** In the skeleton
+/// and in both non-data states there is no item to re-read, so the control is
+/// present but inert. While a request is in flight the button is [busy] and the
+/// caption says what is happening; the wireframe's "Reading the page…" is now a
+/// truthful description rather than an invented one.
 class _EnrichmentAction extends StatelessWidget {
-  const _EnrichmentAction({required this.tokens});
+  const _EnrichmentAction({
+    required this.tokens,
+    this.onReRead,
+    this.enriching = false,
+  });
 
   final AppTokens tokens;
+
+  /// Null when there is no loaded item, which is what keeps the skeleton, the
+  /// read error and C3 from issuing a request.
+  final VoidCallback? onReRead;
+
+  final bool enriching;
 
   @override
   Widget build(BuildContext context) {
@@ -383,18 +420,19 @@ class _EnrichmentAction extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppMetrics.space3),
-        const AppButton(
+        AppButton(
           label: 'Re-read page',
-          // No callback. Not "busy": nothing is running, and a spinner would say
-          // otherwise.
-          onPressed: null,
           variant: AppButtonVariant.secondary,
+          busy: enriching,
+          onPressed: enriching ? null : onReRead,
         ),
-        const SizedBox(height: AppMetrics.space2),
-        Text(
-          'Not available in this version.',
-          style: AppTypography.meta.copyWith(color: tokens.textTertiary),
-        ),
+        if (enriching) ...[
+          const SizedBox(height: AppMetrics.space2),
+          Text(
+            'Reading the page…',
+            style: AppTypography.meta.copyWith(color: tokens.textTertiary),
+          ),
+        ],
       ],
     );
   }

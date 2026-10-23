@@ -5,6 +5,7 @@ import '../models/collection_saved_items_response.dart';
 import '../models/create_saved_item_request.dart';
 import '../models/create_saved_item_response.dart';
 import '../models/delete_saved_item_response.dart';
+import '../models/enrich_saved_item_response.dart';
 import '../models/get_saved_item_response.dart';
 import '../models/list_saved_items_response.dart';
 import '../models/move_to_collection_request.dart';
@@ -133,6 +134,32 @@ abstract class SavedItemsApi {
   /// client cannot tell the two apart and must not say which happened.
   @GET('/saved-items/{id}')
   Future<GetSavedItemResponse> getById(@Path('id') String id);
+
+  /// `POST /saved-items/{id}/enrich` — re-reads the saved item's source page and
+  /// records what the attempt found.
+  ///
+  /// **No request body and no query parameters.** The URL to fetch is the one
+  /// already stored on the server; the id is the whole input. Nothing about the
+  /// page, the extractor or the outcome is selected by the client.
+  ///
+  /// **Mounted as `Auth` → per-user rate limit → handler** (`enrichment/routes.go`),
+  /// so a `401`, a `429` and a `503` are all refused before the handler runs:
+  /// no page is fetched and no enrichment state is written. Only the handler's
+  /// own database writes can produce a `500`.
+  ///
+  /// **Synchronous, with no job to poll.** The handler fetches and extracts the
+  /// page before answering, then reports the item as it now stands. A page that
+  /// could not be read is a recorded `failed` outcome in a `200` body, not an
+  /// HTTP failure — the only not-found answer is `404 SAVED_ITEM_NOT_FOUND`,
+  /// which also covers the item being deleted while the attempt was running. No
+  /// response sets the status to `pending`.
+  ///
+  /// The body carries the same twelve-field `saved_item` object as [getById], but
+  /// **without** the sibling `collection`: enrichment never changes membership, so
+  /// the route does not resolve the collection name. See
+  /// [EnrichSavedItemResponse].
+  @POST('/saved-items/{id}/enrich')
+  Future<EnrichSavedItemResponse> enrich(@Path('id') String id);
 
   /// `DELETE /saved-items/{id}` — permanently removes one saved item.
   ///

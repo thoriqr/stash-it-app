@@ -1,3 +1,35 @@
+## Re-read page / re-enrich a saved item (2026-10-24)
+
+### Verified backend contract (stash-it-backend)
+- `POST /saved-items/{id}/enrich` is **synchronous**. A `200` carries `{data: {saved_item: <12 fields>}, message}` — no `meta` and no collection, nested or sibling. The item is the same Go struct the detail route returns, so the envelope reuses `SavedItemDetailResponse`.
+- **The body, not the status, reports the outcome.** `completed` may still carry a null title, description and image; `failed` preserves the metadata already stored and leaves `last_enriched_at` alone. No response sets `pending`. A page that could not be read is a recorded `failed` outcome in a `200`.
+- A successful attempt overwrites `title`, `platform`, `description` and `image_url` from the extractor, including writing NULL to clear an old value. `url`, `domain` and `collection_id` never change.
+- Mounted `Auth` → per-user rate limit → handler. `429 USER_RATE_LIMIT_EXCEEDED` (with `Retry-After`) and `503 USER_RATE_LIMIT_UNAVAILABLE` (without one) run before the handler: no fetch and no write. `404 SAVED_ITEM_NOT_FOUND` also covers the item being deleted while the attempt runs. A `500` can only come from the handler's own write — one `UPDATE ... RETURNING` that leaves the row as it was if it fails.
+
+### Flutter implementation
+- Added `SavedItemsApi.enrich` (one `POST`, no body, no query) and `SavedItemsRepository.enrich` with the same `DioException` / `TypeError` / `FormatException` mapping as every other write. Added `EnrichSavedItemResponse` / `EnrichSavedItemDataResponse`; the item DTO is reused, not duplicated.
+- Added `SavedItemEnrichmentResult` (the id plus the four fields a re-read can change) and `savedItemEnrichmentFrom`, which reuses `enrichmentStatusFrom` so this route words the three states exactly as the Inbox, Search and Detail mappers do.
+- Added `SavedItemSummary.copyWithEnrichment`: every parameter is required and nullable, so an explicit null **clears** the old value instead of retaining it. Identity, URL, collection id/name and saved-time label are carried from the read that produced the row.
+- `SavedItems.applyEnrichment` and `CollectionSavedItems.applyEnrichment` patch one loaded row in place. Order, cursor, `hasMore`, `isLoadingMore`, `loadMoreFailed` and tombstones are preserved; no row is inserted, resurrected or re-sorted. `collectionsProvider` is not invalidated, because membership and counts cannot change.
+- `savedItemDetailProvider` is now an auto-dispose notifier family with the same provider name and family key, the same initial GET and `_neverRetry`. `applyEnrichment` patches only a loaded detail for the same id and issues **no** follow-up GET: the POST's `200` is authoritative, and a failed reconciliation read must not replace a successful re-read.
+- Added keep-alive `EnrichSavedItem` with plain `bool` state, a synchronous pre-`await` duplicate guard, exhaustive `ApiFailure` handling and a `ref.mounted`-guarded `finally`. One tap is one POST; nothing polls, retries or reconciles.
+- Detail screen: `Re-read page` is enabled for all three enrichment states. The disabled control and "Not available in this version." are gone. While a re-read runs the button is busy and captioned `Reading the page…`, the item stays visible, the enrichment status is **not** changed optimistically, and Move/Delete are disabled.
+- One notice per attempt: `Page re-read.` / `Page re-read. This page shows no details.` / `Couldn't read this page.`. A `429` uses only the server's real `Retry-After`; a `503` invents no interval; `404` invalidates the detail so its existing unavailable state takes over; transport and an unreadable `200` stay **uncertain** and claim nothing. Every failure leaves all metadata caches untouched.
+- A `500` is treated as a **known** failure rather than an ambiguous one: the route's write is a single statement that either commits with a representation or fails, and a failed request carries no representation to apply.
+
+### Verification
+- `dart run build_runner build --delete-conflicting-outputs` — 31 outputs written (the flag itself is reported as removed and ignored).
+- `dart format` on the changed Dart files; `flutter analyze` — no issues found.
+- Focused suites passed: enrich envelope decoding, enrichment mapper, repository incl. the new `enrich` group, detail provider incl. `applyEnrichment`, the new controller, the detail screen and `SavedItemSummary` — 165 tests across the seven files.
+- `flutter test` — 950 passed.
+- No app, device, or emulator run. Nothing staged or committed.
+
+### Remaining limitations
+- Search results are not patched: a re-read from the detail leaves a stale Search row until the user searches again. Search results are transient and unrelated to the current item's caches, so no invalidation was invented.
+- All re-read copy is hardcoded English; the app still has no l10n layer.
+- The re-read is only reachable from the saved-item detail, because that is the only surface with a detail action. Rows have no re-read affordance.
+- A `completed` re-read that clears metadata is applied as such; there is no "restore what was there" action.
+
 ## Saved item image rendering (2026-10-24)
 
 ### Flutter implementation

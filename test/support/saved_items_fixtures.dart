@@ -104,6 +104,51 @@ class SavedItemsFixtures {
     };
   }
 
+  /// The whole `200` body of `POST /saved-items/{id}/enrich`.
+  ///
+  /// **The saved item is the detail shape with no collection anywhere.** The
+  /// enrich route never changes membership, so there is no nested `collection`
+  /// inside the item and no sibling object beside it — and no `meta`. [item]
+  /// supplies the twelve fields, then the nested object is removed rather than
+  /// restating the shape in a second place.
+  ///
+  /// A `failed` status is expressed here as a `200` with `enrichment_status:
+  /// failed`; that is the contract, not a fixture convenience.
+  static Map<String, dynamic> enriched({
+    String id = '01a0f359-093b-737a-963a-80f7ca6768ed',
+    String url = 'https://example.com/articles/crdts-explained',
+    String? domain = 'example.com',
+    String? platform = 'web',
+    String? title = 'Understanding CRDTs',
+    String? description = 'Conflict-free replicated data types converge.',
+    String? imageUrl = 'https://example.com/og.png',
+    String collectionId = '01a0f359-093b-737a-963a-80f7ca6768ed',
+    String enrichmentStatus = 'completed',
+    String? lastEnrichedAt = '2026-10-02T10:31:00Z',
+    String createdAt = '2026-10-02T10:30:00Z',
+    String updatedAt = '2026-10-02T10:31:00Z',
+  }) {
+    final savedItem = item(
+      id: id,
+      url: url,
+      domain: domain,
+      platform: platform,
+      title: title,
+      description: description,
+      imageUrl: imageUrl,
+      collectionId: collectionId,
+      enrichmentStatus: enrichmentStatus,
+      lastEnrichedAt: lastEnrichedAt,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    )..remove('collection');
+
+    return {
+      'data': {'saved_item': savedItem},
+      'message': 'saved item enriched successfully',
+    };
+  }
+
   /// The whole `200` body of `PUT /saved-items/{id}/collection`.
   ///
   /// **No `meta`**, and `data.saved_item` deliberately omits `description`,

@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_enrichment_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 
 part 'saved_item_detail_provider.g.dart';
@@ -32,13 +33,51 @@ Duration? _neverRetry(int retryCount, Object error) => null;
 /// outlive the route. This is the opposite of `savedItemsProvider`, which is
 /// keep-alive because the Inbox is a retained destination.
 ///
-/// The provider performs the GET in [build] because opening the detail is
-/// precisely the read the screen exists for. The route is not rate limited, so a
-/// visit costs one indexed read and nothing else.
+/// The GET happens in [build] because opening the detail is precisely the read the
+/// screen exists for. The route is not rate limited, so a visit costs one indexed
+/// read and nothing else.
 ///
-/// **This request never enriches anything.** It is a plain read; the enrichment
-/// endpoint is not called by this feature.
+/// **A notifier rather than a plain `FutureProvider` for one reason:**
+/// [applyEnrichment] has to replace the loaded value in place after a confirmed
+/// re-read. Invalidating the provider instead would issue a second GET for
+/// information the POST already returned, and a failed follow-up would replace a
+/// successful re-read with the screen's error state. The notifier keeps the
+/// completed POST authoritative.
 @Riverpod(retry: _neverRetry)
-Future<SavedItemSummary> savedItemDetail(Ref ref, String id) {
-  return ref.watch(savedItemsRepositoryProvider).getById(id);
+class SavedItemDetail extends _$SavedItemDetail {
+  @override
+  Future<SavedItemSummary> build(String id) {
+    return ref.watch(savedItemsRepositoryProvider).getById(id);
+  }
+
+  /// Applies a confirmed re-read without fetching anything.
+  ///
+  /// **Only a loaded detail for the same item is updated.** No current data — the
+  /// screen is still loading, failed, or was never opened — means there is
+  /// nothing to patch, and a different id means the result belongs to another
+  /// item. Both are silent no-ops, not errors.
+  ///
+  /// The collection name and id are preserved: the enrich response carries no
+  /// collection, and enrichment never changes membership. Only the four fields the
+  /// write actually decided are replaced, through
+  /// [SavedItemSummary.copyWithEnrichment].
+  ///
+  /// **No request is issued here.** The caller has already received the complete
+  /// post-attempt item in the POST's `200`.
+  void applyEnrichment(SavedItemEnrichmentResult result) {
+    final current = switch (state) {
+      AsyncData(:final value) => value,
+      _ => null,
+    };
+    if (current == null || current.id != result.savedItemId) return;
+
+    state = AsyncData(
+      current.copyWithEnrichment(
+        title: result.title,
+        description: result.description,
+        imageUrl: result.imageUrl,
+        enrichmentStatus: result.enrichmentStatus,
+      ),
+    );
+  }
 }
