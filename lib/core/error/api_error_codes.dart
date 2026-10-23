@@ -201,6 +201,17 @@ abstract final class ApiErrorCode {
   static const String invalidCollectionDeleteTarget =
       'INVALID_COLLECTION_DELETE_TARGET';
 
+  /// 404. The `target_collection_id` of a `move` does not exist or belongs to
+  /// another user. `collection/error_codes.go`
+  /// (`CodeCollectionDeleteTargetNotFound`).
+  ///
+  /// Deliberately distinct from [collectionNotFound]: that code describes the
+  /// collection being deleted, while this one names the destination. The backend
+  /// validates the target before moving or deleting anything, so the source and
+  /// its items are unchanged and the user can choose another destination.
+  static const String collectionDeleteTargetNotFound =
+      'COLLECTION_DELETE_TARGET_NOT_FOUND';
+
   // ---------------------------------------------------------------------------
   // Search — `internal/api/search/error_codes.go`.
   // ---------------------------------------------------------------------------

@@ -30,10 +30,11 @@ abstract class CollectionsApi {
   /// **Mounted as `Auth` only** (`collection/routes.go`): no rate limiter. The
   /// body is required; the action is never defaulted.
   ///
-  /// This client only sends `saved_items_action: "delete"` with an explicit
-  /// `target_collection_id: null`. The follow-up is offered only for a collection
-  /// the saved-item delete reported as empty, so deleting its contents is the
-  /// intended consequence of the action the user confirmed.
+  /// The request states both the action and, for a move, the destination. This
+  /// client sends `delete` with an explicit null target for an empty collection,
+  /// where the disposition question has one accurate answer, and `move` with the
+  /// destination the user picked for a non-empty one. It never sends `move`
+  /// without a target, nor `delete` with one.
   ///
   /// The `200` carries `data: {}` and a message. Neither is read to establish
   /// success: the response means the delete transaction committed.

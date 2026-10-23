@@ -1,3 +1,35 @@
+## Delete collection (2026-10-24)
+
+### Verified backend contract (stash-it-backend)
+- `DELETE /collections/{id}` is unchanged in shape but both dispositions are now used: `{saved_items_action: "delete"|"move", target_collection_id}`. `delete` requires a null or omitted target; `move` requires a target that is not the source. `UNSORTED_COLLECTION_PROTECTED` is decided by `system_key`, so Unsorted is a valid destination and never a valid source. The write is one transaction: either the items are moved and the collection removed, or nothing changes.
+- A move preserves each item's `created_at`, so the destination's contents interleave by original save time and the Inbox order does not change.
+- Errors: `BAD_REQUEST` 400, `INVALID_COLLECTION_DELETE_ACTION` 400, `INVALID_COLLECTION_DELETE_TARGET` 400, `COLLECTION_NOT_FOUND` 404, `COLLECTION_DELETE_TARGET_NOT_FOUND` 404, `UNSORTED_COLLECTION_PROTECTED` 409, `COLLECTION_NOT_EMPTY` 409, `INTERNAL_SERVER_ERROR` 500. `COLLECTION_NOT_EMPTY` is the final foreign-key guard and applies to both actions; it and a missing target roll back entirely, so both are known not-deleted.
+- Success is `200` with an unused `data: null` body; the status is the receipt.
+
+### Flutter implementation
+- The collection contents screen's app bar gained an overflow action. It is shown only for a settled listing and a **known** identity: the row for this id from the already-loaded `collectionsProvider`. `ref.exists` keeps this from issuing `GET /collections`; when that list has never loaded the action stays hidden rather than guessing from the header name (**D2**). Unsorted hides it outright, and `UNSORTED_COLLECTION_PROTECTED` remains a defensive outcome.
+- Empty collection (`items.isEmpty && hasMore == false`): one `AppConfirmDialog`, no Move option. Non-empty: one sheet with Move / Delete / Keep, stating irreversibility; no second confirmation and no barrier or drag dismissal (`PopScope(canPop: !busy)` plus `Keep collection`).
+- The sheet states a number only when the loaded pages cover the collection. `itemCount` is `null` when `hasMore` is true, so a partial page cannot be presented as a total.
+- Move opens the existing cursor-paginated picker with an optional `description`; single-item move copy is unchanged, the source is excluded by id, Unsorted is offered, and dismissal sends nothing. The returned destination is sent as one bulk request — no per-item moves.
+- Added `CollectionsRepository.moveItemsAndDelete` beside the existing `delete`, sharing one private `_submit`. The disposition and destination therefore cannot be sent inconsistently.
+- Added keep-alive `CollectionDeletion` with a synchronous pre-`await` guard, `deleteDiscardingItems` (both destructive paths send `delete` with a null target) and `moveItemsAndDelete`. Success, known refusal and ambiguous outcome stay distinct: an ambiguous outcome changes no cache entry, pops nothing, and keeps the sheet open with `Close` in place of `Keep collection`.
+- `COLLECTION_DELETE_TARGET_NOT_FOUND` is a new error code, failure variant and mapper arm; existing mappings and every exhaustive switch were extended, not replaced. It keeps the source and the sheet intact so another destination can be chosen. `COLLECTION_NOT_EMPTY` explains the change, refreshes the contents once and retries nothing. `COLLECTION_NOT_FOUND` reconciles the removal and leaves.
+- Cache reconciliation is in place, not by invalidation: the source is removed from `collectionsProvider` (sort preserved); a confirmed move rewrites the loaded Inbox rows to the destination and the controller then refreshes the collections list for authoritative counts without count arithmetic and without invalidating Search. `SavedItems` also covers rows it never loaded, and a page requested before the change cannot resurrect or mis-assign rows.
+- After success the decision surface closes and the route pops back to Collections; the source contents are not refreshed for a route that is being removed.
+
+### Verification
+- `dart run build_runner build --delete-conflicting-outputs` — 38 outputs written (the flag itself is reported as removed and ignored).
+- `dart format` on the changed Dart files; `flutter analyze` — no issues found.
+- Focused suites passed: controller, reconciliation, repository delete/move and failure-mapper tests (58), collection contents screen (20), routed delete navigation (2).
+- `flutter test` — 830 passed.
+- No app, device, or emulator run. Nothing staged or committed.
+
+### Remaining limitations
+- Delete copy and feedback remain hardcoded English; the app still has no l10n layer.
+- A direct deep entry into a collection route hides the action until the Collections list has been loaded once, because identity is read from that list rather than fetched for the decision.
+- A collection with more than one loaded page reports no item count; the endpoint has no total, so the sheet says it has saved items without a number.
+- Moving does not re-read the destination's contents; the destination screen reads its own pages when opened.
+
 ## Delete saved item (2026-10-23)
 
 ### Verified backend contract (stash-it-backend)

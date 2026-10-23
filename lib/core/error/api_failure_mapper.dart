@@ -147,6 +147,13 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.collectionNotFound:
       return ApiFailureNotFound(code: code);
 
+    // The `move` action's destination is gone or is not this caller's. It is
+    // not the collection being deleted, so it must not become
+    // `ApiFailureNotFound`: the source is still there and the user can choose
+    // another destination.
+    case ApiErrorCode.collectionDeleteTargetNotFound:
+      return ApiFailureCollectionDeleteTargetNotFound(code: code);
+
     // A `create` request whose name is already held by one of the user's
     // collections. Well formed, but not available as a new name: the user has to
     // choose another one. The backend wrote nothing.

@@ -360,14 +360,16 @@ String messageFor(ApiFailure failure) {
 
     // `ApiFailureNotFound` is unreachable on these routes: none of them answers
     // `RESOURCE_NOT_FOUND`. `ApiFailureCollectionNameAlreadyExists`,
-    // `ApiFailureCollectionNotEmpty` and `ApiFailureUnsortedCollectionProtected`
-    // are likewise collection-route outcomes. All are grouped with the unreadable
-    // replies rather than given sign-in copy for an outcome sign-in cannot
-    // produce, and the closed taxonomy stays exhaustive.
+    // `ApiFailureCollectionNotEmpty`, `ApiFailureUnsortedCollectionProtected`
+    // and `ApiFailureCollectionDeleteTargetNotFound` are likewise
+    // collection-route outcomes. All are grouped with the unreadable replies
+    // rather than given sign-in copy for an outcome sign-in cannot produce, and
+    // the closed taxonomy stays exhaustive.
     ApiFailureNotFound() ||
     ApiFailureCollectionNameAlreadyExists() ||
     ApiFailureCollectionNotEmpty() ||
     ApiFailureUnsortedCollectionProtected() ||
+    ApiFailureCollectionDeleteTargetNotFound() ||
     ApiFailureMalformedRequest() ||
     ApiFailureUnreadableResponse() =>
       "We couldn't read the server's reply. Try again.",

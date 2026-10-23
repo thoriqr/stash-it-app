@@ -75,6 +75,43 @@ void main() {
     );
   });
 
+  test('move sends the action and the chosen destination together', () async {
+    adapter.onMethod(
+      'DELETE',
+      path,
+      body: {'data': {}, 'message': 'collection deleted successfully'},
+    );
+
+    await repository.moveItemsAndDelete(
+      collectionId: collectionId,
+      targetCollectionId: 'collection-2',
+    );
+
+    // One request carries both fields: there is no per-item move and no second
+    // call that could leave the collection deleted with its items stranded.
+    expect(adapter.requests.single.body, {
+      'saved_items_action': 'move',
+      'target_collection_id': 'collection-2',
+    });
+  });
+
+  test('maps COLLECTION_DELETE_TARGET_NOT_FOUND to the destination', () async {
+    adapter.onMethod(
+      'DELETE',
+      path,
+      status: 404,
+      body: errorBody('COLLECTION_DELETE_TARGET_NOT_FOUND'),
+    );
+
+    await expectLater(
+      repository.moveItemsAndDelete(
+        collectionId: collectionId,
+        targetCollectionId: 'collection-2',
+      ),
+      throwsA(isA<ApiFailureCollectionDeleteTargetNotFound>()),
+    );
+  });
+
   test('maps an unavailable collection to typed not-found', () async {
     adapter.onMethod(
       'DELETE',

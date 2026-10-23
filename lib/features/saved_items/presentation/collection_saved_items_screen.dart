@@ -6,11 +6,16 @@ import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/core/error/api_failure_messages.dart';
+import 'package:stash_it_app/features/collections/application/collections_controller.dart';
+import 'package:stash_it_app/features/collections/domain/collection_summary.dart';
 import 'package:stash_it_app/features/saved_items/application/collection_saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/collection_saved_items_state.dart';
+import 'package:stash_it_app/features/saved_items/application/delete_collection_controller.dart';
+import 'package:stash_it_app/features/saved_items/presentation/widgets/delete_collection_sheet.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_skeleton.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
+import 'package:stash_it_app/shared/widgets/app_confirm_dialog.dart';
 
 /// One collection and the items in it, read from
 /// `GET /collections/{id}/saved-items`.
@@ -37,6 +42,13 @@ import 'package:stash_it_app/shared/widgets/app_button.dart';
 /// handled on the saved-item detail screen, and this screen is a listing. Neither
 /// decision touches the API Retry controls, which are the only way to recover from
 /// a failed read.
+///
+/// **Deleting the collection is an action on what is already loaded, not a fifth
+/// state.** The header's overflow offers it only when this document has a settled
+/// listing — an empty one included, since that is the single-confirmation case —
+/// and the collection's identity is already known from the loaded Collections list
+/// and is not Unsorted (**D2**). Identity is never inferred from the display name,
+/// and no `GET /collections` is issued to decide whether the action exists.
 class CollectionSavedItemsScreen extends ConsumerStatefulWidget {
   const CollectionSavedItemsScreen({required this.collectionId, super.key});
 
@@ -135,6 +147,17 @@ class _CollectionSavedItemsScreenState
     // there is no name to show and inventing one would contradict the error.
     final showHeader = listing.hasValue || listing.isLoading;
 
+    // A settled listing is what the delete decision must be taken from: an empty
+    // page is a valid answer, while a page still loading and a failed first read
+    // are not. A refresh keeps the previous rows in place, so it does not remove
+    // the action.
+    final loaded = switch (listing) {
+      AsyncData(:final value) => value,
+      _ => null,
+    };
+    final identity = _knownIdentity(ref);
+    final deleting = ref.watch(collectionDeletionProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('COLLECTION'),
@@ -147,6 +170,31 @@ class _CollectionSavedItemsScreenState
                 tooltip: 'Back to Collections',
                 onPressed: () => context.go(AppRoutes.collections),
               ),
+        actions: [
+          // Two independent conditions, both required: the listing is settled,
+          // and the collection is known not to be Unsorted. Unknown identity
+          // hides the action rather than assuming it is safe.
+          if (loaded != null && identity != null && !identity.isUnsorted)
+            PopupMenuButton<_CollectionAction>(
+              tooltip: 'Collection actions',
+              enabled: !deleting,
+              onSelected: (action) {
+                switch (action) {
+                  case _CollectionAction.delete:
+                    _startDeletion(loaded);
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: _CollectionAction.delete,
+                  child: Text(
+                    'Delete collection',
+                    style: TextStyle(color: AppTheme.tokensOf(context).danger),
+                  ),
+                ),
+              ],
+            ),
+        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,6 +204,88 @@ class _CollectionSavedItemsScreenState
         ],
       ),
     );
+  }
+
+  /// The row for this collection in the **already-loaded** Collections list.
+  ///
+  /// `ref.exists` is what keeps this from becoming a fetch: opening a collection
+  /// directly must not issue `GET /collections` just to decide whether a menu
+  /// action exists. When that list has never been loaded the identity is unknown
+  /// and the action stays hidden, rather than guessing from the display name —
+  /// Unsorted is resolved by `system_key`, never by its name (**D2**), and the
+  /// server still refuses a delete of it defensively.
+  CollectionSummary? _knownIdentity(WidgetRef ref) {
+    if (!ref.exists(collectionsProvider)) return null;
+
+    final items = switch (ref.watch(collectionsProvider)) {
+      AsyncData(:final value) => value.items,
+      _ => const <CollectionSummary>[],
+    };
+
+    for (final collection in items) {
+      if (collection.id == widget.collectionId) return collection;
+    }
+    return null;
+  }
+
+  /// Asks for the one disposition the backend requires, then leaves when the
+  /// collection is known gone.
+  ///
+  /// **Empty and non-empty are different questions.** With the whole collection
+  /// loaded and no items, there is nothing to keep or discard, so a single
+  /// confirmation is enough and no Move option is offered. Otherwise the sheet
+  /// collects Move / Delete / Keep and states that deleting is irreversible.
+  ///
+  /// The controller owns the request, the in-flight guard, cache reconciliation
+  /// and every message. This method owns only the order of decisions and
+  /// navigation, and **never retries on its own**.
+  Future<void> _startDeletion(CollectionSavedItemsState listing) async {
+    if (ref.read(collectionDeletionProvider)) return;
+
+    final name = listing.collectionName;
+    // A total only when the loaded pages cover the collection. `null` means
+    // "there are more than this", which the sheet must not render as a count.
+    final itemCount = listing.hasMore ? null : listing.items.length;
+
+    if (itemCount == 0) {
+      final confirmed = await showAppConfirmDialog(
+        context: context,
+        title: name.trim().isEmpty
+            ? 'Delete this collection?'
+            : 'Delete $name?',
+        message:
+            'This collection is empty. There are no items to keep or discard. '
+            'This cannot be undone.',
+        cancelLabel: 'Cancel',
+        confirmLabel: 'Delete',
+        destructive: true,
+      );
+      if (confirmed != true || !mounted) return;
+
+      final outcome = await ref
+          .read(collectionDeletionProvider.notifier)
+          .deleteDiscardingItems(
+            collectionId: widget.collectionId,
+            collectionName: name,
+          );
+
+      if (!mounted) return;
+      if (outcome is CollectionDeletionSucceeded ||
+          outcome is CollectionDeletionSourceNotFound) {
+        _leave();
+      }
+      return;
+    }
+
+    final result = await showDeleteCollectionSheet(
+      context,
+      collectionId: widget.collectionId,
+      collectionName: name,
+      itemCount: itemCount,
+    );
+
+    if (!mounted) return;
+    if (result == DeleteCollectionSheetResult.deleted) _leave();
   }
 
   /// The collection's name, or a placeholder of the same shape while it is read.
@@ -297,6 +427,13 @@ class _CollectionSavedItemsScreenState
     );
   }
 }
+
+/// The actions the header overflow can offer.
+///
+/// One entry today. Named rather than a bare `VoidCallback` so a second action
+/// cannot be added later without the `switch` that dispatches it saying what it
+/// does.
+enum _CollectionAction { delete }
 
 /// A quiet marker at the end of the list while the next page is in flight.
 ///

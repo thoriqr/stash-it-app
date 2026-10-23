@@ -22,9 +22,11 @@ part of 'delete_saved_item_controller.dart';
 ///
 /// **No cache is invalidated to remove one row.** Loaded listings are edited in
 /// place through their own tombstone-aware methods, preserving their pages,
-/// cursors and sort. Only a confirmed collection deletion invalidates that
-/// collection's contents provider, because a mounted collection screen must stop
-/// showing a collection that no longer exists.
+/// cursors and sort. A collection delete that establishes the collection is gone
+/// (success or not-found) invalidates that collection's contents provider by
+/// default, because a mounted collection screen must stop showing a collection
+/// that no longer exists. The caller may opt out when it is about to pop that
+/// screen.
 
 @ProviderFor(DeleteSavedItem)
 final deleteSavedItemProvider = DeleteSavedItemProvider._();
@@ -43,9 +45,11 @@ final deleteSavedItemProvider = DeleteSavedItemProvider._();
 ///
 /// **No cache is invalidated to remove one row.** Loaded listings are edited in
 /// place through their own tombstone-aware methods, preserving their pages,
-/// cursors and sort. Only a confirmed collection deletion invalidates that
-/// collection's contents provider, because a mounted collection screen must stop
-/// showing a collection that no longer exists.
+/// cursors and sort. A collection delete that establishes the collection is gone
+/// (success or not-found) invalidates that collection's contents provider by
+/// default, because a mounted collection screen must stop showing a collection
+/// that no longer exists. The caller may opt out when it is about to pop that
+/// screen.
 final class DeleteSavedItemProvider
     extends $NotifierProvider<DeleteSavedItem, bool> {
   /// The destructive saved-item flow: one item delete, then at most one optional
@@ -62,9 +66,11 @@ final class DeleteSavedItemProvider
   ///
   /// **No cache is invalidated to remove one row.** Loaded listings are edited in
   /// place through their own tombstone-aware methods, preserving their pages,
-  /// cursors and sort. Only a confirmed collection deletion invalidates that
-  /// collection's contents provider, because a mounted collection screen must stop
-  /// showing a collection that no longer exists.
+  /// cursors and sort. A collection delete that establishes the collection is gone
+  /// (success or not-found) invalidates that collection's contents provider by
+  /// default, because a mounted collection screen must stop showing a collection
+  /// that no longer exists. The caller may opt out when it is about to pop that
+  /// screen.
   DeleteSavedItemProvider._()
     : super(
         from: null,
@@ -92,7 +98,7 @@ final class DeleteSavedItemProvider
   }
 }
 
-String _$deleteSavedItemHash() => r'f2477d715e49013858bf3371d7034cbec37ba5fd';
+String _$deleteSavedItemHash() => r'b53e78221d1496d151f33b3d97c60f3d25b9a153';
 
 /// The destructive saved-item flow: one item delete, then at most one optional
 /// collection delete.
@@ -108,9 +114,11 @@ String _$deleteSavedItemHash() => r'f2477d715e49013858bf3371d7034cbec37ba5fd';
 ///
 /// **No cache is invalidated to remove one row.** Loaded listings are edited in
 /// place through their own tombstone-aware methods, preserving their pages,
-/// cursors and sort. Only a confirmed collection deletion invalidates that
-/// collection's contents provider, because a mounted collection screen must stop
-/// showing a collection that no longer exists.
+/// cursors and sort. A collection delete that establishes the collection is gone
+/// (success or not-found) invalidates that collection's contents provider by
+/// default, because a mounted collection screen must stop showing a collection
+/// that no longer exists. The caller may opt out when it is about to pop that
+/// screen.
 
 abstract class _$DeleteSavedItem extends $Notifier<bool> {
   bool build();

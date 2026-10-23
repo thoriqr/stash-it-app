@@ -241,7 +241,8 @@ class MoveToCollection extends _$MoveToCollection {
       // delete emits these. A known not-moved refusal if a proxy ever produced
       // one; they are not treated as an unconfirmed write.
       case ApiFailureCollectionNotEmpty() ||
-          ApiFailureUnsortedCollectionProtected():
+          ApiFailureUnsortedCollectionProtected() ||
+          ApiFailureCollectionDeleteTargetNotFound():
         _publish(
           const AppFeedback(
             tone: FeedbackTone.danger,

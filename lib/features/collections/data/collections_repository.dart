@@ -61,14 +61,52 @@ class CollectionsRepository {
   /// [ApiFailureUnsortedCollectionProtected] and
   /// [ApiFailureCollectionNotEmpty].
   Future<void> delete({required String collectionId}) async {
+    await _submit(
+      collectionId,
+      const DeleteCollectionRequest(
+        savedItemsAction: 'delete',
+        targetCollectionId: null,
+      ),
+    );
+  }
+
+  /// Permanently removes [collectionId], moving its saved items into
+  /// [targetCollectionId] first.
+  ///
+  /// **One request, one destination.** The action and target travel together in
+  /// the body, so the backend performs the move and the delete in one
+  /// transaction. There is no per-item move and no second request to recover a
+  /// partial result.
+  ///
+  /// **The target is authoritative and already chosen.** It must differ from
+  /// [collectionId]; the backend rejects the source as a target. Unsorted is a
+  /// valid destination.
+  ///
+  /// Throws [ApiFailure] for every refusal. The two rollback outcomes are
+  /// distinct: [ApiFailureCollectionDeleteTargetNotFound] leaves the source and
+  /// its items untouched and the user can choose another destination, while
+  /// [ApiFailureCollectionNotEmpty] means a concurrent insert made the backend
+  /// abandon the whole transaction.
+  Future<void> moveItemsAndDelete({
+    required String collectionId,
+    required String targetCollectionId,
+  }) async {
+    await _submit(
+      collectionId,
+      DeleteCollectionRequest(
+        savedItemsAction: 'move',
+        targetCollectionId: targetCollectionId,
+      ),
+    );
+  }
+
+  /// Sends one collection-delete request and translates every failure once.
+  Future<void> _submit(
+    String collectionId,
+    DeleteCollectionRequest request,
+  ) async {
     try {
-      await api.delete(
-        collectionId,
-        const DeleteCollectionRequest(
-          savedItemsAction: 'delete',
-          targetCollectionId: null,
-        ),
-      );
+      await api.delete(collectionId, request);
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError catch (error) {

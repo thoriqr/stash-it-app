@@ -15,6 +15,7 @@ import 'collection_destination_row.dart';
 Future<CollectionSummary?> showMoveCollectionPickerSheet(
   BuildContext context, {
   required String currentCollectionId,
+  String? description,
 }) {
   final tokens = AppTheme.tokensOf(context);
 
@@ -30,8 +31,10 @@ Future<CollectionSummary?> showMoveCollectionPickerSheet(
         top: Radius.circular(AppMetrics.radius2),
       ),
     ),
-    builder: (_) =>
-        MoveCollectionPickerSheet(currentCollectionId: currentCollectionId),
+    builder: (_) => MoveCollectionPickerSheet(
+      currentCollectionId: currentCollectionId,
+      description: description,
+    ),
   );
 }
 
@@ -44,10 +47,18 @@ Future<CollectionSummary?> showMoveCollectionPickerSheet(
 class MoveCollectionPickerSheet extends ConsumerWidget {
   const MoveCollectionPickerSheet({
     required this.currentCollectionId,
+    this.description,
     super.key,
   });
 
   final String currentCollectionId;
+
+  /// What the picker is choosing a destination for.
+  ///
+  /// Omitted by the single-item move, which keeps its established copy. A bulk
+  /// move supplies wording that names its items rather than one item, without
+  /// duplicating the rest of the picker.
+  final String? description;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -79,7 +90,7 @@ class MoveCollectionPickerSheet extends ConsumerWidget {
               ),
               const SizedBox(height: AppMetrics.space2),
               Text(
-                'Choose a collection to move this item into.',
+                description ?? 'Choose a collection to move this item into.',
                 style: AppTypography.body.copyWith(color: tokens.textSecondary),
               ),
               const SizedBox(height: AppMetrics.space4),

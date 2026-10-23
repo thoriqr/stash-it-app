@@ -129,6 +129,24 @@ final class ApiFailureUnsortedCollectionProtected extends ApiFailure {
   final String code;
 }
 
+/// `COLLECTION_DELETE_TARGET_NOT_FOUND` — a collection delete's `move` action
+/// named a destination that is gone or is not this caller's.
+///
+/// **Known not deleted, and the source is intact.** The backend validates the
+/// target before moving or deleting anything, so nothing changed and the only
+/// correction is another destination.
+///
+/// Deliberately distinct from [ApiFailureNotFound]. That variant describes the
+/// resource a screen is showing, and treating a missing destination as it would
+/// push the collection screen into its not-found state even though the
+/// collection being deleted is still there.
+final class ApiFailureCollectionDeleteTargetNotFound extends ApiFailure {
+  const ApiFailureCollectionDeleteTargetNotFound({required this.code});
+
+  /// The backend code, retained for logging and tests, never for display.
+  final String code;
+}
+
 /// `BAD_REQUEST`, or `INVALID_COLLECTION_INTENT`. The body was unparseable, or
 /// parsed without stating a supported operation.
 ///

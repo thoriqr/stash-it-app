@@ -94,9 +94,25 @@ class SavedItems extends _$SavedItems {
   /// page is authoritative and its cursor was issued after the delete too.
   final Set<String> _tombstones = {};
 
-  /// Increments on every tombstone. A first-page request records this value and
-  /// only clears tombstones when it has not changed, which is how a reply that
-  /// was already in flight cannot authorise clearing them.
+  /// Collection ids whose rows were removed locally after a confirmed
+  /// collection delete.
+  ///
+  /// A page requested before that delete can return one of those rows after the
+  /// in-place removal. Filtering by collection also covers rows the Inbox had
+  /// not loaded yet, which a per-item tombstone cannot.
+  final Set<String> _removedCollectionIds = {};
+
+  /// Confirmed bulk moves, keyed by the collection the items left.
+  ///
+  /// A page requested before the move can still describe the old collection.
+  /// Rewriting it on adoption keeps the chip truthful without replacing loaded
+  /// pages or starting a fetch.
+  final Map<String, _CollectionTarget> _relocatedCollections = {};
+
+  /// Increments on every local reconciliation — a removed item, a removed
+  /// collection, or a confirmed bulk move. A first-page request records this
+  /// value and only clears the protections when it has not changed, which is how
+  /// a reply that was already in flight cannot authorise clearing them.
   int _tombstoneVersion = 0;
 
   @override
@@ -344,16 +360,86 @@ class SavedItems extends _$SavedItems {
     _tombstones.add(savedItemId);
     _tombstoneVersion++;
 
-    final current = switch (state) {
-      AsyncData(:final value) => value,
-      _ => null,
-    };
+    final current = _currentState;
     if (current == null) return;
 
     final items = current.items
         .where((item) => item.id != savedItemId)
         .toList(growable: false);
     if (items.length == current.items.length) return;
+
+    state = AsyncData(current.copyWith(items: items));
+  }
+
+  /// Removes every loaded row that belongs to [collectionId].
+  ///
+  /// This is the Inbox half of a confirmed collection delete. Position, cursor,
+  /// `hasMore` and `isLoadingMore` are preserved: removing a collection removes
+  /// rows, not the listing's continuation point. The collection id is remembered
+  /// so a page already in flight cannot put any of those rows back — including a
+  /// row the Inbox had not loaded when the delete landed.
+  ///
+  /// **No network operation and not announced.** The caller has confirmed the
+  /// delete and publishes its own feedback.
+  void removeItemsInCollection(String collectionId) {
+    final id = collectionId.trim();
+    if (id.isEmpty) return;
+
+    _removedCollectionIds.add(id);
+    _tombstoneVersion++;
+
+    final current = _currentState;
+    if (current == null) return;
+
+    final items = _reconcileAll(current.items);
+    if (items.length == current.items.length) return;
+
+    state = AsyncData(current.copyWith(items: items));
+  }
+
+  /// Rewrites every loaded row in [sourceCollectionId] to the destination of a
+  /// confirmed bulk move.
+  ///
+  /// The items still exist and keep their position in the recent-history order:
+  /// the backend preserves their original save time. Only the collection id and
+  /// displayed name change, so title, description, enrichment state, preview
+  /// flag and saved-time label stay exactly as the read produced them.
+  ///
+  /// The mapping is applied to pages already in flight as well, so a reply
+  /// fetched before the move cannot restore the old chip.
+  ///
+  /// **No network operation and not announced.** The caller has confirmed the
+  /// move and publishes its own feedback.
+  void applyCollectionToItems({
+    required String sourceCollectionId,
+    required String targetCollectionId,
+    required String targetCollectionName,
+  }) {
+    final source = sourceCollectionId.trim();
+    final target = targetCollectionId.trim();
+    if (source.isEmpty || target.isEmpty || source == target) return;
+
+    _relocatedCollections[source] = _CollectionTarget(
+      id: target,
+      name: targetCollectionName,
+    );
+    _tombstoneVersion++;
+
+    final current = _currentState;
+    if (current == null) return;
+
+    var changed = false;
+    final items = <SavedItemSummary>[];
+    for (final item in current.items) {
+      final reconciled = _reconcile(item);
+      if (reconciled == null) {
+        changed = true;
+        continue;
+      }
+      if (!identical(reconciled, item)) changed = true;
+      items.add(reconciled);
+    }
+    if (!changed) return;
 
     state = AsyncData(current.copyWith(items: items));
   }
@@ -432,6 +518,11 @@ class SavedItems extends _$SavedItems {
     }
   }
 
+  SavedItemsState? get _currentState => switch (state) {
+    AsyncData(:final value) => value,
+    _ => null,
+  };
+
   /// Prepends [incoming] — a newer first page — above [existing], in the order
   /// the server sent it, skipping any id already present.
   ///
@@ -439,8 +530,9 @@ class SavedItems extends _$SavedItems {
   /// landed between two fetches can appear both in the refreshed first page and
   /// in an older page already on screen, and a duplicated row is a visible
   /// defect. A row already present keeps its existing position instead of moving
-  /// to the head. Tombstoned ids are dropped: this merge is not a fresh first
-  /// page and cannot authorise clearing them.
+  /// to the head. Locally reconciled rows — deleted ids, removed collections and
+  /// confirmed bulk moves — are applied first: this merge is not a fresh first
+  /// page and cannot authorise clearing those protections.
   List<SavedItemSummary> _prepend(
     List<SavedItemSummary> incoming,
     List<SavedItemSummary> existing,
@@ -449,20 +541,22 @@ class SavedItems extends _$SavedItems {
     final leading = <SavedItemSummary>[];
 
     for (final item in incoming) {
-      if (_tombstones.contains(item.id)) continue;
-      if (seen.add(item.id)) leading.add(item);
+      final reconciled = _reconcile(item);
+      if (reconciled == null) continue;
+      if (seen.add(reconciled.id)) leading.add(reconciled);
     }
 
     return [...leading, ...existing];
   }
 
-  /// Appends [incoming], skipping any id already present or locally deleted.
+  /// Appends [incoming], skipping any id already present or locally reconciled.
   ///
   /// The contract's ordering is stable, so a conforming page cannot repeat an
   /// id. This is not about that: it is about the case the cursor explicitly
   /// survives — an item saved again between two page fetches can appear in both,
   /// and a duplicated row is a visible defect. A page requested before a delete
-  /// can also return the deleted row; the tombstone keeps it out.
+  /// or a bulk move can also return a row this listing has already reconciled;
+  /// the tombstones and relocation map keep the old version out.
   List<SavedItemSummary> _append(
     List<SavedItemSummary> existing,
     List<SavedItemSummary> incoming,
@@ -471,22 +565,58 @@ class SavedItems extends _$SavedItems {
     final merged = List<SavedItemSummary>.of(existing);
 
     for (final item in incoming) {
-      if (_tombstones.contains(item.id)) continue;
-      if (seen.add(item.id)) merged.add(item);
+      final reconciled = _reconcile(item);
+      if (reconciled == null) continue;
+      if (seen.add(reconciled.id)) merged.add(reconciled);
     }
 
     return merged;
   }
 
-  /// Adopts a first page and, when it was requested after every local delete,
-  /// clears the tombstones.
+  /// Applies every local reconciliation to one row, or drops it.
   ///
-  /// The page is filtered against the tombstones that exist **now**, before they
-  /// are cleared. A first-page request that began before a delete recorded an
-  /// older [_tombstoneVersion], so it cannot clear the tombstone that delete
-  /// added; its reply is filtered and the tombstone remains for any page still in
-  /// flight. Once a page requested after the delete is adopted, its cursor was
-  /// issued after the row was gone, so later pages cannot contain it either.
+  /// A move can be followed by a move of its destination, so the chain is
+  /// followed rather than applied once. A collection removed anywhere along that
+  /// chain wins: the row no longer belongs to a collection this client can show.
+  SavedItemSummary? _reconcile(SavedItemSummary item) {
+    if (_tombstones.contains(item.id)) return null;
+
+    var current = item;
+    final visited = <String>{};
+
+    while (true) {
+      if (_removedCollectionIds.contains(current.collectionId)) return null;
+      if (!visited.add(current.collectionId)) return current;
+
+      final target = _relocatedCollections[current.collectionId];
+      if (target == null) return current;
+
+      current = current.copyWithCollection(
+        collectionId: target.id,
+        collectionName: target.name,
+      );
+    }
+  }
+
+  List<SavedItemSummary> _reconcileAll(Iterable<SavedItemSummary> source) {
+    final items = <SavedItemSummary>[];
+    for (final item in source) {
+      final reconciled = _reconcile(item);
+      if (reconciled != null) items.add(reconciled);
+    }
+    return items;
+  }
+
+  /// Adopts a first page and, when it was requested after every local change,
+  /// clears the protections.
+  ///
+  /// The page is reconciled against the state that exists **now**, before it is
+  /// cleared. A first-page request that began before a delete or move recorded an
+  /// older [_tombstoneVersion], so it cannot clear a protection that change
+  /// added; its reply is filtered or rewritten and the protection remains for
+  /// any page still in flight. Once a page requested after the change is
+  /// adopted, its cursor was issued after it too, so later pages cannot contain
+  /// the old version either.
   SavedItemsState _adoptFirstPage(
     SavedItemPage page, {
     required int requestedAtTombstoneVersion,
@@ -494,15 +624,23 @@ class SavedItems extends _$SavedItems {
     final next = _toState(page);
     if (requestedAtTombstoneVersion == _tombstoneVersion) {
       _tombstones.clear();
+      _removedCollectionIds.clear();
+      _relocatedCollections.clear();
     }
     return next;
   }
 
   SavedItemsState _toState(SavedItemPage page) => SavedItemsState(
-    items: page.items
-        .where((item) => !_tombstones.contains(item.id))
-        .toList(growable: false),
+    items: _reconcileAll(page.items),
     nextCursor: page.nextCursor,
     hasMore: page.hasMore,
   );
+}
+
+/// The stored id and name of a collection a confirmed bulk move selected.
+class _CollectionTarget {
+  const _CollectionTarget({required this.id, required this.name});
+
+  final String id;
+  final String name;
 }

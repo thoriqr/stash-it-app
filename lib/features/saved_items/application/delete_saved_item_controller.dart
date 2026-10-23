@@ -325,7 +325,8 @@ class DeleteSavedItem extends _$DeleteSavedItem {
       // `PUT /saved-items/{id}/collection` and `DELETE /collections/{id}`.
       case ApiFailureCollectionNameAlreadyExists() ||
           ApiFailureCollectionNotEmpty() ||
-          ApiFailureUnsortedCollectionProtected():
+          ApiFailureUnsortedCollectionProtected() ||
+          ApiFailureCollectionDeleteTargetNotFound():
         _publish(
           const AppFeedback(
             tone: FeedbackTone.danger,
@@ -462,8 +463,10 @@ class DeleteSavedItem extends _$DeleteSavedItem {
         return const DeleteCollectionFailed();
 
       // Unreachable on a collection delete: only the move endpoint emits the
-      // duplicate-name code.
-      case ApiFailureCollectionNameAlreadyExists():
+      // duplicate-name code, and this flow sends the `delete` action, which has
+      // no target to be missing.
+      case ApiFailureCollectionNameAlreadyExists() ||
+          ApiFailureCollectionDeleteTargetNotFound():
         _publish(
           AppFeedback(
             tone: FeedbackTone.danger,

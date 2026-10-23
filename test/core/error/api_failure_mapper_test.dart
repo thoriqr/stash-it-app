@@ -302,6 +302,27 @@ void main() {
       );
     });
 
+    test('COLLECTION_DELETE_TARGET_NOT_FOUND names the destination', () {
+      // The collection being deleted still exists; only the destination of the
+      // bulk move is gone. Classifying this as `ApiFailureNotFound` would push
+      // the collection screen into its not-found state and make choosing another
+      // destination impossible.
+      final failure = mapApiFailure(
+        badResponse(
+          404,
+          errorBody(ApiErrorCode.collectionDeleteTargetNotFound),
+        ),
+      );
+
+      expect(failure, isA<ApiFailureCollectionDeleteTargetNotFound>());
+      expect(failure, isNot(isA<ApiFailureNotFound>()));
+      expect(
+        (failure as ApiFailureCollectionDeleteTargetNotFound).code,
+        ApiErrorCode.collectionDeleteTargetNotFound,
+        reason: 'retained for diagnosis, never displayed',
+      );
+    });
+
     test('a 404 with an unrecognised code is not the move not-found', () {
       expect(
         mapApiFailure(badResponse(404, errorBody('SOMETHING_ELSE'))),
