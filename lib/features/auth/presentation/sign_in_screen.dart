@@ -359,12 +359,15 @@ String messageFor(ApiFailure failure) {
       'We could not reach the server. Try again shortly.',
 
     // `ApiFailureNotFound` is unreachable on these routes: none of them answers
-    // `RESOURCE_NOT_FOUND`. `ApiFailureCollectionNameAlreadyExists` is likewise
-    // a move-route conflict. Both are grouped with the unreadable replies rather
-    // than given sign-in copy for an outcome sign-in cannot produce, and the
-    // closed taxonomy stays exhaustive.
+    // `RESOURCE_NOT_FOUND`. `ApiFailureCollectionNameAlreadyExists`,
+    // `ApiFailureCollectionNotEmpty` and `ApiFailureUnsortedCollectionProtected`
+    // are likewise collection-route outcomes. All are grouped with the unreadable
+    // replies rather than given sign-in copy for an outcome sign-in cannot
+    // produce, and the closed taxonomy stays exhaustive.
     ApiFailureNotFound() ||
     ApiFailureCollectionNameAlreadyExists() ||
+    ApiFailureCollectionNotEmpty() ||
+    ApiFailureUnsortedCollectionProtected() ||
     ApiFailureMalformedRequest() ||
     ApiFailureUnreadableResponse() =>
       "We couldn't read the server's reply. Try again.",

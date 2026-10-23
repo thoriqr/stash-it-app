@@ -5,6 +5,7 @@ import '../../../core/error/api_failure_mapper.dart';
 import '../domain/collection_saved_items_page.dart';
 import '../domain/move_to_collection_intent.dart';
 import '../domain/move_to_collection_result.dart';
+import '../domain/saved_item_delete_result.dart';
 import '../domain/saved_item_page.dart';
 import '../domain/saved_item_summary.dart';
 import 'collection_saved_items_mapper.dart';
@@ -12,6 +13,7 @@ import 'datasources/saved_items_api.dart';
 import 'models/create_saved_item_request.dart';
 import 'models/move_to_collection_request.dart';
 import 'move_to_collection_mapper.dart';
+import 'saved_item_deletion_mapper.dart';
 import 'saved_item_detail_mapper.dart';
 import 'saved_item_mapper.dart';
 
@@ -114,6 +116,41 @@ class SavedItemsRepository {
       throw mapDecodeFailure(error);
     } on FormatException catch (error) {
       throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Deletes one saved item and reports what the delete left behind.
+  ///
+  /// **A `200` is the only thing that proves the item is gone.** The route has no
+  /// transaction around its three statements: the row delete commits first, then
+  /// the collection count and system-key read follow. A `500` can therefore be
+  /// answered after the item was removed, so this method never turns a server
+  /// fault into "the item still exists".
+  ///
+  /// **A `200` whose body does not decode is still a completed delete.** The
+  /// delete committed, but the collection flags cannot be read, so this returns
+  /// [SavedItemDeletionFlagsUnavailable] instead of throwing. That is deliberately
+  /// distinct from a non-2xx failure, where nothing establishes whether the write
+  /// ran.
+  ///
+  /// A missing item and one owned by another user both answer
+  /// `404 RESOURCE_NOT_FOUND`, which maps to [ApiFailureNotFound]. The variant
+  /// says only that the item is unavailable to this caller.
+  ///
+  /// Throws [ApiFailure] for every non-2xx refusal.
+  Future<SavedItemDeleteResult> delete(String id) async {
+    try {
+      final response = await api.delete(id);
+      return savedItemDeleteResultFrom(response);
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError {
+      // Retrofit decodes a `2xx` body after Dio's transformer returns, so a shape
+      // mismatch never passes through Dio. The status already passed validation,
+      // which for this route means the delete committed.
+      return const SavedItemDeletionFlagsUnavailable();
+    } on FormatException {
+      return const SavedItemDeletionFlagsUnavailable();
     }
   }
 

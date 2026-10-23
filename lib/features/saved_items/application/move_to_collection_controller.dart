@@ -237,6 +237,19 @@ class MoveToCollection extends _$MoveToCollection {
       case ApiFailureCollectionNameAlreadyExists():
         return const MoveToCollectionNameAlreadyExists();
 
+      // Unreachable on `PUT /saved-items/{id}/collection`: only a collection
+      // delete emits these. A known not-moved refusal if a proxy ever produced
+      // one; they are not treated as an unconfirmed write.
+      case ApiFailureCollectionNotEmpty() ||
+          ApiFailureUnsortedCollectionProtected():
+        _publish(
+          const AppFeedback(
+            tone: FeedbackTone.danger,
+            copy: "Something went wrong moving this item. Try again.",
+          ),
+        );
+        return const MoveToCollectionFailed();
+
       case ApiFailureNotFound():
         _publish(
           const AppFeedback(

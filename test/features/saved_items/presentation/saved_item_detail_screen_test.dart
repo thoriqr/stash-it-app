@@ -173,21 +173,27 @@ void main() {
       expect(text.overflow, isNull);
     });
 
-    testWidgets('offers Move to a collection but no delete or open-original', (
-      tester,
-    ) async {
-      await pumpScreen(tester, results: [itemWith()]);
+    testWidgets(
+      'offers Move to a collection and delete, but no open-original',
+      (tester) async {
+        await pumpScreen(tester, results: [itemWith()]);
 
-      expect(find.text('ACTIONS'), findsOneWidget);
-      final move = tester.widget<AppButton>(
-        find.widgetWithText(AppButton, 'Move to a collection'),
-      );
-      expect(move.onPressed, isNotNull);
-      expect(move.variant, AppButtonVariant.secondary);
+        expect(find.text('ACTIONS'), findsOneWidget);
+        final move = tester.widget<AppButton>(
+          find.widgetWithText(AppButton, 'Move to a collection'),
+        );
+        expect(move.onPressed, isNotNull);
+        expect(move.variant, AppButtonVariant.secondary);
 
-      expect(find.text('Delete this item'), findsNothing);
-      expect(find.text('Open original page'), findsNothing);
-    });
+        final delete = tester.widget<AppButton>(
+          find.widgetWithText(AppButton, 'Delete this item'),
+        );
+        expect(delete.onPressed, isNotNull);
+        expect(delete.variant, AppButtonVariant.danger);
+
+        expect(find.text('Open original page'), findsNothing);
+      },
+    );
 
     testWidgets('opens the picker with the current collection as context', (
       tester,

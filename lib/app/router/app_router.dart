@@ -100,8 +100,17 @@ final List<RouteBase> _routes = [
   // item and nothing else.
   GoRoute(
     path: AppRoutes.savedItemDetailPattern,
-    builder: (context, state) =>
-        SavedItemDetailScreen(itemId: state.pathParameters['id']!),
+    builder: (context, state) {
+      final extra = state.extra;
+      return SavedItemDetailScreen(
+        itemId: state.pathParameters['id']!,
+        // Only a collection contents screen supplies this. Inbox, Search and a
+        // direct entry leave it null, so they keep the ordinary single pop.
+        originCollectionId: extra is SavedItemDetailOrigin
+            ? extra.collectionId
+            : null,
+      );
+    },
   ),
   // One collection's saved items, outside the shell for the same reason as the
   // saved-item detail above: it is pushed from a collection tile and popped back

@@ -4,6 +4,7 @@ import 'package:stash_it_app/features/saved_items/data/saved_items_repository.da
 import 'package:stash_it_app/features/saved_items/domain/collection_saved_items_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/move_to_collection_intent.dart';
 import 'package:stash_it_app/features/saved_items/domain/move_to_collection_result.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_delete_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 
@@ -18,13 +19,16 @@ import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart
 /// [detailResults] is read in order, with the last entry repeating, so a test can
 /// script "fail, then succeed" without counting calls by hand — the same shape
 /// as [FakeHttpAdapter.onSequence]. An entry is either a [SavedItemSummary] or an
-/// error to throw. [moveResults] and [collectionResults] follow the same rule.
+/// error to throw. [moveResults], [deleteResults] and [collectionResults] follow
+/// the same rule.
 class FakeSavedItemsRepository extends SavedItemsRepository {
   FakeSavedItemsRepository({
     SavedItemPage? listPage,
     required this.detailResults,
     this.moveResults = const [],
     this.onMove,
+    this.deleteResults = const [],
+    this.onDelete,
     this.collectionResults = const [],
     this.onListInCollection,
   }) : assert(detailResults.isNotEmpty, 'provide at least one detail result'),
@@ -49,6 +53,17 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   )?
   onMove;
 
+  /// A [SavedItemDeleteResult] to return, or an error to throw.
+  ///
+  /// Empty means the delete is not scripted; reaching it is then a `StateError`
+  /// rather than a silent success, so a test that forgot to script it fails
+  /// loudly.
+  final List<Object> deleteResults;
+
+  /// An optional handler for one saved-item delete, used to hold the request
+  /// open while a test asserts the in-flight UI.
+  final Future<SavedItemDeleteResult> Function(String id)? onDelete;
+
   /// A `CollectionSavedItemsPage` to return, or an error to throw.
   ///
   /// Empty means the collection listing is not scripted; reaching it is then a
@@ -70,10 +85,14 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   int listCalls = 0;
   int detailCalls = 0;
   int moveCalls = 0;
+  int deleteCalls = 0;
   int collectionCalls = 0;
 
   /// The ids passed to [getById], in order.
   final List<String> detailIds = [];
+
+  /// The ids passed to [delete], in order.
+  final List<String> deleteIds = [];
 
   /// The collection ids passed to [listInCollection], in order.
   final List<String> collectionIds = [];
@@ -160,6 +179,29 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
             : moveResults.length - 1];
 
     if (result is MoveToCollectionResult) return result;
+    throw result;
+  }
+
+  @override
+  Future<SavedItemDeleteResult> delete(String id) async {
+    deleteCalls++;
+    deleteIds.add(id);
+
+    final handler = onDelete;
+    if (handler != null) return handler(id);
+
+    if (deleteResults.isEmpty) {
+      throw StateError(
+        'FakeSavedItemsRepository has no delete result scripted',
+      );
+    }
+
+    final result =
+        deleteResults[deleteCalls - 1 < deleteResults.length
+            ? deleteCalls - 1
+            : deleteResults.length - 1];
+
+    if (result is SavedItemDeleteResult) return result;
     throw result;
   }
 }

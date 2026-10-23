@@ -424,6 +424,51 @@ void main() {
         reason: 'a pagination failure is not a manual refresh',
       );
     });
+
+    test('a page in flight cannot resurrect a locally deleted row', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      adapter.onSequenceHolding('/saved-items', [
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [
+              SavedItemsFixtures.item(id: 'a'),
+              SavedItemsFixtures.item(id: 'b'),
+            ],
+            nextCursor: 'cursor-2',
+            hasMore: true,
+          ),
+        ),
+        // A stale page: the delete happened after this request was issued, but
+        // the server answered with the row it had already read.
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(
+            items: [
+              SavedItemsFixtures.item(id: 'b'),
+              SavedItemsFixtures.item(id: 'a'),
+            ],
+            hasMore: false,
+          ),
+        ),
+      ], holdAt: 2);
+
+      await container.read(savedItemsProvider.future);
+      final notifier = container.read(savedItemsProvider.notifier);
+      final more = notifier.loadMore();
+      await untilCalled(() => adapter.requests.length == 2);
+
+      notifier.removeItem('a');
+      adapter.releaseBlocked();
+      await more;
+
+      final state = stateOf(container);
+      expect(state.items.map((i) => i.id), ['b']);
+      expect(state.nextCursor, isNull);
+      expect(state.hasMore, isFalse);
+    });
   });
 
   group('in-place collection update', () {

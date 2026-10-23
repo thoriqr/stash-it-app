@@ -148,6 +148,24 @@ class SavedItemsFixtures {
     'message': 'saved item moved into collection successfully',
   };
 
+  /// The whole `200` body of `DELETE /saved-items/{id}`.
+  ///
+  /// **The three flags are directly inside `data`**, not nested under a
+  /// `saved_item`. They report what the delete left behind; they do not delete the
+  /// collection.
+  static Map<String, dynamic> deleted({
+    String collectionId = '01a0f359-093b-737a-963a-80f7ca6768ed',
+    bool collectionEmpty = true,
+    bool collectionDeletable = true,
+  }) => {
+    'data': {
+      'collection_id': collectionId,
+      'collection_empty': collectionEmpty,
+      'collection_deletable': collectionDeletable,
+    },
+    'message': 'saved item deleted successfully',
+  };
+
   /// The whole `201` body of `POST /saved-items`.
   ///
   /// **Exactly the four documented fields**, with no `domain`, `title`,

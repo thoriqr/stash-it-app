@@ -17,6 +17,13 @@ class Collections extends _$Collections {
   int _listVersion = 0;
   String _currentSort = 'newest';
 
+  /// Ids removed after a confirmed collection delete.
+  ///
+  /// A load-more or refresh already in flight can return the collection after the
+  /// in-place removal. Keeping these ids out of every adopted page prevents a
+  /// resurrection without resetting the sort or discarding loaded pages.
+  final Set<String> _removedCollectionIds = {};
+
   @override
   Future<CollectionsState> build() async {
     _listVersion++;
@@ -70,6 +77,29 @@ class Collections extends _$Collections {
     }
   }
 
+  /// Removes one confirmed-deleted collection in place.
+  ///
+  /// The current sort, cursor and `hasMore` are preserved. The id is also kept out
+  /// of pages adopted later, so a load-more or refresh requested before the
+  /// delete cannot bring the row back. The caller has already confirmed the delete
+  /// and publishes its own feedback.
+  void removeCollection(String collectionId) {
+    _removedCollectionIds.add(collectionId);
+
+    final current = switch (state) {
+      AsyncData(:final value) => value,
+      _ => null,
+    };
+    if (current == null) return;
+
+    final items = current.items
+        .where((item) => item.id != collectionId)
+        .toList(growable: false);
+    if (items.length == current.items.length) return;
+
+    state = AsyncData(current.copyWith(items: items));
+  }
+
   Future<void> loadMore() async {
     final current = switch (state) {
       AsyncData(:final value) => value,
@@ -119,25 +149,26 @@ class Collections extends _$Collections {
     }
   }
 
-  static List<CollectionSummary> _append(
+  List<CollectionSummary> _append(
     List<CollectionSummary> existing,
     List<CollectionSummary> incoming,
   ) {
     final seen = {for (final item in existing) item.id};
     final merged = List<CollectionSummary>.of(existing);
     for (final item in incoming) {
+      if (_removedCollectionIds.contains(item.id)) continue;
       if (seen.add(item.id)) merged.add(item);
     }
     return merged;
   }
 
-  static CollectionsState _toState(
-    CollectionPage page, {
-    String sort = 'newest',
-  }) => CollectionsState(
-    items: page.items,
-    nextCursor: page.nextCursor,
-    hasMore: page.hasMore,
-    sort: sort,
-  );
+  CollectionsState _toState(CollectionPage page, {String sort = 'newest'}) =>
+      CollectionsState(
+        items: page.items
+            .where((item) => !_removedCollectionIds.contains(item.id))
+            .toList(growable: false),
+        nextCursor: page.nextCursor,
+        hasMore: page.hasMore,
+        sort: sort,
+      );
 }

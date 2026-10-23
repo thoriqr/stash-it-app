@@ -42,7 +42,7 @@ final class CollectionsProvider
   Collections create() => Collections();
 }
 
-String _$collectionsHash() => r'7715a12b11cb0aa14878763ed621d860e5760e8f';
+String _$collectionsHash() => r'6b0659db9670defea9f5d6681ef6f1c8b3d0b2ec';
 
 /// Collections list controller with cursor pagination.
 ///

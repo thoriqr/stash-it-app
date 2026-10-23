@@ -4,6 +4,7 @@ import 'package:retrofit/retrofit.dart';
 import '../models/collection_saved_items_response.dart';
 import '../models/create_saved_item_request.dart';
 import '../models/create_saved_item_response.dart';
+import '../models/delete_saved_item_response.dart';
 import '../models/get_saved_item_response.dart';
 import '../models/list_saved_items_response.dart';
 import '../models/move_to_collection_request.dart';
@@ -132,4 +133,25 @@ abstract class SavedItemsApi {
   /// client cannot tell the two apart and must not say which happened.
   @GET('/saved-items/{id}')
   Future<GetSavedItemResponse> getById(@Path('id') String id);
+
+  /// `DELETE /saved-items/{id}` — permanently removes one saved item.
+  ///
+  /// **Mounted as `Auth` only** (`saved_item/routes.go`): the route has no rate
+  /// limiter. A `401` therefore comes from the guard before any write.
+  ///
+  /// The item delete is three autocommit statements, not a transaction: the row
+  /// delete commits first, then the collection count and system-key read follow.
+  /// A `500` can therefore be answered **after** the item is gone, so the
+  /// mutation must treat a server fault as ambiguous rather than as a failed
+  /// delete.
+  ///
+  /// The `200` reports the collection the item was in and whether it is now empty
+  /// and deletable. Those flags are advisory input to a separate collection
+  /// delete; this request never removes a collection.
+  ///
+  /// A missing item and one owned by another user both answer
+  /// `404 RESOURCE_NOT_FOUND`, so no copy derived from this call may say which
+  /// happened.
+  @DELETE('/saved-items/{id}')
+  Future<DeleteSavedItemResponse> delete(@Path('id') String id);
 }

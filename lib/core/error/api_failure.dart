@@ -102,6 +102,33 @@ final class ApiFailureCollectionNameAlreadyExists extends ApiFailure {
   final String code;
 }
 
+/// `COLLECTION_NOT_EMPTY` — the collection delete transaction was rolled back
+/// because a saved item was filed into the collection after the operation had
+/// already dealt with the items it found.
+///
+/// **Known not deleted.** The collection and its items are unchanged. This is a
+/// concurrency outcome, not evidence that the client should have checked
+/// emptiness first; the backend is the only authority on the collection's
+/// contents at commit time.
+final class ApiFailureCollectionNotEmpty extends ApiFailure {
+  const ApiFailureCollectionNotEmpty({required this.code});
+
+  /// The backend code, retained for logging and tests, never for display.
+  final String code;
+}
+
+/// `UNSORTED_COLLECTION_PROTECTED` — the collection delete named Unsorted.
+///
+/// **Known not deleted.** Unsorted is identified by its system key on the
+/// server, and no client-side check is authorization. The request writes
+/// nothing.
+final class ApiFailureUnsortedCollectionProtected extends ApiFailure {
+  const ApiFailureUnsortedCollectionProtected({required this.code});
+
+  /// The backend code, retained for logging and tests, never for display.
+  final String code;
+}
+
 /// `BAD_REQUEST`, or `INVALID_COLLECTION_INTENT`. The body was unparseable, or
 /// parsed without stating a supported operation.
 ///

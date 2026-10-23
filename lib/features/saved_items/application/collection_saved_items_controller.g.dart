@@ -94,7 +94,7 @@ final class CollectionSavedItemsProvider
 }
 
 String _$collectionSavedItemsHash() =>
-    r'7b41bc519cf383eb8f5d581b5aafbd73e0d3f408';
+    r'dca003ff5500e20fc9a2a133722f53c5e22f5431';
 
 /// One collection's saved items, with cursor pagination.
 ///

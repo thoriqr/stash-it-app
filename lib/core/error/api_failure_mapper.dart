@@ -125,9 +125,13 @@ ApiFailure mapApiFailure(DioException error) {
     // operation the move endpoint should run. Both are client defects with no
     // user-correctable field, so they share the standard malformed-request
     // handling. `INVALID_COLLECTION_INTENT` in particular must not fall through
-    // to a duplicate-name conflict.
+    // to a duplicate-name conflict. The two collection-delete shape codes are
+    // the same kind of defect: a well-formed client always sends `delete` with a
+    // null target, so reaching either means this client sent an incoherent body.
     case ApiErrorCode.badRequest:
     case ApiErrorCode.invalidCollectionIntent:
+    case ApiErrorCode.invalidCollectionDeleteAction:
+    case ApiErrorCode.invalidCollectionDeleteTarget:
       return const ApiFailureMalformedRequest();
 
     // The resource named by the request is gone, or is not this caller's. Only
@@ -148,6 +152,15 @@ ApiFailure mapApiFailure(DioException error) {
     // choose another one. The backend wrote nothing.
     case ApiErrorCode.collectionNameAlreadyExists:
       return ApiFailureCollectionNameAlreadyExists(code: code);
+
+    // A collection delete that found a concurrent insert, or named the protected
+    // Unsorted collection. Both transactions wrote nothing, so both are known
+    // not-deleted outcomes with different user-facing explanations.
+    case ApiErrorCode.collectionNotEmpty:
+      return ApiFailureCollectionNotEmpty(code: code);
+
+    case ApiErrorCode.unsortedCollectionProtected:
+      return ApiFailureUnsortedCollectionProtected(code: code);
 
     case ApiErrorCode.internalServerError:
       return const ApiFailureServerFault();

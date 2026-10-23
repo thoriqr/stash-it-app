@@ -246,6 +246,43 @@ void main() {
       expect(state.isLoadingMore, isFalse);
     });
 
+    test('a page in flight cannot resurrect a locally deleted row', () async {
+      final container = await makeContainer();
+
+      adapter.onSequenceHolding(path, [
+        pageReply(
+          items: [
+            CollectionSavedItemsFixtures.item(id: 'a'),
+            CollectionSavedItemsFixtures.item(id: 'b'),
+          ],
+          nextCursor: 'cursor-2',
+          hasMore: true,
+        ),
+        // The delete happened after this page was read, but the server still
+        // answered with the row it had already selected.
+        pageReply(
+          items: [
+            CollectionSavedItemsFixtures.item(id: 'b'),
+            CollectionSavedItemsFixtures.item(id: 'a'),
+          ],
+        ),
+      ], holdAt: 2);
+
+      await container.read(provider.future);
+      final notifier = container.read(provider.notifier);
+      final more = notifier.loadMore();
+      await untilCalled(() => adapter.countFor(path) == 2);
+
+      notifier.removeItem('a');
+      adapter.releaseBlocked();
+      await more;
+
+      final state = stateOf(container);
+      expect(state.items.map((item) => item.id), ['b']);
+      expect(state.nextCursor, isNull);
+      expect(state.hasMore, isFalse);
+    });
+
     test('sends each cursor back unchanged', () async {
       final container = await threePages();
       final notifier = container.read(provider.notifier);

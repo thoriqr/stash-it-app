@@ -4,6 +4,7 @@ import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/saved_items/data/datasources/saved_items_api.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_repository.dart';
 import 'package:stash_it_app/features/saved_items/domain/move_to_collection_intent.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_delete_result.dart';
 
 import '../../../support/fake_http.dart';
 import '../../../support/saved_items_fixtures.dart';
@@ -721,6 +722,94 @@ void main() {
       await expectLater(
         repository.getById(id),
         throwsA(isA<ApiFailureAuthRequired>()),
+      );
+    });
+  });
+
+  group('delete', () {
+    const path = '/saved-items/item-1';
+
+    test('sends DELETE and decodes the collection flags', () async {
+      adapter.onMethod(
+        'DELETE',
+        path,
+        body: SavedItemsFixtures.deleted(
+          collectionId: 'collection-1',
+          collectionEmpty: true,
+          collectionDeletable: true,
+        ),
+      );
+
+      final result = await repository.delete('item-1');
+
+      expect(adapter.requests.single.method, 'DELETE');
+      expect(adapter.requests.single.path, contains(path));
+      expect(result, isA<SavedItemDeleted>());
+      final deleted = result as SavedItemDeleted;
+      expect(deleted.collectionId, 'collection-1');
+      expect(deleted.collectionEmpty, isTrue);
+      expect(deleted.collectionDeletable, isTrue);
+    });
+
+    test(
+      'a 200 with an unreadable body still means the item was deleted',
+      () async {
+        // The row delete committed before the flags were read. Returning a
+        // failure here would invite a retry of a write that already happened.
+        adapter.onMethod(
+          'DELETE',
+          path,
+          body: {'data': {}, 'message': 'saved item deleted successfully'},
+        );
+
+        final result = await repository.delete('item-1');
+
+        expect(result, isA<SavedItemDeletionFlagsUnavailable>());
+      },
+    );
+
+    test(
+      'a 500 is a server fault, which the caller must treat as ambiguous',
+      () async {
+        adapter.onMethod(
+          'DELETE',
+          path,
+          status: 500,
+          body: errorBody('INTERNAL_SERVER_ERROR'),
+        );
+
+        await expectLater(
+          repository.delete('item-1'),
+          throwsA(isA<ApiFailureServerFault>()),
+        );
+      },
+    );
+
+    test('maps RESOURCE_NOT_FOUND to typed not-found', () async {
+      adapter.onMethod(
+        'DELETE',
+        path,
+        status: 404,
+        body: errorBody('RESOURCE_NOT_FOUND'),
+      );
+
+      await expectLater(
+        repository.delete('item-1'),
+        throwsA(isA<ApiFailureNotFound>()),
+      );
+    });
+
+    test('an unreadable 500 stays ambiguous rather than not-found', () async {
+      adapter.onMethod(
+        'DELETE',
+        path,
+        status: 500,
+        body: '<html><body>Bad gateway</body></html>',
+      );
+
+      await expectLater(
+        repository.delete('item-1'),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
       );
     });
   });

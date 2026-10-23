@@ -54,9 +54,7 @@ void main() {
 
       scriptPages([
         CollectionsFixtures.page(
-          collections: [
-            CollectionsFixtures.collection(id: 'a', name: 'A'),
-          ],
+          collections: [CollectionsFixtures.collection(id: 'a', name: 'A')],
         ),
       ]);
 
@@ -66,8 +64,10 @@ void main() {
       expect(state.items.length, 1);
       expect(state.sort, 'newest');
       expect(adapter.requests.first.path, contains('/collections'));
-      expect(Uri.parse(adapter.requests.first.path).queryParameters['sort'],
-          'newest');
+      expect(
+        Uri.parse(adapter.requests.first.path).queryParameters['sort'],
+        'newest',
+      );
     });
 
     test('empty page', () async {
@@ -89,16 +89,18 @@ void main() {
       addTearDown(container.dispose);
 
       scriptPages([
-        CollectionsFixtures.page(collections: [CollectionsFixtures.collection()]),
-        CollectionsFixtures.page(collections: [
-          CollectionsFixtures.collection(id: 'old1', name: 'Old')
-        ]),
+        CollectionsFixtures.page(
+          collections: [CollectionsFixtures.collection()],
+        ),
+        CollectionsFixtures.page(
+          collections: [
+            CollectionsFixtures.collection(id: 'old1', name: 'Old'),
+          ],
+        ),
       ]);
 
       await container.read(collectionsProvider.future);
-      await container
-          .read(collectionsProvider.notifier)
-          .setSort('oldest');
+      await container.read(collectionsProvider.notifier).setSort('oldest');
       await container.read(collectionsProvider.future);
 
       expect(stateOf(container).sort, 'oldest');
@@ -114,16 +116,18 @@ void main() {
       addTearDown(container.dispose);
 
       scriptPages([
-        CollectionsFixtures.page(collections: [CollectionsFixtures.collection()]),
-        CollectionsFixtures.page(collections: [
-          CollectionsFixtures.collection(id: 'n1', name: 'Alpha')
-        ]),
+        CollectionsFixtures.page(
+          collections: [CollectionsFixtures.collection()],
+        ),
+        CollectionsFixtures.page(
+          collections: [
+            CollectionsFixtures.collection(id: 'n1', name: 'Alpha'),
+          ],
+        ),
       ]);
 
       await container.read(collectionsProvider.future);
-      await container
-          .read(collectionsProvider.notifier)
-          .setSort('name');
+      await container.read(collectionsProvider.notifier).setSort('name');
       await container.read(collectionsProvider.future);
 
       expect(stateOf(container).sort, 'name');
@@ -136,15 +140,24 @@ void main() {
       addTearDown(container.dispose);
 
       adapter.onSequenceHolding('/collections', [
-        FakeReply(200, CollectionsFixtures.page(collections: [
-          CollectionsFixtures.collection(id: 'a')
-        ])),
-        FakeReply(200, CollectionsFixtures.page(collections: [
-          CollectionsFixtures.collection(id: 'stale')
-        ])),
-        FakeReply(200, CollectionsFixtures.page(collections: [
-          CollectionsFixtures.collection(id: 'latest')
-        ])),
+        FakeReply(
+          200,
+          CollectionsFixtures.page(
+            collections: [CollectionsFixtures.collection(id: 'a')],
+          ),
+        ),
+        FakeReply(
+          200,
+          CollectionsFixtures.page(
+            collections: [CollectionsFixtures.collection(id: 'stale')],
+          ),
+        ),
+        FakeReply(
+          200,
+          CollectionsFixtures.page(
+            collections: [CollectionsFixtures.collection(id: 'latest')],
+          ),
+        ),
       ], holdAt: 2);
 
       await container.read(collectionsProvider.future);
@@ -161,6 +174,50 @@ void main() {
     });
   });
 
+  group('in-place removal', () {
+    test('removes one collection without resetting sort or cursor', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      scriptPages([
+        CollectionsFixtures.page(
+          collections: [
+            CollectionsFixtures.collection(id: 'a', name: 'A'),
+            CollectionsFixtures.collection(id: 'b', name: 'B'),
+          ],
+          nextCursor: 'cursor-2',
+          hasMore: true,
+        ),
+        CollectionsFixtures.page(
+          collections: [
+            CollectionsFixtures.collection(id: 'a', name: 'A'),
+            CollectionsFixtures.collection(id: 'b', name: 'B'),
+          ],
+          nextCursor: 'oldest-cursor',
+          hasMore: true,
+        ),
+      ]);
+
+      await container.read(collectionsProvider.future);
+      await container.read(collectionsProvider.notifier).setSort('oldest');
+      await container.read(collectionsProvider.future);
+      final before = adapter.countFor('/collections');
+
+      container.read(collectionsProvider.notifier).removeCollection('a');
+
+      final state = stateOf(container);
+      expect(state.items.map((c) => c.id), ['b']);
+      expect(state.sort, 'oldest');
+      expect(state.nextCursor, 'oldest-cursor');
+      expect(state.hasMore, isTrue);
+      expect(
+        adapter.countFor('/collections'),
+        before,
+        reason: 'removal must not refetch and lose the chosen sort',
+      );
+    });
+  });
+
   group('pagination', () {
     test('load more uses active sort and correct cursor', () async {
       final container = await makeContainer();
@@ -168,9 +225,7 @@ void main() {
 
       scriptPages([
         CollectionsFixtures.page(
-          collections: [
-            CollectionsFixtures.collection(id: 'a'),
-          ],
+          collections: [CollectionsFixtures.collection(id: 'a')],
           nextCursor: 'c1',
           hasMore: true,
         ),
@@ -198,9 +253,10 @@ void main() {
           nextCursor: 'c1',
           hasMore: true,
         ),
-        CollectionsFixtures.page(collections: [
-          CollectionsFixtures.collection(id: 'b')
-        ], hasMore: false),
+        CollectionsFixtures.page(
+          collections: [CollectionsFixtures.collection(id: 'b')],
+          hasMore: false,
+        ),
       ]);
 
       await container.read(collectionsProvider.future);
@@ -215,11 +271,18 @@ void main() {
       final container = await makeContainer();
       addTearDown(container.dispose);
 
-      adapter.on('/collections',
-          status: 500, body: {'error': {'code': 'INTERNAL_SERVER_ERROR'}});
+      adapter.on(
+        '/collections',
+        status: 500,
+        body: {
+          'error': {'code': 'INTERNAL_SERVER_ERROR'},
+        },
+      );
 
       await expectLater(
-          container.read(collectionsProvider.future), throwsA(isA<Object>()));
+        container.read(collectionsProvider.future),
+        throwsA(isA<Object>()),
+      );
       expect(container.read(collectionsProvider), isA<AsyncError>());
     });
 
@@ -227,14 +290,23 @@ void main() {
       final container = await makeContainer();
       addTearDown(container.dispose);
 
-      adapter.on('/collections',
-          status: 500, body: {'error': {'code': 'INTERNAL_SERVER_ERROR'}});
+      adapter.on(
+        '/collections',
+        status: 500,
+        body: {
+          'error': {'code': 'INTERNAL_SERVER_ERROR'},
+        },
+      );
 
       await expectLater(
-          container.read(collectionsProvider.future), throwsA(isA<Object>()));
+        container.read(collectionsProvider.future),
+        throwsA(isA<Object>()),
+      );
 
       scriptPages([
-        CollectionsFixtures.page(collections: [CollectionsFixtures.collection()])
+        CollectionsFixtures.page(
+          collections: [CollectionsFixtures.collection()],
+        ),
       ]);
       await container.read(collectionsProvider.notifier).retry();
       await container.read(collectionsProvider.future);

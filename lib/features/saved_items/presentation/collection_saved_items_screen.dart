@@ -283,8 +283,13 @@ class _CollectionSavedItemsScreenState
             showCollectionChip: false,
             // Pushed above the shell, so returning pops back to this collection
             // with its pages and scroll position intact. The detail reads the item
-            // again; it never trusts this row's copy as current.
-            onTap: () => context.push(AppRoutes.savedItemDetail(item.id)),
+            // again; it never trusts this row's copy as current. The origin lets
+            // the detail pop this screen too if the user deletes this collection
+            // after deleting its last item.
+            onTap: () => context.push(
+              AppRoutes.savedItemDetail(item.id),
+              extra: SavedItemDetailOrigin.collection(widget.collectionId),
+            ),
             // No `onRetry`: enrichment is acted on in the saved-item detail.
           );
         },

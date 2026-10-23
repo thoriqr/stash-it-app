@@ -6,9 +6,11 @@ import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/core/error/api_failure_messages.dart';
+import 'package:stash_it_app/features/saved_items/application/delete_saved_item_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_item_detail_provider.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
+import 'package:stash_it_app/shared/widgets/app_confirm_dialog.dart';
 
 import 'widgets/move_to_collection_sheet.dart';
 import 'widgets/saved_item_collection_chip.dart';
@@ -25,9 +27,17 @@ import 'widgets/saved_item_preview.dart';
 ///
 /// **Opening this screen only reads.** The only request a visit makes by itself is
 /// the GET behind [savedItemDetailProvider]. Viewing never enriches, extracts,
-/// polls, refreshes in the background, or deletes. The explicit **Move to a
-/// collection** action below issues one `PUT` only after the user chooses a
+/// polls, refreshes in the background, moves, or deletes. The explicit **Move to
+/// a collection** action issues one `PUT` only after the user chooses a
 /// destination; the enrichment control beside it is deliberately inert.
+///
+/// **Delete is explicit and confirmed.** The danger action below Move opens the
+/// first confirmation dialog. Only a confirmed choice issues
+/// `DELETE /saved-items/{id}`. If that succeeds and the server reports the
+/// item's collection is empty and deletable, a second dialog may offer to delete
+/// that collection; confirming it issues exactly one
+/// `DELETE /collections/{id}`. Keeping, dismissing, or going Back sends no
+/// collection request, and nothing is ever deleted automatically.
 ///
 /// The three content states are the wireframe's C1, C2 and C3:
 /// - C1: metadata available; title, source, collection, status and description.
@@ -36,13 +46,26 @@ import 'widgets/saved_item_preview.dart';
 /// - C3: the verified `RESOURCE_NOT_FOUND` → a neutral not-found state with no
 ///   Retry, because re-reading cannot bring the item back.
 class SavedItemDetailScreen extends ConsumerWidget {
-  const SavedItemDetailScreen({required this.itemId, super.key});
+  const SavedItemDetailScreen({
+    required this.itemId,
+    this.originCollectionId,
+    super.key,
+  });
 
   final String itemId;
+
+  /// The collection whose contents screen pushed this route, when there is one.
+  ///
+  /// Null for the Inbox, Search and a direct entry. Used only after a successful
+  /// collection delete: if that collection is the one this detail was opened
+  /// from, the collection route beneath this one is now gone and must be popped
+  /// as well.
+  final String? originCollectionId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(savedItemDetailProvider(itemId));
+    final deleting = ref.watch(deleteSavedItemProvider);
     final canPop = Navigator.of(context).canPop();
 
     return Scaffold(
@@ -62,8 +85,10 @@ class SavedItemDetailScreen extends ConsumerWidget {
       body: switch (detail) {
         AsyncData(:final value) => _DetailBody(
           item: value,
+          deleting: deleting,
           onMoveToCollection: () =>
               showMoveToCollectionSheet(context, item: value),
+          onDelete: () => _confirmDelete(context, ref, value),
         ),
         AsyncError(:final error, :final isLoading) when !isLoading =>
           error is ApiFailureNotFound
@@ -78,6 +103,104 @@ class SavedItemDetailScreen extends ConsumerWidget {
         _ => const _DetailSkeleton(),
       },
     );
+  }
+
+  /// Runs the two-dialog destructive flow.
+  ///
+  /// The controller owns both requests, the in-flight guard, cache
+  /// reconciliation and every feedback message. This method owns only the order
+  /// of user decisions and navigation. **The item delete is never repeated when
+  /// the collection step fails**: the second request is a separate outcome, and
+  /// the screen leaves once the item is known deleted.
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    SavedItemSummary item,
+  ) async {
+    if (ref.read(deleteSavedItemProvider)) return;
+
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: 'Delete this item?',
+      message: 'This removes the saved item. It cannot be undone.',
+      cancelLabel: 'Keep',
+      confirmLabel: 'Delete',
+      destructive: true,
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final outcome = await ref
+        .read(deleteSavedItemProvider.notifier)
+        .deleteItem(item);
+
+    if (!context.mounted) return;
+
+    switch (outcome) {
+      case DeleteSavedItemCollectionOffered(:final result):
+        // Eligibility was checked defensively by the controller, including the
+        // exact collection id match and a non-empty trimmed name. The dialog
+        // uses the trimmed name in both sentences.
+        final name = item.collectionName.trim();
+        final deleteCollection = await showAppConfirmDialog(
+          context: context,
+          title: '$name is now empty',
+          message:
+              'This was the last item in $name. You can keep this empty '
+              'collection or delete it.',
+          cancelLabel: 'Keep it',
+          confirmLabel: 'Delete collection',
+          destructive: true,
+        );
+
+        if (!context.mounted) return;
+
+        // The collection contents route beneath this detail is the one being
+        // deleted. Its contents provider does not need a refresh that can only
+        // answer 404; the route is about to be removed.
+        final leavesCollection = originCollectionId == result.collectionId;
+
+        if (deleteCollection == true) {
+          final outcome = await ref
+              .read(deleteSavedItemProvider.notifier)
+              .deleteCollection(
+                collectionId: result.collectionId,
+                collectionName: name,
+                invalidateContents: !leavesCollection,
+              );
+
+          if (!context.mounted) return;
+
+          if (leavesCollection &&
+              (outcome is DeleteCollectionSucceeded ||
+                  outcome is DeleteCollectionNotFound)) {
+            // Pop this detail and the collection screen it was opened from. The
+            // second pop reveals whatever destination held that collection —
+            // Collections or Search — through the existing stack, rather than
+            // inventing a destination or leaving a deleted collection on screen.
+            context.pop();
+            context.pop();
+            return;
+          }
+        } else {
+          // Barrier tap, Back and the explicit Keep it all mean keep. The
+          // success notice is published only now so it cannot cover the dialog.
+          ref.read(deleteSavedItemProvider.notifier).keepCollection();
+        }
+
+        if (!context.mounted) return;
+        _leave(context);
+
+      case DeleteSavedItemSucceeded():
+      case DeleteSavedItemNotFound():
+        _leave(context);
+
+      // The outcome is genuinely unknown. Staying keeps the distinction visible
+      // and lets the user retry; leaving would imply the deletion completed.
+      case DeleteSavedItemUnconfirmed():
+      case DeleteSavedItemFailed():
+      case DeleteSavedItemIgnored():
+        break;
+    }
   }
 
   /// Pops when there is a page to return to, otherwise opens the Inbox.
@@ -95,13 +218,26 @@ class SavedItemDetailScreen extends ConsumerWidget {
 
 /// C1 and C2: the item's real content, in the wireframe's order.
 class _DetailBody extends StatelessWidget {
-  const _DetailBody({required this.item, this.onMoveToCollection});
+  const _DetailBody({
+    required this.item,
+    this.onMoveToCollection,
+    this.onDelete,
+    this.deleting = false,
+  });
 
   final SavedItemSummary item;
 
   /// Null in the skeleton and in every non-data state, which is what keeps the
   /// action out of the loading, generic-error and C3 screens.
   final VoidCallback? onMoveToCollection;
+
+  /// Null in the skeleton and every non-data state, for the same reason as
+  /// [onMoveToCollection].
+  final VoidCallback? onDelete;
+
+  /// A destructive request is in flight. Both actions are disabled, and the
+  /// delete control shows its own progress rather than leaving a dead button.
+  final bool deleting;
 
   @override
   Widget build(BuildContext context) {
@@ -178,7 +314,7 @@ class _DetailBody extends StatelessWidget {
             color: tokens.border,
           ),
           const SizedBox(height: AppMetrics.space4),
-          if (onMoveToCollection != null) ...[
+          if (onMoveToCollection != null || onDelete != null) ...[
             Text(
               'ACTIONS',
               style: AppTypography.sectionLabel.copyWith(
@@ -186,11 +322,21 @@ class _DetailBody extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppMetrics.space3),
-            AppButton(
-              label: 'Move to a collection',
-              variant: AppButtonVariant.secondary,
-              onPressed: onMoveToCollection,
-            ),
+            if (onMoveToCollection != null) ...[
+              AppButton(
+                label: 'Move to a collection',
+                variant: AppButtonVariant.secondary,
+                onPressed: deleting ? null : onMoveToCollection,
+              ),
+              if (onDelete != null) const SizedBox(height: AppMetrics.space2),
+            ],
+            if (onDelete != null)
+              AppButton(
+                label: 'Delete this item',
+                variant: AppButtonVariant.danger,
+                busy: deleting,
+                onPressed: deleting ? null : onDelete,
+              ),
             const SizedBox(height: AppMetrics.space6),
           ],
           _EnrichmentAction(tokens: tokens),

@@ -167,6 +167,40 @@ abstract final class ApiErrorCode {
   /// from the status alone.
   static const String collectionNotFound = 'COLLECTION_NOT_FOUND';
 
+  /// 409. `DELETE /collections/{id}` found a saved item in the collection after
+  /// the operation had already dealt with the items it saw.
+  /// `collection/error_codes.go` (`CodeCollectionNotEmpty`).
+  ///
+  /// The database's `ON DELETE RESTRICT` constraint detects it, the whole
+  /// transaction rolls back, and the collection and its items are unchanged.
+  /// This is a known not-deleted outcome, not an emptiness precondition the
+  /// client can check.
+  static const String collectionNotEmpty = 'COLLECTION_NOT_EMPTY';
+
+  /// 409. `DELETE /collections/{id}` named the Unsorted collection.
+  /// `collection/error_codes.go` (`CodeUnsortedCollectionProtected`).
+  ///
+  /// Unsorted is identified by its system key, never by display name or type.
+  /// It is the only protected collection and the transaction writes nothing.
+  static const String unsortedCollectionProtected =
+      'UNSORTED_COLLECTION_PROTECTED';
+
+  /// 400. `DELETE /collections/{id}` received no `saved_items_action`, or one
+  /// that is neither `delete` nor `move`. Nothing is defaulted.
+  ///
+  /// A well-formed client never produces it; it maps to the standard malformed
+  /// request handling.
+  static const String invalidCollectionDeleteAction =
+      'INVALID_COLLECTION_DELETE_ACTION';
+
+  /// 400. `DELETE /collections/{id}` received a `target_collection_id` that does
+  /// not match the action: absent for `move`, or present for `delete`.
+  ///
+  /// A well-formed client never produces it; it maps to the standard malformed
+  /// request handling.
+  static const String invalidCollectionDeleteTarget =
+      'INVALID_COLLECTION_DELETE_TARGET';
+
   // ---------------------------------------------------------------------------
   // Search — `internal/api/search/error_codes.go`.
   // ---------------------------------------------------------------------------

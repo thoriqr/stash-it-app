@@ -1,3 +1,17 @@
+/// The collection detail route a saved-item detail was pushed from.
+///
+/// **In-memory only.** It travels through `GoRouterState.extra`, never through the
+/// location, because the detail route still names one item and nothing else. It
+/// exists for one case: after the user deletes the collection the detail was
+/// opened from, the detail must pop that collection route as well instead of
+/// returning to a screen whose collection no longer exists.
+final class SavedItemDetailOrigin {
+  const SavedItemDetailOrigin.collection(this.collectionId);
+
+  /// The collection whose contents screen pushed the item detail.
+  final String collectionId;
+}
+
 /// Route definitions for the application.
 ///
 /// All paths are declared here so navigation stays centralised, as required by

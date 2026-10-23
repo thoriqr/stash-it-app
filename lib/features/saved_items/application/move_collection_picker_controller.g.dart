@@ -10,9 +10,10 @@ part of 'move_collection_picker_controller.dart';
 // ignore_for_file: type=lint, type=warning
 /// Cursor-paginated collection browser for the Move to a collection flow.
 ///
-/// **One page at a time, on demand.** The main sheet loads only its bounded
-/// preview; this controller starts with one page and follows `next_cursor` only
-/// when the user asks for more. Nothing here sweeps every page eagerly.
+/// **One page at a time, as the list reaches its end.** The main sheet loads only
+/// its bounded preview; this controller starts with one page and follows
+/// `next_cursor` as the picker scrolls near the bottom. Nothing here sweeps every
+/// page eagerly, and the footer's Retry is the only manual pagination control.
 ///
 /// **The collections listing has no name filter.** A typed name can therefore
 /// only be compared with collections the client has already fetched. Discovering
@@ -30,9 +31,10 @@ final moveCollectionPickerProvider = MoveCollectionPickerProvider._();
 
 /// Cursor-paginated collection browser for the Move to a collection flow.
 ///
-/// **One page at a time, on demand.** The main sheet loads only its bounded
-/// preview; this controller starts with one page and follows `next_cursor` only
-/// when the user asks for more. Nothing here sweeps every page eagerly.
+/// **One page at a time, as the list reaches its end.** The main sheet loads only
+/// its bounded preview; this controller starts with one page and follows
+/// `next_cursor` as the picker scrolls near the bottom. Nothing here sweeps every
+/// page eagerly, and the footer's Retry is the only manual pagination control.
 ///
 /// **The collections listing has no name filter.** A typed name can therefore
 /// only be compared with collections the client has already fetched. Discovering
@@ -52,9 +54,10 @@ final class MoveCollectionPickerProvider
         > {
   /// Cursor-paginated collection browser for the Move to a collection flow.
   ///
-  /// **One page at a time, on demand.** The main sheet loads only its bounded
-  /// preview; this controller starts with one page and follows `next_cursor` only
-  /// when the user asks for more. Nothing here sweeps every page eagerly.
+  /// **One page at a time, as the list reaches its end.** The main sheet loads only
+  /// its bounded preview; this controller starts with one page and follows
+  /// `next_cursor` as the picker scrolls near the bottom. Nothing here sweeps every
+  /// page eagerly, and the footer's Retry is the only manual pagination control.
   ///
   /// **The collections listing has no name filter.** A typed name can therefore
   /// only be compared with collections the client has already fetched. Discovering
@@ -86,13 +89,14 @@ final class MoveCollectionPickerProvider
 }
 
 String _$moveCollectionPickerHash() =>
-    r'299f3769e927d0f1a845071d4fec6d880178842f';
+    r'4187255966697cff672280701fbefd204f8d8665';
 
 /// Cursor-paginated collection browser for the Move to a collection flow.
 ///
-/// **One page at a time, on demand.** The main sheet loads only its bounded
-/// preview; this controller starts with one page and follows `next_cursor` only
-/// when the user asks for more. Nothing here sweeps every page eagerly.
+/// **One page at a time, as the list reaches its end.** The main sheet loads only
+/// its bounded preview; this controller starts with one page and follows
+/// `next_cursor` as the picker scrolls near the bottom. Nothing here sweeps every
+/// page eagerly, and the footer's Retry is the only manual pagination control.
 ///
 /// **The collections listing has no name filter.** A typed name can therefore
 /// only be compared with collections the client has already fetched. Discovering

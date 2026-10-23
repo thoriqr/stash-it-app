@@ -85,14 +85,29 @@ class SavedItems extends _$SavedItems {
   /// The manual refresh currently in flight, shared by concurrent gestures.
   Future<void>? _refreshInFlight;
 
+  /// Ids removed locally after a confirmed delete.
+  ///
+  /// A load-more or refresh already in flight when the delete completes can
+  /// return the row after the local removal. These tombstones keep such a reply
+  /// from resurrecting it. They are cleared only when a first page requested
+  /// **after** every tombstone was added is adopted: at that point the server's
+  /// page is authoritative and its cursor was issued after the delete too.
+  final Set<String> _tombstones = {};
+
+  /// Increments on every tombstone. A first-page request records this value and
+  /// only clears tombstones when it has not changed, which is how a reply that
+  /// was already in flight cannot authorise clearing them.
+  int _tombstoneVersion = 0;
+
   @override
   Future<SavedItemsState> build() async {
     // A rebuild is a new list too. Any page requested against the previous one
     // must not land in this one.
     _listVersion++;
+    final tombstoneVersion = _tombstoneVersion;
 
     final page = await ref.watch(savedItemsRepositoryProvider).list();
-    return _toState(page);
+    return _adoptFirstPage(page, requestedAtTombstoneVersion: tombstoneVersion);
   }
 
   /// Replaces the loaded history with a fresh first page.
@@ -120,9 +135,10 @@ class SavedItems extends _$SavedItems {
     if (inFlight != null) return inFlight;
 
     final version = ++_listVersion;
+    final tombstoneVersion = _tombstoneVersion;
 
     late final Future<void> future;
-    future = _refresh(version).whenComplete(() {
+    future = _refresh(version, tombstoneVersion).whenComplete(() {
       if (identical(_refreshInFlight, future)) _refreshInFlight = null;
     });
     _refreshInFlight = future;
@@ -140,14 +156,16 @@ class SavedItems extends _$SavedItems {
     return future;
   }
 
-  Future<void> _refresh(int version) async {
+  Future<void> _refresh(int version, int tombstoneVersion) async {
     try {
       final page = await ref.read(savedItemsRepositoryProvider).list();
 
       // A newer refresh or a rebuild owns the list now.
       if (!ref.mounted || version != _listVersion) return;
 
-      state = AsyncData(_toState(page));
+      state = AsyncData(
+        _adoptFirstPage(page, requestedAtTombstoneVersion: tombstoneVersion),
+      );
     } catch (error, stackTrace) {
       if (!ref.mounted || version != _listVersion) return;
 
@@ -315,6 +333,31 @@ class SavedItems extends _$SavedItems {
     state = AsyncData(current.copyWith(items: items));
   }
 
+  /// Removes one confirmed-deleted row in place.
+  ///
+  /// Cursor, `hasMore` and `isLoadingMore` are preserved: deleting one row does
+  /// not change where the next page continues. The id is also tombstoned so a
+  /// page already in flight cannot reinsert it. The caller has already confirmed
+  /// the delete and publishes its own feedback; this is not a network operation
+  /// and does not announce anything.
+  void removeItem(String savedItemId) {
+    _tombstones.add(savedItemId);
+    _tombstoneVersion++;
+
+    final current = switch (state) {
+      AsyncData(:final value) => value,
+      _ => null,
+    };
+    if (current == null) return;
+
+    final items = current.items
+        .where((item) => item.id != savedItemId)
+        .toList(growable: false);
+    if (items.length == current.items.length) return;
+
+    state = AsyncData(current.copyWith(items: items));
+  }
+
   /// Appends the next page.
   ///
   /// Does nothing when the listing has already ended, when a page is already in
@@ -396,8 +439,9 @@ class SavedItems extends _$SavedItems {
   /// landed between two fetches can appear both in the refreshed first page and
   /// in an older page already on screen, and a duplicated row is a visible
   /// defect. A row already present keeps its existing position instead of moving
-  /// to the head.
-  static List<SavedItemSummary> _prepend(
+  /// to the head. Tombstoned ids are dropped: this merge is not a fresh first
+  /// page and cannot authorise clearing them.
+  List<SavedItemSummary> _prepend(
     List<SavedItemSummary> incoming,
     List<SavedItemSummary> existing,
   ) {
@@ -405,19 +449,21 @@ class SavedItems extends _$SavedItems {
     final leading = <SavedItemSummary>[];
 
     for (final item in incoming) {
+      if (_tombstones.contains(item.id)) continue;
       if (seen.add(item.id)) leading.add(item);
     }
 
     return [...leading, ...existing];
   }
 
-  /// Appends [incoming], skipping any id already present.
+  /// Appends [incoming], skipping any id already present or locally deleted.
   ///
   /// The contract's ordering is stable, so a conforming page cannot repeat an
   /// id. This is not about that: it is about the case the cursor explicitly
   /// survives — an item saved again between two page fetches can appear in both,
-  /// and a duplicated row is a visible defect.
-  static List<SavedItemSummary> _append(
+  /// and a duplicated row is a visible defect. A page requested before a delete
+  /// can also return the deleted row; the tombstone keeps it out.
+  List<SavedItemSummary> _append(
     List<SavedItemSummary> existing,
     List<SavedItemSummary> incoming,
   ) {
@@ -425,14 +471,37 @@ class SavedItems extends _$SavedItems {
     final merged = List<SavedItemSummary>.of(existing);
 
     for (final item in incoming) {
+      if (_tombstones.contains(item.id)) continue;
       if (seen.add(item.id)) merged.add(item);
     }
 
     return merged;
   }
 
-  static SavedItemsState _toState(SavedItemPage page) => SavedItemsState(
-    items: page.items,
+  /// Adopts a first page and, when it was requested after every local delete,
+  /// clears the tombstones.
+  ///
+  /// The page is filtered against the tombstones that exist **now**, before they
+  /// are cleared. A first-page request that began before a delete recorded an
+  /// older [_tombstoneVersion], so it cannot clear the tombstone that delete
+  /// added; its reply is filtered and the tombstone remains for any page still in
+  /// flight. Once a page requested after the delete is adopted, its cursor was
+  /// issued after the row was gone, so later pages cannot contain it either.
+  SavedItemsState _adoptFirstPage(
+    SavedItemPage page, {
+    required int requestedAtTombstoneVersion,
+  }) {
+    final next = _toState(page);
+    if (requestedAtTombstoneVersion == _tombstoneVersion) {
+      _tombstones.clear();
+    }
+    return next;
+  }
+
+  SavedItemsState _toState(SavedItemPage page) => SavedItemsState(
+    items: page.items
+        .where((item) => !_tombstones.contains(item.id))
+        .toList(growable: false),
     nextCursor: page.nextCursor,
     hasMore: page.hasMore,
   );

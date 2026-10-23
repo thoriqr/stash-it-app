@@ -1,3 +1,32 @@
+## Delete saved item (2026-10-23)
+
+### Verified backend contract (stash-it-backend)
+- `DELETE /saved-items/{id}` answers `200` with `{data: {collection_id, collection_empty, collection_deletable}, message}` and no `meta`. A `200` proves the row is gone. The flags are advisory: they describe the collection the item left and do not delete it. A `200` with an unreadable body is still a completed item delete, reported without collection flags; a non-2xx unreadable body remains unestablished.
+- `DELETE /collections/{id}` requires `{saved_items_action: "delete", target_collection_id: null}`. Success is the status and needs no response payload. `COLLECTION_NOT_FOUND`, `COLLECTION_NOT_EMPTY` and `UNSORTED_COLLECTION_PROTECTED` are known outcomes; no item delete is repeated after a collection-delete failure.
+
+### Flutter implementation
+- Added `Delete this item` below `Move to a collection` on the saved-item detail. It opens the shared `AppConfirmDialog` with the fixed copy and `Keep` / `Delete` actions. Only a confirmed choice sends one `DELETE /saved-items/{id}`. No Undo and no automatic collection deletion were added.
+- A second dialog is offered only after a successful item delete and only when every eligibility condition holds: both server flags are true, the response `collection_id` is non-empty, it exactly matches the item's last-known `collectionId`, and the trimmed collection name is non-empty. `Keep it`, barrier tap and Back all publish the item-deleted success and send no collection request.
+- `DeleteSavedItem` is a keep-alive controller with a synchronous in-flight guard and separate item/collection outcomes. Confirmed deletes remove rows from loaded Inbox and collection-contents listings in place; both listings keep tombstones so an in-flight page cannot resurrect a deleted row. `Collections` removes the collection in place, preserving its chosen sort, cursor and loaded pages.
+- The optional collection delete sends the one verified request body and updates the loaded collections list. When the delete establishes that the collection is gone (success or `COLLECTION_NOT_FOUND`), a mounted collection-contents provider is invalidated by default so its existing not-found state can take over; the leaving path described below opts out because that route is being removed.
+- Item-delete failures remain distinguishable: a known not-found removes the stale row without claiming this request deleted it; an ambiguous failure stays on the detail with uncertain copy; a confirmed delete with unreadable collection flags reports only the item deletion. Backend `message` is never displayed.
+
+### Navigation after collection deletion
+- A saved-item detail opened from collection contents now receives `SavedItemDetailOrigin.collection(collectionId)` through `GoRouterState.extra`. The location still names only the item.
+- When that origin collection is deleted successfully, or is already unavailable (`COLLECTION_NOT_FOUND`), the detail pops twice: the item detail and the collection detail. The existing shell stack then reveals whichever destination held the collection — Collections or Search — with no new route or invented destination. The same path passes `invalidateContents: false`, so it does not issue a `GET /collections/{id}/saved-items` for the route being removed.
+- Other origins keep the single pop (Inbox, Search, direct entry). If the item was moved to another collection before deletion, the origin collection still exists, so only the item detail is popped. `COLLECTION_NOT_FOUND` remains expected and tolerable for requests that still target a collection deleted elsewhere; it is not broadly suppressed.
+
+### Verification
+- `dart format` applied to the changed Dart files; `flutter analyze` — no issues found.
+- Focused suites passed: 5 dialog tests (including barrier and system Back), 13 routed-navigation tests, 34 collection-contents/collections tests, plus the delete-controller and saved-items-controller suites. The in-flight tombstone test passed individually.
+- `flutter test` — 796 passed.
+- No app, device, or emulator run. Nothing staged or committed.
+
+### Remaining limitations
+- Delete copy and feedback remain hardcoded English; the app still has no l10n layer.
+- `COLLECTION_NOT_FOUND` can still occur when a collection is deleted outside this flow, or on an unconfirmed collection delete. Avoiding it broadly would require suppressing a valid backend answer.
+- The collection-delete follow-up is only offered from the saved-item detail, as decided; no Inbox card or batch flow exists.
+
 ## Collection detail screen (2026-10-23)
 
 This section supersedes the "Collection detail screen and mutations not

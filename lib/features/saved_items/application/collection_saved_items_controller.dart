@@ -75,12 +75,24 @@ class CollectionSavedItems extends _$CollectionSavedItems {
   /// The explicit first-page retry currently in flight.
   Future<void>? _retryInFlight;
 
+  /// Ids removed locally after a confirmed delete.
+  ///
+  /// The detail screen sits above a still-mounted collection screen, so this
+  /// provider usually survives the delete. A page already in flight can return
+  /// the deleted row after the in-place removal; tombstones keep it out.
+  final Set<String> _tombstones = {};
+
+  /// Increments on every tombstone, so a first-page request that began before a
+  /// delete cannot clear that delete's tombstone when its reply arrives.
+  int _tombstoneVersion = 0;
+
   @override
   Future<CollectionSavedItemsState> build(String collectionId) async {
     // A rebuild is a new list too, so any page requested against a previous one
     // must not land in this one.
     _listVersion++;
     _collectionId = collectionId;
+    final tombstoneVersion = _tombstoneVersion;
 
     final page = await ref
         .watch(savedItemsRepositoryProvider)
@@ -91,7 +103,7 @@ class CollectionSavedItems extends _$CollectionSavedItems {
     // only fail the same way.
     _requireUsableCursor(page);
 
-    return _toState(page);
+    return _adoptFirstPage(page, requestedAtTombstoneVersion: tombstoneVersion);
   }
 
   /// Replaces whatever is on screen with a fresh first page.
@@ -118,9 +130,10 @@ class CollectionSavedItems extends _$CollectionSavedItems {
     if (inFlight != null) return inFlight;
 
     final version = ++_listVersion;
+    final tombstoneVersion = _tombstoneVersion;
 
     late final Future<void> future;
-    future = _refresh(version).whenComplete(() {
+    future = _refresh(version, tombstoneVersion).whenComplete(() {
       if (identical(_refreshInFlight, future)) _refreshInFlight = null;
     });
     _refreshInFlight = future;
@@ -135,7 +148,7 @@ class CollectionSavedItems extends _$CollectionSavedItems {
     return future;
   }
 
-  Future<void> _refresh(int version) async {
+  Future<void> _refresh(int version, int tombstoneVersion) async {
     try {
       final page = await ref
           .read(savedItemsRepositoryProvider)
@@ -144,7 +157,7 @@ class CollectionSavedItems extends _$CollectionSavedItems {
       if (!ref.mounted || version != _listVersion) return;
 
       _requireUsableCursor(page);
-      _applyFirstPage(page);
+      _applyFirstPage(page, requestedAtTombstoneVersion: tombstoneVersion);
     } catch (error, stackTrace) {
       if (!ref.mounted || version != _listVersion) return;
 
@@ -179,9 +192,10 @@ class CollectionSavedItems extends _$CollectionSavedItems {
     if (inFlight != null) return inFlight;
 
     final version = ++_listVersion;
+    final tombstoneVersion = _tombstoneVersion;
 
     late final Future<void> future;
-    future = _retry(version).whenComplete(() {
+    future = _retry(version, tombstoneVersion).whenComplete(() {
       if (identical(_retryInFlight, future)) _retryInFlight = null;
     });
     _retryInFlight = future;
@@ -189,7 +203,7 @@ class CollectionSavedItems extends _$CollectionSavedItems {
     return future;
   }
 
-  Future<void> _retry(int version) async {
+  Future<void> _retry(int version, int tombstoneVersion) async {
     // A first load has no rows worth keeping: an explicit retry returns the screen
     // to its loading state, exactly as the Inbox does.
     state = const AsyncLoading();
@@ -202,7 +216,7 @@ class CollectionSavedItems extends _$CollectionSavedItems {
       if (!ref.mounted || version != _listVersion) return;
 
       _requireUsableCursor(page);
-      _applyFirstPage(page);
+      _applyFirstPage(page, requestedAtTombstoneVersion: tombstoneVersion);
     } catch (error, stackTrace) {
       if (!ref.mounted || version != _listVersion) return;
 
@@ -241,6 +255,26 @@ class CollectionSavedItems extends _$CollectionSavedItems {
     if (current == null || !current.hasMore || current.isLoadingMore) return;
 
     await _requestNextPage(current);
+  }
+
+  /// Removes one confirmed-deleted row in place.
+  ///
+  /// The collection's name, cursor, `hasMore` and any load-more failure are
+  /// preserved. The id is tombstoned so a page already in flight cannot reinsert
+  /// it. The caller has already confirmed the item deletion.
+  void removeItem(String savedItemId) {
+    _tombstones.add(savedItemId);
+    _tombstoneVersion++;
+
+    final current = _currentState;
+    if (current == null) return;
+
+    final items = current.items
+        .where((item) => item.id != savedItemId)
+        .toList(growable: false);
+    if (items.length == current.items.length) return;
+
+    state = AsyncData(current.copyWith(items: items));
   }
 
   Future<void> _requestNextPage(CollectionSavedItemsState current) async {
@@ -319,9 +353,32 @@ class CollectionSavedItems extends _$CollectionSavedItems {
   /// The consumed-cursor guard is scoped to one walk of the listing, so a new head
   /// starts a new walk. Without clearing it, a cursor that legitimately reappears
   /// after a refresh would be mistaken for a server repeating itself.
-  void _applyFirstPage(CollectionSavedItemsPage page) {
+  ///
+  /// Tombstones are cleared only when this page was requested after every local
+  /// delete. A reply that was already in flight when a delete completed is
+  /// filtered and leaves the tombstone in place for any other page still in
+  /// flight.
+  void _applyFirstPage(
+    CollectionSavedItemsPage page, {
+    required int requestedAtTombstoneVersion,
+  }) {
     _consumedCursors.clear();
     state = AsyncData(_toState(page));
+    if (requestedAtTombstoneVersion == _tombstoneVersion) {
+      _tombstones.clear();
+    }
+  }
+
+  /// Builds a state from a first page, filtering ids removed locally.
+  CollectionSavedItemsState _adoptFirstPage(
+    CollectionSavedItemsPage page, {
+    required int requestedAtTombstoneVersion,
+  }) {
+    final next = _toState(page);
+    if (requestedAtTombstoneVersion == _tombstoneVersion) {
+      _tombstones.clear();
+    }
+    return next;
   }
 
   /// `has_more` and a usable cursor are one contract: paging with one and not the
@@ -333,13 +390,14 @@ class CollectionSavedItems extends _$CollectionSavedItems {
     }
   }
 
-  /// Appends [incoming], skipping any id already present.
+  /// Appends [incoming], skipping any id already present or locally deleted.
   ///
   /// The contract's ordering is stable, so a conforming page cannot repeat an id.
   /// This is not about that: it is about the case the cursor explicitly survives —
   /// an item moved into this collection between two page fetches can appear in
-  /// both, and a duplicated row is a visible defect.
-  static List<SavedItemSummary> _append(
+  /// both, and a duplicated row is a visible defect. A page requested before a
+  /// delete can also return the deleted row; the tombstone keeps it out.
+  List<SavedItemSummary> _append(
     List<SavedItemSummary> existing,
     List<SavedItemSummary> incoming,
   ) {
@@ -347,17 +405,20 @@ class CollectionSavedItems extends _$CollectionSavedItems {
     final merged = List<SavedItemSummary>.of(existing);
 
     for (final item in incoming) {
+      if (_tombstones.contains(item.id)) continue;
       if (seen.add(item.id)) merged.add(item);
     }
 
     return merged;
   }
 
-  static CollectionSavedItemsState _toState(CollectionSavedItemsPage page) =>
+  CollectionSavedItemsState _toState(CollectionSavedItemsPage page) =>
       CollectionSavedItemsState(
         collectionId: page.collectionId,
         collectionName: page.collectionName,
-        items: page.items,
+        items: page.items
+            .where((item) => !_tombstones.contains(item.id))
+            .toList(growable: false),
         nextCursor: page.nextCursor,
         hasMore: page.hasMore,
       );
