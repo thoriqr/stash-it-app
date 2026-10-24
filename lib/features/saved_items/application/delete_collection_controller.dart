@@ -312,10 +312,17 @@ class CollectionDeletion extends _$CollectionDeletion {
         );
         return const CollectionDeletionFailed();
 
-      // A well-formed client never produces these. Known not deleted, and
-      // nothing the user can correct from this screen.
+      // A well-formed client never produces these, and none belongs to a
+      // collection delete. Known not deleted, and nothing the user can correct
+      // from this screen.
       case ApiFailureValidation() ||
           ApiFailureMalformedRequest() ||
+          ApiFailureUserNotFound() ||
+          ApiFailureCurrentPasswordInvalid() ||
+          ApiFailureCurrentPasswordRequired() ||
+          ApiFailureUnexpectedCurrentPassword() ||
+          ApiFailurePasswordCredentialAlreadyExists() ||
+          ApiFailurePasswordAlreadyChanged() ||
           ApiFailureCollectionNameAlreadyExists():
         _publish(
           const AppFeedback(

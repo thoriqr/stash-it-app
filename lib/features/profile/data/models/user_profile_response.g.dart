@@ -62,3 +62,12 @@ _GetUserResponse _$GetUserResponseFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$GetUserResponseToJson(_GetUserResponse instance) =>
     <String, dynamic>{'data': instance.data, 'message': instance.message};
+
+_UpdateUserResponse _$UpdateUserResponseFromJson(Map<String, dynamic> json) =>
+    _UpdateUserResponse(
+      data: UserDataResponse.fromJson(json['data'] as Map<String, dynamic>),
+      message: json['message'] as String?,
+    );
+
+Map<String, dynamic> _$UpdateUserResponseToJson(_UpdateUserResponse instance) =>
+    <String, dynamic>{'data': instance.data, 'message': instance.message};

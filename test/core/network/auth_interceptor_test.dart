@@ -178,6 +178,30 @@ void main() {
       expect(tokens.refreshCalls, 0);
     });
 
+    test('CURRENT_PASSWORD_INVALID does not renew the access token', () async {
+      // A wrong current password is a 401 from the handler, not from the bearer
+      // guard. The access token was accepted and renewing it cannot make the
+      // password right, so the request must neither refresh nor replay.
+      final tokens = StubTokenProvider();
+      final dio = buildDio(tokens);
+      adapter.on(
+        '/users/me/password',
+        status: 401,
+        body: errorBody(ApiErrorCode.currentPasswordInvalid),
+      );
+
+      await expectLater(
+        dio.put<dynamic>(
+          '/users/me/password',
+          data: {'new_password': 'a-new-password'},
+        ),
+        throwsA(isA<DioException>()),
+      );
+
+      expect(tokens.refreshCalls, 0);
+      expect(adapter.countFor('/users/me/password'), 1);
+    });
+
     test('a 401 with an unrecognised code does not renew', () async {
       // Status alone must never be the trigger: a 401 covers expired, unusable
       // and never-sent alike, and renewing for the latter two cannot succeed.

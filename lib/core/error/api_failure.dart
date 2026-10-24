@@ -216,6 +216,95 @@ final class ApiFailureNotFound extends ApiFailure {
   final String code;
 }
 
+/// `USER_NOT_FOUND` — the account this access token names no longer exists.
+///
+/// Deliberately distinct from [ApiFailureNotFound]. That variant is about the
+/// resource a screen is showing; this one says the authenticated **account** is
+/// unavailable, which is why the profile and password screens need their own
+/// sentence for it.
+///
+/// **[D15] Known not written.** The handler reaches no write when the row is
+/// missing.
+///
+/// **This is not a session expiry and must not cause an automatic sign-out.** The
+/// access token is valid; the account behind it is gone. Signing in again cannot
+/// recreate it, and inventing a sign-out here would discard the very session that
+/// is the only way the server could say so.
+final class ApiFailureUserNotFound extends ApiFailure {
+  const ApiFailureUserNotFound({required this.code});
+
+  /// The backend code, retained for logging and tests, never for display.
+  final String code;
+}
+
+/// `CURRENT_PASSWORD_INVALID` — a password change submitted a current password
+/// that does not match the stored credential.
+///
+/// **401, but not an authentication failure.** This is deliberately its own
+/// variant rather than [ApiFailureAuthRequired]: the access token was accepted and
+/// the user is signed in. Renewing the token cannot fix a wrong password, so this
+/// must never trigger the refresh path. It is a known-not-changed refusal with one
+/// correction — enter the current password again.
+final class ApiFailureCurrentPasswordInvalid extends ApiFailure {
+  const ApiFailureCurrentPasswordInvalid({required this.code});
+
+  /// The backend code, retained for logging and tests, never for display.
+  final String code;
+}
+
+/// `CURRENT_PASSWORD_REQUIRED` — a password change omitted the current password
+/// for an account that holds a credential.
+///
+/// A **mode conflict**, not bad input: the server's credential state differs from
+/// the form the client rendered. Nothing was written. The correction is to refetch
+/// the profile and show the change form, not to ask the user to add a field the
+/// form did not have.
+final class ApiFailureCurrentPasswordRequired extends ApiFailure {
+  const ApiFailureCurrentPasswordRequired({required this.code});
+
+  /// The backend code, retained for logging and tests, never for display.
+  final String code;
+}
+
+/// `UNEXPECTED_CURRENT_PASSWORD` — a first-password request supplied a current
+/// password for an account that holds no credential.
+///
+/// A **mode conflict** in the other direction: the server says the account has no
+/// credential, while the client rendered the change form. Nothing was written. The
+/// correction is to refetch the profile and show the create form.
+final class ApiFailureUnexpectedCurrentPassword extends ApiFailure {
+  const ApiFailureUnexpectedCurrentPassword({required this.code});
+
+  /// The backend code, retained for logging and tests, never for display.
+  final String code;
+}
+
+/// `PASSWORD_CREDENTIAL_ALREADY_EXISTS` — a concurrent request created the
+/// account's first password before this one did.
+///
+/// **Known not created.** The winner's credential is what remains; this request
+/// wrote nothing. The state the create form was based on has changed, so the form
+/// must be re-derived from a fresh profile rather than submitted again unchanged.
+final class ApiFailurePasswordCredentialAlreadyExists extends ApiFailure {
+  const ApiFailurePasswordCredentialAlreadyExists({required this.code});
+
+  /// The backend code, retained for logging and tests, never for display.
+  final String code;
+}
+
+/// `PASSWORD_ALREADY_CHANGED` — a concurrent request changed the credential after
+/// this request read and verified against the previous one.
+///
+/// **Known not changed by this request.** The update and the revocation shared one
+/// transaction and it rolled back, so nothing this request did survives. The
+/// submitted current password no longer describes the stored credential.
+final class ApiFailurePasswordAlreadyChanged extends ApiFailure {
+  const ApiFailurePasswordAlreadyChanged({required this.code});
+
+  /// The backend code, retained for logging and tests, never for display.
+  final String code;
+}
+
 /// The bearer guard refused the request, and any refresh that might have been
 /// possible has already been attempted.
 ///

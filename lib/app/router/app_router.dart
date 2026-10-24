@@ -7,6 +7,7 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
 import 'package:stash_it_app/features/collections/presentation/collections_screen.dart';
 import 'package:stash_it_app/features/inbox/presentation/inbox_screen.dart';
+import 'package:stash_it_app/features/profile/presentation/password_screen.dart';
 import 'package:stash_it_app/features/profile/presentation/profile_screen.dart';
 import 'package:stash_it_app/features/saved_items/presentation/collection_saved_items_screen.dart';
 import 'package:stash_it_app/features/saved_items/presentation/saved_item_detail_screen.dart';
@@ -124,6 +125,14 @@ final List<RouteBase> _routes = [
     path: AppRoutes.collectionDetailPattern,
     builder: (context, state) =>
         CollectionSavedItemsScreen(collectionId: state.pathParameters['id']!),
+  ),
+  // Password create/change, outside the shell for the same reason: it is pushed
+  // from Profile and popped back to the retained Profile branch. The route reads
+  // the loaded profile for its mode; a direct entry has no shell page beneath it,
+  // so the screen falls back to Profile on Back.
+  GoRoute(
+    path: AppRoutes.password,
+    builder: (context, state) => const PasswordScreen(),
   ),
   StatefulShellRoute.indexedStack(
     builder: (context, state, navigationShell) =>

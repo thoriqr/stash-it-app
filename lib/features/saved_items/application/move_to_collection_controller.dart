@@ -238,9 +238,16 @@ class MoveToCollection extends _$MoveToCollection {
         return const MoveToCollectionNameAlreadyExists();
 
       // Unreachable on `PUT /saved-items/{id}/collection`: only a collection
-      // delete emits these. A known not-moved refusal if a proxy ever produced
-      // one; they are not treated as an unconfirmed write.
-      case ApiFailureCollectionNotEmpty() ||
+      // delete emits the first three, and only the profile routes emit the
+      // account and password codes. A known not-moved refusal if a proxy ever
+      // produced one; they are not treated as an unconfirmed write.
+      case ApiFailureUserNotFound() ||
+          ApiFailureCurrentPasswordInvalid() ||
+          ApiFailureCurrentPasswordRequired() ||
+          ApiFailureUnexpectedCurrentPassword() ||
+          ApiFailurePasswordCredentialAlreadyExists() ||
+          ApiFailurePasswordAlreadyChanged() ||
+          ApiFailureCollectionNotEmpty() ||
           ApiFailureUnsortedCollectionProtected() ||
           ApiFailureCollectionDeleteTargetNotFound():
         _publish(

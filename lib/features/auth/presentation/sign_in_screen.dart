@@ -362,10 +362,18 @@ String messageFor(ApiFailure failure) {
     // `RESOURCE_NOT_FOUND`. `ApiFailureCollectionNameAlreadyExists`,
     // `ApiFailureCollectionNotEmpty`, `ApiFailureUnsortedCollectionProtected`
     // and `ApiFailureCollectionDeleteTargetNotFound` are likewise
-    // collection-route outcomes. All are grouped with the unreadable replies
-    // rather than given sign-in copy for an outcome sign-in cannot produce, and
-    // the closed taxonomy stays exhaustive.
+    // collection-route outcomes. The profile and password variants belong to
+    // `GET`/`PATCH /users/me` and `PUT /users/me/password`, none of which sign-in
+    // calls. All are grouped with the unreadable replies rather than given
+    // sign-in copy for an outcome sign-in cannot produce, and the closed
+    // taxonomy stays exhaustive.
     ApiFailureNotFound() ||
+    ApiFailureUserNotFound() ||
+    ApiFailureCurrentPasswordInvalid() ||
+    ApiFailureCurrentPasswordRequired() ||
+    ApiFailureUnexpectedCurrentPassword() ||
+    ApiFailurePasswordCredentialAlreadyExists() ||
+    ApiFailurePasswordAlreadyChanged() ||
     ApiFailureCollectionNameAlreadyExists() ||
     ApiFailureCollectionNotEmpty() ||
     ApiFailureUnsortedCollectionProtected() ||

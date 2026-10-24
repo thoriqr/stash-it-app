@@ -264,6 +264,65 @@ abstract final class ApiErrorCode {
   /// (`login/service.go:266`).
   static const String passwordWorkUnavailable = 'PASSWORD_WORK_UNAVAILABLE';
 
+  // ---------------------------------------------------------------------------
+  // User profile and password — `internal/api/user/error_codes.go`.
+  // ---------------------------------------------------------------------------
+
+  /// 404. No user row holds the authenticated user's id.
+  /// `user/repository.go` (`GetUserProfile`, `UpdateUserDisplayName`).
+  ///
+  /// Reachable because access tokens are stateless and outlive the session they
+  /// name: a token minted before its account was deleted still verifies. Unknown
+  /// and deleted are deliberately the same answer. **This is not a session
+  /// expiry** — the token is valid, the account is gone — so it must not be
+  /// treated like a bearer-guard refusal or used to justify an automatic sign-out.
+  static const String userNotFound = 'USER_NOT_FOUND';
+
+  /// 401. The `current_password` submitted with a password change did not match
+  /// the stored credential. `user/service.go` (`changePassword`).
+  ///
+  /// **401 because the credential failed, not the access token.** It is not one of
+  /// the bearer-guard codes and must never trigger a refresh: renewing the access
+  /// token cannot make a wrong current password right. The distinct code exists so
+  /// a client can say "try a different password" instead of "sign in again".
+  static const String currentPasswordInvalid = 'CURRENT_PASSWORD_INVALID';
+
+  /// 400. A password change omitted `current_password` for an account that holds
+  /// a credential. `user/service.go` (`changePassword`).
+  ///
+  /// The credential state differs from the mode the client rendered. Nothing was
+  /// written.
+  static const String currentPasswordRequired = 'CURRENT_PASSWORD_REQUIRED';
+
+  /// 400. A first-password request supplied `current_password` for an account
+  /// that holds no credential. `user/service.go` (`createPasswordCredential`).
+  ///
+  /// Refused rather than ignored, so the caller is never told a secret it sent was
+  /// checked when it was not. Nothing was written.
+  static const String unexpectedCurrentPassword = 'UNEXPECTED_CURRENT_PASSWORD';
+
+  /// 409. A concurrent request created the account's first password before this
+  /// one could. `user/repository.go` (`CreatePasswordCredential`).
+  ///
+  /// The winner's hash is kept; this request wrote nothing. The credential state
+  /// has changed, so a create form is no longer the correct shape.
+  static const String passwordCredentialAlreadyExists =
+      'PASSWORD_CREDENTIAL_ALREADY_EXISTS';
+
+  /// 409. A concurrent request changed the password after this request read and
+  /// verified against the previous one. `user/repository.go`
+  /// (`SetPasswordAndRevokeOtherSessions`).
+  ///
+  /// The whole transaction — the update and the revocation — rolled back, so this
+  /// request wrote nothing. Its `current_password` no longer describes the stored
+  /// credential.
+  static const String passwordAlreadyChanged = 'PASSWORD_ALREADY_CHANGED';
+
+  // `PASSWORD_CREDENTIAL_NOT_FOUND` is deliberately absent. The code exists in
+  // `user/error_codes.go`, but `Service.SetPassword` consumes it internally to
+  // select the create branch; it is not a reachable HTTP response. Adding it here
+  // without an endpoint that can emit it would invite a branch that never runs.
+
   /// The codes that mean "this session can never be used again", as returned by
   /// `POST /auth/refresh`.
   ///

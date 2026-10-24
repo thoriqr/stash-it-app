@@ -243,9 +243,16 @@ class EnrichSavedItem extends _$EnrichSavedItem {
           ),
         );
 
-      // Unreachable on this route: these belong to collection writes and deletes.
-      // Handled explicitly so a future code cannot be silently ignored.
-      case ApiFailureCollectionNameAlreadyExists() ||
+      // Unreachable on this route: these belong to collection writes and
+      // deletes, and to the profile routes. Handled explicitly so a future code
+      // cannot be silently ignored.
+      case ApiFailureUserNotFound() ||
+          ApiFailureCurrentPasswordInvalid() ||
+          ApiFailureCurrentPasswordRequired() ||
+          ApiFailureUnexpectedCurrentPassword() ||
+          ApiFailurePasswordCredentialAlreadyExists() ||
+          ApiFailurePasswordAlreadyChanged() ||
+          ApiFailureCollectionNameAlreadyExists() ||
           ApiFailureCollectionNotEmpty() ||
           ApiFailureUnsortedCollectionProtected() ||
           ApiFailureCollectionDeleteTargetNotFound():

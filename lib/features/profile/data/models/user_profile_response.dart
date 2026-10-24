@@ -51,3 +51,22 @@ abstract class GetUserResponse with _$GetUserResponse {
   factory GetUserResponse.fromJson(Map<String, dynamic> json) =>
       _$GetUserResponseFromJson(json);
 }
+
+/// The whole `200` body of `PATCH /users/me`.
+///
+/// Structurally identical to [GetUserResponse], and deliberately a separate type:
+/// the endpoint's contract is that it returns the **complete profile as written**,
+/// not a partial patch representation, so this response can replace the loaded
+/// profile outright. Naming it after the operation keeps that guarantee visible at
+/// the call site instead of relying on a reader to know that the GET envelope is
+/// reused.
+@freezed
+abstract class UpdateUserResponse with _$UpdateUserResponse {
+  const factory UpdateUserResponse({
+    required UserDataResponse data,
+    String? message,
+  }) = _UpdateUserResponse;
+
+  factory UpdateUserResponse.fromJson(Map<String, dynamic> json) =>
+      _$UpdateUserResponseFromJson(json);
+}

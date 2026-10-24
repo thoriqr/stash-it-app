@@ -43,6 +43,17 @@ abstract final class AppRoutes {
   /// a session exists.
   static const String signIn = '/sign-in';
 
+  /// Create or change the account's password.
+  ///
+  /// **Not a fifth destination.** A full-screen secondary route outside the
+  /// shell, pushed from the Profile destination and popped back to it. The route
+  /// reads the loaded profile to decide which form to show; a direct entry with
+  /// nothing beneath it falls back to [profile] on Back.
+  ///
+  /// **Two segments under `/profile`**, so it cannot shadow the Profile branch:
+  /// that branch matches `/profile` exactly.
+  static const String password = '/profile/password';
+
   /// One saved item's detail screen (S10).
   ///
   /// **Not a fifth destination.** D1 fixes four bottom-navigation destinations;

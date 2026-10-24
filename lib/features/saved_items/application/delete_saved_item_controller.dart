@@ -322,8 +322,15 @@ class DeleteSavedItem extends _$DeleteSavedItem {
         return const DeleteSavedItemFailed();
 
       // Unreachable on this route: the collection-write codes belong to
-      // `PUT /saved-items/{id}/collection` and `DELETE /collections/{id}`.
-      case ApiFailureCollectionNameAlreadyExists() ||
+      // `PUT /saved-items/{id}/collection` and `DELETE /collections/{id}`, and
+      // the account and password codes belong to the profile routes.
+      case ApiFailureUserNotFound() ||
+          ApiFailureCurrentPasswordInvalid() ||
+          ApiFailureCurrentPasswordRequired() ||
+          ApiFailureUnexpectedCurrentPassword() ||
+          ApiFailurePasswordCredentialAlreadyExists() ||
+          ApiFailurePasswordAlreadyChanged() ||
+          ApiFailureCollectionNameAlreadyExists() ||
           ApiFailureCollectionNotEmpty() ||
           ApiFailureUnsortedCollectionProtected() ||
           ApiFailureCollectionDeleteTargetNotFound():
@@ -464,8 +471,15 @@ class DeleteSavedItem extends _$DeleteSavedItem {
 
       // Unreachable on a collection delete: only the move endpoint emits the
       // duplicate-name code, and this flow sends the `delete` action, which has
-      // no target to be missing.
-      case ApiFailureCollectionNameAlreadyExists() ||
+      // no target to be missing. The account and password codes belong to the
+      // profile routes.
+      case ApiFailureUserNotFound() ||
+          ApiFailureCurrentPasswordInvalid() ||
+          ApiFailureCurrentPasswordRequired() ||
+          ApiFailureUnexpectedCurrentPassword() ||
+          ApiFailurePasswordCredentialAlreadyExists() ||
+          ApiFailurePasswordAlreadyChanged() ||
+          ApiFailureCollectionNameAlreadyExists() ||
           ApiFailureCollectionDeleteTargetNotFound():
         _publish(
           AppFeedback(

@@ -147,6 +147,36 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.collectionNotFound:
       return ApiFailureNotFound(code: code);
 
+    // The **account** behind a valid access token is gone. Kept apart from
+    // `ApiFailureNotFound` because the account is not the resource a screen is
+    // showing, and because it must not be read as a session expiry.
+    case ApiErrorCode.userNotFound:
+      return ApiFailureUserNotFound(code: code);
+
+    // A wrong *current password* is a 401, but it is not a bearer-guard refusal
+    // and never authorises a refresh: the access token was accepted. Mapping it
+    // to `ApiFailureAuthRequired` would tell the user to sign in again for a
+    // problem signing in cannot fix.
+    case ApiErrorCode.currentPasswordInvalid:
+      return ApiFailureCurrentPasswordInvalid(code: code);
+
+    // The two directions of a credential-state mismatch. Both are known
+    // not-written refusals, and both mean the form was rendered for the wrong
+    // mode rather than that the input needs correcting field by field.
+    case ApiErrorCode.currentPasswordRequired:
+      return ApiFailureCurrentPasswordRequired(code: code);
+
+    case ApiErrorCode.unexpectedCurrentPassword:
+      return ApiFailureUnexpectedCurrentPassword(code: code);
+
+    // Two concurrent-writer outcomes. Both wrote nothing: the create lost to an
+    // existing primary key, and the change's conditional update matched no row.
+    case ApiErrorCode.passwordCredentialAlreadyExists:
+      return ApiFailurePasswordCredentialAlreadyExists(code: code);
+
+    case ApiErrorCode.passwordAlreadyChanged:
+      return ApiFailurePasswordAlreadyChanged(code: code);
+
     // The `move` action's destination is gone or is not this caller's. It is
     // not the collection being deleted, so it must not become
     // `ApiFailureNotFound`: the source is still there and the user can choose

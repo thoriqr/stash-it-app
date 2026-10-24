@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
@@ -259,5 +261,103 @@ void main() {
       findsOneWidget,
     );
     expect(find.widgetWithText(AppButton, 'Retry'), findsOneWidget);
+  });
+
+  testWidgets('USER_NOT_FOUND never offers signing in as the fix', (
+    tester,
+  ) async {
+    await pumpProfile(
+      tester,
+      load: () async =>
+          throw const ApiFailureUserNotFound(code: 'USER_NOT_FOUND'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('This account is no longer available.'), findsOneWidget);
+    expect(find.textContaining('Sign in again'), findsNothing);
+  });
+
+  testWidgets('both account actions meet the 48 px row target', (tester) async {
+    await pumpProfile(tester, load: () async => _profile(createdAt: _joined));
+    await tester.pumpAndSettle();
+
+    final displayRow = find.ancestor(
+      of: find.text('Display name'),
+      matching: find.byType(InkWell),
+    );
+    final passwordRow = find.ancestor(
+      of: find.text('Change password'),
+      matching: find.byType(InkWell),
+    );
+
+    expect(tester.getSize(displayRow).height, greaterThanOrEqualTo(48));
+    expect(tester.getSize(passwordRow).height, greaterThanOrEqualTo(48));
+  });
+
+  testWidgets('the display-name row opens the editor with the raw value', (
+    tester,
+  ) async {
+    await pumpProfile(
+      tester,
+      load: () async => _profile(createdAt: _joined, displayName: '  Reader  '),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Display name'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit display name'), findsOneWidget);
+    final field = tester.widget<TextFormField>(find.byType(TextFormField));
+    expect(
+      field.controller?.text,
+      '  Reader  ',
+      reason: 'the sheet must propose the stored value, not a trimmed one',
+    );
+  });
+
+  testWidgets('the password row pushes the dedicated password route', (
+    tester,
+  ) async {
+    final container = ProviderContainer(
+      overrides: [
+        profileProvider.overrideWithBuild(
+          (_, _) async => _profile(createdAt: _joined),
+        ),
+      ],
+      retry: (_, _) => null,
+    );
+    addTearDown(container.dispose);
+
+    final router = GoRouter(
+      initialLocation: AppRoutes.profile,
+      routes: [
+        GoRoute(
+          path: AppRoutes.profile,
+          builder: (_, _) => const ProfileScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.password,
+          builder: (_, _) =>
+              const Scaffold(body: Center(child: Text('PASSWORD FORM'))),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(
+          theme: AppTheme.light(),
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Change password'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('PASSWORD FORM'), findsOneWidget);
   });
 }

@@ -217,6 +217,12 @@ AppFeedback? saveFeedbackFor(ApiFailure failure, {required bool sessionEnded}) {
     ApiFailureServerUnavailable() ||
     ApiFailureServerFault() ||
     ApiFailureNotFound() ||
+    ApiFailureUserNotFound() ||
+    ApiFailureCurrentPasswordInvalid() ||
+    ApiFailureCurrentPasswordRequired() ||
+    ApiFailureUnexpectedCurrentPassword() ||
+    ApiFailurePasswordCredentialAlreadyExists() ||
+    ApiFailurePasswordAlreadyChanged() ||
     ApiFailureCollectionNameAlreadyExists() ||
     ApiFailureCollectionNotEmpty() ||
     ApiFailureUnsortedCollectionProtected() ||

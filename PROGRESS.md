@@ -1,3 +1,34 @@
+## Profile display name and password (2026-10-25)
+
+### Verified backend contract (stash-it-backend)
+- `PATCH /users/me` takes exactly `{display_name}`: 2–100 Unicode code points, stored verbatim (no trim, no case-fold). Success is `200` with the **complete** profile, the same shape `GET /users/me` returns. Errors: `VALIDATION_ERROR` 400, `USER_NOT_FOUND` 404, the three 401s, `INTERNAL_SERVER_ERROR` 500. A `500` can arrive **after** the rename committed, because identities are read after the user update.
+- `PUT /users/me/password` takes `{new_password, current_password?}`. `new_password` is 8–128 code points; every composition rule stays server-side. An absent key selects create, a present one selects change, and the server treats an empty string as omitted. Success is `200` with `data: null`. Errors: `CURRENT_PASSWORD_INVALID` 401 (handler, not the bearer guard), `CURRENT_PASSWORD_REQUIRED` 400, `UNEXPECTED_CURRENT_PASSWORD` 400, `PASSWORD_CREDENTIAL_ALREADY_EXISTS` 409, `PASSWORD_ALREADY_CHANGED` 409, `USER_NOT_FOUND` 404, `PASSWORD_WORK_UNAVAILABLE` 503 with `Retry-After`, the three 401s, `INTERNAL_SERVER_ERROR`.
+- Change revokes every other session and keeps the caller's; already-issued access tokens stay usable until their own ~15-minute expiry. Create revokes nothing.
+- `PASSWORD_CREDENTIAL_NOT_FOUND` is consumed internally to select the create branch and is **not** a reachable HTTP response, so no branch was added for it.
+
+### Flutter implementation
+- Added the six verified codes to `ApiErrorCode` with typed `ApiFailure` variants and mapper arms. `ApiFailureUserNotFound` is deliberately separate from `ApiFailureNotFound`: it names the authenticated account, not the resource on screen. Every exhaustive switch in profile, saved-items and auth gained the new arms.
+- Added `UpdateDisplayNameRequest`, `SetPasswordRequest` (`includeIfNull: false`, so create sends **no** `current_password` key), `SetPasswordResponse` and `UpdateUserResponse`; Retrofit `PATCH /users/me` and `PUT /users/me/password`; repository methods mapping `DioException` / `TypeError` / `FormatException` the same way as every other write.
+- `Profile` gained narrow `applyUpdatedProfile`, `markPasswordCredentialSet` and `reconcile`, plus `UserProfile.withPasswordCredential` — no general `copyWith`. A rename replaces the loaded profile only when one exists and the returned id matches; otherwise the provider is invalidated and refetched. Confirmed password success sets the flag; nothing is optimistic.
+- Display name is a modal bottom sheet: title `Edit display name`, one prefilled `AppField` carrying the **raw untrimmed** stored value, `Save` / `Cancel`, 2–100 `runes.length` locally, keyboard insets and `PopScope(canPop: !busy)`. `VALIDATION_ERROR` shows against the field. A known refusal keeps the sheet and the typed name in a tone-coded notice band. A `500`, transport failure or unreadable body is treated as **ambiguous**: the sheet closes, the profile is refetched, and the copy says the outcome could not be confirmed.
+- Password is a dedicated top-level route `/profile/password`, outside the shell. The screen captures create/change once from the loaded profile and never re-derives it; a loading or failed profile shows a loading state or Retry and never defaults to create. Create shows `New password` / `Confirm new password`; change adds `Current password`. Current is required and non-empty only; new is 8–128 runes; confirmation is client-only and exact. No trimming, no composition rules. `AutofillHints.password` only on current and `newPassword` only on new; visibility toggles carry accessible tooltips.
+- `CURRENT_PASSWORD_INVALID` is inline on the current field and leaves the credential flag alone; it is a 401 from the handler, so the auth interceptor does not refresh (covered by a regression test). `PASSWORD_ALREADY_CHANGED` keeps the form open and clears the stale current password. `PASSWORD_CREDENTIAL_ALREADY_EXISTS`, `CURRENT_PASSWORD_REQUIRED` and `UNEXPECTED_CURRENT_PASSWORD` close the screen, refetch and explain what changed. Password rate limits and `PASSWORD_WORK_UNAVAILABLE` use capacity-neutral copy with only the server's `Retry-After`; failures are never described as excessive attempts. No automatic retries and no automatic sign-out after success.
+- Change mode states that other sessions are revoked but already-issued access tokens may remain usable for about 15 minutes; create mode omits that note entirely.
+- Profile rows are now interactive with 48 px minimum targets, `InkWell` and a chevron; the password TODO placeholder is gone. The rename row pre-fills the raw stored value, not the trimmed display form.
+
+### Verification
+- `dart run build_runner build --delete-conflicting-outputs` completed (the flag is reported as removed and ignored).
+- `dart format` on every changed Dart file; `flutter analyze` — no issues found.
+- Focused suites passed: profile application/data/domain/presentation, `api_failure_mapper_test.dart` and `auth_interceptor_test.dart` — 138 tests.
+- `flutter test` — 1045 passed.
+- No app, device, or emulator run. Nothing staged or committed.
+
+### Remaining limitations
+- All new copy is hardcoded English; the app still has no l10n layer.
+- **Pre-existing, unchanged:** `profileProvider` is keep-alive and `signOut` does not invalidate it, so a later sign-in can briefly read the previous account's profile from cache. This now matters more because the password screen's mode comes from that profile. Fixing it is a separate change to the sign-out path.
+- A successful rename applies the profile the `PATCH` returned, including its linked-identity snapshots, and never rewrites those snapshots locally. If the backend leaves a snapshot stale, the client shows it as returned rather than assuming a rename propagated into another provider.
+- The password screen does not offer a password-reset link; the backend has no reset route, so none was invented.
+
 ## Open a saved item's original URL (2026-10-24)
 
 ### Not a backend contract

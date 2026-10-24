@@ -1161,4 +1161,295 @@ $UserDataResponseCopyWith<$Res> get data {
 }
 }
 
+
+/// @nodoc
+mixin _$UpdateUserResponse {
+
+ UserDataResponse get data; String? get message;
+/// Create a copy of UpdateUserResponse
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$UpdateUserResponseCopyWith<UpdateUserResponse> get copyWith => _$UpdateUserResponseCopyWithImpl<UpdateUserResponse>(this as UpdateUserResponse, _$identity);
+
+  /// Serializes this UpdateUserResponse to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as UpdateUserResponse;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UpdateUserResponse&&(identical(other.data, _this.data) || other.data == _this.data)&&(identical(other.message, _this.message) || other.message == _this.message));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as UpdateUserResponse;
+  return Object.hash(runtimeType,_this.data,_this.message);
+}
+
+@override
+String toString() {
+  final _this = this as UpdateUserResponse;
+  return 'UpdateUserResponse(data: ${_this.data}, message: ${_this.message})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $UpdateUserResponseCopyWith<$Res>  {
+  factory $UpdateUserResponseCopyWith(UpdateUserResponse value, $Res Function(UpdateUserResponse) _then) = _$UpdateUserResponseCopyWithImpl;
+@useResult
+$Res call({
+ UserDataResponse data, String? message
+});
+
+
+$UserDataResponseCopyWith<$Res> get data;
+
+}
+/// @nodoc
+class _$UpdateUserResponseCopyWithImpl<$Res>
+    implements $UpdateUserResponseCopyWith<$Res> {
+  _$UpdateUserResponseCopyWithImpl(this._self, this._then);
+
+  final UpdateUserResponse _self;
+  final $Res Function(UpdateUserResponse) _then;
+
+/// Create a copy of UpdateUserResponse
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? data = null,Object? message = freezed,}) {
+  return _then(UpdateUserResponse(
+data: null == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
+as UserDataResponse,message: freezed == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+/// Create a copy of UpdateUserResponse
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$UserDataResponseCopyWith<$Res> get data {
+  
+  return $UserDataResponseCopyWith<$Res>(_self.data, (value) {
+    return _then(_self.copyWith(data: value));
+  });
+}
+}
+
+
+/// Adds pattern-matching-related methods to [UpdateUserResponse].
+extension UpdateUserResponsePatterns on UpdateUserResponse {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _UpdateUserResponse value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _UpdateUserResponse() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _UpdateUserResponse value)  $default,){
+final _that = this;
+switch (_that) {
+case _UpdateUserResponse():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _UpdateUserResponse value)?  $default,){
+final _that = this;
+switch (_that) {
+case _UpdateUserResponse() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( UserDataResponse data,  String? message)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _UpdateUserResponse() when $default != null:
+return $default(_that.data,_that.message);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( UserDataResponse data,  String? message)  $default,) {final _that = this;
+switch (_that) {
+case _UpdateUserResponse():
+return $default(_that.data,_that.message);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( UserDataResponse data,  String? message)?  $default,) {final _that = this;
+switch (_that) {
+case _UpdateUserResponse() when $default != null:
+return $default(_that.data,_that.message);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _UpdateUserResponse implements UpdateUserResponse {
+  const _UpdateUserResponse({required this.data, this.message});
+  factory _UpdateUserResponse.fromJson(Map<String, dynamic> json) => _$UpdateUserResponseFromJson(json);
+
+@override final  UserDataResponse data;
+@override final  String? message;
+
+/// Create a copy of UpdateUserResponse
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$UpdateUserResponseCopyWith<_UpdateUserResponse> get copyWith => __$UpdateUserResponseCopyWithImpl<_UpdateUserResponse>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$UpdateUserResponseToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _UpdateUserResponse&&(identical(other.data, data) || other.data == data)&&(identical(other.message, message) || other.message == message));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,data,message);
+}
+
+@override
+String toString() {
+    return 'UpdateUserResponse(data: $data, message: $message)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$UpdateUserResponseCopyWith<$Res> implements $UpdateUserResponseCopyWith<$Res> {
+  factory _$UpdateUserResponseCopyWith(_UpdateUserResponse value, $Res Function(_UpdateUserResponse) _then) = __$UpdateUserResponseCopyWithImpl;
+@override @useResult
+$Res call({
+ UserDataResponse data, String? message
+});
+
+
+@override $UserDataResponseCopyWith<$Res> get data;
+
+}
+/// @nodoc
+class __$UpdateUserResponseCopyWithImpl<$Res>
+    implements _$UpdateUserResponseCopyWith<$Res> {
+  __$UpdateUserResponseCopyWithImpl(this._self, this._then);
+
+  final _UpdateUserResponse _self;
+  final $Res Function(_UpdateUserResponse) _then;
+
+/// Create a copy of UpdateUserResponse
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? data = null,Object? message = freezed,}) {
+  return _then(_UpdateUserResponse(
+data: null == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
+as UserDataResponse,message: freezed == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+/// Create a copy of UpdateUserResponse
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$UserDataResponseCopyWith<$Res> get data {
+  
+  return $UserDataResponseCopyWith<$Res>(_self.data, (value) {
+    return _then(_self.copyWith(data: value));
+  });
+}
+}
+
 // dart format on

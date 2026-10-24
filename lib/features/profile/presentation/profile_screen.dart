@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/core/error/api_failure_messages.dart';
@@ -12,6 +14,7 @@ import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/destination_app_bar.dart';
 
 import 'profile_date.dart';
+import 'widgets/display_name_sheet.dart';
 
 /// The Profile destination.
 ///
@@ -239,6 +242,9 @@ class _HeaderError extends StatelessWidget {
 String _profileErrorMessage(Object error) => switch (error) {
   ApiFailureSessionEnded() => 'Your session has ended. Sign in again.',
   ApiFailureAuthRequired() => 'Sign in again to view your profile.',
+  // The token is valid but the account it names is gone. No copy may offer
+  // signing in as a fix: a new session would name the same missing account.
+  ApiFailureUserNotFound() => 'This account is no longer available.',
   ApiFailureServerUnavailable() =>
     'Profile is temporarily unavailable. Try again shortly.',
   ApiFailureTransport() => 'No connection. We could not load your profile.',
@@ -284,111 +290,102 @@ class _SectionLabelRow extends StatelessWidget {
   }
 }
 
-class _AccountSection extends StatelessWidget {
+class _AccountSection extends ConsumerWidget {
   const _AccountSection({required this.profile, required this.tokens});
 
   final UserProfile profile;
   final AppTokens tokens;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final displayName = profile.displayName.trim();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _SectionLabelRow(label: 'ACCOUNT', tokens: tokens),
-        _InfoRow(
+        _ActionRow(
           label: 'Display name',
           value: displayName.isEmpty ? '—' : displayName,
           tokens: tokens,
+          // The raw stored value, not the trimmed one shown in the row: the
+          // endpoint does not trim, and pre-filling a trimmed value would
+          // propose a different name from the one that is actually saved.
+          onTap: () =>
+              showDisplayNameSheet(context, initialName: profile.displayName),
         ),
-        _PasswordActionRow(
-          hasPasswordCredential: profile.hasPasswordCredential,
+        _ActionRow(
+          label: profile.hasPasswordCredential
+              ? 'Change password'
+              : 'Create password',
           tokens: tokens,
+          // The screen captures the mode from the loaded profile at this
+          // instant. It is not passed as an argument, so a direct entry has to
+          // read the profile itself and can never default to create.
+          onTap: () => context.push(AppRoutes.password),
         ),
       ],
     );
   }
 }
 
-/// A compact account row: label on the left, a quiet mono value on the right.
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
+/// One tappable account row: label on the left, an optional quiet mono value and
+/// the disclosure chevron on the right.
+///
+/// **The whole row is the target and it is at least 48 px tall**, so the action
+/// is reachable without aiming at the chevron. The row owns no business rule: it
+/// renders [label] and [value] and invokes [onTap].
+class _ActionRow extends StatelessWidget {
+  const _ActionRow({
     required this.label,
-    required this.value,
     required this.tokens,
+    required this.onTap,
+    this.value,
   });
 
   final String label;
-  final String value;
+  final String? value;
   final AppTokens tokens;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: tokens.surface,
-        border: Border(bottom: BorderSide(color: tokens.borderSubtle)),
-      ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppMetrics.space4,
-        vertical: AppMetrics.space3,
-      ),
-      child: Row(
-        children: [
-          Expanded(child: Text(label, style: _rowLabelStyle(tokens))),
-          const SizedBox(width: AppMetrics.space3),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 180),
-            child: Text(
-              value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.right,
-              style: AppTypography.monoSmall.copyWith(
-                color: tokens.textTertiary,
-              ),
-            ),
+    return Material(
+      color: tokens.surface,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 48),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: tokens.borderSubtle)),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-// TODO(profile): navigate to and implement password creation/change. This row is
-// a visual placeholder only — no password-management flow exists in this client.
-class _PasswordActionRow extends StatelessWidget {
-  const _PasswordActionRow({
-    required this.hasPasswordCredential,
-    required this.tokens,
-  });
-
-  final bool hasPasswordCredential;
-  final AppTokens tokens;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: tokens.surface,
-        border: Border(bottom: BorderSide(color: tokens.borderSubtle)),
-      ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppMetrics.space4,
-        vertical: AppMetrics.space3,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              hasPasswordCredential ? 'Change password' : 'Create password',
-              style: _rowLabelStyle(tokens),
-            ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppMetrics.space4,
+            vertical: AppMetrics.space2,
           ),
-          _Chevron(tokens: tokens),
-        ],
+          child: Row(
+            children: [
+              Expanded(child: Text(label, style: _rowLabelStyle(tokens))),
+              if (value case final value?) ...[
+                const SizedBox(width: AppMetrics.space3),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 180),
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
+                    style: AppTypography.monoSmall.copyWith(
+                      color: tokens.textTertiary,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(width: AppMetrics.space3),
+              _Chevron(tokens: tokens),
+            ],
+          ),
+        ),
       ),
     );
   }

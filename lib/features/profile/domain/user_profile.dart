@@ -80,6 +80,24 @@ class UserProfile {
 
   final List<UserIdentity> identities;
 
+  /// The same profile with the password-credential flag replaced.
+  ///
+  /// The only field a password write establishes about the profile is that a
+  /// credential now exists. A narrow operation rather than a general `copyWith`:
+  /// the other fields are either server-authored or already known, and a
+  /// general setter would make it easy to overwrite one of them with a value the
+  /// password response never contained.
+  UserProfile withPasswordCredential(bool hasPasswordCredential) {
+    return UserProfile(
+      id: id,
+      email: email,
+      displayName: displayName,
+      hasPasswordCredential: hasPasswordCredential,
+      createdAt: createdAt,
+      identities: identities,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       other is UserProfile &&

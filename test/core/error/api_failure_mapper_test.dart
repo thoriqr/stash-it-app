@@ -340,6 +340,100 @@ void main() {
     });
   });
 
+  group('profile and password codes', () {
+    test('USER_NOT_FOUND is the account, not the resource on screen', () {
+      // Access tokens outlive the session they name, so this is reachable. It is
+      // not `ApiFailureNotFound`: that variant describes the item or collection a
+      // screen is showing, while this one says the authenticated account is gone.
+      final failure = mapApiFailure(
+        badResponse(404, errorBody(ApiErrorCode.userNotFound)),
+      );
+
+      expect(failure, isA<ApiFailureUserNotFound>());
+      expect(failure, isNot(isA<ApiFailureNotFound>()));
+      expect(
+        (failure as ApiFailureUserNotFound).code,
+        ApiErrorCode.userNotFound,
+      );
+    });
+
+    test('CURRENT_PASSWORD_INVALID is a credential refusal, never auth', () {
+      // 401 because the *current password* failed, not the bearer token. Mapping
+      // it to auth-required would tell the user to sign in again for a problem
+      // signing in cannot fix, and the interceptor must not refresh for it.
+      final failure = mapApiFailure(
+        badResponse(401, errorBody(ApiErrorCode.currentPasswordInvalid)),
+      );
+
+      expect(failure, isA<ApiFailureCurrentPasswordInvalid>());
+      expect(failure, isNot(isA<ApiFailureAuthRequired>()));
+      expect(failure, isNot(isA<ApiFailureSessionEnded>()));
+      expect(
+        (failure as ApiFailureCurrentPasswordInvalid).code,
+        ApiErrorCode.currentPasswordInvalid,
+      );
+    });
+
+    test('the two credential-state mismatches keep their direction', () {
+      final required = mapApiFailure(
+        badResponse(400, errorBody(ApiErrorCode.currentPasswordRequired)),
+      );
+      final unexpected = mapApiFailure(
+        badResponse(400, errorBody(ApiErrorCode.unexpectedCurrentPassword)),
+      );
+
+      expect(required, isA<ApiFailureCurrentPasswordRequired>());
+      expect(unexpected, isA<ApiFailureUnexpectedCurrentPassword>());
+      expect(
+        (required as ApiFailureCurrentPasswordRequired).code,
+        ApiErrorCode.currentPasswordRequired,
+      );
+      expect(
+        (unexpected as ApiFailureUnexpectedCurrentPassword).code,
+        ApiErrorCode.unexpectedCurrentPassword,
+      );
+      // Neither is a field-validation failure: the form's mode was wrong, not
+      // the value in a field.
+      expect(required, isNot(isA<ApiFailureValidation>()));
+      expect(unexpected, isNot(isA<ApiFailureValidation>()));
+    });
+
+    test('the two concurrent-writer outcomes are distinct', () {
+      final exists = mapApiFailure(
+        badResponse(
+          409,
+          errorBody(ApiErrorCode.passwordCredentialAlreadyExists),
+        ),
+      );
+      final changed = mapApiFailure(
+        badResponse(409, errorBody(ApiErrorCode.passwordAlreadyChanged)),
+      );
+
+      expect(exists, isA<ApiFailurePasswordCredentialAlreadyExists>());
+      expect(changed, isA<ApiFailurePasswordAlreadyChanged>());
+      expect(
+        (exists as ApiFailurePasswordCredentialAlreadyExists).code,
+        ApiErrorCode.passwordCredentialAlreadyExists,
+      );
+      expect(
+        (changed as ApiFailurePasswordAlreadyChanged).code,
+        ApiErrorCode.passwordAlreadyChanged,
+      );
+    });
+
+    test('PASSWORD_CREDENTIAL_NOT_FOUND is not a reachable response', () {
+      // It exists in the backend but `SetPassword` consumes it internally to
+      // select the create branch. A 404 carrying it is therefore outside the
+      // verified list and must stay unmapped rather than gain a branch that
+      // never runs.
+      final failure = mapApiFailure(
+        badResponse(404, errorBody('PASSWORD_CREDENTIAL_NOT_FOUND')),
+      );
+
+      expect(failure, isA<ApiFailureUnreadableResponse>());
+    });
+  });
+
   group('unreadable and unknown responses', () {
     test('a non-JSON body is unreadable, never surfaced', () {
       // Fiber's default handler answers text/plain for a *fiber.Error.
