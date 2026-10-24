@@ -56,6 +56,11 @@ dependencies:
   # Non-sensitive UI preferences only. Credentials stay in secure storage.
   shared_preferences: ^2.5.6
 
+  # Handing a saved item's original URL to the platform's browser or app
+  # (`ux-discovery.md` C.3). A platform action, not an API call: the package
+  # starts an external activity / URL open and never fetches the page itself.
+  url_launcher: ^6.3.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

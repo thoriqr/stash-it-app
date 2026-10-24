@@ -1,3 +1,30 @@
+## Open a saved item's original URL (2026-10-24)
+
+### Not a backend contract
+- Opening the original page is a **platform action, not an API call** (`ux-discovery.md` C.3). There is no endpoint, no server-side validation and no `HEAD`/`GET` availability probe. The stored `url` is handed to the OS as it was saved — never `image_url`, never a metadata-derived value, never resolved against a base.
+
+### Flutter implementation
+- Added `url_launcher: ^6.3.2` (resolved 6.3.3, plus its seven platform packages). It is the only dependency change; no existing package version moved.
+- `lib/features/saved_items/application/open_saved_item_url.dart`: `SavedItemUrlLauncher` is a concrete class with one `launch(Uri)`, overridable through `savedItemUrlLauncherProvider` — the same seam the repository fakes use, so no test opens a browser or touches a platform channel.
+- `LaunchMode.externalApplication`, **not** `platformDefault`: on Android the package's default opens `http(s)` in-app through a Custom Tab, which is not a handoff to the user's browser. No WebView.
+- `launchableSavedItemUrl` reuses `isSubmittableUrl` from `domain/saved_item_url.dart` rather than restating the rules, so the launch gate and the intake gate cannot drift. No `canLaunchUrl`: it needs a `<queries>` entry on Android 11+ and is a preliminary check.
+- Three outcomes, two notices, **no success message**. A value the client refuses → `This link can't be opened.` (danger). A launch the platform refuses → `We couldn't open this link. Try again.` (danger). An accepted handoff → nothing, because the OS taking a link does not establish that a page loaded.
+- Refusals arrive in two shapes and both are handled: iOS returns `false`, Android turns its own `false` into a thrown `PlatformException('ACTIVITY_NOT_FOUND')`. `open` catches `on Exception`, so a missing plugin is handled the same way.
+- Detail screen: `Open the original page` sits between `Move to a collection` and `Delete this item` (wireframe C1 order) as an `AppButton.secondary`. It is wired only in the loaded state, so the skeleton, read-error and not-found screens cannot reach it. It stays enabled while a re-read or delete is in flight, because it reads and writes nothing.
+- A tap changes nothing: no enrichment status, metadata, Inbox row, collection contents, count or pagination is written, refreshed or invalidated. No retry and no connectivity check.
+
+### Verification
+- `dart format` on the five changed Dart files; `flutter analyze` — no issues found.
+- Focused suites passed: `open_saved_item_url_test.dart` (25) and `saved_item_detail_screen_test.dart` (33) — 58 tests.
+- `flutter test` — 981 passed.
+- No app, device, or emulator run. Nothing staged or committed.
+
+### Remaining limitations
+- The action is only on the saved-item detail. Rows carry no open affordance.
+- Copy is hardcoded English; the app still has no l10n layer. `AGENTS.md` §4 still lists "opening the source URL" as a missing capability; the line is now stale, but that file is edited only when asked.
+- Nothing observes the outcome after the handoff: whether the page loads, redirects, demands a sign-in or is gone is unknowable from the client, and no notice pretends otherwise.
+- A stored URL that passed intake will always pass the launch gate; the refusal path exists for values that reached the client some other way (an older row, a server that accepted something this client would not).
+
 ## Re-read page / re-enrich a saved item (2026-10-24)
 
 ### Verified backend contract (stash-it-backend)

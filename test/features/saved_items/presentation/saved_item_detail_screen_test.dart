@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -11,6 +12,7 @@ import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/collections/data/collections_providers.dart';
 import 'package:stash_it_app/features/collections/domain/collection_page.dart';
 import 'package:stash_it_app/features/collections/domain/collection_summary.dart';
+import 'package:stash_it_app/features/saved_items/application/open_saved_item_url.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_item_detail_provider.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_enrichment_result.dart';
@@ -20,14 +22,16 @@ import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_ite
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_collections_repository.dart';
+import '../../../support/fake_saved_item_url_launcher.dart';
 import '../../../support/fake_saved_items_repository.dart';
 
-/// The detail screen's content states, its loading and error states, and the one
-/// explicit write it offers.
+/// The detail screen's content states, its loading and error states, the one
+/// explicit write it offers, and the platform handoff it offers beside it.
 ///
 /// The screen reads the provider, which reads the repository. Overriding the
 /// repository (rather than the provider) exercises the real screen → provider
-/// wiring while keeping every outcome deterministic. No socket is opened.
+/// wiring while keeping every outcome deterministic. No socket is opened and no
+/// browser is ever started: the launcher is a fake too.
 void main() {
   const id = 'item-1';
 
@@ -77,6 +81,7 @@ void main() {
     List<Object> enrichResults = const [],
     Future<SavedItemEnrichmentResult> Function(String id)? onEnrich,
     FakeCollectionsRepository? collections,
+    FakeSavedItemUrlLauncher? launcher,
   }) async {
     final repository = FakeSavedItemsRepository(
       detailResults: results,
@@ -101,6 +106,9 @@ void main() {
           collectionsRepositoryProvider.overrideWithValue(
             collectionsRepository,
           ),
+          savedItemUrlLauncherProvider.overrideWithValue(
+            launcher ?? FakeSavedItemUrlLauncher(),
+          ),
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
@@ -111,6 +119,18 @@ void main() {
     await tester.pumpAndSettle();
     return repository;
   }
+
+  /// The button carrying a label, found by its widget field rather than by text:
+  /// the label is not in the tree while the button is busy.
+  AppButton buttonLabelled(WidgetTester tester, String label) => tester
+      .widgetList<AppButton>(find.byType(AppButton))
+      .firstWhere((button) => button.label == label);
+
+  ProviderContainer containerOf(WidgetTester tester) =>
+      ProviderScope.containerOf(
+        tester.element(find.byType(SavedItemDetailScreen)),
+        listen: false,
+      );
 
   group('C1 — metadata available', () {
     testWidgets(
@@ -180,27 +200,46 @@ void main() {
       expect(text.overflow, isNull);
     });
 
-    testWidgets(
-      'offers Move to a collection and delete, but no open-original',
-      (tester) async {
-        await pumpScreen(tester, results: [itemWith()]);
+    testWidgets('offers move, open and delete, with delete last', (
+      tester,
+    ) async {
+      await pumpScreen(tester, results: [itemWith()]);
 
-        expect(find.text('ACTIONS'), findsOneWidget);
-        final move = tester.widget<AppButton>(
-          find.widgetWithText(AppButton, 'Move to a collection'),
-        );
-        expect(move.onPressed, isNotNull);
-        expect(move.variant, AppButtonVariant.secondary);
+      expect(find.text('ACTIONS'), findsOneWidget);
 
-        final delete = tester.widget<AppButton>(
-          find.widgetWithText(AppButton, 'Delete this item'),
-        );
-        expect(delete.onPressed, isNotNull);
-        expect(delete.variant, AppButtonVariant.danger);
+      final move = tester.widget<AppButton>(
+        find.widgetWithText(AppButton, 'Move to a collection'),
+      );
+      expect(move.onPressed, isNotNull);
+      expect(move.variant, AppButtonVariant.secondary);
 
-        expect(find.text('Open original page'), findsNothing);
-      },
-    );
+      final open = tester.widget<AppButton>(
+        find.widgetWithText(AppButton, 'Open the original page'),
+      );
+      expect(open.onPressed, isNotNull);
+      expect(open.variant, AppButtonVariant.secondary);
+
+      final delete = tester.widget<AppButton>(
+        find.widgetWithText(AppButton, 'Delete this item'),
+      );
+      expect(delete.onPressed, isNotNull);
+      expect(delete.variant, AppButtonVariant.danger);
+
+      // The handoff sits between the two writes, as the wireframe orders it, so
+      // the destructive control stays bottom-most and cannot be reached by
+      // muscle memory aimed at a link.
+      final moveTop = tester
+          .getTopLeft(find.widgetWithText(AppButton, 'Move to a collection'))
+          .dy;
+      final openTop = tester
+          .getTopLeft(find.widgetWithText(AppButton, 'Open the original page'))
+          .dy;
+      final deleteTop = tester
+          .getTopLeft(find.widgetWithText(AppButton, 'Delete this item'))
+          .dy;
+      expect(moveTop, lessThan(openTop));
+      expect(openTop, lessThan(deleteTop));
+    });
 
     testWidgets('opens the picker with the current collection as context', (
       tester,
@@ -248,18 +287,6 @@ void main() {
   });
 
   group('re-read page', () {
-    /// The button carrying a label, found by its widget field rather than by
-    /// text: the label is not in the tree while the button is busy.
-    AppButton buttonLabelled(WidgetTester tester, String label) => tester
-        .widgetList<AppButton>(find.byType(AppButton))
-        .firstWhere((button) => button.label == label);
-
-    ProviderContainer containerOf(WidgetTester tester) =>
-        ProviderScope.containerOf(
-          tester.element(find.byType(SavedItemDetailScreen)),
-          listen: false,
-        );
-
     SavedItemEnrichmentResult completed({String? title = 'Re-read title'}) =>
         SavedItemEnrichmentResult(
           savedItemId: id,
@@ -431,6 +458,178 @@ void main() {
     });
   });
 
+  group('open the original page', () {
+    /// Taps the action, scrolling it into view first: the detail is one scroll
+    /// view and the third action is not guaranteed to be on a small surface.
+    Future<void> openPage(WidgetTester tester) async {
+      await tester.ensureVisible(find.text('Open the original page'));
+      await tester.tap(find.text('Open the original page'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('hands the stored URL to the platform, not a derived one', (
+      tester,
+    ) async {
+      final launcher = FakeSavedItemUrlLauncher();
+      final item = itemWith(
+        imageUrl: 'https://cdn.example.net/og.png',
+        url: 'https://example.com/a/b?q=1#frag',
+      );
+      final repository = await pumpScreen(
+        tester,
+        results: [item],
+        launcher: launcher,
+      );
+
+      await openPage(tester);
+
+      expect(launcher.launched, hasLength(1));
+      expect(
+        launcher.launched.single.toString(),
+        item.url,
+        reason: 'the original page, never the preview image or a rewritten URL',
+      );
+      expect(launcher.launched.single.toString(), isNot(item.imageUrl));
+      expect(repository.detailCalls, 1, reason: 'no second read');
+      expect(find.text('Understanding CRDTs'), findsOneWidget);
+    });
+
+    testWidgets('an accepted handoff publishes no success notice', (
+      tester,
+    ) async {
+      final launcher = FakeSavedItemUrlLauncher();
+      await pumpScreen(tester, results: [itemWith()], launcher: launcher);
+
+      await openPage(tester);
+
+      expect(launcher.calls, 1);
+      expect(
+        containerOf(tester).read(feedbackProvider),
+        isNull,
+        reason: 'the OS accepted a link; nothing claims the page loaded',
+      );
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('a refused link is reported and never reaches the platform', (
+      tester,
+    ) async {
+      final launcher = FakeSavedItemUrlLauncher();
+      await pumpScreen(
+        tester,
+        results: [itemWith(url: 'example.com/articles/one')],
+        launcher: launcher,
+      );
+
+      await openPage(tester);
+
+      expect(launcher.launched, isEmpty);
+      final notice = containerOf(tester).read(feedbackProvider)!;
+      expect(notice.copy, "This link can't be opened.");
+      expect(notice.tone, FeedbackTone.danger);
+      // The screen stays exactly as it was.
+      expect(find.text('Understanding CRDTs'), findsOneWidget);
+      expect(find.text('This item is no longer available'), findsNothing);
+    });
+
+    testWidgets('a launcher-reported failure is reported and changes nothing', (
+      tester,
+    ) async {
+      final launcher = FakeSavedItemUrlLauncher(results: const [false]);
+      final repository = await pumpScreen(
+        tester,
+        results: [itemWith()],
+        launcher: launcher,
+      );
+
+      await openPage(tester);
+
+      final notice = containerOf(tester).read(feedbackProvider)!;
+      expect(notice.copy, "We couldn't open this link. Try again.");
+      expect(notice.tone, FeedbackTone.danger);
+
+      // No enrichment, metadata or amount-of-data change came out of a failed
+      // handoff.
+      final shown = containerOf(
+        tester,
+      ).read(savedItemDetailProvider(id)).value!;
+      expect(shown.title, 'Understanding CRDTs');
+      expect(
+        shown.description,
+        'Conflict-free replicated data types converge.',
+      );
+      expect(shown.enrichmentStatus, EnrichmentStatus.completed);
+      expect(shown.url, 'https://example.com/articles/crdts-explained');
+      expect(find.text("Couldn't read this page"), findsNothing);
+      expect(find.text('Reading page…'), findsNothing);
+      expect(repository.enrichCalls, 0);
+      expect(repository.detailCalls, 1);
+    });
+
+    testWidgets('a launcher exception is handled without crashing', (
+      tester,
+    ) async {
+      final launcher = FakeSavedItemUrlLauncher(
+        results: [PlatformException(code: 'ACTIVITY_NOT_FOUND')],
+      );
+      await pumpScreen(tester, results: [itemWith()], launcher: launcher);
+
+      await openPage(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        containerOf(tester).read(feedbackProvider)!.copy,
+        "We couldn't open this link. Try again.",
+      );
+      expect(find.text('Understanding CRDTs'), findsOneWidget);
+    });
+
+    testWidgets('stays available while a re-read is in flight', (tester) async {
+      // Opening reads nothing from the backend, so an in-flight write is not a
+      // reason to block it.
+      final gate = Completer<SavedItemEnrichmentResult>();
+      final launcher = FakeSavedItemUrlLauncher();
+      await pumpScreen(
+        tester,
+        results: [itemWith()],
+        onEnrich: (_) => gate.future,
+        launcher: launcher,
+      );
+
+      await tester.tap(find.text('Re-read page'));
+      await tester.pump();
+
+      expect(
+        buttonLabelled(tester, 'Open the original page').onPressed,
+        isNotNull,
+      );
+
+      // No `pumpAndSettle` here: the busy re-read button spins, so the tree never
+      // settles while the gate is open. Two pumps let the tap and the fake's
+      // microtask complete.
+      await tester.ensureVisible(find.text('Open the original page'));
+      await tester.tap(find.text('Open the original page'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(launcher.calls, 1);
+      expect(buttonLabelled(tester, 'Re-read page').busy, isTrue);
+      expect(
+        containerOf(tester).read(feedbackProvider),
+        isNull,
+        reason: 'the handoff says nothing while the re-read is still running',
+      );
+
+      gate.complete(
+        const SavedItemEnrichmentResult(
+          savedItemId: id,
+          enrichmentStatus: EnrichmentStatus.completed,
+        ),
+      );
+      await tester.pumpAndSettle();
+    });
+  });
+
   group('C2 — pending', () {
     testWidgets('keeps the item visible and does not imply a new request', (
       tester,
@@ -533,6 +732,11 @@ void main() {
       expect(find.widgetWithText(AppBar, 'ITEM'), findsOneWidget);
       expect(find.text('Move to a collection'), findsNothing);
       expect(find.text('ACTIONS'), findsNothing);
+      expect(
+        find.text('Open the original page'),
+        findsNothing,
+        reason: 'a handoff needs a loaded item to take its URL from',
+      );
       // The placeholder item carries no URL, so the skeleton never creates a
       // network image request.
       expect(find.byType(Image), findsNothing);
@@ -570,6 +774,11 @@ void main() {
         reason: 'there is no loaded item to move',
       );
       expect(find.text('ACTIONS'), findsNothing);
+      expect(
+        find.text('Open the original page'),
+        findsNothing,
+        reason: 'a handoff needs a loaded item to take its URL from',
+      );
     });
   });
 
@@ -616,6 +825,11 @@ void main() {
         expect(find.text('Back to Inbox'), findsNothing);
         expect(find.text('Move to a collection'), findsNothing);
         expect(find.text('ACTIONS'), findsNothing);
+        expect(
+          find.text('Open the original page'),
+          findsNothing,
+          reason: 'a handoff needs a loaded item to take its URL from',
+        );
       });
     }
 

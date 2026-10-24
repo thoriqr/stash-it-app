@@ -8,6 +8,7 @@ import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/core/error/api_failure_messages.dart';
 import 'package:stash_it_app/features/saved_items/application/delete_saved_item_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/enrich_saved_item_controller.dart';
+import 'package:stash_it_app/features/saved_items/application/open_saved_item_url.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_item_detail_provider.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
@@ -33,6 +34,11 @@ import 'widgets/saved_item_preview.dart';
 /// directly — there is no follow-up GET, no polling and no automatic retry. **Move
 /// to a collection** issues one `PUT` only after the user chooses a destination.
 /// Those three writes are independent: none of them runs on its own.
+///
+/// **Open the original page is not a request at all.** It hands the stored URL to
+/// the platform's browser or app, which is free to fail, redirect or demand a
+/// sign-in; nothing is written, refreshed or invalidated, and no notice claims the
+/// page loaded.
 ///
 /// **Delete is explicit and confirmed.** The danger action below Move opens the
 /// first confirmation dialog. Only a confirmed choice issues
@@ -93,6 +99,7 @@ class SavedItemDetailScreen extends ConsumerWidget {
           enriching: enriching,
           onMoveToCollection: () =>
               showMoveToCollectionSheet(context, item: value),
+          onOpenUrl: () => ref.read(openSavedItemUrlProvider).open(value),
           onDelete: () => _confirmDelete(context, ref, value),
           onReRead: () =>
               ref.read(enrichSavedItemProvider.notifier).enrich(value),
@@ -228,6 +235,7 @@ class _DetailBody extends StatelessWidget {
   const _DetailBody({
     required this.item,
     this.onMoveToCollection,
+    this.onOpenUrl,
     this.onDelete,
     this.onReRead,
     this.deleting = false,
@@ -239,6 +247,14 @@ class _DetailBody extends StatelessWidget {
   /// Null in the skeleton and in every non-data state, which is what keeps the
   /// action out of the loading, generic-error and C3 screens.
   final VoidCallback? onMoveToCollection;
+
+  /// Null in the skeleton and every non-data state, for the same reason as
+  /// [onMoveToCollection]: a handoff needs a loaded item to take its URL from.
+  ///
+  /// Supplied even while a write is in flight. Opening a page reads nothing from
+  /// the backend and changes nothing, so a re-read or a delete has no reason to
+  /// block it — and the OS is about to take the screen anyway.
+  final VoidCallback? onOpenUrl;
 
   /// Null in the skeleton and every non-data state, for the same reason as
   /// [onMoveToCollection].
@@ -333,7 +349,9 @@ class _DetailBody extends StatelessWidget {
             color: tokens.border,
           ),
           const SizedBox(height: AppMetrics.space4),
-          if (onMoveToCollection != null || onDelete != null) ...[
+          if (onMoveToCollection != null ||
+              onOpenUrl != null ||
+              onDelete != null) ...[
             Text(
               'ACTIONS',
               style: AppTypography.sectionLabel.copyWith(
@@ -346,6 +364,17 @@ class _DetailBody extends StatelessWidget {
                 label: 'Move to a collection',
                 variant: AppButtonVariant.secondary,
                 onPressed: deleting || enriching ? null : onMoveToCollection,
+              ),
+              if (onOpenUrl != null || onDelete != null)
+                const SizedBox(height: AppMetrics.space2),
+            ],
+            // The platform handoff, in the wireframe's position between the two
+            // writes and never styled as one.
+            if (onOpenUrl != null) ...[
+              AppButton(
+                label: 'Open the original page',
+                variant: AppButtonVariant.secondary,
+                onPressed: onOpenUrl,
               ),
               if (onDelete != null) const SizedBox(height: AppMetrics.space2),
             ],
