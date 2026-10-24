@@ -11,6 +11,8 @@ import 'package:stash_it_app/app/network/network_providers.dart';
 import 'package:stash_it_app/app/router/app_router.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/core/storage/secure_credential_store.dart';
+import 'package:stash_it_app/features/auth/application/session_controller.dart';
 
 import '../../support/fake_http.dart';
 import '../../support/saved_items_fixtures.dart';
@@ -40,6 +42,13 @@ void main() {
     adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
 
     final container = ProviderContainer(
+      // The app root keeps the session boundary alive, and `createAppRouter`
+      // bypasses auth; the controller still needs a store it never reads here.
+      overrides: [
+        credentialStoreProvider.overrideWithValue(
+          SecureCredentialStore(InMemorySecureStorage()),
+        ),
+      ],
       // Riverpod 3 retries a failed provider with backoff; an unscripted listing
       // would leave one of those timers pending past the test body.
       retry: (_, _) => null,

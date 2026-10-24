@@ -62,6 +62,14 @@ class FakeCollectionsRepository extends CollectionsRepository {
   /// The cursor values passed to [list], in order.
   final List<String?> cursors = [];
 
+  /// An optional handler for one listing read, receiving the 1-based call index.
+  ///
+  /// Used where a fixed [results] list cannot express the case: a read that must
+  /// be held open, or a different page per account. When null, [results] is read
+  /// as before.
+  Future<CollectionPage> Function(int call, String? sort, String? cursor)?
+  onList;
+
   @override
   Future<CollectionPage> list({
     String? sort,
@@ -72,6 +80,9 @@ class FakeCollectionsRepository extends CollectionsRepository {
     limits.add(limit);
     cursors.add(cursor);
     listCalls++;
+
+    final handler = onList;
+    if (handler != null) return handler(listCalls, sort, cursor);
 
     final result =
         results[listCalls - 1 < results.length

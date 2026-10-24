@@ -118,6 +118,11 @@ class PasswordUpdate extends _$PasswordUpdate {
     if (state) return const PasswordUpdateIgnored();
     state = true;
 
+    // Captured before the request leaves. The profile may belong to a different
+    // account by the time the `200` arrives, and this id is the only evidence
+    // the completion carries about whose credential was written.
+    final accountId = _loadedAccountId();
+
     try {
       await ref
           .read(profileRepositoryProvider)
@@ -128,13 +133,22 @@ class PasswordUpdate extends _$PasswordUpdate {
 
       if (!ref.mounted) return const PasswordUpdateSucceeded();
 
-      ref.read(profileProvider.notifier).markPasswordCredentialSet();
-      _publish(
-        AppFeedback(
-          tone: FeedbackTone.success,
-          copy: change ? 'Password changed.' : 'Password created.',
-        ),
-      );
+      final applied =
+          accountId != null &&
+          ref
+              .read(profileProvider.notifier)
+              .markPasswordCredentialSet(accountId: accountId);
+
+      // A success belonging to an account that is no longer loaded must not
+      // announce itself during the next account's session.
+      if (applied) {
+        _publish(
+          AppFeedback(
+            tone: FeedbackTone.success,
+            copy: change ? 'Password changed.' : 'Password created.',
+          ),
+        );
+      }
       return const PasswordUpdateSucceeded();
     } on ApiFailure catch (failure) {
       if (!ref.mounted) return const PasswordUpdateUncertain();
@@ -142,6 +156,24 @@ class PasswordUpdate extends _$PasswordUpdate {
     } finally {
       if (ref.mounted) state = false;
     }
+  }
+
+  /// The id of the profile currently loaded, or null when there is none.
+  ///
+  /// `ref.exists` rather than a plain read: submitting with no loaded profile
+  /// must not instantiate the provider and start a read as a side effect. The
+  /// password screen cannot submit in that state, and this keeps the controller
+  /// safe for any other caller.
+  ///
+  /// **Only `AsyncData` is a loaded account.** Riverpod carries the previous
+  /// value inside an `AsyncLoading`, so `hasValue` would still name the account
+  /// whose profile was cleared at a session boundary.
+  String? _loadedAccountId() {
+    if (!ref.exists(profileProvider)) return null;
+    return switch (ref.read(profileProvider)) {
+      AsyncData(:final value) => value.id,
+      _ => null,
+    };
   }
 
   PasswordUpdateOutcome _handle(ApiFailure failure, {required bool change}) {

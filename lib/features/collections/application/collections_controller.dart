@@ -34,6 +34,25 @@ class Collections extends _$Collections {
     return _toState(page, sort: _currentSort);
   }
 
+  /// Drops the loaded list at an authentication boundary.
+  ///
+  /// **An [AsyncLoading] reset, and no request.** The session boundary
+  /// invalidates separately after a sign-in; sign-out must not fetch without a
+  /// session. Every consumer matches `AsyncData`, so changing the state's kind
+  /// stops the previous account's names being rendered even though Riverpod keeps
+  /// that value inside the loading state. The sort returns to the listing's
+  /// default and the ids removed for the previous account are forgotten, so
+  /// neither can filter the next account's collections. In-flight pages are
+  /// invalidated through [_listVersion].
+  void clearForSessionChange() {
+    if (!ref.mounted) return;
+
+    _listVersion++;
+    _currentSort = 'newest';
+    _removedCollectionIds.clear();
+    state = const AsyncLoading();
+  }
+
   Future<void> retry() async {
     ref.invalidateSelf();
   }
@@ -41,16 +60,18 @@ class Collections extends _$Collections {
   Future<void> setSort(String sort) async {
     if (sort == _currentSort) return;
     _currentSort = sort;
-    _listVersion++;
+    final version = ++_listVersion;
     state = const AsyncLoading();
     try {
       final page = await ref
           .read(collectionsRepositoryProvider)
           .list(sort: sort);
-      if (!ref.mounted) return;
+      // A newer sort, refresh or session boundary owns the list now. A reply
+      // from the previous request must not replace its state.
+      if (!ref.mounted || version != _listVersion) return;
       state = AsyncData(_toState(page, sort: sort));
     } catch (error, stackTrace) {
-      if (!ref.mounted) return;
+      if (!ref.mounted || version != _listVersion) return;
       state = AsyncError(error, stackTrace);
     }
   }

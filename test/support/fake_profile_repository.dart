@@ -46,6 +46,13 @@ class FakeProfileRepository extends ProfileRepository {
   /// Holds the profile read open, for the screen's loading state.
   Completer<void>? getUserGate;
 
+  /// An optional handler for one profile read, receiving the 1-based call index.
+  ///
+  /// Used where a single [getUserGate] cannot express the case: two reads that
+  /// must be released in a chosen order, or a different profile per call. When
+  /// null, [profile], [getUserGate] and [getUserFailure] behave as before.
+  Future<UserProfile> Function(int call)? onGetUser;
+
   /// What a rename should return. When null, the fake renames its own [profile].
   UserProfile? renameResult;
 
@@ -73,6 +80,10 @@ class FakeProfileRepository extends ProfileRepository {
   @override
   Future<UserProfile> getUser() async {
     getUserCalls++;
+
+    final handler = onGetUser;
+    if (handler != null) return handler(getUserCalls);
+
     final gate = getUserGate;
     if (gate != null) await gate.future;
     final failure = getUserFailure;

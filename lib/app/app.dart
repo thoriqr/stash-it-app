@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:stash_it_app/app/feedback/feedback_host.dart';
 import 'package:stash_it_app/app/router/app_router.dart';
+import 'package:stash_it_app/app/session/session_boundary.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/settings/application/theme_mode_controller.dart';
 
@@ -20,6 +21,11 @@ class StashItApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watched at the app root so the listener that clears user-scoped caches on
+    // an account change lives for as long as the app does. It holds no value;
+    // watching it is how it is kept alive.
+    ref.watch(sessionBoundaryProvider);
+
     // Watched at the app root so a selection repaints every route immediately.
     // The router is watched too, but its provider value does not change here:
     // only `themeMode` does, so navigation state is not rebuilt from scratch.

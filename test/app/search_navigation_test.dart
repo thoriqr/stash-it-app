@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:stash_it_app/app/app.dart';
 import 'package:stash_it_app/app/router/app_router.dart';
 import 'package:stash_it_app/app/router/routes.dart';
+import 'package:stash_it_app/core/storage/secure_credential_store.dart';
+import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/collection_saved_items_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
@@ -71,6 +73,11 @@ void main() {
       ProviderScope(
         retry: (_, _) => null,
         overrides: [
+          // The app root keeps the session boundary alive, and `createAppRouter`
+          // bypasses auth; the controller still needs a store it never reads.
+          credentialStoreProvider.overrideWithValue(
+            SecureCredentialStore(InMemorySecureStorage()),
+          ),
           searchRepositoryProvider.overrideWithValue(
             SearchRepository(
               api: SearchApi(dio),

@@ -45,7 +45,11 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
 
   /// An optional handler for one Inbox page, used to hold a load-more open while
   /// a test asserts the state it leaves behind.
-  final Future<SavedItemPage> Function(String? cursor)? onList;
+  ///
+  /// Mutable so a test can install it after an initial page has loaded, when the
+  /// next read must behave differently — for example, a gated read for the next
+  /// account.
+  Future<SavedItemPage> Function(String? cursor)? onList;
 
   /// A `SavedItemSummary` to return, or an error to throw.
   final List<Object> detailResults;

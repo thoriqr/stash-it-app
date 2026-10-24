@@ -10,6 +10,7 @@ import 'package:stash_it_app/features/profile/application/password_update_contro
 import 'package:stash_it_app/features/profile/application/profile_controller.dart';
 import 'package:stash_it_app/features/profile/data/profile_providers.dart';
 
+import '../../../support/fake_http.dart';
 import '../../../support/fake_profile_repository.dart';
 
 class _RecordingAuthState extends AuthState {
@@ -307,5 +308,70 @@ void main() {
 
     fake.passwordGate!.complete();
     expect(await first, isA<PasswordUpdateSucceeded>());
+  });
+
+  test('a late success from the previous account leaves B unchanged and '
+      'silent', () async {
+    final fake = FakeProfileRepository(
+      profile: profileFixture(id: 'account-a', hasPasswordCredential: false),
+    )..passwordGate = Completer<void>();
+    final container = makeContainer(fake);
+    await container.read(profileProvider.future);
+
+    final submission = container
+        .read(passwordUpdateProvider.notifier)
+        .submit(change: false, newPassword: 'a first password');
+    await untilCalled(() => fake.passwordCalls == 1);
+
+    // Exactly what the session boundary does when a different account signs in
+    // while the write is in flight: clear the old value, invalidate, and start
+    // B's read. The read is held open, so A's completion lands while the
+    // provider is an AsyncLoading that still carries A's value — the window in
+    // which `hasValue` alone would name the wrong account.
+    final bGate = Completer<void>();
+    fake.getUserGate = bGate;
+    container.read(profileProvider.notifier).clearForSessionChange();
+    container.invalidate(profileProvider);
+    final bFuture = container.read(profileProvider.future);
+    await untilCalled(() => fake.getUserCalls == 2);
+    expect(container.read(profileProvider), isA<AsyncLoading>());
+
+    fake.passwordGate!.complete();
+    expect(await submission, isA<PasswordUpdateSucceeded>());
+
+    expect(
+      container.read(profileProvider),
+      isA<AsyncLoading>(),
+      reason:
+          "account A's confirmed write must not publish A's profile during "
+          "B's session",
+    );
+    expect(
+      container.read(feedbackProvider),
+      isNull,
+      reason: "A's success notice must not appear during B's session",
+    );
+
+    // A's write has completed against A's account; the fake updated its stored
+    // profile for A. B is a different account, and the read held open above
+    // must answer with B rather than with the profile A's write produced.
+    fake.profile = profileFixture(
+      id: 'account-b',
+      hasPasswordCredential: false,
+    );
+    bGate.complete();
+    await bFuture;
+
+    expect(container.read(profileProvider).value!.id, 'account-b');
+    expect(
+      container.read(profileProvider).value!.hasPasswordCredential,
+      isFalse,
+      reason: "account A's confirmed write must not set B's flag",
+    );
+    expect(
+      fake.getUserCalls,
+      2,
+      reason: "the late completion must not trigger another profile read",
+    );
   });
 }

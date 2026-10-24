@@ -127,6 +127,31 @@ class SavedItems extends _$SavedItems {
     return _adoptFirstPage(page, requestedAtTombstoneVersion: tombstoneVersion);
   }
 
+  /// Drops the loaded history at an authentication boundary.
+  ///
+  /// **An [AsyncLoading] reset, and no request.** The session boundary
+  /// invalidates separately after a sign-in; sign-out must not fetch without a
+  /// session. Every consumer matches `AsyncData`, so changing the state's kind
+  /// stops the previous account's rows being rendered even though Riverpod keeps
+  /// that value inside the loading state. The fields reset here are the state
+  /// that belongs to the account that produced it: the list generation that
+  /// guards every in-flight page, and the local reconciliation bookkeeping
+  /// (deleted ids, removed collections and confirmed moves). An in-flight reply
+  /// from the previous account fails its version check and cannot append to, or
+  /// advance the cursor of, the next account's list.
+  void clearForSessionChange() {
+    if (!ref.mounted) return;
+
+    _listVersion++;
+    _refreshInFlight = null;
+    _tombstones.clear();
+    _removedCollectionIds.clear();
+    _relocatedCollections.clear();
+    _tombstoneVersion++;
+
+    state = const AsyncLoading();
+  }
+
   /// Replaces the loaded history with a fresh first page.
   ///
   /// This is the pull-to-refresh path, distinct from [retry] and [refreshHead].

@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:stash_it_app/app/app.dart';
 import 'package:stash_it_app/app/router/app_router.dart';
 import 'package:stash_it_app/app/router/routes.dart';
+import 'package:stash_it_app/core/storage/secure_credential_store.dart';
+import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/collections/data/collections_providers.dart';
 import 'package:stash_it_app/features/collections/domain/collection_page.dart';
 import 'package:stash_it_app/features/collections/domain/collection_summary.dart';
@@ -15,6 +17,7 @@ import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart
 import 'package:stash_it_app/features/saved_items/presentation/widgets/collection_destination_row.dart';
 
 import '../support/fake_collections_repository.dart';
+import '../support/fake_http.dart';
 import '../support/fake_saved_items_repository.dart';
 
 /// Deleting a collection, in the real route tree.
@@ -80,6 +83,11 @@ void main() {
       ProviderScope(
         retry: (_, _) => null,
         overrides: [
+          // The app root keeps the session boundary alive, and `createAppRouter`
+          // bypasses auth; the controller still needs a store it never reads.
+          credentialStoreProvider.overrideWithValue(
+            SecureCredentialStore(InMemorySecureStorage()),
+          ),
           savedItemsRepositoryProvider.overrideWithValue(savedItems),
           collectionsRepositoryProvider.overrideWithValue(collections),
         ],

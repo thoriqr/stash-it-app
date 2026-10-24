@@ -7,6 +7,8 @@ import 'package:stash_it_app/app/app.dart';
 import 'package:stash_it_app/app/network/network_providers.dart';
 import 'package:stash_it_app/app/router/app_router.dart';
 import 'package:stash_it_app/app/router/routes.dart';
+import 'package:stash_it_app/core/storage/secure_credential_store.dart';
+import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/settings/application/theme_mode_controller.dart';
 import 'package:stash_it_app/features/settings/data/theme_preference_store.dart';
 
@@ -31,6 +33,11 @@ void main() {
 
     final container = ProviderContainer(
       overrides: [
+        // The app root keeps the session boundary alive, and `createAppRouter`
+        // bypasses auth; the controller still needs a store it never reads here.
+        credentialStoreProvider.overrideWithValue(
+          SecureCredentialStore(InMemorySecureStorage()),
+        ),
         themePreferenceStoreProvider.overrideWithValue(store),
         initialThemeModeProvider.overrideWithValue(store.read()),
       ],

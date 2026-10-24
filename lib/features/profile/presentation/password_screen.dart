@@ -51,9 +51,12 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
   @override
   void initState() {
     super.initState();
+    // `AsyncData`, not `hasValue`: an `AsyncLoading` can carry the profile of
+    // the account that signed out, and its credential state must not choose the
+    // form this account sees.
     final profile = ref.read(profileProvider);
-    if (profile.hasValue) {
-      _changeMode = profile.value!.hasPasswordCredential;
+    if (profile is AsyncData<UserProfile>) {
+      _changeMode = profile.value.hasPasswordCredential;
     }
   }
 
@@ -131,8 +134,8 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
     // Capture the mode when the profile arrives after this screen was pushed.
     // Once captured, later profile rebuilds leave it alone.
     ref.listen(profileProvider, (previous, next) {
-      if (_changeMode == null && next.hasValue) {
-        setState(() => _changeMode = next.value!.hasPasswordCredential);
+      if (_changeMode == null && next is AsyncData<UserProfile>) {
+        setState(() => _changeMode = next.value.hasPasswordCredential);
       }
     });
 

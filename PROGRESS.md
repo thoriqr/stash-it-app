@@ -1,3 +1,29 @@
+## Account isolation at session boundaries (2026-10-25)
+
+### Flutter implementation
+- Added `lib/app/session/session_boundary.dart`: one app-level `Provider<void>` watched by `StashItApp`, so it is never paused. It listens to `AuthStatus` **transitions**, not token values or session-notifier identity. `signedIn → signedOut` clears every initialized user-scoped provider and fetches nothing; `signedOut → signedIn` clears first and then invalidates, so the next account's read starts under its own session. A token rotation keeps the status at `signedIn` and changes nothing. `ref.exists` stops the boundary from instantiating — and therefore fetching — a provider no screen ever read.
+- `Profile`, `SavedItems` and `Collections` each gained a narrow `clearForSessionChange()`; no shared abstraction was introduced for three call sites. Saved Items resets its list generation, refresh-in-flight flag, tombstones, removed collections, confirmed relocations and tombstone version. Collections resets its list generation, sort and removed ids. A late page or sort reply from the previous account therefore fails its version check instead of appending to, or reordering, the next account's list.
+- Account-ownership checks now require `AsyncData`, not `hasValue`: `Profile.applyUpdatedProfile`, `Profile.markPasswordCredentialSet`, `PasswordUpdate`'s pre-request account capture, and `PasswordScreen`'s mode capture in `initState` and `ref.listen`. `PasswordUpdate` captures the initiating account before the request and publishes its success notice only when the guarded update actually applied, so a late A write cannot set B's credential flag or announce itself during B's session.
+- Eight widget harnesses (`widget_test`, `skeleton_theme_test`, `settings_theme_test`, `feedback_host_test`, `search_navigation_test`, `saved_item_detail_navigation_test`, `collection_delete_navigation_test`, `collection_detail_navigation_test`) now override `credentialStoreProvider` with a `SecureCredentialStore(InMemorySecureStorage())`. The app root watches the boundary, which reads `authStateProvider`, which builds the session controller and its store; `createAppRouter` bypasses auth, so that path was previously never read in those tests.
+
+### Riverpod 3.4.3 constraint — the clear is a state-kind reset, not a value-less loading
+- A **truly value-less `AsyncLoading` cannot be produced** for a keep-alive `AsyncNotifier`. `ElementWithFuture.asyncTransition` in `riverpod-3.4.3/lib/src/core/element.dart` merges every new state with the previous one through `copyWithPrevious`, so assigning `const AsyncLoading()` leaves `hasValue == true` with the previous account's value inside.
+- The clear therefore changes the state's **kind** to `AsyncLoading`. Every consumer of these three providers matches `AsyncData`, so the previous account's profile, rows and collection names stop being rendered without an unauthenticated fetch. The merged value is still reachable through `hasValue`, which is exactly why every ownership check above was moved to the `AsyncData` subtype.
+- No `autoDispose` migration, provider pause, private API or framework patch was used to force the literal behaviour.
+- This supersedes the "`profileProvider` is keep-alive and `signOut` does not invalidate it" limitation recorded in the profile/password entry below.
+
+### Verification
+- `dart format` on every changed Dart file.
+- `flutter analyze` — no issues found.
+- Focused suites passed: `session_boundary_test.dart` (6), `profile_controller_test.dart` (4), `password_update_controller_test.dart` (11) — 21 tests.
+- `flutter test` — 1056 passed.
+- No app, device, or emulator run. Nothing staged or committed.
+
+### Remaining limitations
+- **`AuthState.signOut` clears the credential store before `discard()`.** If `clear()` throws, `discard()` never runs, so the status never reaches `signedOut` and this boundary cannot fire: the session stays signed in while the stored token pair may already be gone. That ordering is unchanged and is not fixed here.
+- Only the three keep-alive caches are cleared. Route-scoped providers (`savedItemDetailProvider`, `collectionSavedItemsProvider`) are auto-dispose and end with their route, which the signed-out redirect removes.
+- In-flight writes started by the previous account are not cancelled by the boundary. The password flag and the rename path are guarded; the move, delete, enrich and save-URL controllers still publish their own outcome notice when their request settles. `feedbackProvider` is app-level and not account-scoped, so a notice already showing is not dismissed at a boundary. Changing that is a feedback-architecture change, not this one.
+
 ## Profile display name and password (2026-10-25)
 
 ### Verified backend contract (stash-it-backend)
