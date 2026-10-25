@@ -210,7 +210,7 @@ class FeedbackNotice extends StatelessWidget {
 ///
 /// An `OverlayEntry` cannot reach the place this needs to be either. The host
 /// must sit **above the router** — that is what makes one notice serve every
-/// route, including the sign-in screen outside the shell, and what stops a route
+/// route, including the auth screens outside the shell, and what stops a route
 /// change from taking the notice with it. Above the router there is no `Overlay`
 /// ancestor at all: the `Navigator` creates the overlay, and it is *below* this
 /// point, so `Overlay.of(context)` could not be called from here. A `Stack` is
@@ -225,13 +225,13 @@ class FeedbackNotice extends StatelessWidget {
 /// override, so `kToolbarHeight` is the exact band they occupy, and the notice
 /// lands just below whichever destination is showing.
 ///
-/// `SignInScreen` is the exception — it has no app bar, because the brand row
-/// replaces one — so there the notice starts a toolbar height below the status
-/// bar instead. That is the deliberate trade: **one fixed band, so the notice
-/// never jumps between routes and never collides with an app bar**, at the cost
-/// of a gap on the one route without one. Measuring the app bar per route would
-/// mean this widget knowing each route's chrome, which is the coupling the
-/// app-level position exists to avoid.
+/// `AuthEntryScreen` and `SignInScreen` are the exceptions — they have no app
+/// bar, because the brand row replaces one — so there the notice starts a
+/// toolbar height below the status bar instead. That is the deliberate trade:
+/// **one fixed band, so the notice never jumps between routes and never collides
+/// with an app bar**, at the cost of a gap on the routes without one. Measuring
+/// the app bar per route would mean this widget knowing each route's chrome,
+/// which is the coupling the app-level position exists to avoid.
 ///
 /// ## Lifecycle
 ///

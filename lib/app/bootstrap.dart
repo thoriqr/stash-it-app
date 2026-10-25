@@ -17,8 +17,9 @@ import 'config/api_config.dart';
 /// for one reason: **storage reads are asynchronous** and a provider's `build`
 /// cannot be. Reading them inside `bootstrap` is what lets [AuthState] and the
 /// theme choice be synchronous, and therefore what lets the router decide on the
-/// very first navigation whether to show the app or sign-in — with no flash of
-/// the wrong one and no `restoring` state threaded through every screen.
+/// very first navigation whether to show the app or the auth entry screen — with
+/// no flash of the wrong one and no `restoring` state threaded through every
+/// screen.
 ///
 /// Three things happen here and nowhere else:
 ///

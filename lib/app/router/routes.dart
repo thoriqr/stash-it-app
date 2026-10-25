@@ -35,12 +35,21 @@ abstract final class AppRoutes {
   /// to the same retained branch.
   static const String settings = '/settings';
 
+  /// The landing screen for a signed-out user.
+  ///
+  /// **Not a fifth destination.** D1 fixes four bottom-navigation destinations
+  /// and this is not one of them: it sits outside the `StatefulShellRoute`
+  /// entirely and has no navigation-bar entry. Signed-out users are allowed
+  /// here and on [signIn]; every other location redirects here.
+  static const String auth = '/auth';
+
   /// Manual sign-in.
   ///
   /// **Not a fifth destination.** D1 fixes four bottom-navigation destinations
   /// and this is not one of them: it sits outside the `StatefulShellRoute`
   /// entirely, has no navigation-bar entry, and is replaced by the shell once
-  /// a session exists.
+  /// a session exists. Reached from [auth], and allowed as a direct entry while
+  /// signed out so the entry screen's Sign in action cannot bounce back.
   static const String signIn = '/sign-in';
 
   /// Create or change the account's password.

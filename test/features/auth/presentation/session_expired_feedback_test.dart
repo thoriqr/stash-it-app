@@ -12,18 +12,20 @@ import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
+import 'package:stash_it_app/features/auth/presentation/auth_entry_screen.dart';
+import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_http.dart';
 import '../../../support/saved_items_fixtures.dart';
 
-/// Telling the user *why* they are on the sign-in screen.
+/// Telling the user *why* they are on the auth entry screen.
 ///
 /// A session can end while they are somewhere else entirely: a renewal the backend
 /// refuses terminally clears the credentials, `AuthState` follows, and the router
-/// moves them here. Without an explanation the screen is just a form, and the
-/// natural reading is that they did something wrong.
+/// moves them here. Without an explanation the entry screen gives no reason for
+/// appearing, and the natural reading is that they did something wrong.
 ///
 /// These drive the **real** graph — session controller, interceptor and the
 /// router built by `appRouterProvider` — against a scripted transport, so the
@@ -39,6 +41,9 @@ import '../../../support/saved_items_fixtures.dart';
 /// that were true before the first transition; this file's subject *is* the
 /// transition.
 void main() {
+  /// The entry screen's heading, used as its stable on-screen identity.
+  const entryHeading = 'A place for things you find on the internet.';
+
   const accessKey = 'stash_it.auth.access_token';
   const refreshKey = 'stash_it.auth.refresh_token';
   const session = AuthTokens(
@@ -111,25 +116,26 @@ void main() {
       'SESSION_REVOKED',
       'SESSION_EXPIRED',
     ]) {
-      testWidgets('$code redirects to sign-in and explains itself once', (
-        tester,
-      ) async {
-        scriptExpiredListing();
-        scriptRenewal(401, code);
+      testWidgets(
+        '$code redirects to the auth entry screen and explains itself once',
+        (tester) async {
+          scriptExpiredListing();
+          scriptRenewal(401, code);
 
-        final container = await pumpApp(tester);
+          final container = await pumpApp(tester);
 
-        // The router did its job...
-        expect(find.text('Sign in to Stash It'), findsOneWidget);
-        expect(find.byType(NavigationBar), findsNothing);
-        // ...and the reason came with it, exactly once.
-        expect(find.text(sessionEndedMessage), findsOneWidget);
-        expect(
-          unannounced(container),
-          isFalse,
-          reason: 'the reason is consumed when the screen reads it',
-        );
-      });
+          // The router did its job...
+          expect(find.text(entryHeading), findsOneWidget);
+          expect(find.byType(NavigationBar), findsNothing);
+          // ...and the reason came with it, exactly once.
+          expect(find.text(sessionEndedMessage), findsOneWidget);
+          expect(
+            unannounced(container),
+            isFalse,
+            reason: 'the reason is consumed when the screen reads it',
+          );
+        },
+      );
     }
 
     testWidgets('a rebuild does not repeat the message', (tester) async {
@@ -153,7 +159,7 @@ void main() {
           child: MaterialApp(
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
-            home: const SignInScreen(),
+            home: const AuthEntryScreen(),
           ),
         ),
       );
@@ -162,9 +168,10 @@ void main() {
       expect(
         find.text(sessionEndedMessage),
         findsNothing,
-        reason: 'the reason was consumed, so a later visit is a plain form',
+        reason:
+            'the reason was consumed, so a later visit is a plain entry screen',
       );
-      expect(find.text('Sign in to Stash It'), findsOneWidget);
+      expect(find.text(entryHeading), findsOneWidget);
     });
   });
 
@@ -186,7 +193,7 @@ void main() {
         AuthStatus.signedIn,
         reason: 'an ambiguous failure must not sign the user out',
       );
-      expect(find.text('Sign in to Stash It'), findsNothing);
+      expect(find.text(entryHeading), findsNothing);
       expect(find.text(sessionEndedMessage), findsNothing);
       // The evidence is kept, which is the whole point of the policy.
       expect(backend.values[refreshKey], 'refresh-1');
@@ -218,7 +225,7 @@ void main() {
       unawaited(container.read(authStateProvider.notifier).signOut());
       await tester.pumpAndSettle();
 
-      expect(find.text('Sign in to Stash It'), findsOneWidget);
+      expect(find.text(entryHeading), findsOneWidget);
       expect(
         unannounced(container),
         isFalse,

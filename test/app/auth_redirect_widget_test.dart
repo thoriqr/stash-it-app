@@ -11,11 +11,18 @@ import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
+import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../support/fake_http.dart';
 import '../support/saved_items_fixtures.dart';
 
 void main() {
+  /// The entry screen's heading, used as its stable on-screen identity.
+  const entryHeading = 'A place for things you find on the internet.';
+
+  /// The sign-in form's heading.
+  const formHeading = 'Sign in to Stash It';
+
   /// Overrides for a container that needs the auth state and nothing else.
   ///
   /// The credential store is required because the auth status is *derived from
@@ -79,39 +86,43 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('a signed-out user is redirected to sign-in', (tester) async {
+  testWidgets('a signed-out user is redirected to the auth entry screen', (
+    tester,
+  ) async {
     await pumpApp(tester, AuthStatus.signedOut);
 
-    expect(find.text('Sign in to Stash It'), findsOneWidget);
+    expect(find.text(entryHeading), findsOneWidget);
     expect(find.byType(NavigationBar), findsNothing);
   });
 
-  testWidgets('a signed-out user reaching /profile is redirected to sign-in', (
-    tester,
-  ) async {
-    await pumpApp(
-      tester,
-      AuthStatus.signedOut,
-      initialLocation: AppRoutes.profile,
-    );
+  testWidgets(
+    'a signed-out user reaching /profile is redirected to the auth entry screen',
+    (tester) async {
+      await pumpApp(
+        tester,
+        AuthStatus.signedOut,
+        initialLocation: AppRoutes.profile,
+      );
 
-    expect(find.text('Sign in to Stash It'), findsOneWidget);
-  });
-
-  testWidgets('a signed-out user reaching /settings is redirected to sign-in', (
-    tester,
-  ) async {
-    await pumpApp(
-      tester,
-      AuthStatus.signedOut,
-      initialLocation: AppRoutes.settings,
-    );
-
-    expect(find.text('Sign in to Stash It'), findsOneWidget);
-  });
+      expect(find.text(entryHeading), findsOneWidget);
+    },
+  );
 
   testWidgets(
-    'a signed-out user reaching a saved-item detail is redirected to sign-in',
+    'a signed-out user reaching /settings is redirected to the auth entry screen',
+    (tester) async {
+      await pumpApp(
+        tester,
+        AuthStatus.signedOut,
+        initialLocation: AppRoutes.settings,
+      );
+
+      expect(find.text(entryHeading), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'a signed-out user reaching a saved-item detail is redirected to the auth entry screen',
     (tester) async {
       await pumpApp(
         tester,
@@ -119,16 +130,81 @@ void main() {
         initialLocation: AppRoutes.savedItemDetail('item-1'),
       );
 
-      expect(find.text('Sign in to Stash It'), findsOneWidget);
+      expect(find.text(entryHeading), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
     },
   );
+
+  testWidgets('a signed-out user may stay on the auth entry screen', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      AuthStatus.signedOut,
+      initialLocation: AppRoutes.auth,
+    );
+
+    expect(find.text(entryHeading), findsOneWidget);
+    expect(find.text(formHeading), findsNothing);
+  });
+
+  testWidgets('a signed-out user may stay on the sign-in form', (tester) async {
+    await pumpApp(
+      tester,
+      AuthStatus.signedOut,
+      initialLocation: AppRoutes.signIn,
+    );
+
+    expect(find.text(formHeading), findsOneWidget);
+    expect(find.text(entryHeading), findsNothing);
+  });
+
+  testWidgets('tapping Sign in opens the form without bouncing back', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      AuthStatus.signedOut,
+      initialLocation: AppRoutes.auth,
+    );
+
+    await tester.tap(find.widgetWithText(AppButton, 'Sign in'));
+    await tester.pumpAndSettle();
+
+    expect(find.text(formHeading), findsOneWidget);
+    expect(find.text(entryHeading), findsNothing);
+  });
+
+  testWidgets('tapping Create an account does not navigate', (tester) async {
+    await pumpApp(
+      tester,
+      AuthStatus.signedOut,
+      initialLocation: AppRoutes.auth,
+    );
+
+    await tester.tap(
+      find.widgetWithText(AppButton, 'Create an account'),
+      warnIfMissed: false,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(entryHeading), findsOneWidget);
+    expect(find.text(formHeading), findsNothing);
+  });
 
   testWidgets('a signed-in user sees the shell', (tester) async {
     await pumpApp(tester, AuthStatus.signedIn);
 
     expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.text('Sign in to Stash It'), findsNothing);
+    expect(find.text(formHeading), findsNothing);
+    expect(find.text(entryHeading), findsNothing);
+  });
+
+  testWidgets('a signed-in user on /auth is sent into the app', (tester) async {
+    await pumpApp(tester, AuthStatus.signedIn, initialLocation: AppRoutes.auth);
+
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.text(entryHeading), findsNothing);
   });
 
   testWidgets('a signed-in user on /sign-in is sent into the app', (
@@ -141,6 +217,6 @@ void main() {
     );
 
     expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.text('Sign in to Stash It'), findsNothing);
+    expect(find.text(formHeading), findsNothing);
   });
 }

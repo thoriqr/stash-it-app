@@ -135,8 +135,8 @@ class SessionController extends _$SessionController implements TokenProvider {
   /// Whether a session has just ended, consuming the fact.
   ///
   /// Returns `true` **once** per ended session: the flag is cleared before the
-  /// answer is given, so a rebuild or a later visit to sign-in gets `false` and
-  /// cannot repeat the explanation.
+  /// answer is given, so a rebuild or a later visit to the auth entry screen
+  /// gets `false` and cannot repeat the explanation.
   ///
   /// Consuming rather than reading is the point. A flag that outlived its first
   /// reader would re-announce the same expiry every time the screen rebuilt,

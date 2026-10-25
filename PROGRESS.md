@@ -1,3 +1,22 @@
+## Auth entry screen (2026-10-25)
+
+### Flutter implementation
+- Added `AppRoutes.auth = '/auth'` and `AuthEntryScreen`: heading, `Sign in` (`context.go` to the existing form), a disabled `Create an account` with its caption, and no Google UI. Registration does not exist, so the control promises nothing.
+- `redirectFor` now allows **both** `/auth` and `/sign-in` while signed out; every other signed-out location goes to `/auth`. Signed-in users at either auth route go to `AppRoutes.initial`, which still points at the Inbox. `restoring` still returns no redirect, so a cold start does not flash the entry screen.
+- Moved `sessionEndedMessage` to `auth_messages.dart` and the one-shot `consumeSessionEnded()` consumer from `SignInScreen` to `AuthEntryScreen.initState`. `messageFor` still maps `ApiFailureSessionEnded`; deliberate sign-out and ambiguous/transport renewal failures remain silent.
+- Extracted `AuthBrandRow` and `AuthMessageBand`/`AuthMessageTone` for the two auth screens only. The band's layout, padding, Dismiss target and styling are unchanged; sign-in failures keep the danger tone.
+
+### Verification
+- `dart format` on every changed Dart file; `flutter analyze` — no issues found.
+- Focused suites passed: router, redirect widget, entry screen, session-expiry, sign-in — 57 tests.
+- `flutter test` — 1066 passed.
+- No build_runner (no generated-code annotation changed), no app/device/emulator run. Nothing staged or committed.
+
+### Remaining limitations
+- Registration and Google sign-in are not implemented; the account-creation control stays disabled until one exists.
+- **Pre-existing, unchanged:** a bearer refusal other than `ACCESS_TOKEN_EXPIRED` (`INVALID_ACCESS_TOKEN`, `INVALID_AUTHORIZATION_HEADER`) does not end the session; the requesting screen reports it and the stored pair remains.
+- All new copy is hardcoded English; the l10n layer still does not exist.
+
 ## Account isolation at session boundaries (2026-10-25)
 
 ### Flutter implementation

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
+import 'package:stash_it_app/features/auth/presentation/auth_entry_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
 import 'package:stash_it_app/features/collections/presentation/collections_screen.dart';
 import 'package:stash_it_app/features/inbox/presentation/inbox_screen.dart';
@@ -48,7 +49,7 @@ GoRouter appRouter(Ref ref) {
   );
 }
 
-/// Sends the user to sign-in, or back into the app.
+/// Sends the user to the auth entry screen, or back into the app.
 ///
 /// A pure function of the session and the current location, so the rule can be
 /// tested exhaustively without pumping a router — and so there is exactly one
@@ -58,6 +59,10 @@ GoRouter appRouter(Ref ref) {
 /// guards itself can be reached by a route that does not, and the gap shows up
 /// only as a flash of protected content.
 ///
+/// **Both auth routes are allowed while signed out.** The entry screen's Sign in
+/// action navigates to `/sign-in`; allow-listing only the entry screen would
+/// send that navigation straight back and loop.
+///
 /// Returns null to leave navigation alone.
 String? redirectFor(AuthStatus auth, String location) {
   // Startup has not settled. Returning null parks the navigation rather than
@@ -65,29 +70,35 @@ String? redirectFor(AuthStatus auth, String location) {
   // so this is a guard rather than a state the user sees.
   if (!auth.isResolved) return null;
 
+  final atAuthEntry = location == AppRoutes.auth;
   final atSignIn = location == AppRoutes.signIn;
 
   if (auth.isSignedOut) {
-    // Everything except sign-in needs a session. Pending URLs are held behind
-    // this gate and surface on return (D6); that queue is not built yet, and
-    // this redirect is what will later release it.
-    return atSignIn ? null : AppRoutes.signIn;
+    // Both auth screens are reachable without a session. Pending URLs are held
+    // behind this gate and surface on return (D6); that queue is not built yet,
+    // and this redirect is what will later release it.
+    if (atAuthEntry || atSignIn) return null;
+    return AppRoutes.auth;
   }
 
-  // Signed in and looking at sign-in: there is nothing to sign in to.
-  if (atSignIn) return AppRoutes.initial;
+  // Signed in and looking at either auth screen: there is nothing to sign in to.
+  if (atAuthEntry || atSignIn) return AppRoutes.initial;
 
   return null;
 }
 
 final List<RouteBase> _routes = [
   GoRoute(
+    path: AppRoutes.auth,
+    builder: (context, state) => const AuthEntryScreen(),
+  ),
+  GoRoute(
     path: AppRoutes.signIn,
     builder: (context, state) => const SignInScreen(),
   ),
   // A top-level route, not a shell branch: Settings is pushed above the shell
   // and popped back to the destination that opened it. The redirect above still
-  // protects it like every route except sign-in.
+  // protects it like every route except the two auth screens.
   GoRoute(
     path: AppRoutes.settings,
     builder: (context, state) => const SettingsScreen(),

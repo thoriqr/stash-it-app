@@ -5,31 +5,43 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 
 void main() {
   group('redirectFor', () {
-    test('a signed-out user on a protected route is sent to sign-in', () {
-      for (final location in [
-        AppRoutes.inbox,
-        AppRoutes.collections,
-        AppRoutes.search,
-        AppRoutes.profile,
-        AppRoutes.settings,
-      ]) {
+    test(
+      'a signed-out user on a protected route is sent to the auth entry screen',
+      () {
+        for (final location in [
+          AppRoutes.inbox,
+          AppRoutes.collections,
+          AppRoutes.search,
+          AppRoutes.profile,
+          AppRoutes.settings,
+        ]) {
+          expect(
+            redirectFor(AuthStatus.signedOut, location),
+            AppRoutes.auth,
+            reason: '$location requires a session',
+          );
+        }
+      },
+    );
+
+    test('a signed-out user already on an auth route is left alone', () {
+      for (final location in [AppRoutes.auth, AppRoutes.signIn]) {
         expect(
           redirectFor(AuthStatus.signedOut, location),
-          AppRoutes.signIn,
-          reason: '$location requires a session',
+          isNull,
+          reason: '$location is reachable without a session',
         );
       }
     });
 
-    test('a signed-out user already on sign-in is left alone', () {
-      expect(redirectFor(AuthStatus.signedOut, AppRoutes.signIn), isNull);
-    });
-
-    test('a signed-in user on sign-in is sent into the app', () {
-      expect(
-        redirectFor(AuthStatus.signedIn, AppRoutes.signIn),
-        AppRoutes.initial,
-      );
+    test('a signed-in user on an auth route is sent into the app', () {
+      for (final location in [AppRoutes.auth, AppRoutes.signIn]) {
+        expect(
+          redirectFor(AuthStatus.signedIn, location),
+          AppRoutes.initial,
+          reason: '$location has nothing to offer a signed-in user',
+        );
+      }
     });
 
     test('a signed-in user on a protected route is left alone', () {
@@ -50,9 +62,11 @@ void main() {
 
     test('nothing is redirected while startup is unresolved', () {
       // Returning null parks the navigation rather than guessing. Guessing here
-      // would bounce a signed-in user to sign-in during a slow cold start.
+      // would bounce a signed-in user to the auth entry screen during a slow
+      // cold start.
       for (final location in [
         AppRoutes.inbox,
+        AppRoutes.auth,
         AppRoutes.signIn,
         AppRoutes.profile,
       ]) {
@@ -75,18 +89,21 @@ void main() {
       );
     });
 
-    test('sign-in is a separate route from the shell', () {
-      expect(
-        AppRoutes.signIn,
-        isNot(
-          anyElement([
-            AppRoutes.inbox,
-            AppRoutes.collections,
-            AppRoutes.search,
-            AppRoutes.profile,
-          ]),
-        ),
-      );
+    test('the auth screens are separate routes from the shell', () {
+      for (final location in [AppRoutes.auth, AppRoutes.signIn]) {
+        expect(
+          location,
+          isNot(
+            anyElement([
+              AppRoutes.inbox,
+              AppRoutes.collections,
+              AppRoutes.search,
+              AppRoutes.profile,
+            ]),
+          ),
+          reason: '$location is not a bottom-navigation destination',
+        );
+      }
     });
 
     test('settings is a separate route from the shell', () {

@@ -42,8 +42,9 @@ class StashItApp extends ConsumerWidget {
       // inherits one treatment. See `skeleton_theme.dart`.
       //
       // `FeedbackHost` is the outermost of the two, so one notice serves every
-      // route — including sign-in, which sits outside the shell — and sits above
-      // the shell's navigation bar rather than inside a destination's Scaffold.
+      // route — including the auth screens, which sit outside the shell — and
+      // sits above the shell's navigation bar rather than inside a destination's
+      // Scaffold.
       // See `feedback/feedback_host.dart` for why that position is where it is.
       builder: (context, child) => FeedbackHost(
         child: SkeletonizerConfig(

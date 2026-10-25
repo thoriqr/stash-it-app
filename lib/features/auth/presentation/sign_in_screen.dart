@@ -3,15 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
-import 'package:stash_it_app/features/auth/application/session_controller.dart';
+import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
+import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
+import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
 /// Manual sign-in, following `docs/design-explorations/auth.html`.
 ///
-/// Reached only through the router redirect, so this screen does not check
-/// whether a session exists — doing so in both places is how the two drift
-/// apart.
+/// Reached from the auth entry screen. The router also allows a direct entry,
+/// so this screen does not check whether a session exists — doing so in both
+/// places is how the two drift apart.
 ///
 /// Covers only manual sign-in. Registration, Google sign-in and password reset
 /// all exist in the backend and are out of scope for this milestone; none of
@@ -28,20 +30,6 @@ class SignInScreen extends ConsumerStatefulWidget {
   ConsumerState<SignInScreen> createState() => _SignInScreenState();
 }
 
-/// Copy for a session that ended while the user was elsewhere.
-///
-/// One string, two callers: the message shown when the screen mounts onto an
-/// ended session, and [messageFor]'s `ApiFailureSessionEnded` case. Keeping them
-/// the same constant is what stops the two explanations of one event from
-/// drifting apart.
-///
-/// **Neutral and factual.** It says the session ended and what to do next, and
-/// makes no claim about why — the backend's reason is not shown to users
-/// ([D22]), and an expiry the user did not cause is not presented as a mistake
-/// they made.
-const String sessionEndedMessage =
-    'Your session has ended. Sign in again to continue.';
-
 class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
@@ -57,31 +45,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   /// How [_message] is presented. Defaults to danger so every ordinary
   /// sign-in failure keeps the treatment it had before tones existed.
-  _MessageTone _messageTone = _MessageTone.danger;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // A session can end while the user is somewhere else entirely: a renewal the
-    // backend refuses terminally clears the credentials, the router sends them
-    // here, and nothing else would say why. The reason is *consumed* rather than
-    // stored, so it appears once and never repeats on a rebuild or a later visit
-    // — see `SessionController.consumeSessionEnded`.
-    //
-    // A deliberate sign-out does not set it: `AuthState.signOut` discards the
-    // session directly rather than ending it, so asking to be signed out is never
-    // reported back as an expiry. An ambiguous renewal failure does not set it
-    // either, because nothing ended the session — only `_endSession` does.
-    if (ref.read(sessionControllerProvider.notifier).consumeSessionEnded()) {
-      _message = sessionEndedMessage;
-
-      // Warning, not danger: `design-system.md` §6.5 files expiry under Warning.
-      // Nothing the user did failed here — a session simply lapsed — and a danger
-      // band would read as a mistake of theirs.
-      _messageTone = _MessageTone.warning;
-    }
-  }
+  AuthMessageTone _messageTone = AuthMessageTone.danger;
 
   @override
   void dispose() {
@@ -122,7 +86,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         // Explicit even though it is the default: this is the branch that must
         // keep the danger treatment, and saying so here stops a later default
         // change from quietly re-toning every sign-in failure.
-        _messageTone = _MessageTone.danger;
+        _messageTone = AuthMessageTone.danger;
       });
     } catch (_) {
       // A credential-storage failure surfaces here as
@@ -133,7 +97,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       setState(() {
         _submitting = false;
         _message = 'Something went wrong signing in. Try again.';
-        _messageTone = _MessageTone.danger;
+        _messageTone = AuthMessageTone.danger;
       });
     }
   }
@@ -160,7 +124,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const _BrandRow(),
+                    const AuthBrandRow(),
                     const SizedBox(height: AppMetrics.space5),
                     Text(
                       'Sign in to Stash It',
@@ -237,7 +201,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     ),
                     if (_message case final message?) ...[
                       const SizedBox(height: AppMetrics.space4),
-                      _SignInMessage(
+                      AuthMessageBand(
                         message: message,
                         onDismiss: _dismissMessage,
                         tone: _messageTone,
@@ -275,51 +239,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   /// failure in the first place. The user edits and submits deliberately.
   void _dismissMessage() {
     setState(() => _message = null);
-  }
-}
-
-/// The wordmark and its mark, the one place the brand is set.
-class _BrandRow extends StatelessWidget {
-  const _BrandRow();
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = AppTheme.tokensOf(context);
-
-    return Row(
-      children: [
-        Container(
-          width: AppMetrics.brandMarkSize,
-          height: AppMetrics.brandMarkSize,
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: tokens.accent,
-              width: AppMetrics.borderWidthEmphasis,
-            ),
-            borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: tokens.accent,
-                borderRadius: BorderRadius.circular(1),
-              ),
-              child: const SizedBox.expand(),
-            ),
-          ),
-        ),
-        const SizedBox(width: AppMetrics.space2),
-        // Written uppercase at the call site: Flutter has no text-transform.
-        Text(
-          'STASH-IT',
-          style: AppTypography.wordmark.copyWith(
-            fontSize: 12,
-            color: tokens.textPrimary,
-          ),
-        ),
-      ],
-    );
   }
 }
 
@@ -396,128 +315,4 @@ String messageFor(ApiFailure failure) {
     ApiFailureCredentialStorage() =>
       'Your sign-in could not be saved securely. Try again.',
   };
-}
-
-/// How a message band presents itself.
-///
-/// `design-system.md` §6.5 gives five feedback treatments. Only two of them can
-/// appear here, and the distinction is the point rather than decoration:
-///
-/// | Situation | Treatment | Mark |
-/// | --- | --- | --- |
-/// | **Warning** (budget spent, **expiry**) | `warning-soft` + `warning-border` | filled |
-/// | **Failure** (known) | `danger-soft` + `danger-border` | filled |
-///
-/// An expiry is filed under Warning by the specification, so it must not wear the
-/// Failure colours: the user did not do anything wrong, and a danger band reads
-/// as a mistake they made. The fifth row — **Uncertain**, the same warning colours
-/// with a *hollow* mark — is deliberately not modelled here. Nothing on this
-/// screen reports an outcome the client cannot determine, so adding a third tone
-/// now would be a case with no caller.
-enum _MessageTone {
-  /// A confirmed failure of something the user attempted.
-  danger,
-
-  /// Something lapsed without the user attempting it.
-  warning,
-}
-
-/// A message the user can dismiss.
-///
-/// The tone decides the fill, border and mark; the layout is identical either
-/// way, so a change of treatment never changes the band's height or its
-/// wrapping.
-///
-/// The message and Dismiss share one row. They were stacked, and because
-/// Material gives a `TextButton` a 48 px minimum target the dismiss row alone
-/// was taller than the sentence above it, so a one-line failure occupied roughly
-/// a hundred pixels with an empty gap under the text. Inline, the band is as
-/// tall as the message it has to show — and a longer message still wraps, because
-/// the text is the flexible child and Dismiss is not.
-class _SignInMessage extends StatelessWidget {
-  const _SignInMessage({
-    required this.message,
-    required this.onDismiss,
-    this.tone = _MessageTone.danger,
-  });
-
-  final String message;
-  final VoidCallback onDismiss;
-
-  /// Defaults to [_MessageTone.danger], so every ordinary sign-in failure keeps
-  /// the treatment it has always had without each call site naming it.
-  final _MessageTone tone;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = AppTheme.tokensOf(context);
-
-    final fill = switch (tone) {
-      _MessageTone.danger => tokens.dangerSoft,
-      _MessageTone.warning => tokens.warningSoft,
-    };
-    final border = switch (tone) {
-      _MessageTone.danger => tokens.dangerBorder,
-      _MessageTone.warning => tokens.warningBorder,
-    };
-    final mark = switch (tone) {
-      _MessageTone.danger => tokens.danger,
-      _MessageTone.warning => tokens.warning,
-    };
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppMetrics.space3),
-      decoration: BoxDecoration(
-        color: fill,
-        border: Border.all(color: border),
-        borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
-      ),
-      child: Row(
-        // Centred, so a single-line message and its dismiss action read as one
-        // unit rather than as two unrelated rows.
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // The flexible child: this is what wraps when a message is long.
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  // Sits on the first line's baseline rather than the row's top.
-                  padding: const EdgeInsets.only(top: 5),
-                  child: Container(width: 5, height: 5, color: mark),
-                ),
-                const SizedBox(width: AppMetrics.space2),
-                Expanded(
-                  child: Text(
-                    message,
-                    style: AppTypography.meta.copyWith(
-                      color: tokens.textPrimary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppMetrics.space2),
-          TextButton(
-            onPressed: onDismiss,
-            style: TextButton.styleFrom(
-              // 32 px rather than Material's 48: the band is a confirmation of
-              // a failure, not the primary action, and its own target still
-              // clears WCAG 2.5.8's 24 px minimum by a comfortable margin.
-              minimumSize: const Size(0, 32),
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppMetrics.space2,
-              ),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-            ),
-            child: const Text('Dismiss'),
-          ),
-        ],
-      ),
-    );
-  }
 }

@@ -170,9 +170,10 @@ class SaveUrl extends _$SaveUrl {
 /// | renewal failed | known not saved; session unknown | warning |
 ///
 /// [sessionEnded] is the caller's answer to "has the session layer already taken
-/// over this failure?". When it has, the router has moved the user to sign-in and
-/// `SignInScreen` is showing its own one-time `sessionEndedMessage`; a second
-/// notice about the same expiry would be two announcements of one event.
+/// over this failure?". When it has, the router has moved the user to the auth
+/// entry screen and `AuthEntryScreen` is showing its own one-time
+/// `sessionEndedMessage`; a second notice about the same expiry would be two
+/// announcements of one event.
 AppFeedback? saveFeedbackFor(ApiFailure failure, {required bool sessionEnded}) {
   return switch (failure) {
     // A URL the server refuses to use. Actionable, and the field still holds the
@@ -281,8 +282,8 @@ AppFeedback? saveFeedbackFor(ApiFailure failure, {required bool sessionEnded}) {
     // everything it can: either renew-and-replay succeeded and the replay was
     // refused again, or a terminal renewal surfaced the original `401`. A known,
     // actionable refusal — **unless** the session has ended, in which case the
-    // router is already taking the user to sign-in, which explains it once.
-    // **D15 group A.**
+    // router is already taking the user to the auth entry screen, which explains
+    // it once. **D15 group A.**
     ApiFailureAuthRequired() =>
       sessionEnded
           ? null
