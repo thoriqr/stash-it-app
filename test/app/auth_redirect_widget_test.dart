@@ -266,4 +266,48 @@ void main() {
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text(signUpHeading), findsNothing);
   });
+
+  testWidgets('a signed-out user can open PIN entry with a real UUID', (
+    tester,
+  ) async {
+    const uuid = '01a175e6-4a20-7649-b9b0-aa3b26237074';
+    final adapter = FakeHttpAdapter();
+    adapter.onMethod(
+      'GET',
+      '/auth/register/verification/$uuid',
+      status: 200,
+      body: {
+        'data': {
+          'verification_id': uuid,
+          'status': 'pending',
+          'pin_issued': true,
+          'resend_in_seconds': 0,
+        },
+        'message': 'verification retrieved',
+      },
+    );
+
+    final container = ProviderContainer(
+      overrides: authOverrides(AuthStatus.signedOut),
+      retry: (_, _) => null,
+    );
+    addTearDown(container.dispose);
+    container.read(appDioProvider).httpClientAdapter = adapter;
+    container.read(refreshDioProvider).httpClientAdapter = adapter;
+
+    final router = container.read(appRouterProvider);
+    addTearDown(router.dispose);
+    router.go('/sign-up/verify/$uuid');
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: StashItApp(router: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter your PIN'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Resend PIN'), findsOneWidget);
+  });
 }

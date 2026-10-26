@@ -74,7 +74,7 @@ final class MoveToCollectionProvider
   }
 }
 
-String _$moveToCollectionHash() => r'147614248ac28f406aae61a0f840d39386ed370b';
+String _$moveToCollectionHash() => r'36414026ce0d1a285786a2cbca719e93145dc388';
 
 /// The Move to collection mutation: **one `PUT` per explicit user action**.
 ///

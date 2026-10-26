@@ -1,3 +1,19 @@
+## Registration verification status and PIN resend (2026-10-27)
+
+### Flutter implementation
+- Added GET /auth/register/verification/{id} and POST .../resend to AuthApi/AuthRepository with Freezed DTOs.
+- Added PinEntryScreen at /sign-up/verify/:verificationId: loading, pending, verified, invalid/expired, and recoverable error states; resend with server cooldown and duplicate prevention; uncertain delivery/transport copy.
+- SignUpScreen now navigates to PinEntryScreen with the server-issued verification id after PIN creation succeeds.
+- Router allows the new route while signed out and redirects signed-in users.
+
+### Verification
+- dart format on changed Dart files; lutter analyze -- no issues found.
+- lutter test -- 1122 passed.
+- No app, device, or emulator run. Nothing staged or committed.
+
+### Limitations
+- PIN verification, continuation, and finalization are not implemented; the Verify action is intentionally not wired.
+- Email address is not displayed on the PIN screen because it is not carried from Sign-Up.
 ## Sign-in to sign-up navigation (2026-10-26)
 
 ### Flutter implementation

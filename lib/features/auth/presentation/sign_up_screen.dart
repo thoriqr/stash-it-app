@@ -85,6 +85,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       await repository.createPin(verificationId: verificationId);
 
       if (!mounted) return;
+      if (GoRouter.maybeOf(context) != null) {
+        context.go('/sign-up/verify/$verificationId');
+        return;
+      }
       setState(() {
         _submitting = false;
         _pinSentTo = email;

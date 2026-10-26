@@ -98,7 +98,7 @@ final class DeleteSavedItemProvider
   }
 }
 
-String _$deleteSavedItemHash() => r'b53e78221d1496d151f33b3d97c60f3d25b9a153';
+String _$deleteSavedItemHash() => r'359f24b87d414298dd7dad9662ac219003387b2c';
 
 /// The destructive saved-item flow: one item delete, then at most one optional
 /// collection delete.

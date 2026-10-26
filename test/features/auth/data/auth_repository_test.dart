@@ -349,4 +349,195 @@ void main() {
       );
     });
   });
+
+  group('registration verification status', () {
+    const verificationId = '01a0f359-093b-737a-963a-80f7ca6768ed';
+
+    test('decodes every documented field', () async {
+      adapter.onMethod(
+        'GET',
+        '/auth/register/verification/$verificationId',
+        status: 200,
+        body: {
+          'data': {
+            'verification_id': verificationId,
+            'status': 'pending',
+            'pin_issued': true,
+            'resend_in_seconds': 42,
+          },
+          'message': 'verification retrieved',
+        },
+      );
+
+      final status = await repository.getVerification(
+        verificationId: verificationId,
+      );
+
+      expect(status.verificationId, verificationId);
+      expect(status.status, 'pending');
+      expect(status.pinIssued, isTrue);
+      expect(status.resendInSeconds, 42);
+    });
+
+    test('a missing verification is not found', () async {
+      adapter.onMethod(
+        'GET',
+        '/auth/register/verification/$verificationId',
+        status: 404,
+        body: errorBody(ApiErrorCode.resourceNotFound),
+      );
+
+      await expectLater(
+        repository.getVerification(verificationId: verificationId),
+        throwsA(isA<ApiFailureNotFound>()),
+      );
+    });
+
+    test('an expired registration requires restarting registration', () async {
+      adapter.onMethod(
+        'GET',
+        '/auth/register/verification/$verificationId',
+        status: 409,
+        body: errorBody(ApiErrorCode.registrationExpired),
+      );
+
+      await expectLater(
+        repository.getVerification(verificationId: verificationId),
+        throwsA(isA<ApiFailureRegistrationRestartRequired>()),
+      );
+    });
+
+    test('an unreadable response is unreadable', () async {
+      adapter.onMethod(
+        'GET',
+        '/auth/register/verification/$verificationId',
+        status: 200,
+        body: 'not JSON',
+      );
+
+      await expectLater(
+        repository.getVerification(verificationId: verificationId),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+
+    test('a lost request is an uncertain transport failure', () async {
+      adapter.onOffline('/auth/register/verification/$verificationId');
+
+      await expectLater(
+        repository.getVerification(verificationId: verificationId),
+        throwsA(isA<ApiFailureTransport>()),
+      );
+    });
+  });
+
+  group('registration resend', () {
+    const verificationId = '01a0f359-093b-737a-963a-80f7ca6768ed';
+
+    test('uses the resend path with no request body', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/verification/$verificationId/resend',
+        status: 200,
+        body: {
+          'data': {'verification_id': verificationId},
+          'message': 'verification code resent',
+        },
+      );
+
+      final returned = await repository.resendVerification(
+        verificationId: verificationId,
+      );
+
+      expect(returned, verificationId);
+      final sent = adapter.lastRequestTo('/resend')!;
+      expect(sent.method, 'POST');
+      expect(sent.body, isNull);
+    });
+
+    test('a cooldown refusal has no invented duration', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/verification/$verificationId/resend',
+        status: 409,
+        body: errorBody(ApiErrorCode.verificationResendCooldown),
+      );
+
+      await expectLater(
+        repository.resendVerification(verificationId: verificationId),
+        throwsA(isA<ApiFailureVerificationResendCooldown>()),
+      );
+    });
+
+    test('a delivery failure carries the server cooldown', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/verification/$verificationId/resend',
+        status: 503,
+        body: errorBody(ApiErrorCode.pinEmailDeliveryFailed),
+        headers: {
+          'retry-after': ['60'],
+        },
+      );
+
+      await expectLater(
+        repository.resendVerification(verificationId: verificationId),
+        throwsA(
+          isA<ApiFailurePinEmailDeliveryFailed>().having(
+            (failure) => failure.retryAfter,
+            'retryAfter',
+            const Duration(seconds: 60),
+          ),
+        ),
+      );
+    });
+
+    test('a rate limit carries Retry-After', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/verification/$verificationId/resend',
+        status: 429,
+        body: errorBody(ApiErrorCode.pinRateLimitExceeded),
+        headers: {
+          'retry-after': ['42'],
+        },
+      );
+
+      await expectLater(
+        repository.resendVerification(verificationId: verificationId),
+        throwsA(
+          isA<ApiFailureRateLimited>().having(
+            (failure) => failure.retryAfter,
+            'retryAfter',
+            const Duration(seconds: 42),
+          ),
+        ),
+      );
+    });
+
+    test('a lost resend is an uncertain transport failure', () async {
+      adapter.onOffline(
+        '/auth/register/verification/$verificationId/resend',
+      );
+
+      await expectLater(
+        repository.resendVerification(verificationId: verificationId),
+        throwsA(isA<ApiFailureTransport>()),
+      );
+    });
+
+    test('an unreadable resend response is unreadable', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/verification/$verificationId/resend',
+        status: 200,
+        body: 'not JSON',
+      );
+
+      await expectLater(
+        repository.resendVerification(verificationId: verificationId),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+  });
 }

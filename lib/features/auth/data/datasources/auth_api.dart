@@ -7,6 +7,8 @@ import '../models/login_response.dart';
 import '../models/logout_data.dart';
 import '../models/register_manual_request.dart';
 import '../models/register_manual_response.dart';
+import '../models/resend_verification_response.dart';
+import '../models/verification_status_response.dart';
 
 part 'auth_api.g.dart';
 
@@ -49,6 +51,24 @@ abstract class AuthApi {
   /// code was sent or emailed.
   @POST('/auth/register/verification/{verificationId}/pin')
   Future<void> createPin(@Path('verificationId') String verificationId);
+
+  /// `GET /auth/register/verification/{verificationId}`
+  ///
+  /// Read-only status of a registration verification. No request body. Returns
+  /// the verification status, whether a PIN has been issued, and the remaining
+  /// resend cooldown in seconds.
+  @GET('/auth/register/verification/{verificationId}')
+  Future<ApiEnvelope<VerificationStatusResponse>> getVerification(
+    @Path('verificationId') String verificationId,
+  );
+
+  /// `POST /auth/register/verification/{verificationId}/resend`
+  ///
+  /// Issues a replacement PIN. No request body. The verification id is unchanged.
+  @POST('/auth/register/verification/{verificationId}/resend')
+  Future<ApiEnvelope<ResendVerificationResponse>> resendVerification(
+    @Path('verificationId') String verificationId,
+  );
 
   /// `POST /auth/logout`
   ///

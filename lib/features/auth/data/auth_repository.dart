@@ -7,6 +7,7 @@ import 'models/auth_tokens.dart';
 import 'models/auth_user.dart';
 import 'models/login_request.dart';
 import 'models/register_manual_request.dart';
+import 'models/verification_status_response.dart';
 
 /// The outcome of a successful sign-in.
 ///
@@ -113,6 +114,52 @@ class AuthRepository {
   Future<void> createPin({required String verificationId}) async {
     try {
       await authApi.createPin(verificationId);
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Reads the current status of a registration verification.
+  ///
+  /// A `200` whose envelope lacks `data` is unreadable: without the status the
+  /// screen cannot represent the verification lifecycle.
+  Future<VerificationStatusResponse> getVerification({
+    required String verificationId,
+  }) async {
+    try {
+      final response = await authApi.getVerification(verificationId);
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+      return data;
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Requests a replacement PIN for [verificationId].
+  ///
+  /// Returns the verification id the server confirms (unchanged). A `200` whose
+  /// envelope lacks `data` is unreadable.
+  Future<String> resendVerification({
+    required String verificationId,
+  }) async {
+    try {
+      final response = await authApi.resendVerification(verificationId);
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+      return data.verificationId;
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError catch (error) {

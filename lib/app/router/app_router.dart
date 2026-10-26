@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_entry_screen.dart';
+import 'package:stash_it_app/features/auth/presentation/pin_entry_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_up_screen.dart';
 import 'package:stash_it_app/features/collections/presentation/collections_screen.dart';
@@ -75,18 +76,19 @@ String? redirectFor(AuthStatus auth, String location) {
   final atAuthEntry = location == AppRoutes.auth;
   final atSignIn = location == AppRoutes.signIn;
   final atSignUp = location == AppRoutes.signUp;
+  final atSignUpVerify = location.startsWith('/sign-up/verify/');
 
   if (auth.isSignedOut) {
-    // The three auth screens are reachable without a session. Pending URLs are
-    // held behind this gate and surface on return (D6); that queue is not built
-    // yet, and this redirect is what will later release it.
-    if (atAuthEntry || atSignIn || atSignUp) return null;
+    // The auth screens are reachable without a session.
+    if (atAuthEntry || atSignIn || atSignUp || atSignUpVerify) return null;
     return AppRoutes.auth;
   }
 
   // Signed in and looking at an auth screen: there is nothing to sign in to or
   // register.
-  if (atAuthEntry || atSignIn || atSignUp) return AppRoutes.initial;
+  if (atAuthEntry || atSignIn || atSignUp || atSignUpVerify) {
+    return AppRoutes.initial;
+  }
 
   return null;
 }
@@ -103,6 +105,11 @@ final List<RouteBase> _routes = [
   GoRoute(
     path: AppRoutes.signUp,
     builder: (context, state) => const SignUpScreen(),
+  ),
+  GoRoute(
+    path: AppRoutes.signUpVerify,
+    builder: (context, state) =>
+        PinEntryScreen(verificationId: state.pathParameters['verificationId']!),
   ),
   // A top-level route, not a shell branch: Settings is pushed above the shell
   // and popped back to the destination that opened it. The redirect above still

@@ -65,6 +65,13 @@ abstract final class AppRoutes {
   /// makes it safe to revisit.
   static const String signUp = '/sign-up';
 
+  /// Enter the PIN sent for a registration verification.
+  ///
+  /// Carries the server-issued verification id as a path parameter. Sits
+  /// outside the shell like the other auth routes and is reachable only while
+  /// signed out.
+  static const String signUpVerify = '/sign-up/verify/:verificationId';
+
   /// Create or change the account's password.
   ///
   /// **Not a fifth destination.** A full-screen secondary route outside the

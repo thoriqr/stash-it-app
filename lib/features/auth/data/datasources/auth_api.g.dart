@@ -104,6 +104,72 @@ class _AuthApi implements AuthApi {
   }
 
   @override
+  Future<ApiEnvelope<VerificationStatusResponse>> getVerification(
+    String verificationId,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<ApiEnvelope<VerificationStatusResponse>>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/auth/register/verification/${verificationId}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late ApiEnvelope<VerificationStatusResponse> _value;
+    try {
+      _value = ApiEnvelope<VerificationStatusResponse>.fromJson(
+        _result.data!,
+        (json) =>
+            VerificationStatusResponse.fromJson(json as Map<String, dynamic>),
+      );
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options, response: _result);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
+  Future<ApiEnvelope<ResendVerificationResponse>> resendVerification(
+    String verificationId,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<ApiEnvelope<ResendVerificationResponse>>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/auth/register/verification/${verificationId}/resend',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late ApiEnvelope<ResendVerificationResponse> _value;
+    try {
+      _value = ApiEnvelope<ResendVerificationResponse>.fromJson(
+        _result.data!,
+        (json) =>
+            ResendVerificationResponse.fromJson(json as Map<String, dynamic>),
+      );
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options, response: _result);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
   Future<ApiEnvelope<LogoutData>> logout() async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};

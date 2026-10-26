@@ -95,7 +95,7 @@ final class PasswordUpdateProvider
   }
 }
 
-String _$passwordUpdateHash() => r'b10dec26026aaa6c23266fb60b7f0a5855ec26e4';
+String _$passwordUpdateHash() => r'658e67dc691ab7b69e37f092268a4b9f1fdb3f03';
 
 /// One `PUT /users/me/password` per explicit submission.
 ///
