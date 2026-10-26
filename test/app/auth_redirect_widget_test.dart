@@ -23,6 +23,9 @@ void main() {
   /// The sign-in form's heading.
   const formHeading = 'Sign in to Stash It';
 
+  /// The registration form's heading.
+  const signUpHeading = 'Create your account';
+
   /// Overrides for a container that needs the auth state and nothing else.
   ///
   /// The credential store is required because the auth status is *derived from
@@ -159,6 +162,18 @@ void main() {
     expect(find.text(entryHeading), findsNothing);
   });
 
+  testWidgets('a signed-out user may stay on the sign-up form', (tester) async {
+    await pumpApp(
+      tester,
+      AuthStatus.signedOut,
+      initialLocation: AppRoutes.signUp,
+    );
+
+    expect(find.text(signUpHeading), findsOneWidget);
+    expect(find.text(entryHeading), findsNothing);
+    expect(find.text(formHeading), findsNothing);
+  });
+
   testWidgets('tapping Sign in opens the form without bouncing back', (
     tester,
   ) async {
@@ -175,21 +190,40 @@ void main() {
     expect(find.text(entryHeading), findsNothing);
   });
 
-  testWidgets('tapping Create an account does not navigate', (tester) async {
+  testWidgets(
+    'tapping Create an account opens the sign-up form without bouncing back',
+    (tester) async {
+      await pumpApp(
+        tester,
+        AuthStatus.signedOut,
+        initialLocation: AppRoutes.auth,
+      );
+
+      await tester.tap(find.widgetWithText(AppButton, 'Create an account'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(signUpHeading), findsOneWidget);
+      expect(find.text(entryHeading), findsNothing);
+      expect(find.text(formHeading), findsNothing);
+    },
+  );
+
+  testWidgets('the sign-up form keeps the sign-in path reachable', (
+    tester,
+  ) async {
     await pumpApp(
       tester,
       AuthStatus.signedOut,
       initialLocation: AppRoutes.auth,
     );
 
-    await tester.tap(
-      find.widgetWithText(AppButton, 'Create an account'),
-      warnIfMissed: false,
-    );
+    await tester.tap(find.widgetWithText(AppButton, 'Create an account'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(AppButton, 'Sign in'));
     await tester.pumpAndSettle();
 
-    expect(find.text(entryHeading), findsOneWidget);
-    expect(find.text(formHeading), findsNothing);
+    expect(find.text(formHeading), findsOneWidget);
+    expect(find.text(signUpHeading), findsNothing);
   });
 
   testWidgets('a signed-in user sees the shell', (tester) async {
@@ -218,5 +252,18 @@ void main() {
 
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text(formHeading), findsNothing);
+  });
+
+  testWidgets('a signed-in user on /sign-up is sent into the app', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      AuthStatus.signedIn,
+      initialLocation: AppRoutes.signUp,
+    );
+
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.text(signUpHeading), findsNothing);
   });
 }

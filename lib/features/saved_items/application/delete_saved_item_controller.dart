@@ -333,6 +333,8 @@ class DeleteSavedItem extends _$DeleteSavedItem {
           ApiFailureCollectionNameAlreadyExists() ||
           ApiFailureCollectionNotEmpty() ||
           ApiFailureUnsortedCollectionProtected() ||
+          ApiFailurePinEmailDeliveryFailed() ||
+          ApiFailureRegistration() ||
           ApiFailureCollectionDeleteTargetNotFound():
         _publish(
           const AppFeedback(
@@ -480,6 +482,8 @@ class DeleteSavedItem extends _$DeleteSavedItem {
           ApiFailurePasswordCredentialAlreadyExists() ||
           ApiFailurePasswordAlreadyChanged() ||
           ApiFailureCollectionNameAlreadyExists() ||
+          ApiFailurePinEmailDeliveryFailed() ||
+          ApiFailureRegistration() ||
           ApiFailureCollectionDeleteTargetNotFound():
         _publish(
           AppFeedback(

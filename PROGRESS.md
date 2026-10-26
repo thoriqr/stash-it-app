@@ -1,3 +1,25 @@
+## Sign-in to sign-up navigation (2026-10-26)
+
+### Flutter implementation
+- Added a Don't have an account? Create account action to SignInScreen, navigating to /sign-up via context.go(AppRoutes.signUp).
+- Existing Sign-Up -> Sign-In navigation remains.
+
+### Verification
+- lutter analyze -- no issues found.
+- lutter test -- 1122 passed.
+- No app, device, or emulator run. Nothing staged or committed.
+## Manual sign-up start (2026-10-26)
+
+### Flutter implementation
+- Added SignUpScreen at /sign-up: email form with local empty/malformed validation, loading state and duplicate-submission guard, and a success state reporting that a PIN was sent without claiming the account exists. Typed failures map to client-owned copy; uncertain PIN issuance stays uncertain.
+- AuthEntryScreen now enables Create an account and navigates to /sign-up; router allows /sign-up while signed out and redirects signed-in users away.
+- Reuses existing registration data layer: egisterManual(email) then createPin(verificationId) in order; createPin failure surfaces through typed failures.
+- PIN entry, resend, continuation and finalization are not implemented; success state is interim and says so.
+
+### Verification
+- dart format on changed Dart files; lutter analyze -- no issues found.
+- lutter test -- 1121 passed.
+- No app, device, or emulator run. Nothing staged or committed.
 ## Auth entry screen (2026-10-25)
 
 ### Flutter implementation

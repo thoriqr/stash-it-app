@@ -25,7 +25,11 @@ void main() {
     );
 
     test('a signed-out user already on an auth route is left alone', () {
-      for (final location in [AppRoutes.auth, AppRoutes.signIn]) {
+      for (final location in [
+        AppRoutes.auth,
+        AppRoutes.signIn,
+        AppRoutes.signUp,
+      ]) {
         expect(
           redirectFor(AuthStatus.signedOut, location),
           isNull,
@@ -35,7 +39,11 @@ void main() {
     });
 
     test('a signed-in user on an auth route is sent into the app', () {
-      for (final location in [AppRoutes.auth, AppRoutes.signIn]) {
+      for (final location in [
+        AppRoutes.auth,
+        AppRoutes.signIn,
+        AppRoutes.signUp,
+      ]) {
         expect(
           redirectFor(AuthStatus.signedIn, location),
           AppRoutes.initial,
@@ -68,6 +76,7 @@ void main() {
         AppRoutes.inbox,
         AppRoutes.auth,
         AppRoutes.signIn,
+        AppRoutes.signUp,
         AppRoutes.profile,
       ]) {
         expect(redirectFor(AuthStatus.restoring, location), isNull);
@@ -90,7 +99,11 @@ void main() {
     });
 
     test('the auth screens are separate routes from the shell', () {
-      for (final location in [AppRoutes.auth, AppRoutes.signIn]) {
+      for (final location in [
+        AppRoutes.auth,
+        AppRoutes.signIn,
+        AppRoutes.signUp,
+      ]) {
         expect(
           location,
           isNot(

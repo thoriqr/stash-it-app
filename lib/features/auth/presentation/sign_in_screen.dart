@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
@@ -214,6 +216,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       busy: _submitting,
                       onPressed: _submit,
                     ),
+                    const SizedBox(height: AppMetrics.space3),
+                    _SignUpPrompt(onPressed: _submitting ? null : _openSignUp),
                   ],
                 ),
               ),
@@ -240,6 +244,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   void _dismissMessage() {
     setState(() => _message = null);
   }
+
+  /// Replaces this form with the registration start screen, as a peer.
+  void _openSignUp() => context.go(AppRoutes.signUp);
 }
 
 /// Client-owned copy for a failed sign-in.
@@ -298,6 +305,8 @@ String messageFor(ApiFailure failure) {
     ApiFailureUnsortedCollectionProtected() ||
     ApiFailureCollectionDeleteTargetNotFound() ||
     ApiFailureMalformedRequest() ||
+    ApiFailurePinEmailDeliveryFailed() ||
+    ApiFailureRegistration() ||
     ApiFailureUnreadableResponse() =>
       "We couldn't read the server's reply. Try again.",
 
@@ -315,4 +324,36 @@ String messageFor(ApiFailure failure) {
     ApiFailureCredentialStorage() =>
       'Your sign-in could not be saved securely. Try again.',
   };
+}
+
+/// The quiet route to registration, kept on the sign-in screen so a new account
+/// is never stranded.
+class _SignUpPrompt extends StatelessWidget {
+  const _SignUpPrompt({required this.onPressed});
+
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTheme.tokensOf(context);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Flexible(
+          child: Text(
+            "Don't have an account?",
+            style: AppTypography.meta.copyWith(color: tokens.textSecondary),
+          ),
+        ),
+        AppButton(
+          label: 'Create account',
+          variant: AppButtonVariant.quiet,
+          small: true,
+          block: false,
+          onPressed: onPressed,
+        ),
+      ],
+    );
+  }
 }

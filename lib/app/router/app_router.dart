@@ -6,6 +6,7 @@ import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_entry_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
+import 'package:stash_it_app/features/auth/presentation/sign_up_screen.dart';
 import 'package:stash_it_app/features/collections/presentation/collections_screen.dart';
 import 'package:stash_it_app/features/inbox/presentation/inbox_screen.dart';
 import 'package:stash_it_app/features/profile/presentation/password_screen.dart';
@@ -59,9 +60,10 @@ GoRouter appRouter(Ref ref) {
 /// guards itself can be reached by a route that does not, and the gap shows up
 /// only as a flash of protected content.
 ///
-/// **Both auth routes are allowed while signed out.** The entry screen's Sign in
-/// action navigates to `/sign-in`; allow-listing only the entry screen would
-/// send that navigation straight back and loop.
+/// **All three signed-out auth routes are allowed while signed out.** The entry
+/// screen's Sign in and Create an account actions navigate to `/sign-in` and
+/// `/sign-up`; allow-listing only the entry screen would send those navigations
+/// straight back and loop.
 ///
 /// Returns null to leave navigation alone.
 String? redirectFor(AuthStatus auth, String location) {
@@ -72,17 +74,19 @@ String? redirectFor(AuthStatus auth, String location) {
 
   final atAuthEntry = location == AppRoutes.auth;
   final atSignIn = location == AppRoutes.signIn;
+  final atSignUp = location == AppRoutes.signUp;
 
   if (auth.isSignedOut) {
-    // Both auth screens are reachable without a session. Pending URLs are held
-    // behind this gate and surface on return (D6); that queue is not built yet,
-    // and this redirect is what will later release it.
-    if (atAuthEntry || atSignIn) return null;
+    // The three auth screens are reachable without a session. Pending URLs are
+    // held behind this gate and surface on return (D6); that queue is not built
+    // yet, and this redirect is what will later release it.
+    if (atAuthEntry || atSignIn || atSignUp) return null;
     return AppRoutes.auth;
   }
 
-  // Signed in and looking at either auth screen: there is nothing to sign in to.
-  if (atAuthEntry || atSignIn) return AppRoutes.initial;
+  // Signed in and looking at an auth screen: there is nothing to sign in to or
+  // register.
+  if (atAuthEntry || atSignIn || atSignUp) return AppRoutes.initial;
 
   return null;
 }
@@ -95,6 +99,10 @@ final List<RouteBase> _routes = [
   GoRoute(
     path: AppRoutes.signIn,
     builder: (context, state) => const SignInScreen(),
+  ),
+  GoRoute(
+    path: AppRoutes.signUp,
+    builder: (context, state) => const SignUpScreen(),
   ),
   // A top-level route, not a shell branch: Settings is pushed above the shell
   // and popped back to the destination that opened it. The redirect above still

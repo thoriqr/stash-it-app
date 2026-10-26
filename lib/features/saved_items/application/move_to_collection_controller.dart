@@ -249,6 +249,8 @@ class MoveToCollection extends _$MoveToCollection {
           ApiFailurePasswordAlreadyChanged() ||
           ApiFailureCollectionNotEmpty() ||
           ApiFailureUnsortedCollectionProtected() ||
+          ApiFailurePinEmailDeliveryFailed() ||
+          ApiFailureRegistration() ||
           ApiFailureCollectionDeleteTargetNotFound():
         _publish(
           const AppFeedback(

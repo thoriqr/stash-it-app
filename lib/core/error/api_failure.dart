@@ -55,6 +55,18 @@ final class ApiFailureServerUnavailable extends ApiFailure {
   final String code;
 }
 
+/// A registration PIN was persisted, but the server could not hand its email to
+/// the sender.
+///
+/// This stays separate from [ApiFailureServerUnavailable]: `CreatePIN` has
+/// already changed server state and the server supplies the cooldown before a
+/// replacement may be requested. The failure carries no backend prose.
+final class ApiFailurePinEmailDeliveryFailed extends ApiFailure {
+  const ApiFailurePinEmailDeliveryFailed({this.retryAfter});
+
+  final Duration? retryAfter;
+}
+
 /// The server failed in a way it reports as its own fault (`500`).
 ///
 /// **[D15] group C. Known not saved.** For a refresh specifically this outcome is
@@ -71,6 +83,74 @@ final class ApiFailureServerFault extends ApiFailure {
 /// logging.
 sealed class ApiFailureRequest extends ApiFailure {
   const ApiFailureRequest();
+}
+
+/// A refusal from the manual registration lifecycle.
+///
+/// The backend answers all of these with `409`, but they do not share a
+/// correction, so each is mapped to its own typed variant. Presentation selects
+/// on the variant and never on [code]; the code is retained for logging and
+/// tests only (`AGENTS.md` §2, presentation boundaries).
+///
+/// Sealed so a route that cannot reach registration can still cover the whole
+/// group in one arm, and so an exhaustive switch over [ApiFailure] stays
+/// exhaustive through this hierarchy.
+sealed class ApiFailureRegistration extends ApiFailure {
+  const ApiFailureRegistration({required this.code});
+
+  /// The backend code, retained for logging and tests, never for display.
+  final String code;
+}
+
+/// `REGISTRATION_ALREADY_COMPLETED` — this address already has a completed
+/// registration, so there is no sign-up to start.
+///
+/// The only correction is to sign in. Retrying registration cannot succeed, and
+/// no copy derived from this variant may describe it as a transient conflict.
+/// Nothing was created by this request.
+final class ApiFailureRegistrationAlreadyCompleted
+    extends ApiFailureRegistration {
+  const ApiFailureRegistrationAlreadyCompleted({required super.code});
+}
+
+/// `REGISTRATION_ALREADY_EXISTS` or `ACTIVE_VERIFICATION_CODE_EXISTS` — a
+/// concurrent request won a unique-constraint race this one lost.
+///
+/// Nothing is wrong with the request or the address: the other request's row is
+/// what remains, which is why the same call is expected to succeed if repeated.
+/// No copy derived from this variant may ask the user to change the email
+/// address. Nothing was written by this request.
+final class ApiFailureRegistrationRetryable extends ApiFailureRegistration {
+  const ApiFailureRegistrationRetryable({required super.code});
+}
+
+/// `VERIFICATION_NOT_PENDING`, `REGISTRATION_NOT_PENDING`, or
+/// `REGISTRATION_EXPIRED` — the registration or its verification can no longer
+/// accept work.
+///
+/// The lifecycle is over, so repeating the same request returns the same
+/// refusal. The correction is to start a new registration, which may reuse the
+/// address once the abandoned one is no longer pending. Nothing was written by
+/// this request.
+final class ApiFailureRegistrationRestartRequired
+    extends ApiFailureRegistration {
+  const ApiFailureRegistrationRestartRequired({required super.code});
+}
+
+/// `VERIFICATION_RESEND_COOLDOWN` — a PIN was sent too recently to send
+/// another.
+///
+/// **No duration is carried, because the server sends none.** This refusal is a
+/// `409` without a `Retry-After` header, and the backend does not report the
+/// remaining cooldown on this response. A countdown would therefore be invented,
+/// which `decisions.md` §2.11 forbids: presentation may say a code was sent
+/// recently and to try again shortly, and may not say how long remains.
+///
+/// Known not sent: the cooldown is checked before a code is reserved or written,
+/// so the code the user already holds is the one that still applies.
+final class ApiFailureVerificationResendCooldown
+    extends ApiFailureRegistration {
+  const ApiFailureVerificationResendCooldown({required super.code});
 }
 
 /// `VALIDATION_ERROR`, `INVALID_URL`, `INVALID_SEARCH_QUERY`, and

@@ -76,6 +76,57 @@ abstract final class ApiErrorCode {
   static const String invalidCredentials = 'INVALID_CREDENTIALS';
 
   // ---------------------------------------------------------------------------
+  // Manual registration — `internal/api/auth/registration/error_codes.go`.
+  //
+  // Only codes reachable from `POST /auth/register/manual` or
+  // `POST /auth/register/verification/{id}/pin` belong here. Later registration
+  // stages have their own contracts and must not acquire client branches early.
+  // ---------------------------------------------------------------------------
+
+  /// 409. This address already has a completed manual registration.
+  static const String registrationAlreadyCompleted =
+      'REGISTRATION_ALREADY_COMPLETED';
+
+  /// 409. A concurrent registration insert could not be reconciled.
+  static const String registrationAlreadyExists = 'REGISTRATION_ALREADY_EXISTS';
+
+  /// 409. Another issuance left an active code for this verification.
+  static const String activeVerificationCodeExists =
+      'ACTIVE_VERIFICATION_CODE_EXISTS';
+
+  /// 409. The verification request can no longer accept a PIN.
+  static const String verificationNotPending = 'VERIFICATION_NOT_PENDING';
+
+  /// 409. The registration behind the verification is no longer pending.
+  static const String registrationNotPending = 'REGISTRATION_NOT_PENDING';
+
+  /// 409. The registration expired before a PIN could be issued.
+  static const String registrationExpired = 'REGISTRATION_EXPIRED';
+
+  /// 409. A PIN was already issued and its server-owned resend cooldown remains.
+  static const String verificationResendCooldown =
+      'VERIFICATION_RESEND_COOLDOWN';
+
+  /// 429, `Retry-After` present. The client address's PIN budget is spent.
+  static const String pinRateLimitExceeded = 'PIN_RATE_LIMIT_EXCEEDED';
+
+  /// 503, no `Retry-After`. The client address's PIN budget was unavailable.
+  static const String pinRateLimitUnavailable = 'PIN_RATE_LIMIT_UNAVAILABLE';
+
+  /// 429, `Retry-After` present. The deployment-wide PIN email budget is spent.
+  static const String pinEmailBudgetExceeded = 'PIN_EMAIL_BUDGET_EXCEEDED';
+
+  /// 503, no `Retry-After`. The deployment-wide PIN email budget was unavailable.
+  static const String pinEmailBudgetUnavailable =
+      'PIN_EMAIL_BUDGET_UNAVAILABLE';
+
+  /// 503, **`Retry-After` present**. The PIN was persisted but handing the
+  /// message to the email sender failed. This is distinct from an unavailable
+  /// limiter: its cooldown is the server-owned recovery time for a code that
+  /// already exists.
+  static const String pinEmailDeliveryFailed = 'PIN_EMAIL_DELIVERY_FAILED';
+
+  // ---------------------------------------------------------------------------
   // Generic — `internal/apperror/error.go`.
   // ---------------------------------------------------------------------------
 

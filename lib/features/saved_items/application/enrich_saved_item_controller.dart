@@ -255,6 +255,8 @@ class EnrichSavedItem extends _$EnrichSavedItem {
           ApiFailureCollectionNameAlreadyExists() ||
           ApiFailureCollectionNotEmpty() ||
           ApiFailureUnsortedCollectionProtected() ||
+          ApiFailurePinEmailDeliveryFailed() ||
+          ApiFailureRegistration() ||
           ApiFailureCollectionDeleteTargetNotFound():
         _publish(
           const AppFeedback(

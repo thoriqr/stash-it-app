@@ -52,6 +52,19 @@ abstract final class AppRoutes {
   /// signed out so the entry screen's Sign in action cannot bounce back.
   static const String signIn = '/sign-in';
 
+  /// Start of manual registration.
+  ///
+  /// **Not a fifth destination.** Like [signIn], it sits outside the shell, has
+  /// no navigation-bar entry, and is reachable only while signed out. Reached
+  /// from [auth], and allowed as a direct entry for the same reason: the entry
+  /// screen's account-creation action navigates here.
+  ///
+  /// **Does not create a session.** The route covers only the first two of the
+  /// eight registration steps — starting the registration and requesting its
+  /// first emailed PIN — so a route that redirects on `signedIn` is not what
+  /// makes it safe to revisit.
+  static const String signUp = '/sign-up';
+
   /// Create or change the account's password.
   ///
   /// **Not a fifth destination.** A full-screen secondary route outside the

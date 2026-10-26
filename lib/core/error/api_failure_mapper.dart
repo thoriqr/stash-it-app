@@ -64,6 +64,8 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.userRateLimitExceeded:
     case ApiErrorCode.ipRateLimitExceeded:
     case ApiErrorCode.loginRateLimitExceeded:
+    case ApiErrorCode.pinRateLimitExceeded:
+    case ApiErrorCode.pinEmailBudgetExceeded:
       return ApiFailureRateLimited(
         code: code,
         retryAfter: parseRetryAfter(response),
@@ -78,9 +80,19 @@ ApiFailure mapApiFailure(DioException error) {
         retryAfter: parseRetryAfter(response),
       );
 
+    // The code was persisted before delivery was attempted. Its Retry-After is
+    // the actual resend cooldown, so it must not be collapsed into a generic
+    // unavailable service which has no known recovery time.
+    case ApiErrorCode.pinEmailDeliveryFailed:
+      return ApiFailurePinEmailDeliveryFailed(
+        retryAfter: parseRetryAfter(response),
+      );
+
     case ApiErrorCode.ipRateLimitUnavailable:
     case ApiErrorCode.loginRateLimitUnavailable:
     case ApiErrorCode.userRateLimitUnavailable:
+    case ApiErrorCode.pinRateLimitUnavailable:
+    case ApiErrorCode.pinEmailBudgetUnavailable:
     case ApiErrorCode.clientIpUnavailable:
     case ApiErrorCode.serviceUnavailable:
       return ApiFailureServerUnavailable(code: code);
@@ -103,6 +115,35 @@ ApiFailure mapApiFailure(DioException error) {
       return const ApiFailureAuthRequired(
         code: ApiErrorCode.invalidCredentials,
       );
+
+    // Registration lifecycle refusals. They share a `409`, but each has a
+    // different correction, so they are mapped to typed variants rather than one
+    // conflict type. Branching on the code here is the only place it happens;
+    // presentation selects on the variant. They are deliberately not inferred
+    // from `409` alone: an unknown conflict stays unreadable so a future backend
+    // code cannot silently select this flow.
+    case ApiErrorCode.registrationAlreadyCompleted:
+      return ApiFailureRegistrationAlreadyCompleted(code: code);
+
+    // A concurrent request won the insert, and the other request's row is what
+    // remains. The request is well formed and the address need not change:
+    // retrying is the correction.
+    case ApiErrorCode.registrationAlreadyExists:
+    case ApiErrorCode.activeVerificationCodeExists:
+      return ApiFailureRegistrationRetryable(code: code);
+
+    // The lifecycle is over. Repeating the same request cannot succeed; the flow
+    // has to start a new registration.
+    case ApiErrorCode.verificationNotPending:
+    case ApiErrorCode.registrationNotPending:
+    case ApiErrorCode.registrationExpired:
+      return ApiFailureRegistrationRestartRequired(code: code);
+
+    // A code was sent too recently. The server states no wait for this `409`, so
+    // none is carried and `parseRetryAfter` is deliberately not called: a
+    // duration taken from anywhere else would be invented.
+    case ApiErrorCode.verificationResendCooldown:
+      return ApiFailureVerificationResendCooldown(code: code);
 
     case ApiErrorCode.validationError:
       return ApiFailureValidation(body.fields);

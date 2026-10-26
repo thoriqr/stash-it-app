@@ -6,6 +6,7 @@ import 'datasources/auth_api.dart';
 import 'models/auth_tokens.dart';
 import 'models/auth_user.dart';
 import 'models/login_request.dart';
+import 'models/register_manual_request.dart';
 
 /// The outcome of a successful sign-in.
 ///
@@ -70,6 +71,54 @@ class AuthRepository {
       );
     } on DioException catch (error) {
       throw mapApiFailure(error);
+    }
+  }
+
+  /// Starts manual registration and returns the server-created verification id.
+  ///
+  /// The subsequent PIN request must use precisely this value. A `201` whose
+  /// envelope lacks `data` is unreadable rather than a successful registration:
+  /// without an id the client cannot make the next contractually required call.
+  Future<String> registerManual({required String email}) async {
+    try {
+      final response = await authApi.registerManual(
+        RegisterManualRequest(email: email),
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+
+      return data.verificationId;
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Requests the first registration PIN for [verificationId].
+  ///
+  /// The `201` body repeats [verificationId], which the caller already has, so
+  /// this returns nothing instead of a second parsed id. The body is still
+  /// decoded, and a body that cannot be decoded surfaces as
+  /// [ApiFailureUnreadableResponse]. Because the server issued the code before
+  /// answering, that failure does not establish that issuance or email delivery
+  /// failed, and no caller may say that it does (**D15**, **D16**).
+  ///
+  /// Dio, transport and decoder failures remain classified through the same
+  /// boundary as every other repository call.
+  Future<void> createPin({required String verificationId}) async {
+    try {
+      await authApi.createPin(verificationId);
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
     }
   }
 

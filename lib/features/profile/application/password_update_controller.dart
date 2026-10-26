@@ -316,6 +316,8 @@ class PasswordUpdate extends _$PasswordUpdate {
           ApiFailureCollectionNameAlreadyExists() ||
           ApiFailureCollectionNotEmpty() ||
           ApiFailureUnsortedCollectionProtected() ||
+          ApiFailurePinEmailDeliveryFailed() ||
+          ApiFailureRegistration() ||
           ApiFailureCollectionDeleteTargetNotFound():
         return const PasswordUpdateRejected(
           "We couldn't set your password. Try again.",

@@ -11,14 +11,15 @@ import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 /// The landing screen for a signed-out user.
 ///
-/// It sits outside the four destinations (D1), like `SignInScreen`, and carries
-/// the wordmark instead of an app bar. The router allows both this screen and
-/// the sign-in form while signed out; everything else redirects here.
+/// It sits outside the four destinations (D1), like `SignInScreen` and
+/// `SignUpScreen`, and carries the wordmark instead of an app bar. The router
+/// allows all three auth screens while signed out; everything else redirects
+/// here.
 ///
 /// The screen owns one decision only: whether to explain an ended session. The
-/// sign-in form owns the credentials. Registration and Google sign-in are not
-/// implemented, so the account-creation control is deliberately disabled rather
-/// than wired to a destination that does not exist.
+/// sign-in form owns the credentials, and the sign-up form owns the first
+/// registration steps. Google sign-in is not implemented, so no Google control
+/// appears here.
 class AuthEntryScreen extends ConsumerStatefulWidget {
   const AuthEntryScreen({super.key});
 
@@ -109,19 +110,10 @@ class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
                     onPressed: () => context.go(AppRoutes.signIn),
                   ),
                   const SizedBox(height: AppMetrics.space3),
-                  // Deliberately disabled: there is no registration flow to
-                  // reach, and an enabled control would promise one.
-                  const AppButton(
+                  AppButton(
                     label: 'Create an account',
                     variant: AppButtonVariant.secondary,
-                    onPressed: null,
-                  ),
-                  const SizedBox(height: AppMetrics.space1),
-                  Text(
-                    'Account creation is coming soon.',
-                    style: AppTypography.meta.copyWith(
-                      color: tokens.textSecondary,
-                    ),
+                    onPressed: () => context.go(AppRoutes.signUp),
                   ),
                 ],
               ),

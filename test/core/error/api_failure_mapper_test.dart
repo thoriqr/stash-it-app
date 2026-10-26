@@ -434,6 +434,166 @@ void main() {
     });
   });
 
+  group('initial manual registration codes', () {
+    test('each lifecycle code keeps its own typed outcome and code', () {
+      final expected = <String, Type>{
+        ApiErrorCode.registrationAlreadyCompleted:
+            ApiFailureRegistrationAlreadyCompleted,
+        ApiErrorCode.registrationAlreadyExists: ApiFailureRegistrationRetryable,
+        ApiErrorCode.activeVerificationCodeExists:
+            ApiFailureRegistrationRetryable,
+        ApiErrorCode.verificationNotPending:
+            ApiFailureRegistrationRestartRequired,
+        ApiErrorCode.registrationNotPending:
+            ApiFailureRegistrationRestartRequired,
+        ApiErrorCode.registrationExpired: ApiFailureRegistrationRestartRequired,
+        ApiErrorCode.verificationResendCooldown:
+            ApiFailureVerificationResendCooldown,
+      };
+
+      for (final entry in expected.entries) {
+        final failure = mapApiFailure(badResponse(409, errorBody(entry.key)));
+
+        expect(
+          failure,
+          isA<ApiFailureRegistration>(),
+          reason: '${entry.key} belongs to the registration group',
+        );
+        expect(
+          failure.runtimeType,
+          entry.value,
+          reason: '${entry.key} must not collapse into another outcome',
+        );
+        expect(
+          (failure as ApiFailureRegistration).code,
+          entry.key,
+          reason: '${entry.key} must be retained for diagnosis',
+        );
+      }
+    });
+
+    test('a completed registration points at sign-in, not a retry', () {
+      final failure = mapApiFailure(
+        badResponse(409, errorBody(ApiErrorCode.registrationAlreadyCompleted)),
+      );
+
+      expect(failure, isA<ApiFailureRegistrationAlreadyCompleted>());
+      expect(failure, isNot(isA<ApiFailureRegistrationRetryable>()));
+      expect(failure, isNot(isA<ApiFailureRegistrationRestartRequired>()));
+    });
+
+    test('concurrent registration conflicts are retryable', () {
+      for (final code in [
+        ApiErrorCode.registrationAlreadyExists,
+        ApiErrorCode.activeVerificationCodeExists,
+      ]) {
+        expect(
+          mapApiFailure(badResponse(409, errorBody(code))),
+          isA<ApiFailureRegistrationRetryable>(),
+          reason: '$code is a transient conflict, not a lifecycle end',
+        );
+      }
+    });
+
+    test('a finished lifecycle requires restarting registration', () {
+      for (final code in [
+        ApiErrorCode.verificationNotPending,
+        ApiErrorCode.registrationNotPending,
+        ApiErrorCode.registrationExpired,
+      ]) {
+        expect(
+          mapApiFailure(badResponse(409, errorBody(code))),
+          isA<ApiFailureRegistrationRestartRequired>(),
+          reason: '$code cannot accept another lifecycle step',
+        );
+      }
+    });
+
+    test('the resend cooldown is its own outcome with no invented wait', () {
+      // The backend answers this `409` without a `Retry-After`, and the variant
+      // carries no duration. It must not become a rate limit: there is no budget
+      // to report and no server-stated time to count down from.
+      final failure = mapApiFailure(
+        badResponse(409, errorBody(ApiErrorCode.verificationResendCooldown)),
+      );
+
+      expect(failure, isA<ApiFailureVerificationResendCooldown>());
+      expect(failure, isNot(isA<ApiFailureRateLimited>()));
+      expect(failure, isNot(isA<ApiFailureRegistrationRetryable>()));
+    });
+
+    test('PIN budgets retain server-provided Retry-After', () {
+      for (final code in [
+        ApiErrorCode.pinRateLimitExceeded,
+        ApiErrorCode.pinEmailBudgetExceeded,
+      ]) {
+        final failure = mapApiFailure(
+          badResponse(
+            429,
+            errorBody(code),
+            headers: {
+              'retry-after': ['45'],
+            },
+          ),
+        );
+
+        expect(failure, isA<ApiFailureRateLimited>());
+        final limited = failure as ApiFailureRateLimited;
+        expect(limited.code, code);
+        expect(limited.retryAfter, const Duration(seconds: 45));
+      }
+    });
+
+    test(
+      'unavailable PIN budgets remain server-unavailable without a wait',
+      () {
+        for (final code in [
+          ApiErrorCode.pinRateLimitUnavailable,
+          ApiErrorCode.pinEmailBudgetUnavailable,
+        ]) {
+          final failure = mapApiFailure(badResponse(503, errorBody(code)));
+
+          expect(failure, isA<ApiFailureServerUnavailable>());
+          expect((failure as ApiFailureServerUnavailable).code, code);
+        }
+      },
+    );
+
+    test('PIN email delivery failure is distinct and keeps its cooldown', () {
+      final failure = mapApiFailure(
+        badResponse(
+          503,
+          errorBody(ApiErrorCode.pinEmailDeliveryFailed),
+          headers: {
+            'retry-after': ['60'],
+          },
+        ),
+      );
+
+      expect(failure, isA<ApiFailurePinEmailDeliveryFailed>());
+      expect(
+        (failure as ApiFailurePinEmailDeliveryFailed).retryAfter,
+        const Duration(seconds: 60),
+      );
+      expect(failure, isNot(isA<ApiFailureServerUnavailable>()));
+    });
+
+    test('an unreachable registration code remains unmapped', () {
+      // `REGISTRATION_ALREADY_PENDING` exists in backend implementation detail,
+      // but RegisterManual consumes it into a successful response. It must not
+      // grow a client branch for an HTTP response this endpoint cannot emit.
+      final failure = mapApiFailure(
+        badResponse(409, errorBody('REGISTRATION_ALREADY_PENDING')),
+      );
+
+      expect(failure, isA<ApiFailureUnreadableResponse>());
+      expect(
+        (failure as ApiFailureUnreadableResponse).code,
+        'REGISTRATION_ALREADY_PENDING',
+      );
+    });
+  });
+
   group('unreadable and unknown responses', () {
     test('a non-JSON body is unreadable, never surfaced', () {
       // Fiber's default handler answers text/plain for a *fiber.Error.

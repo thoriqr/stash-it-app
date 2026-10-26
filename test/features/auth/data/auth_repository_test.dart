@@ -36,6 +36,11 @@ void main() {
     'message': 'login successful',
   };
 
+  Map<String, dynamic> registerManualEnvelope() => {
+    'data': {'verification_id': '01a0f359-093b-737a-963a-80f7ca6768ed'},
+    'message': 'registration requested',
+  };
+
   group('login', () {
     test('decodes the documented success envelope', () async {
       adapter.on('/auth/login', body: loginEnvelope());
@@ -183,6 +188,164 @@ void main() {
       await expectLater(
         repository.logout(),
         throwsA(isA<ApiFailureAuthRequired>()),
+      );
+    });
+  });
+
+  group('manual registration', () {
+    test(
+      'returns the documented verification id and sends only the email',
+      () async {
+        adapter.on(
+          '/auth/register/manual',
+          status: 201,
+          body: registerManualEnvelope(),
+        );
+
+        final verificationId = await repository.registerManual(
+          email: 'user@example.com',
+        );
+
+        expect(verificationId, '01a0f359-093b-737a-963a-80f7ca6768ed');
+        final sent = adapter.lastRequestTo('/auth/register/manual')!;
+        expect(sent.method, 'POST');
+        expect(sent.jsonField('email'), 'user@example.com');
+        expect((sent.body as Map).keys, {'email'});
+      },
+    );
+
+    test('a 201 without registration data is unreadable', () async {
+      adapter.on(
+        '/auth/register/manual',
+        status: 201,
+        body: {'data': null, 'message': 'registration requested'},
+      );
+
+      await expectLater(
+        repository.registerManual(email: 'user@example.com'),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+
+    test('a malformed success response is unreadable', () async {
+      adapter.on(
+        '/auth/register/manual',
+        status: 201,
+        body: {'data': {}, 'message': 'registration requested'},
+      );
+
+      await expectLater(
+        repository.registerManual(email: 'user@example.com'),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+
+    test(
+      'a lost registration request is an uncertain transport failure',
+      () async {
+        adapter.onOffline('/auth/register/manual');
+
+        await expectLater(
+          repository.registerManual(email: 'user@example.com'),
+          throwsA(isA<ApiFailureTransport>()),
+        );
+      },
+    );
+
+    test('a completed registration surfaces as already completed', () async {
+      adapter.on(
+        '/auth/register/manual',
+        status: 409,
+        body: errorBody(ApiErrorCode.registrationAlreadyCompleted),
+      );
+
+      await expectLater(
+        repository.registerManual(email: 'user@example.com'),
+        throwsA(isA<ApiFailureRegistrationAlreadyCompleted>()),
+      );
+    });
+  });
+
+  group('registration PIN', () {
+    const verificationId = '01a0f359-093b-737a-963a-80f7ca6768ed';
+
+    test('uses the verification path with no request body', () async {
+      adapter.on(
+        '/auth/register/verification/$verificationId/pin',
+        status: 201,
+        body: {
+          'data': {'verification_id': verificationId},
+          'message': 'verification code created',
+        },
+      );
+
+      await expectLater(
+        repository.createPin(verificationId: verificationId),
+        completes,
+      );
+
+      final sent = adapter.lastRequestTo('/verification/$verificationId/pin')!;
+      expect(sent.method, 'POST');
+      expect(sent.body, isNull);
+    });
+
+    test(
+      'an unreadable response is not treated as PIN creation success',
+      () async {
+        adapter.on(
+          '/auth/register/verification/$verificationId/pin',
+          status: 201,
+          body: 'not JSON',
+        );
+
+        await expectLater(
+          repository.createPin(verificationId: verificationId),
+          // An unreadable `201` is not evidence that issuance or email delivery
+          // failed: the server persisted the code before answering. It must stay
+          // distinct from the delivery-failure and server-unavailable variants.
+          throwsA(
+            allOf(
+              isA<ApiFailureUnreadableResponse>(),
+              isNot(isA<ApiFailurePinEmailDeliveryFailed>()),
+              isNot(isA<ApiFailureServerUnavailable>()),
+            ),
+          ),
+        );
+      },
+    );
+
+    test('a lost PIN request is an uncertain transport failure', () async {
+      adapter.onOffline('/auth/register/verification/$verificationId/pin');
+
+      await expectLater(
+        repository.createPin(verificationId: verificationId),
+        throwsA(isA<ApiFailureTransport>()),
+      );
+    });
+
+    test('an expired registration requires restarting registration', () async {
+      adapter.on(
+        '/auth/register/verification/$verificationId/pin',
+        status: 409,
+        body: errorBody(ApiErrorCode.registrationExpired),
+      );
+
+      await expectLater(
+        repository.createPin(verificationId: verificationId),
+        throwsA(isA<ApiFailureRegistrationRestartRequired>()),
+      );
+    });
+
+    test('the resend cooldown is not a rate limit', () async {
+      adapter.on(
+        '/auth/register/verification/$verificationId/pin',
+        status: 409,
+        body: errorBody(ApiErrorCode.verificationResendCooldown),
+      );
+
+      await expectLater(
+        repository.createPin(verificationId: verificationId),
+        throwsA(isA<ApiFailureVerificationResendCooldown>()),
       );
     });
   });

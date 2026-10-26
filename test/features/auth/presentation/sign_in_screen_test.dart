@@ -494,7 +494,7 @@ void main() {
       // Found by type, not by label: a busy button replaces its label with a
       // spinner, so `widgetWithText` would find nothing at exactly the moment
       // this test needs to look.
-      final button = tester.widget<AppButton>(find.byType(AppButton));
+      final button = tester.widget<AppButton>(find.byType(AppButton).first);
       expect(button.busy, isTrue);
       expect(
         button.onPressed,
@@ -580,6 +580,18 @@ void main() {
         dismiss.top - message.top,
         lessThan(message.height),
         reason: 'Dismiss is aligned to the message, not parked below it',
+      );
+    });
+
+    testWidgets('shows an enabled create-account action', (tester) async {
+      await pumpSignIn(tester);
+
+      final createAccount = find.widgetWithText(AppButton, 'Create account');
+      expect(createAccount, findsOneWidget);
+      expect(
+        tester.widget<AppButton>(createAccount).onPressed,
+        isNotNull,
+        reason: 'registration is reachable from this screen',
       );
     });
   });

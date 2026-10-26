@@ -5,6 +5,8 @@ import '../../../../core/error/api_envelope.dart';
 import '../models/login_request.dart';
 import '../models/login_response.dart';
 import '../models/logout_data.dart';
+import '../models/register_manual_request.dart';
+import '../models/register_manual_response.dart';
 
 part 'auth_api.g.dart';
 
@@ -23,6 +25,30 @@ abstract class AuthApi {
   /// (30/10min and 10/15min). A `429` here is a real budget, not a defect.
   @POST('/auth/login')
   Future<ApiEnvelope<LoginResponse>> login(@Body() LoginRequest request);
+
+  /// `POST /auth/register/manual`
+  ///
+  /// Starts (or resumes) the email registration lifecycle and returns the
+  /// verification id needed to request its first PIN. This route is
+  /// unauthenticated and has no registration rate middleware of its own.
+  @POST('/auth/register/manual')
+  Future<ApiEnvelope<RegisterManualResponse>> registerManual(
+    @Body() RegisterManualRequest request,
+  );
+
+  /// `POST /auth/register/verification/{verificationId}/pin`
+  ///
+  /// The verification id is the complete input: this endpoint has **no request
+  /// body**. The `201` carries an envelope repeating that id, which the caller
+  /// already has, so this returns `void` rather than a second parsed value.
+  ///
+  /// **Dio still decodes the `201` body**, and a body it cannot decode fails the
+  /// call. That failure does not prove the PIN was not issued: the server
+  /// persisted the code before answering, so only the representation is
+  /// unreadable. Callers must not present a decode failure as proof that no
+  /// code was sent or emailed.
+  @POST('/auth/register/verification/{verificationId}/pin')
+  Future<void> createPin(@Path('verificationId') String verificationId);
 
   /// `POST /auth/logout`
   ///

@@ -214,6 +214,8 @@ class DisplayNameUpdate extends _$DisplayNameUpdate {
           ApiFailureCollectionNameAlreadyExists() ||
           ApiFailureCollectionNotEmpty() ||
           ApiFailureUnsortedCollectionProtected() ||
+          ApiFailurePinEmailDeliveryFailed() ||
+          ApiFailureRegistration() ||
           ApiFailureCollectionDeleteTargetNotFound():
         return const DisplayNameUpdateRejected(
           "We couldn't change your display name. Try again.",

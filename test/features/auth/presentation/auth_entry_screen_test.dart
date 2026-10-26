@@ -14,10 +14,10 @@ import '../../../support/fake_http.dart';
 /// The signed-out landing screen.
 ///
 /// The routing behaviour — where a signed-out or signed-in user is sent, and
-/// that Sign in does not bounce back — lives in
+/// that Sign in and Create an account do not bounce back — lives in
 /// `test/app/auth_redirect_widget_test.dart`, because it needs the provider-built
-/// router. This file covers the screen itself: its copy, the deliberately
-/// disabled account-creation control, the one-shot expiry explanation, and the
+/// router. This file covers the screen itself: its copy, the enabled
+/// account-creation control, the one-shot expiry explanation, and the
 /// small-screen layout.
 void main() {
   const entryHeading = 'A place for things you find on the internet.';
@@ -76,31 +76,24 @@ void main() {
     );
     expect(find.widgetWithText(AppButton, 'Sign in'), findsOneWidget);
     expect(find.widgetWithText(AppButton, 'Create an account'), findsOneWidget);
-    expect(find.text('Account creation is coming soon.'), findsOneWidget);
 
     // An expiry is only shown when one happened; a plain visit is not an event.
     expect(find.text(sessionEndedMessage), findsNothing);
   });
 
-  testWidgets('the account-creation action is disabled and inert', (
-    tester,
-  ) async {
+  testWidgets('the account-creation action is enabled', (tester) async {
     await pumpEntry(tester);
 
     final createAccount = find.widgetWithText(AppButton, 'Create an account');
     expect(
       tester.widget<AppButton>(createAccount).onPressed,
-      isNull,
-      reason: 'there is no registration flow for an enabled control to reach',
+      isNotNull,
+      reason: 'registration is reachable from this screen',
     );
 
-    // No router is attached, so a tap that somehow navigated would throw rather
-    // than silently pass.
-    await tester.tap(createAccount, warnIfMissed: false);
-    await tester.pumpAndSettle();
-
+    // No router is attached here; navigation itself is covered by
+    // `auth_redirect_widget_test.dart`, which pumps the real router.
     expect(tester.takeException(), isNull);
-    expect(find.text(entryHeading), findsOneWidget);
   });
 
   testWidgets('shows no Google sign-in UI', (tester) async {
@@ -143,12 +136,14 @@ void main() {
     expect(find.text(sessionEndedMessage), findsOneWidget);
     expect(find.widgetWithText(AppButton, 'Sign in'), findsOneWidget);
 
-    // The caption is below the fold on a narrow phone; the screen must scroll to
-    // it rather than clip it.
-    await tester.ensureVisible(find.text('Account creation is coming soon.'));
+    // The second action is below the fold on a narrow phone; the screen must
+    // scroll to it rather than clip it.
+    await tester.ensureVisible(
+      find.widgetWithText(AppButton, 'Create an account'),
+    );
     await tester.pumpAndSettle();
 
-    expect(find.text('Account creation is coming soon.'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Create an account'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
