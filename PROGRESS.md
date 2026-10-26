@@ -1,3 +1,39 @@
+## Manual registration recovery (2026-10-26)
+
+### Verified backend contract (stash-it-backend)
+- `POST /auth/register/manual` is **201** `{data: {verification_id, verification_status}, message}`; the status field is additive, `pending` or `verified`, with no `meta`, no rate limiter and no change to `verification_id`.
+- `pending` = request a PIN. `verified` = PIN verification has already completed **and** a usable (unconsumed, unexpired) registration continuation exists. A live continuation is retained and the same verification id/status returned; the route is unauthenticated and will not cancel it.
+- A verified registration with a consumed, expired or absent continuation is expired and replaced: a new registration + verification request is created, returning a **new** `verification_id` and `pending`.
+- A completed registration still answers **409 `REGISTRATION_ALREADY_COMPLETED`**.
+- The raw continuation token is returned only by `POST .../verification/{id}/verify`. The backend stores its hash and cannot reissue it.
+- `GET /auth/register/continuation` requires `X-Registration-Continuation`; errors are **401 `REGISTRATION_CONTINUATION_REQUIRED`**, **409 `REGISTRATION_CONTINUATION_CONSUMED` / `..._EXPIRED` / `REGISTRATION_NOT_PENDING` / `REGISTRATION_EXPIRED`**, or the **generic 409 `CONFLICT`** for an unknown token hash.
+- `GET /auth/register/verification/{id}` never returns `verified`: a completed verification answers **409 `VERIFICATION_NOT_PENDING`**.
+- Lifetimes: continuation **15 min**, verification code **5 min**, registration **7 days**, resend cooldown **60 s**, max PIN attempts **5**.
+
+### Flutter implementation
+- `RegisterManualResponse` now decodes a nullable `verification_status` and exposes `isVerified`. A missing status (older backend) or an unknown value takes the PIN path, preserving the pre-change behaviour.
+- Added `RegistrationContinuationStore`, a feature-owned store over the existing `FlutterSecureStorage` (key `stash_it.auth.registration_continuation`, JSON `{email, token}`, normalized email, single slot, no expiry). It is separate from `SecureCredentialStore`; session credential storage, rotation, sign-out and the session boundary are unchanged. `bootstrap` overrides its provider and does not read it during startup.
+- Added pure rules in `features/auth/application/registration_recovery.dart`: `registrationStartFor` (request PIN / open finalize / blocked) and `continuationOutcomeFor` (consumed / restart required / unconfirmed).
+- Sign-up now branches on `verification_status`. `pending` keeps the two-call flow; a `VERIFICATION_RESEND_COOLDOWN` from `createPin` is treated as proof a PIN was already issued and enters the PIN screen instead of showing an error. `verified` never calls `/pin` or `/verify`: a token matching the entered address is validated with `GET /continuation` and handed to finalization; a missing or foreign token shows a recovery state. Terminal continuation refusals clear the matching token; expired/unavailable ones issue exactly one replacement registration; `CONSUMED` reports an already-completed registration. No automatic loop.
+- The PIN screen accepts the email as route `extra` and writes the raw token **before** navigating. A storage failure warns and still continues, because the token can finish now even though recovery after a restart is lost. The unreachable "PIN verified → sign in" state was replaced with honest terminal guidance.
+- Finalize recovery: transient load failures offer Retry and keep the token; consumed/expired load failures are terminal and clear it. Only a **201** is success. `CONSUMED` and `USER_ALREADY_EXISTS` lead to sign-in; expired/restart lead to a new registration; ambiguous outcomes keep the token and form with no automatic resend. `registration-uncertain` is now passed to sign-in only after an ambiguous submit. A successful load repairs a missing or mismatched stored record.
+- Router: `AppRoutes.signUpVerifyFor` added; the PIN route builder reads the email from `extra`.
+
+### Verification
+- `dart run build_runner build --delete-conflicting-outputs` completed (the flag is reported as removed and ignored); 44 outputs written.
+- `dart format` on every changed Dart file.
+- `flutter analyze` — no issues found.
+- Focused suites passed: `flutter test test/features/auth test/app/router test/app/bootstrap_test.dart` — **256 passed**.
+- `flutter test` — **1233 passed**.
+- No app, device, or emulator run. Nothing staged or committed.
+
+### Remaining limitations
+- The continuation store is **single-slot**: verifying a second address on the same device overwrites the first address's token. The earlier registration is recoverable only after its 15-minute continuation lifetime, by re-entering that address.
+- The backend's generic **409 `CONFLICT`** for an unknown token hash is not distinguishable from an unreadable reply without widening the error taxonomy. It is treated as **unconfirmed**: the token is kept and Retry is offered, never a loop and never success.
+- No continuation-expiry countdown is shown; no response exposes the expiry, and the 15-minute figure appears only in explanatory copy.
+- The sign-up verified path performs one `GET /continuation` before navigating, and finalize performs its own on open. The pre-read is deliberate: it lets a dead token be replaced within the same user action.
+- All new copy is hardcoded English; the app still has no l10n layer.
+
 ## Registration UX and contextual messages (2026-10-27)
 
 ### Flutter implementation

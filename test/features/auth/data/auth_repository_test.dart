@@ -36,8 +36,11 @@ void main() {
     'message': 'login successful',
   };
 
-  Map<String, dynamic> registerManualEnvelope() => {
-    'data': {'verification_id': '01a0f359-093b-737a-963a-80f7ca6768ed'},
+  Map<String, dynamic> registerManualEnvelope({String? status}) => {
+    'data': {
+      'verification_id': '01a0f359-093b-737a-963a-80f7ca6768ed',
+      'verification_status': ?status,
+    },
     'message': 'registration requested',
   };
 
@@ -202,15 +205,69 @@ void main() {
           body: registerManualEnvelope(),
         );
 
-        final verificationId = await repository.registerManual(
+        final response = await repository.registerManual(
           email: 'user@example.com',
         );
 
-        expect(verificationId, '01a0f359-093b-737a-963a-80f7ca6768ed');
+        expect(response.verificationId, '01a0f359-093b-737a-963a-80f7ca6768ed');
+        expect(
+          response.verificationStatus,
+          isNull,
+          reason: 'an older backend omits the additive status field',
+        );
+        expect(response.isVerified, isFalse);
         final sent = adapter.lastRequestTo('/auth/register/manual')!;
         expect(sent.method, 'POST');
         expect(sent.jsonField('email'), 'user@example.com');
         expect((sent.body as Map).keys, {'email'});
+      },
+    );
+
+    test('decodes a pending verification status', () async {
+      adapter.on(
+        '/auth/register/manual',
+        status: 201,
+        body: registerManualEnvelope(status: 'pending'),
+      );
+
+      final response = await repository.registerManual(
+        email: 'user@example.com',
+      );
+
+      expect(response.verificationStatus, 'pending');
+      expect(response.isVerified, isFalse);
+    });
+
+    test('decodes a verified verification status', () async {
+      adapter.on(
+        '/auth/register/manual',
+        status: 201,
+        body: registerManualEnvelope(status: 'verified'),
+      );
+
+      final response = await repository.registerManual(
+        email: 'user@example.com',
+      );
+
+      expect(response.verificationStatus, 'verified');
+      expect(response.isVerified, isTrue);
+    });
+
+    test(
+      'preserves an unknown status without treating it as verified',
+      () async {
+        adapter.on(
+          '/auth/register/manual',
+          status: 201,
+          body: registerManualEnvelope(status: 'something-new'),
+        );
+
+        final response = await repository.registerManual(
+          email: 'user@example.com',
+        );
+
+        expect(response.verificationStatus, 'something-new');
+        expect(response.isVerified, isFalse);
       },
     );
 
@@ -516,9 +573,7 @@ void main() {
     });
 
     test('a lost resend is an uncertain transport failure', () async {
-      adapter.onOffline(
-        '/auth/register/verification/$verificationId/resend',
-      );
+      adapter.onOffline('/auth/register/verification/$verificationId/resend');
 
       await expectLater(
         repository.resendVerification(verificationId: verificationId),
@@ -536,6 +591,381 @@ void main() {
 
       await expectLater(
         repository.resendVerification(verificationId: verificationId),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+  });
+
+  group('registration PIN verification', () {
+    const verificationId = '01a0f359-093b-737a-963a-80f7ca6768ed';
+    const token = 'raw-continuation-token';
+
+    test('returns the raw continuation token and sends the PIN', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/verification/$verificationId/verify',
+        status: 200,
+        body: {
+          'data': {'registration_continuation_token': token},
+          'message': 'registration verified',
+        },
+      );
+
+      final returned = await repository.verifyRegistration(
+        verificationId: verificationId,
+        pin: '123456',
+      );
+
+      expect(returned, token);
+      final sent = adapter.lastRequestTo('/verify')!;
+      expect(sent.method, 'POST');
+      expect(sent.jsonField('pin'), '123456');
+    });
+
+    test('a wrong PIN stays a typed refusal', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/verification/$verificationId/verify',
+        status: 409,
+        body: errorBody(ApiErrorCode.invalidVerificationCode),
+      );
+
+      await expectLater(
+        repository.verifyRegistration(
+          verificationId: verificationId,
+          pin: '000000',
+        ),
+        throwsA(isA<ApiFailureInvalidVerificationCode>()),
+      );
+    });
+
+    test('exhausted attempts stay a typed refusal', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/verification/$verificationId/verify',
+        status: 409,
+        body: errorBody(ApiErrorCode.verificationCodeAttemptsExceeded),
+      );
+
+      await expectLater(
+        repository.verifyRegistration(
+          verificationId: verificationId,
+          pin: '000000',
+        ),
+        throwsA(isA<ApiFailureVerificationCodeAttemptsExceeded>()),
+      );
+    });
+
+    test('a 200 with no data is unreadable', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/verification/$verificationId/verify',
+        status: 200,
+        body: {'data': null, 'message': 'registration verified'},
+      );
+
+      await expectLater(
+        repository.verifyRegistration(
+          verificationId: verificationId,
+          pin: '123456',
+        ),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+
+    test('an unreadable body is not treated as a token', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/verification/$verificationId/verify',
+        status: 200,
+        body: 'not JSON',
+      );
+
+      await expectLater(
+        repository.verifyRegistration(
+          verificationId: verificationId,
+          pin: '123456',
+        ),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+
+    test('a lost verification is an uncertain transport failure', () async {
+      adapter.onOffline('/auth/register/verification/$verificationId/verify');
+
+      await expectLater(
+        repository.verifyRegistration(
+          verificationId: verificationId,
+          pin: '123456',
+        ),
+        throwsA(isA<ApiFailureTransport>()),
+      );
+    });
+  });
+
+  group('registration continuation', () {
+    const token = 'raw-continuation-token';
+
+    test('sends the token header and decodes every documented field', () async {
+      adapter.onMethod(
+        'GET',
+        '/auth/register/continuation',
+        status: 200,
+        body: {
+          'data': {
+            'email': 'user@example.com',
+            'registration_type': 'manual',
+            'requires_password': true,
+          },
+          'message': 'registration continuation is valid',
+        },
+      );
+
+      final continuation = await repository.getRegistrationContinuation(
+        continuationToken: token,
+      );
+
+      expect(continuation.email, 'user@example.com');
+      expect(continuation.registrationType, 'manual');
+      expect(continuation.requiresPassword, isTrue);
+
+      final sent = adapter.lastRequestTo('/auth/register/continuation')!;
+      expect(sent.method, 'GET');
+      expect(sent.headers['X-Registration-Continuation'], token);
+    });
+
+    test('a missing header is the required refusal', () async {
+      adapter.onMethod(
+        'GET',
+        '/auth/register/continuation',
+        status: 401,
+        body: errorBody(ApiErrorCode.registrationContinuationRequired),
+      );
+
+      await expectLater(
+        repository.getRegistrationContinuation(continuationToken: token),
+        throwsA(isA<ApiFailureRegistrationContinuationRequired>()),
+      );
+    });
+
+    test('a consumed token stays distinct', () async {
+      adapter.onMethod(
+        'GET',
+        '/auth/register/continuation',
+        status: 409,
+        body: errorBody(ApiErrorCode.registrationContinuationConsumed),
+      );
+
+      await expectLater(
+        repository.getRegistrationContinuation(continuationToken: token),
+        throwsA(isA<ApiFailureRegistrationContinuationConsumed>()),
+      );
+    });
+
+    test('an expired token stays distinct', () async {
+      adapter.onMethod(
+        'GET',
+        '/auth/register/continuation',
+        status: 409,
+        body: errorBody(ApiErrorCode.registrationContinuationExpired),
+      );
+
+      await expectLater(
+        repository.getRegistrationContinuation(continuationToken: token),
+        throwsA(isA<ApiFailureRegistrationContinuationExpired>()),
+      );
+    });
+
+    test('the backend generic CONFLICT for an unknown token is unreadable, '
+        'not guessed as expired', () async {
+      adapter.onMethod(
+        'GET',
+        '/auth/register/continuation',
+        status: 409,
+        body: errorBody('CONFLICT'),
+      );
+
+      await expectLater(
+        repository.getRegistrationContinuation(continuationToken: token),
+        throwsA(
+          isA<ApiFailureUnreadableResponse>().having(
+            (failure) => failure.code,
+            'code',
+            'CONFLICT',
+          ),
+        ),
+      );
+    });
+
+    test('a lost validation is an uncertain transport failure', () async {
+      adapter.onOffline('/auth/register/continuation');
+
+      await expectLater(
+        repository.getRegistrationContinuation(continuationToken: token),
+        throwsA(isA<ApiFailureTransport>()),
+      );
+    });
+  });
+
+  group('manual finalization', () {
+    const token = 'raw-continuation-token';
+
+    test('sends the token header and documented body, then decodes', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/finalize/manual',
+        status: 201,
+        body: {
+          'data': {'email': 'user@example.com', 'display_name': 'John Doe'},
+          'message': 'registration completed successfully',
+        },
+      );
+
+      final result = await repository.finalizeManualRegistration(
+        continuationToken: token,
+        displayName: 'John Doe',
+        password: 'password123',
+      );
+
+      expect(result.email, 'user@example.com');
+      expect(result.displayName, 'John Doe');
+
+      final sent = adapter.lastRequestTo('/auth/register/finalize/manual')!;
+      expect(sent.method, 'POST');
+      expect(sent.headers['X-Registration-Continuation'], token);
+      expect(sent.jsonField('display_name'), 'John Doe');
+      expect(sent.jsonField('password'), 'password123');
+    });
+
+    test('an existing account is already completed', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/finalize/manual',
+        status: 409,
+        body: errorBody(ApiErrorCode.userAlreadyExists),
+      );
+
+      await expectLater(
+        repository.finalizeManualRegistration(
+          continuationToken: token,
+          displayName: 'John Doe',
+          password: 'password123',
+        ),
+        throwsA(isA<ApiFailureRegistrationAlreadyCompleted>()),
+      );
+    });
+
+    test('a consumed token stays distinct', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/finalize/manual',
+        status: 409,
+        body: errorBody(ApiErrorCode.registrationContinuationConsumed),
+      );
+
+      await expectLater(
+        repository.finalizeManualRegistration(
+          continuationToken: token,
+          displayName: 'John Doe',
+          password: 'password123',
+        ),
+        throwsA(isA<ApiFailureRegistrationContinuationConsumed>()),
+      );
+    });
+
+    test('an expired token stays distinct', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/finalize/manual',
+        status: 409,
+        body: errorBody(ApiErrorCode.registrationContinuationExpired),
+      );
+
+      await expectLater(
+        repository.finalizeManualRegistration(
+          continuationToken: token,
+          displayName: 'John Doe',
+          password: 'password123',
+        ),
+        throwsA(isA<ApiFailureRegistrationContinuationExpired>()),
+      );
+    });
+
+    test('password-work capacity carries Retry-After', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/finalize/manual',
+        status: 503,
+        body: errorBody(ApiErrorCode.passwordWorkUnavailable),
+        headers: {
+          'retry-after': ['5'],
+        },
+      );
+
+      await expectLater(
+        repository.finalizeManualRegistration(
+          continuationToken: token,
+          displayName: 'John Doe',
+          password: 'password123',
+        ),
+        throwsA(
+          isA<ApiFailureRateLimited>().having(
+            (failure) => failure.retryAfter,
+            'retryAfter',
+            const Duration(seconds: 5),
+          ),
+        ),
+      );
+    });
+
+    test('an IP rate limit carries Retry-After', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/finalize/manual',
+        status: 429,
+        body: errorBody(ApiErrorCode.ipRateLimitExceeded),
+        headers: {
+          'retry-after': ['30'],
+        },
+      );
+
+      await expectLater(
+        repository.finalizeManualRegistration(
+          continuationToken: token,
+          displayName: 'John Doe',
+          password: 'password123',
+        ),
+        throwsA(isA<ApiFailureRateLimited>()),
+      );
+    });
+
+    test('a lost finalization is an uncertain transport failure', () async {
+      adapter.onOffline('/auth/register/finalize/manual');
+
+      await expectLater(
+        repository.finalizeManualRegistration(
+          continuationToken: token,
+          displayName: 'John Doe',
+          password: 'password123',
+        ),
+        throwsA(isA<ApiFailureTransport>()),
+      );
+    });
+
+    test('a 201 with no data is unreadable', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/finalize/manual',
+        status: 201,
+        body: {'data': null, 'message': 'registration completed successfully'},
+      );
+
+      await expectLater(
+        repository.finalizeManualRegistration(
+          continuationToken: token,
+          displayName: 'John Doe',
+          password: 'password123',
+        ),
         throwsA(isA<ApiFailureUnreadableResponse>()),
       );
     });

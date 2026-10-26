@@ -106,9 +106,7 @@ final List<RouteBase> _routes = [
     path: AppRoutes.signIn,
     builder: (context, state) {
       final extra = state.extra;
-      return SignInScreen(
-        contextualMessage: extra is String ? extra : null,
-      );
+      return SignInScreen(contextualMessage: extra is String ? extra : null);
     },
   ),
   GoRoute(
@@ -117,8 +115,17 @@ final List<RouteBase> _routes = [
   ),
   GoRoute(
     path: AppRoutes.signUpVerify,
-    builder: (context, state) =>
-        PinEntryScreen(verificationId: state.pathParameters['verificationId']!),
+    builder: (context, state) {
+      // The email is carried in `extra`, not in the location: the route still
+      // names one verification and nothing else. It is needed to scope the
+      // continuation token written after a successful verification, so a direct
+      // entry (no extra) simply cannot persist and stays an in-memory flow.
+      final extra = state.extra;
+      return PinEntryScreen(
+        verificationId: state.pathParameters['verificationId']!,
+        email: extra is String && extra.isNotEmpty ? extra : null,
+      );
+    },
   ),
   GoRoute(
     path: AppRoutes.finalizeRegistration,
@@ -129,9 +136,8 @@ final List<RouteBase> _routes = [
       }
       return null;
     },
-    builder: (context, state) => FinalizeRegistrationScreen(
-      continuationToken: state.extra as String,
-    ),
+    builder: (context, state) =>
+        FinalizeRegistrationScreen(continuationToken: state.extra as String),
   ),
   // A top-level route, not a shell branch: Settings is pushed above the shell
   // and popped back to the destination that opened it. The redirect above still

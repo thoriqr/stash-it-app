@@ -72,6 +72,14 @@ abstract final class AppRoutes {
   /// signed out.
   static const String signUpVerify = '/sign-up/verify/:verificationId';
 
+  /// The location of the PIN screen for [verificationId].
+  ///
+  /// A helper rather than string interpolation at the call site, so the route
+  /// shape has one owner. The id is URL-encoded defensively; backend ids are
+  /// UUIDs, which contain no characters that encoding changes.
+  static String signUpVerifyFor(String verificationId) =>
+      '/sign-up/verify/${Uri.encodeComponent(verificationId)}';
+
   /// Finalize a manual registration using a continuation token passed via route
   /// extra. Sits outside the shell and is reachable only while signed out.
   static const String finalizeRegistration = '/sign-up/finalize';

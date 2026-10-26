@@ -35,5 +35,54 @@ void main() {
         throwsA(isA<TypeError>()),
       );
     });
+
+    test('decodes a pending status', () {
+      final response = RegisterManualResponse.fromJson(const {
+        'verification_id': '01a0f359-093b-737a-963a-80f7ca6768ed',
+        'verification_status': 'pending',
+      });
+
+      expect(response.verificationStatus, 'pending');
+      expect(response.isVerified, isFalse);
+    });
+
+    test('decodes a verified status', () {
+      final response = RegisterManualResponse.fromJson(const {
+        'verification_id': '01a0f359-093b-737a-963a-80f7ca6768ed',
+        'verification_status': 'verified',
+      });
+
+      expect(response.verificationStatus, 'verified');
+      expect(response.isVerified, isTrue);
+    });
+
+    test('an older backend that omits the status is not verified', () {
+      final response = RegisterManualResponse.fromJson(const {
+        'verification_id': '01a0f359-093b-737a-963a-80f7ca6768ed',
+      });
+
+      expect(response.verificationStatus, isNull);
+      expect(response.isVerified, isFalse);
+    });
+
+    test('an unknown status is preserved and not treated as verified', () {
+      final response = RegisterManualResponse.fromJson(const {
+        'verification_id': '01a0f359-093b-737a-963a-80f7ca6768ed',
+        'verification_status': 'something-new',
+      });
+
+      expect(response.verificationStatus, 'something-new');
+      expect(response.isVerified, isFalse);
+    });
+
+    test('a null status decodes as absent', () {
+      final response = RegisterManualResponse.fromJson(const {
+        'verification_id': '01a0f359-093b-737a-963a-80f7ca6768ed',
+        'verification_status': null,
+      });
+
+      expect(response.verificationStatus, isNull);
+      expect(response.isVerified, isFalse);
+    });
   });
 }

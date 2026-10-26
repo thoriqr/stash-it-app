@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:stash_it_app/app/network/network_providers.dart';
+import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_error_codes.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
+import 'package:stash_it_app/features/auth/data/registration_continuation_store.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_up_screen.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
@@ -26,14 +29,19 @@ void main() {
   late InMemorySecureStorage backend;
   late FakeHttpAdapter adapter;
   late ProviderContainer container;
+  late RegistrationContinuationStore continuationStore;
 
   setUp(() {
     backend = InMemorySecureStorage();
     adapter = FakeHttpAdapter();
+    continuationStore = RegistrationContinuationStore(backend);
     container = ProviderContainer(
       overrides: [
         credentialStoreProvider.overrideWithValue(
           SecureCredentialStore(backend),
+        ),
+        registrationContinuationStoreProvider.overrideWithValue(
+          continuationStore,
         ),
         restoredTokensProvider.overrideWithValue(null),
       ],
@@ -61,10 +69,73 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Pumps a routed sign-up screen so navigation can be asserted.
+  ///
+  /// Only the three registration destinations are needed here; each renders what
+  /// it received, so a test can assert both the location and the `extra` it
+  /// carried. The real route tree is covered separately.
+  Future<void> pumpRoutedSignUp(WidgetTester tester) async {
+    container.read(appDioProvider).httpClientAdapter = adapter;
+    container.read(refreshDioProvider).httpClientAdapter = adapter;
+
+    final router = GoRouter(
+      initialLocation: AppRoutes.signUp,
+      routes: [
+        GoRoute(
+          path: AppRoutes.signUp,
+          builder: (_, _) => const SignUpScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.signUpVerify,
+          builder: (_, state) => Scaffold(
+            body: Text(
+              'PIN ${state.pathParameters['verificationId']} '
+              'email=${state.extra ?? ''}',
+            ),
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.finalizeRegistration,
+          builder: (_, state) =>
+              Scaffold(body: Text('FINALIZE ${state.extra ?? ''}')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
   /// The documented success envelope of `POST /auth/register/manual`.
-  Map<String, dynamic> registrationEnvelope({String id = verificationId}) => {
-    'data': {'verification_id': id},
+  Map<String, dynamic> registrationEnvelope({
+    String id = verificationId,
+    String? status,
+  }) => {
+    'data': {
+      'verification_id': id,
+      'verification_status': ?status,
+    },
     'message': 'registration requested',
+  };
+
+  /// The documented success envelope of `GET /auth/register/continuation`.
+  Map<String, dynamic> continuationEnvelope({String address = email}) => {
+    'data': {
+      'email': address,
+      'registration_type': 'manual',
+      'requires_password': true,
+    },
+    'message': 'registration continuation is valid',
   };
 
   /// The documented success envelope of the PIN request.
@@ -75,14 +146,15 @@ void main() {
 
   void scriptRegistration({
     String id = verificationId,
-    int status = 201,
+    String? status,
+    int httpStatus = 201,
     Object? body,
   }) {
     adapter.onMethod(
       'POST',
       '/auth/register/manual',
-      status: status,
-      body: body ?? registrationEnvelope(id: id),
+      status: httpStatus,
+      body: body ?? registrationEnvelope(id: id, status: status),
     );
   }
 
@@ -272,10 +344,6 @@ void main() {
 
       expect(find.text('Check your email'), findsOneWidget);
       expect(find.textContaining(email), findsOneWidget);
-      expect(
-        find.text('PIN verification is not available in this version yet.'),
-        findsOneWidget,
-      );
       expect(find.text('Back to sign in'), findsOneWidget);
 
       // Both calls only start the lifecycle: no session is created and no
@@ -305,7 +373,7 @@ void main() {
     testWidgets('a registration failure never requests a PIN', (tester) async {
       await pumpSignUp(tester);
       scriptRegistration(
-        status: 409,
+        httpStatus: 409,
         body: errorBody(ApiErrorCode.registrationAlreadyCompleted),
       );
 
@@ -379,6 +447,270 @@ void main() {
     });
   });
 
+  group('verified registration recovery', () {
+    const storedToken = 'stored-continuation-token';
+
+    testWidgets('a matching stored token goes straight to finalization', (
+      tester,
+    ) async {
+      await pumpRoutedSignUp(tester);
+      await continuationStore.write(email: email, token: storedToken);
+      scriptRegistration(status: 'verified');
+      adapter.onMethod(
+        'GET',
+        '/auth/register/continuation',
+        body: continuationEnvelope(),
+      );
+
+      await submit(tester);
+
+      expect(
+        adapter.countFor('/pin'),
+        0,
+        reason: 'a verified registration must never request another PIN',
+      );
+      expect(adapter.countFor('/auth/register/continuation'), 1);
+      expect(find.text('FINALIZE $storedToken'), findsOneWidget);
+    });
+
+    testWidgets(
+      'a token for another address is never applied and nothing is cleared',
+      (tester) async {
+        await pumpSignUp(tester);
+        await continuationStore.write(
+          email: 'other@example.com',
+          token: 'other-token',
+        );
+        scriptRegistration(status: 'verified');
+
+        await submit(tester);
+
+        expect(find.text('Verification already complete'), findsOneWidget);
+        expect(adapter.countFor('/pin'), 0);
+        expect(
+          adapter.countFor('/auth/register/continuation'),
+          0,
+          reason: 'a token for another registration must not be presented',
+        );
+        expect((await continuationStore.read())?.token, 'other-token');
+      },
+    );
+
+    testWidgets('verified without a stored token shows the recovery state', (
+      tester,
+    ) async {
+      await pumpSignUp(tester);
+      scriptRegistration(status: 'verified');
+
+      await submit(tester);
+
+      expect(find.text('Verification already complete'), findsOneWidget);
+      expect(find.byType(TextFormField), findsNothing);
+      expect(find.widgetWithText(AppButton, 'Send PIN'), findsNothing);
+      expect(adapter.countFor('/pin'), 0);
+      expect(adapter.countFor('/auth/register/continuation'), 0);
+      expect(find.widgetWithText(AppButton, 'Try again'), findsOneWidget);
+      expect(
+        find.widgetWithText(AppButton, 'Use a different email'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('an expired stored token is replaced exactly once', (
+      tester,
+    ) async {
+      const replacementId = 'replacement-verification-id';
+      await pumpRoutedSignUp(tester);
+      await continuationStore.write(email: email, token: storedToken);
+      adapter.onSequence('/auth/register/manual', [
+        FakeReply(201, registrationEnvelope(status: 'verified')),
+        FakeReply(
+          201,
+          registrationEnvelope(id: replacementId, status: 'pending'),
+        ),
+      ]);
+      adapter.onMethod(
+        'GET',
+        '/auth/register/continuation',
+        status: 409,
+        body: errorBody(ApiErrorCode.registrationContinuationExpired),
+      );
+      adapter.onMethod(
+        'POST',
+        '/verification/$replacementId/pin',
+        status: 201,
+        body: pinEnvelope(id: replacementId),
+      );
+
+      await submit(tester);
+
+      expect(adapter.countFor('/auth/register/manual'), 2);
+      expect(adapter.countFor('/pin'), 1);
+      expect(await continuationStore.read(), isNull);
+      expect(
+        find.text('PIN $replacementId email=$email'),
+        findsOneWidget,
+        reason: 'the replacement id and the email must reach the PIN route',
+      );
+    });
+
+    testWidgets('a consumed token is already completed and is not retried', (
+      tester,
+    ) async {
+      await pumpSignUp(tester);
+      await continuationStore.write(email: email, token: storedToken);
+      scriptRegistration(status: 'verified');
+      adapter.onMethod(
+        'GET',
+        '/auth/register/continuation',
+        status: 409,
+        body: errorBody(ApiErrorCode.registrationContinuationConsumed),
+      );
+
+      await submit(tester);
+
+      expect(
+        find.text('This registration was already completed. Sign in instead.'),
+        findsOneWidget,
+      );
+      expect(
+        adapter.countFor('/auth/register/manual'),
+        1,
+        reason: 'a consumed continuation must not trigger a replacement',
+      );
+      expect(await continuationStore.read(), isNull);
+    });
+
+    testWidgets('an unconfirmed check keeps the token and claims nothing', (
+      tester,
+    ) async {
+      await pumpSignUp(tester);
+      await continuationStore.write(email: email, token: storedToken);
+      scriptRegistration(status: 'verified');
+      adapter.onOffline('/auth/register/continuation');
+
+      await submit(tester);
+
+      expect(
+        find.text(
+          'No connection to the server. We could not check that '
+          'registration. Try again.',
+        ),
+        findsOneWidget,
+      );
+      expect((await continuationStore.read())?.token, storedToken);
+      expect(adapter.countFor('/pin'), 0);
+    });
+
+    testWidgets('a continuation for another address is discarded, not used', (
+      tester,
+    ) async {
+      await pumpSignUp(tester);
+      await continuationStore.write(email: email, token: storedToken);
+      scriptRegistration(status: 'verified');
+      adapter.onMethod(
+        'GET',
+        '/auth/register/continuation',
+        body: continuationEnvelope(address: 'other@example.com'),
+      );
+
+      await submit(tester);
+
+      expect(find.textContaining('could not match'), findsOneWidget);
+      expect(await continuationStore.read(), isNull);
+      expect(adapter.countFor('/pin'), 0);
+    });
+
+    testWidgets('a pending response clears a matching stale token', (
+      tester,
+    ) async {
+      await pumpSignUp(tester);
+      await continuationStore.write(email: email, token: storedToken);
+      scriptRegistration(status: 'pending');
+      adapter.onMethod(
+        'POST',
+        '/verification/$verificationId/pin',
+        status: 201,
+        body: pinEnvelope(),
+      );
+
+      await submit(tester);
+
+      expect(adapter.countFor('/pin'), 1);
+      expect(await continuationStore.read(), isNull);
+      expect(find.text('Check your email'), findsOneWidget);
+    });
+
+    testWidgets('Try again makes one more request and explains the wait', (
+      tester,
+    ) async {
+      await pumpSignUp(tester);
+      scriptRegistration(status: 'verified');
+
+      await submit(tester);
+      expect(find.text('Verification already complete'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(AppButton, 'Try again'));
+      await tester.pumpAndSettle();
+
+      expect(adapter.countFor('/auth/register/manual'), 2);
+      expect(adapter.countFor('/pin'), 0);
+      expect(find.textContaining('15-minute'), findsOneWidget);
+      expect(find.text('Verification already complete'), findsOneWidget);
+    });
+
+    testWidgets('an already completed registration clears a matching token', (
+      tester,
+    ) async {
+      await pumpSignUp(tester);
+      await continuationStore.write(email: email, token: storedToken);
+      scriptRegistration(
+        httpStatus: 409,
+        body: errorBody(ApiErrorCode.registrationAlreadyCompleted),
+      );
+
+      await submit(tester);
+
+      expect(await continuationStore.read(), isNull);
+      expect(
+        find.text('An account already exists for this email. Sign in instead.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a storage read failure still allows a pending registration', (
+      tester,
+    ) async {
+      await pumpSignUp(tester);
+      backend.failingReads.add(RegistrationContinuationStore.storageKey);
+      scriptRegistration(status: 'pending');
+      adapter.onMethod(
+        'POST',
+        '/verification/$verificationId/pin',
+        status: 201,
+        body: pinEnvelope(),
+      );
+
+      await submit(tester);
+
+      expect(adapter.countFor('/pin'), 1);
+      expect(find.text('Check your email'), findsOneWidget);
+    });
+
+    testWidgets('a storage read failure blocks a verified registration', (
+      tester,
+    ) async {
+      await pumpSignUp(tester);
+      backend.failingReads.add(RegistrationContinuationStore.storageKey);
+      scriptRegistration(status: 'verified');
+
+      await submit(tester);
+
+      expect(find.text('Verification already complete'), findsOneWidget);
+      expect(adapter.countFor('/pin'), 0);
+    });
+  });
+
   group('registration-start failures', () {
     final cases = <({String name, String code, int status, String message})>[
       (
@@ -431,7 +763,7 @@ void main() {
       testWidgets('${testCase.name}, and keeps the address', (tester) async {
         await pumpSignUp(tester);
         scriptRegistration(
-          status: testCase.status,
+          httpStatus: testCase.status,
           body: errorBody(testCase.code),
         );
 
@@ -473,7 +805,7 @@ void main() {
     ) async {
       await pumpSignUp(tester);
       scriptRegistration(
-        status: 429,
+        httpStatus: 429,
         body: errorBody(ApiErrorCode.pinRateLimitExceeded),
       );
 
@@ -508,7 +840,7 @@ void main() {
       tester,
     ) async {
       await pumpSignUp(tester);
-      scriptRegistration(status: 201, body: 'not JSON');
+      scriptRegistration(httpStatus: 201, body: 'not JSON');
 
       await submit(tester);
 
@@ -526,7 +858,7 @@ void main() {
     testWidgets('dismissing a failure does not resubmit it', (tester) async {
       await pumpSignUp(tester);
       scriptRegistration(
-        status: 409,
+        httpStatus: 409,
         body: errorBody(ApiErrorCode.registrationAlreadyCompleted),
       );
 
@@ -550,22 +882,23 @@ void main() {
 
   group('PIN-request failures', () {
     testWidgets(
-      'a resend cooldown states no duration the server did not send',
+      'a resend cooldown means a PIN was already issued and enters the flow',
       (tester) async {
-        await pumpSignUp(tester);
+        await pumpRoutedSignUp(tester);
         scriptRegistration();
         scriptPinFailure(ApiErrorCode.verificationResendCooldown);
 
         await submit(tester);
 
+        // The cooldown is checked before any budget or issuance, so no email was
+        // sent and the code the user already holds is the one that applies. The
+        // PIN screen's status read reports the real countdown.
+        expect(find.text('PIN $verificationId email=$email'), findsOneWidget);
         expect(
-          find.text(
-            'A PIN was sent to this email recently. Try again shortly.',
-          ),
-          findsOneWidget,
+          find.text('A PIN was sent to this email recently. Try again shortly.'),
+          findsNothing,
         );
         expect(find.textContaining('seconds'), findsNothing);
-        expect(find.text('Check your email'), findsNothing);
       },
     );
 

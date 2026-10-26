@@ -29,6 +29,8 @@ void main() {
         AppRoutes.auth,
         AppRoutes.signIn,
         AppRoutes.signUp,
+        AppRoutes.signUpVerifyFor('01a0f359-093b-737a-963a-80f7ca6768ed'),
+        AppRoutes.finalizeRegistration,
       ]) {
         expect(
           redirectFor(AuthStatus.signedOut, location),
@@ -43,6 +45,8 @@ void main() {
         AppRoutes.auth,
         AppRoutes.signIn,
         AppRoutes.signUp,
+        AppRoutes.signUpVerifyFor('01a0f359-093b-737a-963a-80f7ca6768ed'),
+        AppRoutes.finalizeRegistration,
       ]) {
         expect(
           redirectFor(AuthStatus.signedIn, location),

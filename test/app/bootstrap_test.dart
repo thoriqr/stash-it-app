@@ -9,6 +9,7 @@ import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/auth_repository.dart';
 import 'package:stash_it_app/features/auth/data/datasources/auth_api.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
+import 'package:stash_it_app/features/auth/data/registration_continuation_store.dart';
 
 import '../support/fake_http.dart';
 
@@ -85,10 +86,14 @@ void main() {
       AuthTokens? restored,
       InMemorySecureStorage? storage,
     }) {
+      final sharedStorage = storage ?? InMemorySecureStorage();
       final container = ProviderContainer(
         overrides: [
           credentialStoreProvider.overrideWithValue(
-            SecureCredentialStore(storage ?? InMemorySecureStorage()),
+            SecureCredentialStore(sharedStorage),
+          ),
+          registrationContinuationStoreProvider.overrideWithValue(
+            RegistrationContinuationStore(sharedStorage),
           ),
           restoredTokensProvider.overrideWithValue(restored),
           authRepositoryProvider.overrideWith(
@@ -129,6 +134,17 @@ void main() {
       expect(container.read(authRepositoryProvider), isA<AuthRepository>());
       expect(container.read(appDioProvider), isNotNull);
       expect(container.read(refreshDioProvider), isNotNull);
+    });
+
+    test('the registration continuation store resolves', () {
+      // Its default throws deliberately, so a missing bootstrap override would
+      // only surface when the user submitted the sign-up form.
+      final container = wiredContainer();
+
+      expect(
+        container.read(registrationContinuationStoreProvider),
+        isA<RegistrationContinuationStore>(),
+      );
     });
 
     test('refreshDio carries no auth interceptor, so renewal cannot recurse', () {

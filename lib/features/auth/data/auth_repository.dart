@@ -9,6 +9,7 @@ import 'models/login_request.dart';
 import 'models/finalize_manual_registration_request.dart';
 import 'models/finalize_manual_registration_response.dart';
 import 'models/register_manual_request.dart';
+import 'models/register_manual_response.dart';
 import 'models/registration_continuation_response.dart';
 import 'models/verify_registration_request.dart';
 import 'models/verification_status_response.dart';
@@ -79,12 +80,15 @@ class AuthRepository {
     }
   }
 
-  /// Starts manual registration and returns the server-created verification id.
+  /// Starts (or resumes) manual registration.
   ///
-  /// The subsequent PIN request must use precisely this value. A `201` whose
-  /// envelope lacks `data` is unreadable rather than a successful registration:
-  /// without an id the client cannot make the next contractually required call.
-  Future<String> registerManual({required String email}) async {
+  /// Returns the whole response rather than only the verification id, because
+  /// `verification_status` decides what the caller must do next: `verified` means
+  /// PIN verification has already completed and no PIN may be requested. A `201`
+  /// whose envelope lacks `data` is unreadable rather than a successful
+  /// registration: without an id the client cannot make the next contractually
+  /// required call.
+  Future<RegisterManualResponse> registerManual({required String email}) async {
     try {
       final response = await authApi.registerManual(
         RegisterManualRequest(email: email),
@@ -94,7 +98,7 @@ class AuthRepository {
         throw const ApiFailureUnreadableResponse();
       }
 
-      return data.verificationId;
+      return data;
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError catch (error) {
@@ -154,9 +158,7 @@ class AuthRepository {
   ///
   /// Returns the verification id the server confirms (unchanged). A `200` whose
   /// envelope lacks `data` is unreadable.
-  Future<String> resendVerification({
-    required String verificationId,
-  }) async {
+  Future<String> resendVerification({required String verificationId}) async {
     try {
       final response = await authApi.resendVerification(verificationId);
       final data = response.data;

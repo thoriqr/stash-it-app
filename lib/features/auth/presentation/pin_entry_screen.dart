@@ -10,6 +10,7 @@ import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/data/models/verification_status_response.dart';
+import 'package:stash_it_app/features/auth/data/registration_continuation_store.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_up_screen.dart'
     show registrationMessageFor;
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
@@ -20,13 +21,22 @@ import 'package:stash_it_app/shared/widgets/app_field.dart';
 /// PIN entry and verification status for a manual registration.
 ///
 /// Reached after the first two registration steps succeed. It reads the
-/// backend's verification status and offers a resend; it does not perform PIN
-/// verification, continuation, or finalization, none of which is implemented in
-/// this milestone.
+/// backend's verification status, offers a resend, verifies the PIN, and — when
+/// the registration email was carried from sign-up — persists the raw
+/// continuation token before continuing to finalization. The backend stores only
+/// the token's hash, so losing it means the verified registration cannot be
+/// finished from this device.
 class PinEntryScreen extends ConsumerStatefulWidget {
-  const PinEntryScreen({super.key, required this.verificationId});
+  const PinEntryScreen({super.key, required this.verificationId, this.email});
 
   final String verificationId;
+
+  /// The address this verification belongs to, carried from sign-up so the
+  /// continuation token can be scoped to it.
+  ///
+  /// Null for a direct entry: verification still works, but the token cannot be
+  /// persisted and the flow survives only while the app does.
+  final String? email;
 
   @override
   ConsumerState<PinEntryScreen> createState() => _PinEntryScreenState();
@@ -284,41 +294,20 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
 
   Widget _buildContent(AppTokens tokens) {
     final status = _status!;
-    if (status.status == 'verified') {
-      return _buildVerified(tokens);
-    }
     if (status.status != 'pending') {
       return _buildInvalid(tokens);
     }
     return _buildPending(tokens, status);
   }
 
-  Widget _buildVerified(AppTokens tokens) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'PIN verified',
-          style: AppTypography.screenHeading.copyWith(
-            color: tokens.textPrimary,
-          ),
-        ),
-        const SizedBox(height: AppMetrics.space1),
-        Text(
-          'Your PIN has been verified. You can now sign in to your account.',
-          style: AppTypography.body.copyWith(color: tokens.textSecondary),
-        ),
-        const SizedBox(height: AppMetrics.space6),
-        AppButton(
-          label: 'Back to sign in',
-          variant: AppButtonVariant.secondary,
-          onPressed: _openSignIn,
-        ),
-      ],
-    );
-  }
-
+  /// Terminal verification state.
+  ///
+  /// The backend never returns `verified` from this endpoint: a completed
+  /// verification answers `409 VERIFICATION_NOT_PENDING`, which reaches this
+  /// screen as a restart-required failure. If a status other than `pending` ever
+  /// arrives, the honest guidance is the same — this step is closed, and the
+  /// user continues by re-entering the same email at sign-up, where the
+  /// `verified` response and the stored continuation take over.
   Widget _buildInvalid(AppTokens tokens) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -332,7 +321,8 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
         ),
         const SizedBox(height: AppMetrics.space1),
         Text(
-          'This registration can no longer continue. Start a new one.',
+          'This registration step is no longer open. Start over with the same '
+          'email to continue.',
           style: AppTypography.body.copyWith(color: tokens.textSecondary),
         ),
         const SizedBox(height: AppMetrics.space6),
@@ -444,6 +434,35 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
           .verifyRegistration(verificationId: widget.verificationId, pin: pin);
       if (!mounted) return;
 
+      // Persist before navigating. The token is returned exactly once and the
+      // backend stores only its hash, so a crash between here and finalization
+      // would otherwise make the verified registration unrecoverable.
+      final email = widget.email;
+      if (email != null) {
+        try {
+          await ref
+              .read(registrationContinuationStoreProvider)
+              .write(email: email, token: token);
+        } catch (_) {
+          if (!mounted) return;
+          // A valid token can still finish now; only recovery after a restart is
+          // lost. The verification itself succeeded, so this must not block the
+          // flow or claim otherwise.
+          ref
+              .read(feedbackProvider.notifier)
+              .show(
+                const AppFeedback(
+                  tone: FeedbackTone.warning,
+                  copy:
+                      'PIN verified, but this device could not save your '
+                      'progress. Finish before closing the app.',
+                ),
+              );
+        }
+      }
+
+      if (!mounted) return;
+
       if (GoRouter.maybeOf(context) != null) {
         context.go(AppRoutes.finalizeRegistration, extra: token);
         return;
@@ -504,7 +523,11 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
 
   String _loadMessage(ApiFailure failure) {
     if (failure is ApiFailureRegistrationRestartRequired) {
-      return registrationMessageFor(failure);
+      // A verified request answers 409 VERIFICATION_NOT_PENDING here. "Start
+      // over" is right, but the copy must not imply the registration was never
+      // verified: re-entering the same email resumes from the verified state.
+      return 'This registration step is no longer open. Start over with the '
+          'same email to continue.';
     }
     if (failure is ApiFailureNotFound) {
       return 'We could not find that registration. Start a new one.';

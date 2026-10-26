@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/storage/secure_credential_store.dart';
 import '../features/auth/application/session_controller.dart';
+import '../features/auth/data/registration_continuation_store.dart';
 import '../features/settings/application/theme_mode_controller.dart';
 import '../features/settings/data/theme_preference_store.dart';
 import 'config/api_config.dart';
@@ -47,11 +48,18 @@ Future<List<Override>> bootstrap() async {
 
   const secureStorage = FlutterSecureStorage();
   const credentialStore = SecureCredentialStore(secureStorage);
+  const registrationContinuationStore = RegistrationContinuationStore(
+    secureStorage,
+  );
 
   // Read directly rather than through a provider: `credentialStoreProvider` is
   // overridden only by the overrides returned below, so reading it from a fresh
   // container would hit the deliberate `UnimplementedError` its default carries.
   final restoredTokens = await credentialStore.read();
+
+  // The registration continuation is deliberately not read here. It is only
+  // needed when the user submits the sign-up form, and an unfinished
+  // registration is not resumed automatically on launch.
 
   // A non-sensitive UI preference lives in shared preferences, not in the
   // credential store. Reading it here, rather than inside a provider build,
@@ -61,6 +69,9 @@ Future<List<Override>> bootstrap() async {
 
   return [
     credentialStoreProvider.overrideWithValue(credentialStore),
+    registrationContinuationStoreProvider.overrideWithValue(
+      registrationContinuationStore,
+    ),
     restoredTokensProvider.overrideWithValue(restoredTokens),
     themePreferenceStoreProvider.overrideWithValue(themeStore),
     initialThemeModeProvider.overrideWithValue(themeStore.read()),

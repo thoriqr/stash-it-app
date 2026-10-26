@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RegisterManualResponse {
 
-@JsonKey(name: 'verification_id') String get verificationId;
+@JsonKey(name: 'verification_id') String get verificationId;@JsonKey(name: 'verification_status') String? get verificationStatus;
 /// Create a copy of RegisterManualResponse
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,20 +30,20 @@ $RegisterManualResponseCopyWith<RegisterManualResponse> get copyWith => _$Regist
 @override
 bool operator ==(Object other) {
   final _this = this as RegisterManualResponse;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterManualResponse&&(identical(other.verificationId, _this.verificationId) || other.verificationId == _this.verificationId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterManualResponse&&(identical(other.verificationId, _this.verificationId) || other.verificationId == _this.verificationId)&&(identical(other.verificationStatus, _this.verificationStatus) || other.verificationStatus == _this.verificationStatus));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as RegisterManualResponse;
-  return Object.hash(runtimeType,_this.verificationId);
+  return Object.hash(runtimeType,_this.verificationId,_this.verificationStatus);
 }
 
 @override
 String toString() {
   final _this = this as RegisterManualResponse;
-  return 'RegisterManualResponse(verificationId: ${_this.verificationId})';
+  return 'RegisterManualResponse(verificationId: ${_this.verificationId}, verificationStatus: ${_this.verificationStatus})';
 }
 
 
@@ -54,7 +54,7 @@ abstract mixin class $RegisterManualResponseCopyWith<$Res>  {
   factory $RegisterManualResponseCopyWith(RegisterManualResponse value, $Res Function(RegisterManualResponse) _then) = _$RegisterManualResponseCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'verification_id') String verificationId
+@JsonKey(name: 'verification_id') String verificationId,@JsonKey(name: 'verification_status') String? verificationStatus
 });
 
 
@@ -71,10 +71,11 @@ class _$RegisterManualResponseCopyWithImpl<$Res>
 
 /// Create a copy of RegisterManualResponse
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? verificationId = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? verificationId = null,Object? verificationStatus = freezed,}) {
   return _then(RegisterManualResponse(
 verificationId: null == verificationId ? _self.verificationId : verificationId // ignore: cast_nullable_to_non_nullable
-as String,
+as String,verificationStatus: freezed == verificationStatus ? _self.verificationStatus : verificationStatus // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -159,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'verification_id')  String verificationId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'verification_id')  String verificationId, @JsonKey(name: 'verification_status')  String? verificationStatus)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RegisterManualResponse() when $default != null:
-return $default(_that.verificationId);case _:
+return $default(_that.verificationId,_that.verificationStatus);case _:
   return orElse();
 
 }
@@ -180,10 +181,10 @@ return $default(_that.verificationId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'verification_id')  String verificationId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'verification_id')  String verificationId, @JsonKey(name: 'verification_status')  String? verificationStatus)  $default,) {final _that = this;
 switch (_that) {
 case _RegisterManualResponse():
-return $default(_that.verificationId);case _:
+return $default(_that.verificationId,_that.verificationStatus);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +201,10 @@ return $default(_that.verificationId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'verification_id')  String verificationId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'verification_id')  String verificationId, @JsonKey(name: 'verification_status')  String? verificationStatus)?  $default,) {final _that = this;
 switch (_that) {
 case _RegisterManualResponse() when $default != null:
-return $default(_that.verificationId);case _:
+return $default(_that.verificationId,_that.verificationStatus);case _:
   return null;
 
 }
@@ -214,11 +215,12 @@ return $default(_that.verificationId);case _:
 /// @nodoc
 @JsonSerializable()
 
-class _RegisterManualResponse implements RegisterManualResponse {
-  const _RegisterManualResponse({@JsonKey(name: 'verification_id') required this.verificationId});
+class _RegisterManualResponse extends RegisterManualResponse {
+  const _RegisterManualResponse({@JsonKey(name: 'verification_id') required this.verificationId, @JsonKey(name: 'verification_status') this.verificationStatus}): super._();
   factory _RegisterManualResponse.fromJson(Map<String, dynamic> json) => _$RegisterManualResponseFromJson(json);
 
 @override@JsonKey(name: 'verification_id') final  String verificationId;
+@override@JsonKey(name: 'verification_status') final  String? verificationStatus;
 
 /// Create a copy of RegisterManualResponse
 /// with the given fields replaced by the non-null parameter values.
@@ -233,18 +235,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterManualResponse&&(identical(other.verificationId, verificationId) || other.verificationId == verificationId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterManualResponse&&(identical(other.verificationId, verificationId) || other.verificationId == verificationId)&&(identical(other.verificationStatus, verificationStatus) || other.verificationStatus == verificationStatus));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,verificationId);
+    return Object.hash(runtimeType,verificationId,verificationStatus);
 }
 
 @override
 String toString() {
-    return 'RegisterManualResponse(verificationId: $verificationId)';
+    return 'RegisterManualResponse(verificationId: $verificationId, verificationStatus: $verificationStatus)';
 }
 
 
@@ -255,7 +257,7 @@ abstract mixin class _$RegisterManualResponseCopyWith<$Res> implements $Register
   factory _$RegisterManualResponseCopyWith(_RegisterManualResponse value, $Res Function(_RegisterManualResponse) _then) = __$RegisterManualResponseCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'verification_id') String verificationId
+@JsonKey(name: 'verification_id') String verificationId,@JsonKey(name: 'verification_status') String? verificationStatus
 });
 
 
@@ -272,10 +274,11 @@ class __$RegisterManualResponseCopyWithImpl<$Res>
 
 /// Create a copy of RegisterManualResponse
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? verificationId = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? verificationId = null,Object? verificationStatus = freezed,}) {
   return _then(_RegisterManualResponse(
 verificationId: null == verificationId ? _self.verificationId : verificationId // ignore: cast_nullable_to_non_nullable
-as String,
+as String,verificationStatus: freezed == verificationStatus ? _self.verificationStatus : verificationStatus // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

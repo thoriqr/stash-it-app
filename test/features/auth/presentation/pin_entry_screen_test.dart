@@ -5,6 +5,7 @@ import 'package:stash_it_app/app/network/network_providers.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
+import 'package:stash_it_app/features/auth/data/registration_continuation_store.dart';
 import 'package:stash_it_app/features/auth/presentation/pin_entry_screen.dart';
 import 'package:stash_it_app/core/error/api_error_codes.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
@@ -19,14 +20,19 @@ void main() {
   late InMemorySecureStorage backend;
   late FakeHttpAdapter adapter;
   late ProviderContainer container;
+  late RegistrationContinuationStore continuationStore;
 
   setUp(() {
     backend = InMemorySecureStorage();
     adapter = FakeHttpAdapter();
+    continuationStore = RegistrationContinuationStore(backend);
     container = ProviderContainer(
       overrides: [
         credentialStoreProvider.overrideWithValue(
           SecureCredentialStore(backend),
+        ),
+        registrationContinuationStoreProvider.overrideWithValue(
+          continuationStore,
         ),
         restoredTokensProvider.overrideWithValue(null),
       ],
@@ -35,7 +41,7 @@ void main() {
     addTearDown(container.dispose);
   });
 
-  Future<void> pumpScreen(WidgetTester tester) async {
+  Future<void> pumpScreen(WidgetTester tester, {String? email}) async {
     container.read(appDioProvider).httpClientAdapter = adapter;
     container.read(refreshDioProvider).httpClientAdapter = adapter;
 
@@ -45,7 +51,7 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
-          home: PinEntryScreen(verificationId: verificationId),
+          home: PinEntryScreen(verificationId: verificationId, email: email),
         ),
       ),
     );
@@ -98,7 +104,9 @@ void main() {
     expect(tester.widget<AppButton>(resend).onPressed, isNull);
   });
 
-  testWidgets('shows verified state', (tester) async {
+  testWidgets('a non-pending status is terminal, never a success claim', (
+    tester,
+  ) async {
     adapter.onMethod(
       'GET',
       '/auth/register/verification/$verificationId',
@@ -117,7 +125,10 @@ void main() {
     await pumpScreen(tester);
     await tester.pumpAndSettle();
 
-    expect(find.text('PIN verified'), findsOneWidget);
+    expect(find.text('Registration unavailable'), findsOneWidget);
+    expect(find.textContaining('no longer open'), findsOneWidget);
+    expect(find.text('PIN verified'), findsNothing);
+    expect(find.textContaining('sign in to your account'), findsNothing);
   });
 
   testWidgets('successful resend refreshes status', (tester) async {
@@ -155,8 +166,10 @@ void main() {
     await tester.pumpAndSettle();
 
     int getCount(String method, String fragment) => adapter.requests
-        .where((request) =>
-            request.method == method && request.path.contains(fragment))
+        .where(
+          (request) =>
+              request.method == method && request.path.contains(fragment),
+        )
         .length;
 
     await tester.tap(find.widgetWithText(AppButton, 'Resend PIN'));
@@ -201,9 +214,10 @@ void main() {
     await tester.pumpAndSettle();
 
     int resendCount() => adapter.requests
-        .where((request) =>
-            request.method == 'POST' &&
-            request.path.contains('/resend'))
+        .where(
+          (request) =>
+              request.method == 'POST' && request.path.contains('/resend'),
+        )
         .length;
 
     final resendFinder = find.byWidgetPredicate(
@@ -279,8 +293,9 @@ void main() {
     expect(tester.widget<AppButton>(resend).onPressed, isNull);
   });
 
-  testWidgets('a stale refresh cannot clear an active delivery cooldown',
-      (tester) async {
+  testWidgets('a stale refresh cannot clear an active delivery cooldown', (
+    tester,
+  ) async {
     adapter.onSequence('/auth/register/verification/$verificationId', [
       FakeReply(200, {
         'data': {
@@ -323,8 +338,9 @@ void main() {
     );
   });
 
-  testWidgets('expired verification offers recovery instead of resend',
-      (tester) async {
+  testWidgets('expired verification offers recovery instead of resend', (
+    tester,
+  ) async {
     adapter.onMethod(
       'GET',
       '/auth/register/verification/$verificationId',
@@ -428,5 +444,85 @@ void main() {
     expect(feedback, isNotNull);
     expect(feedback!.tone, FeedbackTone.success);
     expect(feedback.copy, 'A new PIN has been sent.');
+  });
+
+  group('continuation persistence', () {
+    Map<String, dynamic> pendingEnvelope() => {
+      'data': {
+        'verification_id': verificationId,
+        'status': 'pending',
+        'pin_issued': true,
+        'resend_in_seconds': 0,
+      },
+      'message': 'verification retrieved',
+    };
+
+    Map<String, dynamic> verifyEnvelope() => {
+      'data': {'registration_continuation_token': 'raw-token'},
+      'message': 'registration verified',
+    };
+
+    void scriptPendingAndVerify() {
+      adapter.onMethod(
+        'GET',
+        '/auth/register/verification/$verificationId',
+        status: 200,
+        body: pendingEnvelope(),
+      );
+      adapter.onMethod(
+        'POST',
+        '/auth/register/verification/$verificationId/verify',
+        status: 200,
+        body: verifyEnvelope(),
+      );
+    }
+
+    Future<void> verify(WidgetTester tester) async {
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '123456');
+      await tester.tap(find.widgetWithText(AppButton, 'Verify PIN'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a successful verification writes the token for the email', (
+      tester,
+    ) async {
+      scriptPendingAndVerify();
+
+      await pumpScreen(tester, email: '  Reader@Example.com  ');
+      await verify(tester);
+
+      final stored = await continuationStore.read();
+      expect(stored, isNotNull);
+      expect(stored!.email, 'reader@example.com');
+      expect(stored.token, 'raw-token');
+    });
+
+    testWidgets('a direct entry with no email cannot scope a token', (
+      tester,
+    ) async {
+      scriptPendingAndVerify();
+
+      await pumpScreen(tester);
+      await verify(tester);
+
+      expect(await continuationStore.read(), isNull);
+    });
+
+    testWidgets('a storage failure still lets verification continue, with a '
+        'warning', (tester) async {
+      scriptPendingAndVerify();
+      backend.failingWrites.add(RegistrationContinuationStore.storageKey);
+
+      await pumpScreen(tester, email: 'reader@example.com');
+      await verify(tester);
+
+      expect(tester.takeException(), isNull);
+      final feedback = container.read(feedbackProvider);
+      expect(feedback, isNotNull);
+      expect(feedback!.tone, FeedbackTone.warning);
+      expect(feedback.copy, contains('could not save'));
+      expect(feedback.copy, contains('PIN verified'));
+    });
   });
 }
