@@ -26,7 +26,9 @@ import 'package:stash_it_app/shared/widgets/app_field.dart';
 /// dismissal-not-retry failure message, and the same `ApiFailure` mapping. Only
 /// the presentation follows the approved design system.
 class SignInScreen extends ConsumerStatefulWidget {
-  const SignInScreen({super.key});
+  const SignInScreen({super.key, this.contextualMessage});
+
+  final String? contextualMessage;
 
   @override
   ConsumerState<SignInScreen> createState() => _SignInScreenState();
@@ -34,6 +36,26 @@ class SignInScreen extends ConsumerStatefulWidget {
 
 class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
+
+  bool _contextualMessageSet = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_contextualMessageSet) return;
+    _contextualMessageSet = true;
+    final extra = widget.contextualMessage;
+    if (extra == 'registration-success') {
+      _message = 'Registration successful. Please sign in with your new account.';
+      _messageTone = AuthMessageTone.warning;
+    } else if (extra == 'registration-uncertain') {
+      _message =
+          'We could not confirm whether registration completed. '
+          'Try signing in; if it fails, start again.';
+      _messageTone = AuthMessageTone.warning;
+    }
+  }
+
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 

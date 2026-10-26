@@ -378,6 +378,12 @@ String registrationMessageFor(ApiFailure failure) {
     ApiFailureCollectionDeleteTargetNotFound() ||
     ApiFailureMalformedRequest() ||
     ApiFailureAuthRequired() ||
+    ApiFailureInvalidVerificationCode() ||
+    ApiFailureVerificationCodeAttemptsExceeded() ||
+    ApiFailureRegistrationContinuationRequired() ||
+    ApiFailureRegistrationContinuationConsumed() ||
+    ApiFailureRegistrationContinuationExpired() ||
+    ApiFailureInvalidRegistrationType() ||
     ApiFailureSessionEnded() ||
     ApiFailureRefreshUncertain() ||
     ApiFailureCredentialStorage() =>

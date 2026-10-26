@@ -1,3 +1,27 @@
+## Registration UX and contextual messages (2026-10-27)
+
+### Flutter implementation
+- PinEntryScreen now locks PIN input, Resend, and Back during verification; removed obsolete PIN-unavailable text; resend success publishes global feedback.
+- SignInScreen shows dismissible contextual registration success/uncertain messages via constructor data.
+- Finalization success navigates to Sign-In with success context; uncertain outcomes remain on-screen with neutral guidance.
+
+### Verification
+- lutter analyze -- no issues found.
+- lutter test -- 1146 passed.
+- No app, device, or emulator run. Nothing staged or committed.
+## Manual registration completion (2026-10-27)
+
+### Flutter implementation
+- Added verify/continuation/finalize DTOs, API methods, repository methods, and typed failure mappings.
+- Wired PinEntryScreen Verify button to erifyRegistration; navigates to FinalizeRegistrationScreen with the continuation token in route extra.
+- FinalizeRegistrationScreen fetches continuation, collects display name/password/confirmation, submits finalization, and navigates to Sign-In with contextual success/uncertain messages.
+- SignInScreen reads route extra and shows dismissible contextual registration messages.
+- No session is created; registration completion requires sign-in.
+
+### Verification
+- dart format on changed Dart files; lutter analyze -- no issues found.
+- lutter test -- 1142 passed.
+- No app, device, or emulator run. Nothing staged or committed.
 ## Registration verification status and PIN resend (2026-10-27)
 
 ### Flutter implementation

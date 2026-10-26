@@ -7,6 +7,8 @@ import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/presentation/pin_entry_screen.dart';
 import 'package:stash_it_app/core/error/api_error_codes.dart';
+import 'package:stash_it_app/app/feedback/app_feedback.dart';
+import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_http.dart';
@@ -335,5 +337,96 @@ void main() {
 
     expect(find.widgetWithText(AppButton, 'Start over'), findsOneWidget);
     expect(find.widgetWithText(AppButton, 'Resend PIN'), findsNothing);
+  });
+
+  testWidgets('verification locks all controls', (tester) async {
+    adapter.onMethod(
+      'GET',
+      '/auth/register/verification/$verificationId',
+      status: 200,
+      body: {
+        'data': {
+          'verification_id': verificationId,
+          'status': 'pending',
+          'pin_issued': true,
+          'resend_in_seconds': 0,
+        },
+        'message': 'verification retrieved',
+      },
+    );
+    adapter.onBlocking(
+      '/auth/register/verification/$verificationId/verify',
+      FakeReply(200, {
+        'data': {'registration_continuation_token': 'token'},
+        'message': 'registration verified',
+      }),
+    );
+
+    await pumpScreen(tester);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '123456');
+    final verifyFinder = find.widgetWithText(AppButton, 'Verify PIN');
+    await tester.tap(verifyFinder);
+    final deadline = DateTime.now().add(const Duration(seconds: 5));
+    while (adapter.countFor('/verify') < 1) {
+      if (DateTime.now().isAfter(deadline)) break;
+      await tester.pump(const Duration(milliseconds: 1));
+    }
+
+    expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+    final resendFinder = find.byWidgetPredicate(
+      (widget) =>
+          widget is AppButton && widget.variant == AppButtonVariant.secondary,
+    );
+    expect(tester.widget<AppButton>(resendFinder).onPressed, isNull);
+    final backFinder = find.widgetWithText(AppButton, 'Back to sign in');
+    expect(tester.widget<AppButton>(backFinder).onPressed, isNull);
+
+    adapter.releaseBlocked();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('resend success publishes global feedback', (tester) async {
+    adapter.onSequence('/auth/register/verification/$verificationId', [
+      FakeReply(200, {
+        'data': {
+          'verification_id': verificationId,
+          'status': 'pending',
+          'pin_issued': true,
+          'resend_in_seconds': 0,
+        },
+        'message': 'verification retrieved',
+      }),
+      FakeReply(200, {
+        'data': {
+          'verification_id': verificationId,
+          'status': 'pending',
+          'pin_issued': true,
+          'resend_in_seconds': 60,
+        },
+        'message': 'verification retrieved',
+      }),
+    ]);
+    adapter.onMethod(
+      'POST',
+      '/auth/register/verification/$verificationId/resend',
+      status: 200,
+      body: {
+        'data': {'verification_id': verificationId},
+        'message': 'verification code resent',
+      },
+    );
+
+    await pumpScreen(tester);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(AppButton, 'Resend PIN'));
+    await tester.pumpAndSettle();
+
+    final feedback = container.read(feedbackProvider);
+    expect(feedback, isNotNull);
+    expect(feedback!.tone, FeedbackTone.success);
+    expect(feedback.copy, 'A new PIN has been sent.');
   });
 }

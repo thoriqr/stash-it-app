@@ -145,6 +145,28 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.verificationResendCooldown:
       return ApiFailureVerificationResendCooldown(code: code);
 
+    case ApiErrorCode.invalidVerificationCode:
+      return ApiFailureInvalidVerificationCode(code: code);
+
+    case ApiErrorCode.verificationCodeAttemptsExceeded:
+      return ApiFailureVerificationCodeAttemptsExceeded(code: code);
+
+    case ApiErrorCode.registrationContinuationRequired:
+      return ApiFailureRegistrationContinuationRequired(code: code);
+
+    case ApiErrorCode.registrationContinuationConsumed:
+      return ApiFailureRegistrationContinuationConsumed(code: code);
+
+    case ApiErrorCode.registrationContinuationExpired:
+      return ApiFailureRegistrationContinuationExpired(code: code);
+
+    case ApiErrorCode.invalidRegistrationType:
+      return ApiFailureInvalidRegistrationType(code: code);
+
+    case ApiErrorCode.userAlreadyExists:
+    case ApiErrorCode.authIdentityAlreadyExists:
+      return ApiFailureRegistrationAlreadyCompleted(code: code);
+
     case ApiErrorCode.validationError:
       return ApiFailureValidation(body.fields);
 

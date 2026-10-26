@@ -595,4 +595,52 @@ void main() {
       );
     });
   });
+
+  testWidgets('shows a dismissible registration success message', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        home: const SignInScreen(contextualMessage: 'registration-success'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Registration successful. Please sign in with your new account.'),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(TextButton, 'Dismiss'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Dismiss'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Registration successful. Please sign in with your new account.'),
+      findsNothing,
+    );
+  });
+
+  testWidgets('shows a dismissible uncertain registration message', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        home: const SignInScreen(contextualMessage: 'registration-uncertain'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('could not confirm whether registration completed'),
+      findsOneWidget,
+    );
+    await tester.tap(find.widgetWithText(TextButton, 'Dismiss'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('could not confirm whether registration completed'),
+      findsNothing,
+    );
+  });
 }

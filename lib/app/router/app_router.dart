@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_entry_screen.dart';
+import 'package:stash_it_app/features/auth/presentation/finalize_registration_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/pin_entry_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_up_screen.dart';
@@ -77,16 +78,19 @@ String? redirectFor(AuthStatus auth, String location) {
   final atSignIn = location == AppRoutes.signIn;
   final atSignUp = location == AppRoutes.signUp;
   final atSignUpVerify = location.startsWith('/sign-up/verify/');
+  final atFinalize = location == AppRoutes.finalizeRegistration;
 
   if (auth.isSignedOut) {
     // The auth screens are reachable without a session.
-    if (atAuthEntry || atSignIn || atSignUp || atSignUpVerify) return null;
+    if (atAuthEntry || atSignIn || atSignUp || atSignUpVerify || atFinalize) {
+      return null;
+    }
     return AppRoutes.auth;
   }
 
   // Signed in and looking at an auth screen: there is nothing to sign in to or
   // register.
-  if (atAuthEntry || atSignIn || atSignUp || atSignUpVerify) {
+  if (atAuthEntry || atSignIn || atSignUp || atSignUpVerify || atFinalize) {
     return AppRoutes.initial;
   }
 
@@ -100,7 +104,12 @@ final List<RouteBase> _routes = [
   ),
   GoRoute(
     path: AppRoutes.signIn,
-    builder: (context, state) => const SignInScreen(),
+    builder: (context, state) {
+      final extra = state.extra;
+      return SignInScreen(
+        contextualMessage: extra is String ? extra : null,
+      );
+    },
   ),
   GoRoute(
     path: AppRoutes.signUp,
@@ -110,6 +119,19 @@ final List<RouteBase> _routes = [
     path: AppRoutes.signUpVerify,
     builder: (context, state) =>
         PinEntryScreen(verificationId: state.pathParameters['verificationId']!),
+  ),
+  GoRoute(
+    path: AppRoutes.finalizeRegistration,
+    redirect: (context, state) {
+      final extra = state.extra;
+      if (extra is! String || extra.isEmpty) {
+        return AppRoutes.signUp;
+      }
+      return null;
+    },
+    builder: (context, state) => FinalizeRegistrationScreen(
+      continuationToken: state.extra as String,
+    ),
   ),
   // A top-level route, not a shell branch: Settings is pushed above the shell
   // and popped back to the destination that opened it. The redirect above still

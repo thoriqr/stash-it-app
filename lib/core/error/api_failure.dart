@@ -153,6 +153,42 @@ final class ApiFailureVerificationResendCooldown
   const ApiFailureVerificationResendCooldown({required super.code});
 }
 
+/// `INVALID_VERIFICATION_CODE` — the submitted PIN did not match.
+final class ApiFailureInvalidVerificationCode
+    extends ApiFailureRegistration {
+  const ApiFailureInvalidVerificationCode({required super.code});
+}
+
+/// `VERIFICATION_CODE_ATTEMPTS_EXCEEDED` — too many incorrect PINs.
+final class ApiFailureVerificationCodeAttemptsExceeded
+    extends ApiFailureRegistration {
+  const ApiFailureVerificationCodeAttemptsExceeded({required super.code});
+}
+
+/// `REGISTRATION_CONTINUATION_REQUIRED` — no continuation token was supplied.
+final class ApiFailureRegistrationContinuationRequired
+    extends ApiFailureRegistration {
+  const ApiFailureRegistrationContinuationRequired({required super.code});
+}
+
+/// `REGISTRATION_CONTINUATION_CONSUMED` — the token has already been used.
+final class ApiFailureRegistrationContinuationConsumed
+    extends ApiFailureRegistration {
+  const ApiFailureRegistrationContinuationConsumed({required super.code});
+}
+
+/// `REGISTRATION_CONTINUATION_EXPIRED` — the token has expired.
+final class ApiFailureRegistrationContinuationExpired
+    extends ApiFailureRegistration {
+  const ApiFailureRegistrationContinuationExpired({required super.code});
+}
+
+/// `INVALID_REGISTRATION_TYPE` — the registration is not manual.
+final class ApiFailureInvalidRegistrationType
+    extends ApiFailureRegistration {
+  const ApiFailureInvalidRegistrationType({required super.code});
+}
+
 /// `VALIDATION_ERROR`, `INVALID_URL`, `INVALID_SEARCH_QUERY`, and
 /// `INVALID_COLLECTION_NAME` — an input that parses but names nothing usable,
 /// or is outside its documented bounds.

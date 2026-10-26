@@ -5,9 +5,14 @@ import '../../../../core/error/api_envelope.dart';
 import '../models/login_request.dart';
 import '../models/login_response.dart';
 import '../models/logout_data.dart';
+import '../models/finalize_manual_registration_request.dart';
+import '../models/finalize_manual_registration_response.dart';
 import '../models/register_manual_request.dart';
 import '../models/register_manual_response.dart';
+import '../models/registration_continuation_response.dart';
 import '../models/resend_verification_response.dart';
+import '../models/verify_registration_request.dart';
+import '../models/verify_registration_response.dart';
 import '../models/verification_status_response.dart';
 
 part 'auth_api.g.dart';
@@ -68,6 +73,33 @@ abstract class AuthApi {
   @POST('/auth/register/verification/{verificationId}/resend')
   Future<ApiEnvelope<ResendVerificationResponse>> resendVerification(
     @Path('verificationId') String verificationId,
+  );
+
+  /// `POST /auth/register/verification/{verificationId}/verify`
+  ///
+  /// Verifies the PIN and returns a registration continuation token.
+  @POST('/auth/register/verification/{verificationId}/verify')
+  Future<ApiEnvelope<VerifyRegistrationResponse>> verifyRegistration(
+    @Path('verificationId') String verificationId,
+    @Body() VerifyRegistrationRequest request,
+  );
+
+  /// `GET /auth/register/continuation`
+  ///
+  /// Validates the continuation token supplied in the `X-Registration-Continuation`
+  /// header and returns registration details.
+  @GET('/auth/register/continuation')
+  Future<ApiEnvelope<RegistrationContinuationResponse>> getRegistrationContinuation(
+    @Header('X-Registration-Continuation') String continuationToken,
+  );
+
+  /// `POST /auth/register/finalize/manual`
+  ///
+  /// Finalizes manual registration using the continuation token header and body.
+  @POST('/auth/register/finalize/manual')
+  Future<ApiEnvelope<FinalizeManualRegistrationResponse>> finalizeManualRegistration(
+    @Header('X-Registration-Continuation') String continuationToken,
+    @Body() FinalizeManualRegistrationRequest request,
   );
 
   /// `POST /auth/logout`

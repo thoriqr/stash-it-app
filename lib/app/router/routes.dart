@@ -72,6 +72,10 @@ abstract final class AppRoutes {
   /// signed out.
   static const String signUpVerify = '/sign-up/verify/:verificationId';
 
+  /// Finalize a manual registration using a continuation token passed via route
+  /// extra. Sits outside the shell and is reachable only while signed out.
+  static const String finalizeRegistration = '/sign-up/finalize';
+
   /// Create or change the account's password.
   ///
   /// **Not a fifth destination.** A full-screen secondary route outside the

@@ -126,6 +126,35 @@ abstract final class ApiErrorCode {
   /// already exists.
   static const String pinEmailDeliveryFailed = 'PIN_EMAIL_DELIVERY_FAILED';
 
+  /// 409. The submitted PIN does not match the issued code.
+  static const String invalidVerificationCode = 'INVALID_VERIFICATION_CODE';
+
+  /// 409. Too many incorrect PIN attempts.
+  static const String verificationCodeAttemptsExceeded =
+      'VERIFICATION_CODE_ATTEMPTS_EXCEEDED';
+
+  /// 401. The continuation token is required.
+  static const String registrationContinuationRequired =
+      'REGISTRATION_CONTINUATION_REQUIRED';
+
+  /// 409. The continuation token has already been used.
+  static const String registrationContinuationConsumed =
+      'REGISTRATION_CONTINUATION_CONSUMED';
+
+  /// 409. The continuation token has expired.
+  static const String registrationContinuationExpired =
+      'REGISTRATION_CONTINUATION_EXPIRED';
+
+  /// 409. The registration is not a manual registration.
+  static const String invalidRegistrationType = 'INVALID_REGISTRATION_TYPE';
+
+  /// 409. The account already exists.
+  static const String userAlreadyExists = 'USER_ALREADY_EXISTS';
+
+  /// 409. The auth identity already exists.
+  static const String authIdentityAlreadyExists =
+      'AUTH_IDENTITY_ALREADY_EXISTS';
+
   // ---------------------------------------------------------------------------
   // Generic — `internal/apperror/error.go`.
   // ---------------------------------------------------------------------------

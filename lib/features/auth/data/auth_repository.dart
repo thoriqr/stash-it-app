@@ -6,7 +6,11 @@ import 'datasources/auth_api.dart';
 import 'models/auth_tokens.dart';
 import 'models/auth_user.dart';
 import 'models/login_request.dart';
+import 'models/finalize_manual_registration_request.dart';
+import 'models/finalize_manual_registration_response.dart';
 import 'models/register_manual_request.dart';
+import 'models/registration_continuation_response.dart';
+import 'models/verify_registration_request.dart';
 import 'models/verification_status_response.dart';
 
 /// The outcome of a successful sign-in.
@@ -160,6 +164,80 @@ class AuthRepository {
         throw const ApiFailureUnreadableResponse();
       }
       return data.verificationId;
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Verifies a registration PIN and returns the continuation token.
+  Future<String> verifyRegistration({
+    required String verificationId,
+    required String pin,
+  }) async {
+    try {
+      final response = await authApi.verifyRegistration(
+        verificationId,
+        VerifyRegistrationRequest(pin: pin),
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+      return data.registrationContinuationToken;
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Reads registration continuation details for a token.
+  Future<RegistrationContinuationResponse> getRegistrationContinuation({
+    required String continuationToken,
+  }) async {
+    try {
+      final response = await authApi.getRegistrationContinuation(
+        continuationToken,
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+      return data;
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Finalizes a manual registration.
+  Future<FinalizeManualRegistrationResponse> finalizeManualRegistration({
+    required String continuationToken,
+    required String displayName,
+    required String password,
+  }) async {
+    try {
+      final response = await authApi.finalizeManualRegistration(
+        continuationToken,
+        FinalizeManualRegistrationRequest(
+          displayName: displayName,
+          password: password,
+        ),
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+      return data;
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError catch (error) {

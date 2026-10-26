@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:stash_it_app/app/router/routes.dart';
+import 'package:stash_it_app/app/feedback/app_feedback.dart';
+import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
@@ -39,6 +41,9 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
   bool _statusInFlight = false;
   bool _resending = false;
   ApiFailure? _resendFailure;
+
+  bool _verifying = false;
+  ApiFailure? _verifyFailure;
 
   int _remainingSeconds = 0;
   Timer? _timer;
@@ -144,6 +149,14 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
           .read(authRepositoryProvider)
           .resendVerification(verificationId: widget.verificationId);
       if (!mounted) return;
+      ref
+          .read(feedbackProvider.notifier)
+          .show(
+            const AppFeedback(
+              tone: FeedbackTone.success,
+              copy: 'A new PIN has been sent.',
+            ),
+          );
       await _loadStatus();
     } on ApiFailure catch (failure) {
       if (!mounted) return;
@@ -332,7 +345,7 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
         AppButton(
           label: 'Back to sign in',
           variant: AppButtonVariant.quiet,
-          onPressed: _openSignIn,
+          onPressed: _verifying ? null : _openSignIn,
         ),
       ],
     );
@@ -340,7 +353,10 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
 
   Widget _buildPending(AppTokens tokens, VerificationStatusResponse status) {
     final resendEnabled =
-        !_resending && _remainingSeconds == 0 && status.status == 'pending';
+        !_verifying &&
+        !_resending &&
+        _remainingSeconds == 0 &&
+        status.status == 'pending';
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -361,9 +377,17 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
         AppField(
           label: 'PIN',
           controller: _pinController,
-          enabled: !_resending,
+          enabled: !_verifying && !_resending,
           keyboardType: TextInputType.number,
         ),
+        if (_verifyFailure case final failure?) ...[
+          const SizedBox(height: AppMetrics.space4),
+          AuthMessageBand(
+            message: _verifyMessageFor(failure),
+            onDismiss: () => setState(() => _verifyFailure = null),
+            tone: AuthMessageTone.danger,
+          ),
+        ],
         if (_resendFailure case final failure?) ...[
           const SizedBox(height: AppMetrics.space4),
           AuthMessageBand(
@@ -376,12 +400,8 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
         AppButton(
           label: 'Verify PIN',
           variant: AppButtonVariant.primary,
-          onPressed: _verifyNotImplemented,
-        ),
-        const SizedBox(height: AppMetrics.space1),
-        Text(
-          'PIN verification is not available in this version yet.',
-          style: AppTypography.meta.copyWith(color: tokens.textSecondary),
+          busy: _verifying,
+          onPressed: _verifying ? null : _verifyPin,
         ),
         const SizedBox(height: AppMetrics.space6),
         AppButton(
@@ -398,22 +418,88 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
         AppButton(
           label: 'Back to sign in',
           variant: AppButtonVariant.quiet,
-          onPressed: _openSignIn,
+          onPressed: _verifying ? null : _openSignIn,
         ),
       ],
     );
   }
 
-  void _verifyNotImplemented() {
+  Future<void> _verifyPin() async {
+    if (_verifying) return;
+
+    final pin = _pinController.text.trim();
+    if (!RegExp(r'^\d{6}$').hasMatch(pin)) {
+      setState(() => _verifyFailure = const ApiFailureValidation([]));
+      return;
+    }
+
     setState(() {
-      _resendFailure = null;
+      _verifying = true;
+      _verifyFailure = null;
     });
-    // No PIN verification API is wired in this milestone.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('PIN verification is not available in this version yet.'),
-      ),
-    );
+
+    try {
+      final token = await ref
+          .read(authRepositoryProvider)
+          .verifyRegistration(verificationId: widget.verificationId, pin: pin);
+      if (!mounted) return;
+
+      if (GoRouter.maybeOf(context) != null) {
+        context.go(AppRoutes.finalizeRegistration, extra: token);
+        return;
+      }
+
+      setState(() {
+        _verifying = false;
+        _verifyFailure = null;
+      });
+    } on ApiFailure catch (failure) {
+      if (!mounted) return;
+      setState(() {
+        _verifying = false;
+        _verifyFailure = failure;
+      });
+      if (failure is ApiFailureRegistrationRestartRequired ||
+          failure is ApiFailureNotFound ||
+          failure is ApiFailureMalformedRequest) {
+        await _loadStatus();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _verifying = false;
+        _verifyFailure = const ApiFailureTransport();
+      });
+    }
+  }
+
+  String _verifyMessageFor(ApiFailure failure) {
+    return switch (failure) {
+      ApiFailureInvalidVerificationCode() =>
+        'That PIN is not correct. Try again.',
+      ApiFailureVerificationCodeAttemptsExceeded() =>
+        'Too many incorrect PINs. Start a new registration.',
+      ApiFailureRegistrationRestartRequired() =>
+        'That registration can no longer continue. Start a new one.',
+      ApiFailureNotFound() =>
+        'We could not find that registration. Start a new one.',
+      ApiFailureMalformedRequest() =>
+        'We could not read that registration. Start a new one.',
+      ApiFailureRateLimited(:final retryAfter) =>
+        retryAfter != null
+            ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
+            : 'Too many attempts. Try again shortly.',
+      ApiFailureServerUnavailable() =>
+        'Verification is temporarily unavailable. Try again shortly.',
+      ApiFailureServerFault() =>
+        'We could not verify your PIN. Try again shortly.',
+      ApiFailureTransport() =>
+        'No connection to the server. We could not confirm your PIN.',
+      ApiFailureUnreadableResponse() =>
+        'We could not read the server reply. Try again.',
+      ApiFailureValidation() => 'Enter a 6-digit PIN.',
+      _ => 'We could not verify your PIN. Try again.',
+    };
   }
 
   String _loadMessage(ApiFailure failure) {
