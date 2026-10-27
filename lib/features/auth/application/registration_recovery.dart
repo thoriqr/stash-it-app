@@ -18,10 +18,10 @@ enum RegistrationStart {
   openFinalize,
 
   /// PIN verification has already completed but this device has no usable
-  /// continuation for the entered address. The backend cannot reissue the raw
-  /// token, so the flow must not enter the PIN screens. The only supported
-  /// recovery is retrying manual registration after the continuation's
-  /// 15-minute lifetime.
+  /// continuation for the entered address. The raw token is never reissued, so
+  /// the screen must not enter the PIN flow for this id. The supported recovery
+  /// is an explicit `POST /auth/register/recovery/manual` followed by the normal
+  /// PIN verification and a new continuation token.
   verifiedWithoutToken,
 }
 

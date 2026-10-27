@@ -125,6 +125,14 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.registrationAlreadyCompleted:
       return ApiFailureRegistrationAlreadyCompleted(code: code);
 
+    // Recovery was asked to start while the normal verification is still
+    // pending. It is not a restart — the registration is alive and the normal
+    // PIN flow is its continuation. It is also not the concurrent-insert
+    // variant: the correction is to re-enter `/register/manual` with the same
+    // email, not to repeat the recovery call.
+    case ApiErrorCode.registrationAlreadyPending:
+      return ApiFailureRegistrationAlreadyPending(code: code);
+
     // A concurrent request won the insert, and the other request's row is what
     // remains. The request is well formed and the address need not change:
     // retrying is the correction.

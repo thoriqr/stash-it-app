@@ -323,6 +323,210 @@ void main() {
     });
   });
 
+  group('manual recovery', () {
+    const recoveryEnvelope = {
+      'data': {
+        'verification_id': '01a0f359-093b-737a-963a-80f7ca6768ed',
+        'verification_status': 'pending',
+      },
+      'message': 'registration recovery started',
+    };
+
+    test('sends only the email and decodes the pending response', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/recovery/manual',
+        status: 201,
+        body: recoveryEnvelope,
+      );
+
+      final response = await repository.initiateManualRecovery(
+        email: 'user@example.com',
+      );
+
+      expect(response.verificationId, '01a0f359-093b-737a-963a-80f7ca6768ed');
+      expect(response.verificationStatus, 'pending');
+      expect(response.isVerified, isFalse);
+
+      final sent = adapter.lastRequestTo('/auth/register/recovery/manual')!;
+      expect(sent.method, 'POST');
+      expect(sent.jsonField('email'), 'user@example.com');
+      expect((sent.body as Map).keys, {'email'});
+    });
+
+    test('a 201 without recovery data is unreadable', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/recovery/manual',
+        status: 201,
+        body: {'data': null, 'message': 'registration recovery started'},
+      );
+
+      await expectLater(
+        repository.initiateManualRecovery(email: 'user@example.com'),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+
+    test('an already completed registration cannot be recovered', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/recovery/manual',
+        status: 409,
+        body: errorBody(ApiErrorCode.registrationAlreadyCompleted),
+      );
+
+      await expectLater(
+        repository.initiateManualRecovery(email: 'user@example.com'),
+        throwsA(isA<ApiFailureRegistrationAlreadyCompleted>()),
+      );
+    });
+
+    test('a still-pending normal verification is already pending', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/recovery/manual',
+        status: 409,
+        body: errorBody(ApiErrorCode.registrationAlreadyPending),
+      );
+
+      await expectLater(
+        repository.initiateManualRecovery(email: 'user@example.com'),
+        throwsA(isA<ApiFailureRegistrationAlreadyPending>()),
+      );
+    });
+
+    test('a registration no longer pending requires a restart', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/recovery/manual',
+        status: 409,
+        body: errorBody(ApiErrorCode.registrationNotPending),
+      );
+
+      await expectLater(
+        repository.initiateManualRecovery(email: 'user@example.com'),
+        throwsA(isA<ApiFailureRegistrationRestartRequired>()),
+      );
+    });
+
+    test('an expired registration requires a restart', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/recovery/manual',
+        status: 409,
+        body: errorBody(ApiErrorCode.registrationExpired),
+      );
+
+      await expectLater(
+        repository.initiateManualRecovery(email: 'user@example.com'),
+        throwsA(isA<ApiFailureRegistrationRestartRequired>()),
+      );
+    });
+
+    test('a social registration is the invalid-type refusal', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/recovery/manual',
+        status: 409,
+        body: errorBody(ApiErrorCode.invalidRegistrationType),
+      );
+
+      await expectLater(
+        repository.initiateManualRecovery(email: 'user@example.com'),
+        throwsA(isA<ApiFailureInvalidRegistrationType>()),
+      );
+    });
+
+    test('a rejected address is validation', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/recovery/manual',
+        status: 400,
+        body: errorBody(ApiErrorCode.validationError),
+      );
+
+      await expectLater(
+        repository.initiateManualRecovery(email: 'not-an-email'),
+        throwsA(isA<ApiFailureValidation>()),
+      );
+    });
+
+    test('a spent IP budget carries the server Retry-After', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/recovery/manual',
+        status: 429,
+        body: errorBody(ApiErrorCode.ipRateLimitExceeded),
+        headers: {
+          'retry-after': ['42'],
+        },
+      );
+
+      await expectLater(
+        repository.initiateManualRecovery(email: 'user@example.com'),
+        throwsA(
+          isA<ApiFailureRateLimited>().having(
+            (failure) => failure.retryAfter,
+            'retryAfter',
+            const Duration(seconds: 42),
+          ),
+        ),
+      );
+    });
+
+    test('an unavailable limiter is server-unavailable', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/recovery/manual',
+        status: 503,
+        body: errorBody(ApiErrorCode.ipRateLimitUnavailable),
+      );
+
+      await expectLater(
+        repository.initiateManualRecovery(email: 'user@example.com'),
+        throwsA(isA<ApiFailureServerUnavailable>()),
+      );
+    });
+
+    test('a server fault is its own outcome', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/recovery/manual',
+        status: 500,
+        body: errorBody(ApiErrorCode.internalServerError),
+      );
+
+      await expectLater(
+        repository.initiateManualRecovery(email: 'user@example.com'),
+        throwsA(isA<ApiFailureServerFault>()),
+      );
+    });
+
+    test('a lost recovery request is an uncertain transport failure', () async {
+      adapter.onOffline('/auth/register/recovery/manual');
+
+      await expectLater(
+        repository.initiateManualRecovery(email: 'user@example.com'),
+        throwsA(isA<ApiFailureTransport>()),
+      );
+    });
+
+    test('an unreadable recovery reply stays unreadable', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/recovery/manual',
+        status: 201,
+        body: 'not JSON',
+      );
+
+      await expectLater(
+        repository.initiateManualRecovery(email: 'user@example.com'),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+  });
+
   group('registration PIN', () {
     const verificationId = '01a0f359-093b-737a-963a-80f7ca6768ed';
 

@@ -78,7 +78,8 @@ abstract final class ApiErrorCode {
   // ---------------------------------------------------------------------------
   // Manual registration — `internal/api/auth/registration/error_codes.go`.
   //
-  // Only codes reachable from `POST /auth/register/manual` or
+  // Only codes reachable from `POST /auth/register/manual`,
+  // `POST /auth/register/recovery/manual`, or
   // `POST /auth/register/verification/{id}/pin` belong here. Later registration
   // stages have their own contracts and must not acquire client branches early.
   // ---------------------------------------------------------------------------
@@ -86,6 +87,16 @@ abstract final class ApiErrorCode {
   /// 409. This address already has a completed manual registration.
   static const String registrationAlreadyCompleted =
       'REGISTRATION_ALREADY_COMPLETED';
+
+  /// 409. Recovery was requested while the normal registration verification is
+  /// still `pending`.
+  ///
+  /// The recovery route refuses this state without creating a recovery request
+  /// or returning a verification id. The correction is the normal
+  /// `POST /auth/register/manual` + PIN flow, which returns the existing
+  /// verification id with `verification_status: "pending"`.
+  static const String registrationAlreadyPending =
+      'REGISTRATION_ALREADY_PENDING';
 
   /// 409. A concurrent registration insert could not be reconciled.
   static const String registrationAlreadyExists = 'REGISTRATION_ALREADY_EXISTS';

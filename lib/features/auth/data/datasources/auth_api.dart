@@ -43,6 +43,21 @@ abstract class AuthApi {
     @Body() RegisterManualRequest request,
   );
 
+  /// `POST /auth/register/recovery/manual`
+  ///
+  /// Starts (or resumes) a recovery verification for a manual registration
+  /// whose raw continuation token this device no longer has. The response has
+  /// the same shape as [registerManual] and reports `pending`: the returned id
+  /// must be used with the existing PIN, status, resend and verify routes.
+  ///
+  /// This route sends **no email** itself and does not expire or replace the
+  /// registration. It is bounded by the same per-client-address budget as PIN
+  /// issuance.
+  @POST('/auth/register/recovery/manual')
+  Future<ApiEnvelope<RegisterManualResponse>> initiateManualRecovery(
+    @Body() RegisterManualRequest request,
+  );
+
   /// `POST /auth/register/verification/{verificationId}/pin`
   ///
   /// The verification id is the complete input: this endpoint has **no request
@@ -89,7 +104,8 @@ abstract class AuthApi {
   /// Validates the continuation token supplied in the `X-Registration-Continuation`
   /// header and returns registration details.
   @GET('/auth/register/continuation')
-  Future<ApiEnvelope<RegistrationContinuationResponse>> getRegistrationContinuation(
+  Future<ApiEnvelope<RegistrationContinuationResponse>>
+  getRegistrationContinuation(
     @Header('X-Registration-Continuation') String continuationToken,
   );
 
@@ -97,7 +113,8 @@ abstract class AuthApi {
   ///
   /// Finalizes manual registration using the continuation token header and body.
   @POST('/auth/register/finalize/manual')
-  Future<ApiEnvelope<FinalizeManualRegistrationResponse>> finalizeManualRegistration(
+  Future<ApiEnvelope<FinalizeManualRegistrationResponse>>
+  finalizeManualRegistration(
     @Header('X-Registration-Continuation') String continuationToken,
     @Body() FinalizeManualRegistrationRequest request,
   );

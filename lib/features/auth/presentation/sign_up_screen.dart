@@ -25,10 +25,13 @@ import 'package:stash_it_app/shared/widgets/app_field.dart';
 /// and enters the verification flow. A `verified` response means PIN verification
 /// has already completed and **no PIN may be requested**: the screen either
 /// recovers the continuation token this device persisted after verification and
-/// goes straight to finalization, or shows a recoverable state when no usable
-/// token exists. The backend stores only the token's hash and cannot reissue it,
-/// so the latter is a real dead end until the continuation's 15-minute lifetime
-/// expires and a replacement registration can be opened.
+/// goes straight to finalization, or offers an explicit recovery through
+/// `POST /auth/register/recovery/manual` when this device has no usable token.
+///
+/// **Recovery is never automatic.** Merely receiving `verified`, finding no
+/// token, rebuilding the widget or hitting an error does not call the recovery
+/// endpoint. The user must tap `Recover this registration`, because that action
+/// is what sends the recovery PIN.
 ///
 /// It creates no session and no account: manual finalization happens later and
 /// returns no tokens (`ux-discovery.md` §A.4).
@@ -37,6 +40,18 @@ class SignUpScreen extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+/// Why the verified-registration state is showing.
+enum _BlockedReason {
+  /// The registration is verified but this device holds no matching continuation
+  /// token. Explicit recovery is the only way forward.
+  noToken,
+
+  /// A matching continuation exists, but checking it produced an unconfirmed or
+  /// ambiguous result. The token is retained until the user explicitly chooses
+  /// recovery or a later check returns a terminal outcome.
+  savedCodeUnconfirmed,
 }
 
 class _SignUpScreenState extends ConsumerState<SignUpScreen> {
@@ -58,14 +73,13 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   /// routed app navigates to the PIN screen instead.
   String? _pinSentTo;
 
-  /// The address whose registration is verified but cannot be finished on this
-  /// device because no usable continuation token is stored. Non-null shows the
-  /// recovery state instead of the form.
+  /// The address whose registration is verified but cannot be finished from the
+  /// state this device holds. Non-null shows the recovery state instead of the
+  /// form.
   String? _verifiedBlockedEmail;
 
-  /// Whether the blocked state is being shown after a replacement attempt that
-  /// also came back `verified`.
-  bool _recoveryRetried = false;
+  /// Why the recovery state is showing, or null when it is not.
+  _BlockedReason? _blockedReason;
 
   @override
   void dispose() {
@@ -91,7 +105,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   /// because its `verification_status` decides whether a PIN is even a valid
   /// request. At most two `register/manual` calls happen per user action: this one,
   /// and one replacement when a stored continuation is refused terminally.
-  Future<void> _start(String email, {bool fromRetry = false}) async {
+  Future<void> _start(String email, {bool allowReplacement = true}) async {
     final repository = ref.read(authRepositoryProvider);
     final store = ref.read(registrationContinuationStoreProvider);
 
@@ -99,10 +113,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       _submitting = true;
       _failureMessage = null;
       _pinSentTo = null;
-      if (!fromRetry) {
-        _verifiedBlockedEmail = null;
-        _recoveryRetried = false;
-      }
+      _verifiedBlockedEmail = null;
+      _blockedReason = null;
     });
 
     try {
@@ -120,12 +132,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
       switch (start) {
         case RegistrationStart.requestPin:
-          // A pending status means the backend holds no usable continuation for
-          // this address, so any record this device still has is dead.
-          if (stored != null &&
-              stored.email == normalizeRegistrationEmail(email)) {
-            await _clearStored(store, stored.token);
-          }
+          // Do **not** clear a matching record here. A `pending` response can
+          // now mean an open recovery request while the old continuation is
+          // still valid; the successful verification writes the new token over
+          // the single slot, and a terminal refusal clears it where it occurs.
           await _requestPinAndContinue(
             repository,
             response.verificationId,
@@ -134,7 +144,13 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           return;
 
         case RegistrationStart.openFinalize:
-          await _continueToFinalize(repository, store, stored!, email);
+          await _continueToFinalize(
+            repository,
+            store,
+            stored!,
+            email,
+            allowReplacement: allowReplacement,
+          );
           return;
 
         case RegistrationStart.verifiedWithoutToken:
@@ -142,7 +158,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           setState(() {
             _submitting = false;
             _verifiedBlockedEmail = email;
-            _recoveryRetried = fromRetry;
+            _blockedReason = _BlockedReason.noToken;
           });
           return;
       }
@@ -158,14 +174,16 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
       setState(() {
         _submitting = false;
-        if (!fromRetry) _verifiedBlockedEmail = null;
+        _verifiedBlockedEmail = null;
+        _blockedReason = null;
         _failureMessage = registrationMessageFor(failure);
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        if (!fromRetry) _verifiedBlockedEmail = null;
+        _verifiedBlockedEmail = null;
+        _blockedReason = null;
         _failureMessage =
             'Something went wrong starting your registration. Try again.';
       });
@@ -215,8 +233,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     AuthRepository repository,
     RegistrationContinuationStore store,
     StoredRegistrationContinuation stored,
-    String email,
-  ) async {
+    String email, {
+    bool allowReplacement = true,
+  }) async {
     try {
       final continuation = await repository.getRegistrationContinuation(
         continuationToken: stored.token,
@@ -233,7 +252,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         setState(() {
           _submitting = false;
           _verifiedBlockedEmail = email;
-          _recoveryRetried = true;
+          _blockedReason = _BlockedReason.noToken;
           _failureMessage =
               'We could not match that registration to this email. Try again '
               'with the same address.';
@@ -251,7 +270,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       setState(() {
         _submitting = false;
         _verifiedBlockedEmail = email;
-        _recoveryRetried = true;
+        _blockedReason = _BlockedReason.noToken;
       });
     } on ApiFailure catch (failure) {
       if (!mounted) return;
@@ -264,6 +283,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           setState(() {
             _submitting = false;
             _verifiedBlockedEmail = null;
+            _blockedReason = null;
             _failureMessage =
                 'This registration was already completed. Sign in instead.';
           });
@@ -272,13 +292,29 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         case ContinuationOutcome.restartRequired:
           await _clearStored(store, stored.token);
           if (!mounted) return;
+          if (!allowReplacement) {
+            // The recovery fallback is bounded to one `/register/manual` call.
+            // A terminally dead saved token therefore returns to the form
+            // instead of issuing the replacement call a normal submission may
+            // make.
+            setState(() {
+              _submitting = false;
+              _verifiedBlockedEmail = null;
+              _blockedReason = null;
+              _failureMessage = registrationMessageFor(failure);
+            });
+            return;
+          }
           await _requestReplacement(repository, store, email);
           return;
 
         case ContinuationOutcome.unconfirmed:
+          // The token is retained. The user can retry the check, or explicitly
+          // choose recovery (which discards this device's saved code).
           setState(() {
             _submitting = false;
-            _verifiedBlockedEmail = null;
+            _verifiedBlockedEmail = email;
+            _blockedReason = _BlockedReason.savedCodeUnconfirmed;
             _failureMessage = _recoveryMessageFor(failure);
           });
           return;
@@ -305,17 +341,13 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         setState(() {
           _submitting = false;
           _verifiedBlockedEmail = email;
-          _recoveryRetried = true;
+          _blockedReason = _BlockedReason.noToken;
         });
         return;
       }
 
-      final stored = await _readStored(store);
-      if (stored != null && stored.email == normalizeRegistrationEmail(email)) {
-        await _clearStored(store, stored.token);
-      }
-      if (!mounted) return;
-
+      // Do not clear a matching record here: a `pending` response can mean an
+      // open recovery request whose predecessor continuation is still valid.
       await _requestPinAndContinue(
         repository,
         replacement.verificationId,
@@ -326,16 +358,128 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       setState(() {
         _submitting = false;
         _verifiedBlockedEmail = null;
+        _blockedReason = null;
         _failureMessage = registrationMessageFor(failure);
       });
     }
   }
 
-  /// One user-initiated retry from the blocked state.
-  Future<void> _retryVerified() async {
+  /// Retries the saved continuation from the `savedCodeUnconfirmed` state.
+  ///
+  /// Only the continuation check is repeated; `/register/manual` is not called
+  /// again. The token stays in the store until this check returns a terminal
+  /// outcome or the user explicitly chooses recovery.
+  Future<void> _retrySavedCode() async {
     final email = _verifiedBlockedEmail;
     if (email == null || _submitting) return;
-    await _start(email, fromRetry: true);
+
+    final repository = ref.read(authRepositoryProvider);
+    final store = ref.read(registrationContinuationStoreProvider);
+    final stored = await _readStored(store);
+    if (!mounted) return;
+
+    if (stored == null || stored.email != normalizeRegistrationEmail(email)) {
+      // The record disappeared or no longer belongs to this address. Offer
+      // recovery rather than pretending the saved code still exists.
+      setState(() {
+        _blockedReason = _BlockedReason.noToken;
+        _failureMessage = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _submitting = true;
+      _failureMessage = null;
+    });
+    await _continueToFinalize(repository, store, stored, email);
+  }
+
+  /// Starts an explicit recovery for the blocked registration.
+  ///
+  /// This is the only place that calls `POST /auth/register/recovery/manual`.
+  /// It is reached only from a user tap, never from a probe, a rebuild or a
+  /// failure.
+  Future<void> _recoverRegistration() async {
+    final email = _verifiedBlockedEmail;
+    if (email == null || _submitting) return;
+
+    final reason = _blockedReason;
+    final repository = ref.read(authRepositoryProvider);
+    final store = ref.read(registrationContinuationStoreProvider);
+
+    setState(() {
+      _submitting = true;
+      _failureMessage = null;
+    });
+
+    if (reason == _BlockedReason.savedCodeUnconfirmed) {
+      // The user explicitly chose recovery over an unverifiable saved code.
+      // Best effort: a failure to clear must not block the recovery, and a
+      // successful verification overwrites the single slot anyway.
+      await _clearMatching(store, email);
+      if (!mounted) return;
+      // The saved code has been discarded, so even a failure below leaves the
+      // no-token state rather than claiming a saved code still exists.
+      setState(() => _blockedReason = _BlockedReason.noToken);
+    }
+
+    try {
+      final recovery = await repository.initiateManualRecovery(email: email);
+      if (!mounted) return;
+
+      if (recovery.isVerified) {
+        // The route is implemented and documented to answer `pending`. A
+        // `verified` answer names no raw token, so it must not enter the PIN
+        // flow or claim the registration can continue.
+        setState(() {
+          _submitting = false;
+          _failureMessage = 'Recovery could not be started. Try again.';
+        });
+        return;
+      }
+
+      // Reuses the existing cooldown tolerance and the email route extra.
+      await _requestPinAndContinue(repository, recovery.verificationId, email);
+    } on ApiFailure catch (failure) {
+      if (!mounted) return;
+
+      if (failure is ApiFailureRegistrationAlreadyPending) {
+        // The normal verification is still pending, so the recovery route
+        // refuses this state without creating anything. The normal registration
+        // flow is the continuation. This is the only fallback call, and
+        // `allowReplacement: false` keeps it from issuing a second
+        // `/register/manual` when a saved token turns out terminally dead.
+        await _start(email, allowReplacement: false);
+        return;
+      }
+
+      if (failure is ApiFailureRegistrationAlreadyCompleted) {
+        await _clearMatching(store, email);
+        if (!mounted) return;
+      }
+
+      final terminal =
+          failure is ApiFailureRegistrationAlreadyCompleted ||
+          failure is ApiFailureRegistrationRestartRequired ||
+          failure is ApiFailureInvalidRegistrationType ||
+          failure is ApiFailureValidation;
+
+      setState(() {
+        _submitting = false;
+        if (terminal) {
+          _verifiedBlockedEmail = null;
+          _blockedReason = null;
+        }
+        _failureMessage = _recoveryStartMessageFor(failure);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _failureMessage = 'Something went wrong starting recovery. Try again.';
+      });
+    }
   }
 
   Future<StoredRegistrationContinuation?> _readStored(
@@ -380,6 +524,23 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       ApiFailureUnreadableResponse() =>
         'We could not read the server\'s reply, so we could not check that '
             'registration. Try again.',
+      ApiFailureServerUnavailable() || ApiFailureServerFault() =>
+        'We could not check that registration. Try again shortly.',
+      _ => registrationMessageFor(failure),
+    };
+  }
+
+  String _recoveryStartMessageFor(ApiFailure failure) {
+    return switch (failure) {
+      ApiFailureTransport() =>
+        'No connection to the server. We could not start recovery. Try again.',
+      ApiFailureUnreadableResponse() =>
+        'We could not confirm whether recovery started. Try again.',
+      ApiFailureServerUnavailable() =>
+        'Recovery is temporarily unavailable. Try again shortly.',
+      ApiFailureServerFault() =>
+        'We could not start recovery. Try again shortly.',
+      ApiFailureValidation() => 'Check your email address, then try again.',
       _ => registrationMessageFor(failure),
     };
   }
@@ -517,12 +678,16 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   /// The recovery state for a verified registration this device cannot finish.
   ///
-  /// The backend cannot reissue the raw continuation token, and the route is
-  /// unauthenticated so it will not replace a live one. The only supported
-  /// recovery is waiting out the continuation's 15-minute lifetime and letting a
-  /// replacement registration be opened. Nothing here requests a PIN or claims
-  /// the registration can be completed.
+  /// `noToken` means no matching continuation exists; recovery is the only path.
+  /// `savedCodeUnconfirmed` means a matching token exists but its check could
+  /// not be completed; the token is kept until the user retries it, explicitly
+  /// chooses recovery, or the backend returns a terminal outcome.
+  ///
+  /// Nothing here calls the recovery endpoint. Only a tap does.
   Widget _buildVerifiedBlocked(AppTokens tokens, String email) {
+    final savedCodeUnconfirmed =
+        _blockedReason == _BlockedReason.savedCodeUnconfirmed;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -535,19 +700,15 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         ),
         const SizedBox(height: AppMetrics.space1),
         Text(
-          'This email has already been verified, but this device does not have '
-          'the code needed to finish it. Enter the same email after a few '
-          'minutes to continue.',
+          savedCodeUnconfirmed
+              ? 'We could not check the code saved on this device for $email. '
+                    'Try again, or recover the registration with a new PIN. '
+                    'Recovering replaces this device\'s saved code.'
+              : 'This email has already been verified, but this device does not '
+                    'have the code needed to finish it. Recover it with a new '
+                    'PIN sent to $email.',
           style: AppTypography.body.copyWith(color: tokens.textSecondary),
         ),
-        if (_recoveryRetried) ...[
-          const SizedBox(height: AppMetrics.space4),
-          Text(
-            'A pending registration is replaced only after its 15-minute '
-            'continuation expires.',
-            style: AppTypography.meta.copyWith(color: tokens.textSecondary),
-          ),
-        ],
         if (_failureMessage case final message?) ...[
           const SizedBox(height: AppMetrics.space4),
           AuthMessageBand(
@@ -557,18 +718,33 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           ),
         ],
         const SizedBox(height: AppMetrics.space6),
-        AppButton(
-          label: 'Try again',
-          variant: AppButtonVariant.primary,
-          busy: _submitting,
-          onPressed: _submitting ? null : _retryVerified,
-        ),
-        const SizedBox(height: AppMetrics.space3),
-        AppButton(
-          label: 'Use a different email',
-          variant: AppButtonVariant.secondary,
-          onPressed: _submitting ? null : _useDifferentEmail,
-        ),
+        if (savedCodeUnconfirmed) ...[
+          AppButton(
+            label: 'Try again',
+            variant: AppButtonVariant.primary,
+            busy: _submitting,
+            onPressed: _submitting ? null : _retrySavedCode,
+          ),
+          const SizedBox(height: AppMetrics.space3),
+          AppButton(
+            label: 'Recover this registration',
+            variant: AppButtonVariant.secondary,
+            onPressed: _submitting ? null : _recoverRegistration,
+          ),
+        ] else ...[
+          AppButton(
+            label: 'Recover this registration',
+            variant: AppButtonVariant.primary,
+            busy: _submitting,
+            onPressed: _submitting ? null : _recoverRegistration,
+          ),
+          const SizedBox(height: AppMetrics.space3),
+          AppButton(
+            label: 'Use a different email',
+            variant: AppButtonVariant.secondary,
+            onPressed: _submitting ? null : _useDifferentEmail,
+          ),
+        ],
         const SizedBox(height: AppMetrics.space3),
         AppButton(
           label: 'Back to sign in',
@@ -584,7 +760,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   void _useDifferentEmail() {
     setState(() {
       _verifiedBlockedEmail = null;
-      _recoveryRetried = false;
+      _blockedReason = null;
       _failureMessage = null;
     });
   }
@@ -653,6 +829,12 @@ String registrationMessageFor(ApiFailure failure) {
     // is the sign-in form, which this screen keeps on screen.
     ApiFailureRegistrationAlreadyCompleted() =>
       'An account already exists for this email. Sign in instead.',
+
+    // The recovery route's refusal for a still-pending normal verification.
+    // The recovery action handles it by falling back to the normal flow; this
+    // copy only covers an unexpected surfacing.
+    ApiFailureRegistrationAlreadyPending() =>
+      'This registration is already waiting for a PIN. Continue with that step.',
 
     // Another request won the unique-constraint race. Nothing about the address
     // is wrong, so the copy asks for the same call again rather than an edit.

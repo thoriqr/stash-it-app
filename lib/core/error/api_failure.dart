@@ -113,6 +113,24 @@ final class ApiFailureRegistrationAlreadyCompleted
   const ApiFailureRegistrationAlreadyCompleted({required super.code});
 }
 
+/// `REGISTRATION_ALREADY_PENDING` — recovery was requested while the normal
+/// registration verification is still `pending`.
+///
+/// **Not a restart and not a generic retry.** The registration is alive and
+/// usable; only the recovery route refuses it, because recovery is reserved for
+/// a registration that has already passed the normal PIN step. The correction is
+/// to continue through `POST /auth/register/manual`, which returns the existing
+/// verification id with `verification_status: "pending"`, and then the normal
+/// PIN flow.
+///
+/// Deliberately distinct from [ApiFailureRegistrationRetryable] (a concurrent
+/// insert race) and [ApiFailureRegistrationRestartRequired] (the lifecycle is
+/// over). Nothing was created or replaced by the refused request.
+final class ApiFailureRegistrationAlreadyPending
+    extends ApiFailureRegistration {
+  const ApiFailureRegistrationAlreadyPending({required super.code});
+}
+
 /// `REGISTRATION_ALREADY_EXISTS` or `ACTIVE_VERIFICATION_CODE_EXISTS` — a
 /// concurrent request won a unique-constraint race this one lost.
 ///
@@ -154,8 +172,7 @@ final class ApiFailureVerificationResendCooldown
 }
 
 /// `INVALID_VERIFICATION_CODE` — the submitted PIN did not match.
-final class ApiFailureInvalidVerificationCode
-    extends ApiFailureRegistration {
+final class ApiFailureInvalidVerificationCode extends ApiFailureRegistration {
   const ApiFailureInvalidVerificationCode({required super.code});
 }
 
@@ -184,8 +201,7 @@ final class ApiFailureRegistrationContinuationExpired
 }
 
 /// `INVALID_REGISTRATION_TYPE` — the registration is not manual.
-final class ApiFailureInvalidRegistrationType
-    extends ApiFailureRegistration {
+final class ApiFailureInvalidRegistrationType extends ApiFailureRegistration {
   const ApiFailureInvalidRegistrationType({required super.code});
 }
 

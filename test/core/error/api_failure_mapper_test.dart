@@ -578,18 +578,22 @@ void main() {
       expect(failure, isNot(isA<ApiFailureServerUnavailable>()));
     });
 
-    test('an unreachable registration code remains unmapped', () {
-      // `REGISTRATION_ALREADY_PENDING` exists in backend implementation detail,
-      // but RegisterManual consumes it into a successful response. It must not
-      // grow a client branch for an HTTP response this endpoint cannot emit.
+    test('REGISTRATION_ALREADY_PENDING is its own recovery refusal', () {
+      // Emitted by POST /auth/register/recovery/manual while the normal
+      // verification is still pending. The registration is alive and the normal
+      // PIN flow is its continuation, so this is not a restart, not the
+      // concurrent-insert retry, and not a completed account.
       final failure = mapApiFailure(
-        badResponse(409, errorBody('REGISTRATION_ALREADY_PENDING')),
+        badResponse(409, errorBody(ApiErrorCode.registrationAlreadyPending)),
       );
 
-      expect(failure, isA<ApiFailureUnreadableResponse>());
+      expect(failure, isA<ApiFailureRegistrationAlreadyPending>());
+      expect(failure, isNot(isA<ApiFailureRegistrationRestartRequired>()));
+      expect(failure, isNot(isA<ApiFailureRegistrationRetryable>()));
+      expect(failure, isNot(isA<ApiFailureRegistrationAlreadyCompleted>()));
       expect(
-        (failure as ApiFailureUnreadableResponse).code,
-        'REGISTRATION_ALREADY_PENDING',
+        (failure as ApiFailureRegistrationAlreadyPending).code,
+        ApiErrorCode.registrationAlreadyPending,
       );
     });
   });

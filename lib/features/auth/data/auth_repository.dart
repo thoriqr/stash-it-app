@@ -108,6 +108,38 @@ class AuthRepository {
     }
   }
 
+  /// Starts (or resumes) recovery for a verified manual registration whose raw
+  /// continuation token this device no longer has.
+  ///
+  /// The response has the same shape as [registerManual] and reports `pending`;
+  /// the returned id is used with the existing PIN, status, resend and verify
+  /// routes. A `201` whose envelope lacks `data` is unreadable: without an id
+  /// the caller cannot request the recovery PIN.
+  ///
+  /// This call does not expire or replace the old registration. That happens
+  /// only when the recovery PIN is verified.
+  Future<RegisterManualResponse> initiateManualRecovery({
+    required String email,
+  }) async {
+    try {
+      final response = await authApi.initiateManualRecovery(
+        RegisterManualRequest(email: email),
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+
+      return data;
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
   /// Requests the first registration PIN for [verificationId].
   ///
   /// The `201` body repeats [verificationId], which the caller already has, so

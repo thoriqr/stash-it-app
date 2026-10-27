@@ -121,10 +121,7 @@ void main() {
     String id = verificationId,
     String? status,
   }) => {
-    'data': {
-      'verification_id': id,
-      'verification_status': ?status,
-    },
+    'data': {'verification_id': id, 'verification_status': ?status},
     'message': 'registration requested',
   };
 
@@ -155,6 +152,22 @@ void main() {
       '/auth/register/manual',
       status: httpStatus,
       body: body ?? registrationEnvelope(id: id, status: status),
+    );
+  }
+
+  void scriptRecovery({
+    String id = 'recovery-verification-id',
+    String? status = 'pending',
+    int httpStatus = 201,
+    Object? body,
+    Map<String, List<String>> headers = const {},
+  }) {
+    adapter.onMethod(
+      'POST',
+      '/auth/register/recovery/manual',
+      status: httpStatus,
+      body: body ?? registrationEnvelope(id: id, status: status),
+      headers: headers,
     );
   }
 
@@ -509,7 +522,15 @@ void main() {
       expect(find.widgetWithText(AppButton, 'Send PIN'), findsNothing);
       expect(adapter.countFor('/pin'), 0);
       expect(adapter.countFor('/auth/register/continuation'), 0);
-      expect(find.widgetWithText(AppButton, 'Try again'), findsOneWidget);
+      expect(
+        adapter.countFor('/auth/register/recovery/manual'),
+        0,
+        reason: 'recovery is never initiated automatically',
+      );
+      expect(
+        find.widgetWithText(AppButton, 'Recover this registration'),
+        findsOneWidget,
+      );
       expect(
         find.widgetWithText(AppButton, 'Use a different email'),
         findsOneWidget,
@@ -598,8 +619,19 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(find.text('Verification already complete'), findsOneWidget);
+      expect(find.widgetWithText(AppButton, 'Try again'), findsOneWidget);
+      expect(
+        find.widgetWithText(AppButton, 'Recover this registration'),
+        findsOneWidget,
+      );
       expect((await continuationStore.read())?.token, storedToken);
       expect(adapter.countFor('/pin'), 0);
+      expect(
+        adapter.countFor('/auth/register/recovery/manual'),
+        0,
+        reason: 'an unconfirmed check must not discard the token or recover',
+      );
     });
 
     testWidgets('a continuation for another address is discarded, not used', (
@@ -617,13 +649,16 @@ void main() {
       await submit(tester);
 
       expect(find.textContaining('could not match'), findsOneWidget);
+      expect(find.text('Verification already complete'), findsOneWidget);
       expect(await continuationStore.read(), isNull);
       expect(adapter.countFor('/pin'), 0);
+      expect(
+        find.widgetWithText(AppButton, 'Recover this registration'),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('a pending response clears a matching stale token', (
-      tester,
-    ) async {
+    testWidgets('a pending response retains a matching token', (tester) async {
       await pumpSignUp(tester);
       await continuationStore.write(email: email, token: storedToken);
       scriptRegistration(status: 'pending');
@@ -637,26 +672,667 @@ void main() {
       await submit(tester);
 
       expect(adapter.countFor('/pin'), 1);
-      expect(await continuationStore.read(), isNull);
+      expect(
+        (await continuationStore.read())?.token,
+        storedToken,
+        reason: 'pending can mean an open recovery with a still-valid token',
+      );
       expect(find.text('Check your email'), findsOneWidget);
     });
 
-    testWidgets('Try again makes one more request and explains the wait', (
+    group('explicit recovery', () {
+      const recoveryId = 'recovery-verification-id';
+
+      testWidgets('recovers only on a tap, then requests a PIN and navigates', (
+        tester,
+      ) async {
+        await pumpRoutedSignUp(tester);
+        scriptRegistration(status: 'verified');
+        scriptRecovery(id: recoveryId);
+        adapter.onMethod(
+          'POST',
+          '/verification/$recoveryId/pin',
+          status: 201,
+          body: pinEnvelope(id: recoveryId),
+        );
+
+        await submit(tester);
+
+        expect(find.text('Verification already complete'), findsOneWidget);
+        expect(
+          adapter.countFor('/auth/register/recovery/manual'),
+          0,
+          reason: 'receiving verified must not initiate recovery',
+        );
+
+        // A rebuild must not turn the blocked state into a request either.
+        await tester.pump();
+        expect(adapter.countFor('/auth/register/recovery/manual'), 0);
+
+        await tester.tap(
+          find.widgetWithText(AppButton, 'Recover this registration'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(adapter.countFor('/auth/register/recovery/manual'), 1);
+        final recoveryRequest = adapter.lastRequestTo(
+          '/auth/register/recovery/manual',
+        )!;
+        expect(recoveryRequest.jsonField('email'), email);
+        expect((recoveryRequest.body as Map).keys, {'email'});
+        expect(
+          adapter.countFor('/auth/register/manual'),
+          1,
+          reason: 'recovery must not re-probe manual registration',
+        );
+        expect(adapter.countFor('/verification/$recoveryId/pin'), 1);
+        expect(find.text('PIN $recoveryId email=$email'), findsOneWidget);
+      });
+
+      testWidgets('a resend cooldown still enters the PIN flow', (
+        tester,
+      ) async {
+        await pumpRoutedSignUp(tester);
+        scriptRegistration(status: 'verified');
+        scriptRecovery(id: recoveryId);
+        adapter.onMethod(
+          'POST',
+          '/verification/$recoveryId/pin',
+          status: 409,
+          body: errorBody(ApiErrorCode.verificationResendCooldown),
+        );
+
+        await submit(tester);
+        await tester.tap(
+          find.widgetWithText(AppButton, 'Recover this registration'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('PIN $recoveryId email=$email'), findsOneWidget);
+      });
+
+      testWidgets(
+        'a PIN delivery failure stays recoverable and a later tap resumes',
+        (tester) async {
+          await pumpRoutedSignUp(tester);
+          scriptRegistration(status: 'verified');
+          scriptRecovery(id: recoveryId);
+          adapter.onSequence('/verification/$recoveryId/pin', [
+            FakeReply.errorWithRetryAfter(
+              503,
+              ApiErrorCode.pinEmailDeliveryFailed,
+              30,
+            ),
+            FakeReply(201, pinEnvelope(id: recoveryId)),
+          ]);
+
+          await submit(tester);
+          await tester.tap(
+            find.widgetWithText(AppButton, 'Recover this registration'),
+          );
+          await tester.pumpAndSettle();
+
+          expect(
+            find.text(
+              'We could not confirm the PIN email was sent. Check your inbox '
+              'before trying again.',
+            ),
+            findsOneWidget,
+          );
+          expect(find.text('Verification already complete'), findsOneWidget);
+          expect(adapter.countFor('/verification/$recoveryId/pin'), 1);
+
+          await tester.tap(
+            find.widgetWithText(AppButton, 'Recover this registration'),
+          );
+          await tester.pumpAndSettle();
+
+          expect(adapter.countFor('/auth/register/recovery/manual'), 2);
+          expect(adapter.countFor('/verification/$recoveryId/pin'), 2);
+          expect(find.text('PIN $recoveryId email=$email'), findsOneWidget);
+        },
+      );
+
+      testWidgets('an already completed account returns to sign-in', (
+        tester,
+      ) async {
+        await pumpSignUp(tester);
+        scriptRegistration(status: 'verified');
+        scriptRecovery(
+          httpStatus: 409,
+          body: errorBody(ApiErrorCode.registrationAlreadyCompleted),
+        );
+
+        await submit(tester);
+        await tester.tap(
+          find.widgetWithText(AppButton, 'Recover this registration'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(TextFormField), findsOneWidget);
+        expect(
+          find.text(
+            'An account already exists for this email. Sign in instead.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.widgetWithText(AppButton, 'Sign in'), findsOneWidget);
+        expect(adapter.countFor('/pin'), 0);
+      });
+
+      for (final code in [
+        ApiErrorCode.registrationExpired,
+        ApiErrorCode.registrationNotPending,
+        ApiErrorCode.invalidRegistrationType,
+      ]) {
+        testWidgets('a $code refusal returns to the registration form', (
+          tester,
+        ) async {
+          await pumpSignUp(tester);
+          scriptRegistration(status: 'verified');
+          scriptRecovery(httpStatus: 409, body: errorBody(code));
+
+          await submit(tester);
+          await tester.tap(
+            find.widgetWithText(AppButton, 'Recover this registration'),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.byType(TextFormField), findsOneWidget);
+          expect(
+            find.text(
+              'That registration can no longer continue. Start a new one.',
+            ),
+            findsOneWidget,
+          );
+          expect(adapter.countFor('/pin'), 0);
+        });
+      }
+
+      testWidgets('a spent IP budget keeps the server wait and no PIN', (
+        tester,
+      ) async {
+        await pumpSignUp(tester);
+        scriptRegistration(status: 'verified');
+        scriptRecovery(
+          httpStatus: 429,
+          body: errorBody(ApiErrorCode.ipRateLimitExceeded),
+          headers: {
+            'retry-after': ['42'],
+          },
+        );
+
+        await submit(tester);
+        await tester.tap(
+          find.widgetWithText(AppButton, 'Recover this registration'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Too many attempts. Try again in 42 seconds.'),
+          findsOneWidget,
+        );
+        expect(find.text('Verification already complete'), findsOneWidget);
+        expect(find.byType(TextFormField), findsNothing);
+        expect(adapter.countFor('/pin'), 0);
+      });
+
+      testWidgets('a lost recovery request stays in the recovery state', (
+        tester,
+      ) async {
+        await pumpSignUp(tester);
+        scriptRegistration(status: 'verified');
+        adapter.onOffline('/auth/register/recovery/manual');
+
+        await submit(tester);
+        await tester.tap(
+          find.widgetWithText(AppButton, 'Recover this registration'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text(
+            'No connection to the server. We could not start recovery. '
+            'Try again.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Verification already complete'), findsOneWidget);
+        expect(adapter.countFor('/pin'), 0);
+      });
+
+      for (final testCase in [
+        (
+          status: 503,
+          code: ApiErrorCode.ipRateLimitUnavailable,
+          message: 'Recovery is temporarily unavailable. Try again shortly.',
+        ),
+        (
+          status: 500,
+          code: ApiErrorCode.internalServerError,
+          message: 'We could not start recovery. Try again shortly.',
+        ),
+      ]) {
+        testWidgets('${testCase.status} keeps the recovery state', (
+          tester,
+        ) async {
+          await pumpSignUp(tester);
+          scriptRegistration(status: 'verified');
+          scriptRecovery(
+            httpStatus: testCase.status,
+            body: errorBody(testCase.code),
+          );
+
+          await submit(tester);
+          await tester.tap(
+            find.widgetWithText(AppButton, 'Recover this registration'),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.text(testCase.message), findsOneWidget);
+          expect(find.text('Verification already complete'), findsOneWidget);
+          expect(adapter.countFor('/pin'), 0);
+        });
+      }
+
+      testWidgets('an unreadable recovery reply claims no progress', (
+        tester,
+      ) async {
+        await pumpSignUp(tester);
+        scriptRegistration(status: 'verified');
+        scriptRecovery(httpStatus: 201, body: 'not JSON');
+
+        await submit(tester);
+        await tester.tap(
+          find.widgetWithText(AppButton, 'Recover this registration'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text(
+            'We could not confirm whether recovery started. Try again.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Verification already complete'), findsOneWidget);
+        expect(adapter.countFor('/pin'), 0);
+      });
+
+      testWidgets('an unexpected verified answer never requests a PIN', (
+        tester,
+      ) async {
+        await pumpSignUp(tester);
+        scriptRegistration(status: 'verified');
+        scriptRecovery(status: 'verified');
+
+        await submit(tester);
+        await tester.tap(
+          find.widgetWithText(AppButton, 'Recover this registration'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Recovery could not be started. Try again.'),
+          findsOneWidget,
+        );
+        expect(find.text('Verification already complete'), findsOneWidget);
+        expect(adapter.countFor('/pin'), 0);
+        expect(find.text('Enter your PIN'), findsNothing);
+      });
+
+      testWidgets('a second tap is refused while recovery is in flight', (
+        tester,
+      ) async {
+        await pumpSignUp(tester);
+        scriptRegistration(status: 'verified');
+        adapter.onBlocking(
+          '/auth/register/recovery/manual',
+          FakeReply(
+            201,
+            registrationEnvelope(id: recoveryId, status: 'pending'),
+          ),
+        );
+        adapter.onMethod(
+          'POST',
+          '/verification/$recoveryId/pin',
+          status: 201,
+          body: pinEnvelope(id: recoveryId),
+        );
+
+        await submit(tester);
+        await tester.tap(
+          find.widgetWithText(AppButton, 'Recover this registration'),
+        );
+        await tester.pump();
+
+        final primary = find.byWidgetPredicate(
+          (widget) =>
+              widget is AppButton && widget.variant == AppButtonVariant.primary,
+        );
+        expect(tester.widget<AppButton>(primary).busy, isTrue);
+
+        await tester.tap(primary, warnIfMissed: false);
+        adapter.releaseBlocked();
+        await tester.pumpAndSettle();
+
+        expect(adapter.countFor('/auth/register/recovery/manual'), 1);
+        expect(adapter.countFor('/verification/$recoveryId/pin'), 1);
+      });
+    });
+
+    group('pending-verification fallback', () {
+      const fallbackId = 'fallback-verification-id';
+
+      testWidgets(
+        'RECOVERY_ALREADY_PENDING falls back and enters the PIN flow',
+        (tester) async {
+          await pumpRoutedSignUp(tester);
+          adapter.onSequence('/auth/register/manual', [
+            FakeReply(201, registrationEnvelope(status: 'verified')),
+            FakeReply(
+              201,
+              registrationEnvelope(id: fallbackId, status: 'pending'),
+            ),
+          ]);
+          scriptRecovery(
+            httpStatus: 409,
+            body: errorBody(ApiErrorCode.registrationAlreadyPending),
+          );
+          adapter.onMethod(
+            'POST',
+            '/verification/$fallbackId/pin',
+            status: 201,
+            body: pinEnvelope(id: fallbackId),
+          );
+
+          await submit(tester);
+          expect(find.text('Verification already complete'), findsOneWidget);
+
+          await tester.tap(
+            find.widgetWithText(AppButton, 'Recover this registration'),
+          );
+          await tester.pumpAndSettle();
+
+          expect(adapter.countFor('/auth/register/recovery/manual'), 1);
+          expect(
+            adapter.countFor('/auth/register/manual'),
+            2,
+            reason: 'the initial probe plus exactly one fallback',
+          );
+          expect(
+            adapter.lastRequestTo('/auth/register/manual')!.jsonField('email'),
+            email,
+          );
+          expect(adapter.countFor('/verification/$fallbackId/pin'), 1);
+          expect(find.text('PIN $fallbackId email=$email'), findsOneWidget);
+        },
+      );
+
+      testWidgets(
+        'a fallback that is still verified does not re-enter recovery',
+        (tester) async {
+          await pumpSignUp(tester);
+          adapter.onSequence('/auth/register/manual', [
+            FakeReply(201, registrationEnvelope(status: 'verified')),
+            FakeReply(201, registrationEnvelope(status: 'verified')),
+          ]);
+          scriptRecovery(
+            httpStatus: 409,
+            body: errorBody(ApiErrorCode.registrationAlreadyPending),
+          );
+
+          await submit(tester);
+          await tester.tap(
+            find.widgetWithText(AppButton, 'Recover this registration'),
+          );
+          await tester.pumpAndSettle();
+
+          expect(adapter.countFor('/auth/register/recovery/manual'), 1);
+          expect(adapter.countFor('/auth/register/manual'), 2);
+          expect(find.text('Verification already complete'), findsOneWidget);
+          expect(
+            find.widgetWithText(AppButton, 'Recover this registration'),
+            findsOneWidget,
+          );
+          expect(adapter.countFor('/pin'), 0);
+        },
+      );
+
+      testWidgets(
+        'a verified fallback with a surviving saved token uses it and does '
+        'not recover again',
+        (tester) async {
+          await pumpRoutedSignUp(tester);
+          await continuationStore.write(email: email, token: storedToken);
+          adapter.onSequence('/auth/register/manual', [
+            FakeReply(201, registrationEnvelope(status: 'verified')),
+            FakeReply(201, registrationEnvelope(status: 'verified')),
+          ]);
+          adapter.onSequence('/auth/register/continuation', [
+            FakeReply(500, errorBody(ApiErrorCode.internalServerError)),
+            FakeReply(200, continuationEnvelope()),
+          ]);
+          scriptRecovery(
+            httpStatus: 409,
+            body: errorBody(ApiErrorCode.registrationAlreadyPending),
+          );
+
+          await submit(tester);
+          expect(find.text('Verification already complete'), findsOneWidget);
+          expect(find.widgetWithText(AppButton, 'Try again'), findsOneWidget);
+
+          // The explicit discard cannot delete the record, so the saved token
+          // survives the recovery action and the fallback can use it.
+          backend.failingDeletes.add(RegistrationContinuationStore.storageKey);
+
+          await tester.tap(
+            find.widgetWithText(AppButton, 'Recover this registration'),
+          );
+          await tester.pumpAndSettle();
+
+          expect(adapter.countFor('/auth/register/recovery/manual'), 1);
+          expect(adapter.countFor('/auth/register/manual'), 2);
+          expect(adapter.countFor('/auth/register/continuation'), 2);
+          expect(find.text('FINALIZE $storedToken'), findsOneWidget);
+          expect((await continuationStore.read())?.token, storedToken);
+        },
+      );
+
+      testWidgets('a fallback completed account directs the user to sign in', (
+        tester,
+      ) async {
+        await pumpSignUp(tester);
+        adapter.onSequence('/auth/register/manual', [
+          FakeReply(201, registrationEnvelope(status: 'verified')),
+          FakeReply(409, errorBody(ApiErrorCode.registrationAlreadyCompleted)),
+        ]);
+        scriptRecovery(
+          httpStatus: 409,
+          body: errorBody(ApiErrorCode.registrationAlreadyPending),
+        );
+
+        await submit(tester);
+        await tester.tap(
+          find.widgetWithText(AppButton, 'Recover this registration'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(adapter.countFor('/auth/register/recovery/manual'), 1);
+        expect(adapter.countFor('/auth/register/manual'), 2);
+        expect(find.byType(TextFormField), findsOneWidget);
+        expect(
+          find.text(
+            'An account already exists for this email. Sign in instead.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.widgetWithText(AppButton, 'Sign in'), findsOneWidget);
+        expect(adapter.countFor('/pin'), 0);
+      });
+
+      testWidgets('a failed fallback does not retry recovery', (tester) async {
+        await pumpSignUp(tester);
+        adapter.onSequence('/auth/register/manual', [
+          FakeReply(201, registrationEnvelope(status: 'verified')),
+          FakeReply(500, errorBody(ApiErrorCode.internalServerError)),
+        ]);
+        scriptRecovery(
+          httpStatus: 409,
+          body: errorBody(ApiErrorCode.registrationAlreadyPending),
+        );
+
+        await submit(tester);
+        await tester.tap(
+          find.widgetWithText(AppButton, 'Recover this registration'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(adapter.countFor('/auth/register/recovery/manual'), 1);
+        expect(adapter.countFor('/auth/register/manual'), 2);
+        expect(
+          find.text(
+            'The server could not start your registration. Try again shortly.',
+          ),
+          findsOneWidget,
+        );
+        expect(adapter.countFor('/pin'), 0);
+      });
+
+      testWidgets('duplicate taps do not duplicate recovery or the fallback', (
+        tester,
+      ) async {
+        await pumpSignUp(tester);
+        adapter.onSequence('/auth/register/manual', [
+          FakeReply(201, registrationEnvelope(status: 'verified')),
+          FakeReply(
+            201,
+            registrationEnvelope(id: fallbackId, status: 'pending'),
+          ),
+        ]);
+        adapter.onBlocking(
+          '/auth/register/recovery/manual',
+          FakeReply(409, errorBody(ApiErrorCode.registrationAlreadyPending)),
+        );
+        adapter.onMethod(
+          'POST',
+          '/verification/$fallbackId/pin',
+          status: 201,
+          body: pinEnvelope(id: fallbackId),
+        );
+
+        await submit(tester);
+        await tester.tap(
+          find.widgetWithText(AppButton, 'Recover this registration'),
+        );
+        await tester.pump();
+
+        final primary = find.byWidgetPredicate(
+          (widget) =>
+              widget is AppButton && widget.variant == AppButtonVariant.primary,
+        );
+        expect(tester.widget<AppButton>(primary).busy, isTrue);
+
+        await tester.tap(primary, warnIfMissed: false);
+        adapter.releaseBlocked();
+        await tester.pumpAndSettle();
+
+        expect(adapter.countFor('/auth/register/recovery/manual'), 1);
+        expect(adapter.countFor('/auth/register/manual'), 2);
+        expect(adapter.countFor('/verification/$fallbackId/pin'), 1);
+      });
+    });
+
+    testWidgets('saved-code retry re-reads the token and can finalize', (
       tester,
     ) async {
-      await pumpSignUp(tester);
+      await pumpRoutedSignUp(tester);
+      await continuationStore.write(email: email, token: storedToken);
       scriptRegistration(status: 'verified');
+      adapter.onSequence('/auth/register/continuation', [
+        FakeReply(500, errorBody(ApiErrorCode.internalServerError)),
+        FakeReply(200, continuationEnvelope()),
+      ]);
 
       await submit(tester);
+
       expect(find.text('Verification already complete'), findsOneWidget);
+      expect(
+        find.text('We could not check that registration. Try again shortly.'),
+        findsOneWidget,
+      );
+      expect((await continuationStore.read())?.token, storedToken);
+      expect(adapter.countFor('/auth/register/continuation'), 1);
 
       await tester.tap(find.widgetWithText(AppButton, 'Try again'));
       await tester.pumpAndSettle();
 
-      expect(adapter.countFor('/auth/register/manual'), 2);
-      expect(adapter.countFor('/pin'), 0);
-      expect(find.textContaining('15-minute'), findsOneWidget);
-      expect(find.text('Verification already complete'), findsOneWidget);
+      expect(adapter.countFor('/auth/register/continuation'), 2);
+      expect(find.text('FINALIZE $storedToken'), findsOneWidget);
+      expect((await continuationStore.read())?.token, storedToken);
+    });
+
+    testWidgets(
+      'explicit recovery from an unconfirmed saved code discards it first',
+      (tester) async {
+        const recoveryId = 'recovery-verification-id';
+        await pumpRoutedSignUp(tester);
+        await continuationStore.write(email: email, token: storedToken);
+        scriptRegistration(status: 'verified');
+        adapter.onSequence('/auth/register/continuation', [
+          FakeReply(500, errorBody(ApiErrorCode.internalServerError)),
+        ]);
+        scriptRecovery(id: recoveryId);
+        adapter.onMethod(
+          'POST',
+          '/verification/$recoveryId/pin',
+          status: 201,
+          body: pinEnvelope(id: recoveryId),
+        );
+
+        await submit(tester);
+        expect(find.text('Verification already complete'), findsOneWidget);
+        expect(
+          find.widgetWithText(AppButton, 'Recover this registration'),
+          findsOneWidget,
+        );
+
+        await tester.tap(
+          find.widgetWithText(AppButton, 'Recover this registration'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(adapter.countFor('/auth/register/recovery/manual'), 1);
+        expect(await continuationStore.read(), isNull);
+        expect(find.text('PIN $recoveryId email=$email'), findsOneWidget);
+      },
+    );
+
+    testWidgets('recovery never clears a token for another address', (
+      tester,
+    ) async {
+      const recoveryId = 'recovery-verification-id';
+      await pumpRoutedSignUp(tester);
+      await continuationStore.write(
+        email: 'other@example.com',
+        token: 'other-token',
+      );
+      scriptRegistration(status: 'verified');
+      scriptRecovery(id: recoveryId);
+      adapter.onMethod(
+        'POST',
+        '/verification/$recoveryId/pin',
+        status: 201,
+        body: pinEnvelope(id: recoveryId),
+      );
+
+      await submit(tester);
+      await tester.tap(
+        find.widgetWithText(AppButton, 'Recover this registration'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('PIN $recoveryId email=$email'), findsOneWidget);
+      expect((await continuationStore.read())?.token, 'other-token');
     });
 
     testWidgets('an already completed registration clears a matching token', (
@@ -895,7 +1571,9 @@ void main() {
         // PIN screen's status read reports the real countdown.
         expect(find.text('PIN $verificationId email=$email'), findsOneWidget);
         expect(
-          find.text('A PIN was sent to this email recently. Try again shortly.'),
+          find.text(
+            'A PIN was sent to this email recently. Try again shortly.',
+          ),
           findsNothing,
         );
         expect(find.textContaining('seconds'), findsNothing);

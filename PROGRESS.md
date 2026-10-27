@@ -1,3 +1,68 @@
+## Recovery already-pending fallback (2026-10-27)
+
+### Verified backend contract (stash-it-backend, uncommitted)
+- `POST /auth/register/recovery/manual` now requires the normal registration verification to be `verified`. If it is still `pending`, the route answers **409 `REGISTRATION_ALREADY_PENDING`** and returns no verification id. It creates no recovery request and changes nothing.
+- `POST /auth/register/manual` is unchanged: for the same still-pending verification it returns the existing `verification_id` with `verification_status: "pending"`, and the normal PIN flow continues.
+- The new refusal carries the existing 409 conflict status; no new endpoint, DTO, or other code changed. Migration/backend deployment still applies.
+
+### Flutter implementation
+- Added `ApiErrorCode.registrationAlreadyPending` and the typed `ApiFailureRegistrationAlreadyPending`, mapped from the code before the generic unknown-code path. It stays distinct from `ApiFailureRegistrationRetryable`, `ApiFailureRegistrationRestartRequired`, and `ApiFailureRegistrationAlreadyCompleted`; the mapper test pins that separation.
+- `SignUpScreen._recoverRegistration` now catches this failure before the terminal classification and calls the existing `_start(email, allowReplacement: false)` fallback exactly once. The recovery endpoint is not called again.
+- The fallback reuses the normal orchestration for every outcome:
+  - `pending` → existing `/pin` request and PIN route with the returned id and email.
+  - `verified` → existing continuation logic (`openFinalize` when a token is stored, otherwise the existing blocked state); no automatic recovery.
+  - `ALREADY_COMPLETED` → existing sign-in copy/form.
+  - other `ApiFailure`s → existing form copy; no second recovery attempt.
+- The fallback is bounded: `allowReplacement: false` threads through `_start` and `_continueToFinalize`, so a terminally dead saved token in the fallback returns to the form instead of issuing the one-shot `/register/manual` replacement a normal submission would make. Normal submissions and `_retrySavedCode` keep the existing replacement behavior.
+- No change to the recovery trigger, `savedCodeUnconfirmed` actions, token retention/clearing rules, cooldown handling, PIN persistence, or finalization.
+
+### Verification
+- `dart format` on every changed Dart file.
+- `flutter analyze` — no issues found.
+- Focused `flutter test test/features/auth test/core/error/api_failure_mapper_test.dart` — **315 passed**.
+- `flutter test` — **1268 passed**.
+- No app, device, or emulator run. Nothing staged or committed.
+
+### Remaining limitations
+- The fallback is only reachable against a backend that emits `REGISTRATION_ALREADY_PENDING`. An older backend still returns the pre-change successful response; the client then follows the returned pending verification id through the existing `/pin` path. No feature detection is added.
+- `REGISTRATION_ALREADY_PENDING` is retained as a registration-lifecycle variant for diagnosis; no user-facing copy is normally shown because the recovery action consumes it.
+- All new copy is hardcoded English.
+
+## Manual registration recovery endpoint (2026-10-27)
+
+### Verified backend contract (stash-it-backend, uncommitted)
+- `POST /auth/register/recovery/manual` takes `{email}` and is **201** `{data: {verification_id, verification_status: "pending"}, message: "registration recovery started"}`. It is behind the same per-IP PIN budget as `/pin` and `/resend`, sends **no email**, and does **not** expire or replace the registration.
+- The returned verification id is used with the existing `/verification/{id}/pin`, `GET /verification/{id}`, `/resend` and `/verify` routes. A recovery `/verify` runs one transaction: expires the old registration, creates a new pending registration, reassigns the recovery request to it as a normal verified request, and returns a **new** `registration_continuation_token` in the existing field. The old token then fails with `REGISTRATION_NOT_PENDING` (if live) or `REGISTRATION_CONTINUATION_EXPIRED`.
+- Initiation errors are the existing typed codes: `REGISTRATION_ALREADY_COMPLETED`, `REGISTRATION_NOT_PENDING`, `REGISTRATION_EXPIRED`, `INVALID_REGISTRATION_TYPE`, `VALIDATION_ERROR`, `IP_RATE_LIMIT_EXCEEDED` (+`Retry-After`), `IP_RATE_LIMIT_UNAVAILABLE` / `CLIENT_IP_UNAVAILABLE`, `INTERNAL_SERVER_ERROR`. No new error code or DTO exists.
+- When a recovery request is open, `POST /auth/register/manual` returns that recovery id with `pending` (not `verified`). A verified response therefore means a usable continuation exists and no recovery is open. Concurrent initiations reuse one recovery request; a normal `/register/manual` does not replace it.
+- **Backend limitation (deferred):** the repository does not check whether the old continuation is usable. Recovery can be initiated for any verified, non-expired manual registration, even with a live continuation. The Flutter client keeps initiation narrow (no usable local token) and explicit; tightening the backend is a separate task.
+
+### Flutter implementation
+- Added `AuthApi.initiateManualRecovery` (`POST /auth/register/recovery/manual`) and `AuthRepository.initiateManualRecovery`, reusing `RegisterManualRequest` / `RegisterManualResponse` and the existing Dio/decoding mapping. `auth_api.g.dart` regenerated; no new DTO, provider, route, storage key or dependency.
+- `SignUpScreen` now has two blocked reasons: `noToken` (verified, no matching local token) and `savedCodeUnconfirmed` (matching token, unconfirmed/ambiguous continuation check).
+  - `noToken` shows **Recover this registration** (explicit), **Use a different email**, and sign-in. Nothing calls recovery until the tap.
+  - `savedCodeUnconfirmed` shows **Try again** (re-runs only `GET /continuation` with the saved token) and **Recover this registration** (explicitly discards the saved record first, best effort). The token is otherwise retained.
+  - Removed the old `/register/manual` retry and the 15-minute-wait copy.
+- Explicit recovery: clear the saved record only for `savedCodeUnconfirmed`; `POST /recovery/manual`; then the existing `_requestPinAndContinue` (cooldown-tolerant) with the returned id and email route extra. A defensive `verified` response never requests a PIN or navigates. Terminal recovery failures (`ALREADY_COMPLETED`, `RESTART_REQUIRED`/`EXPIRED`, `INVALID_REGISTRATION_TYPE`, validation) return to the form; rate limits, server, transport and unreadable failures keep the recovery state with client-owned copy. No automatic retries.
+- **Continuation-token semantics:** a `pending` response no longer clears a matching stored token (it can mean an open recovery with a still-valid predecessor), and neither does the replacement path. Terminal continuation refusals and consumed tokens still clear as before. A token for another email is never presented or cleared.
+- The PIN screen, continuation store, router and finalize screen are unchanged. The PIN screen persists the new token and finalization works as for any manual registration.
+
+### Verification
+- `dart run build_runner build --delete-conflicting-outputs` completed (the flag is reported as removed and ignored); 41 outputs written.
+- `dart format` on every changed Dart file.
+- `flutter analyze` — no issues found.
+- Focused `flutter test test/features/auth` — **261 passed**.
+- `flutter test` — **1261 passed**.
+- No app, device, or emulator run. Nothing staged or committed.
+
+### Remaining limitations
+- The backend eligibility restriction is deferred (see above). The client cannot prevent another client from initiating recovery while a continuation is live; it only avoids doing so itself.
+- The generic 409 `CONFLICT` for an unknown continuation hash is still indistinguishable from an unreadable reply. `savedCodeUnconfirmed` offers Retry plus an explicit discard-and-recover choice rather than clearing automatically.
+- The finalize screen's terminal state does not offer recovery (it has no email context); it keeps "Start a new registration", which leads back through sign-up.
+- Recovery requires mailbox access. No alternative proof exists.
+- A multi-device race is resolved by the backend: exactly one of finalization and recovery verification wins.
+- All new copy is hardcoded English.
+
 ## Manual registration recovery (2026-10-26)
 
 ### Verified backend contract (stash-it-backend)
