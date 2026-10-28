@@ -251,6 +251,7 @@ class MoveToCollection extends _$MoveToCollection {
           ApiFailureUnsortedCollectionProtected() ||
           ApiFailurePinEmailDeliveryFailed() ||
           ApiFailureRegistration() ||
+          ApiFailureGoogleAuth() ||
           ApiFailurePasswordReset() ||
           ApiFailureCollectionDeleteTargetNotFound():
         _publish(

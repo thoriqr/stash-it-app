@@ -18,7 +18,7 @@ import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_ban
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
-/// PIN entry and verification status for a manual registration.
+/// PIN entry and verification status for a registration.
 ///
 /// Reached after the first two registration steps succeed. It reads the
 /// backend's verification status, offers a resend, verifies the PIN, and — when
@@ -26,8 +26,18 @@ import 'package:stash_it_app/shared/widgets/app_field.dart';
 /// continuation token before continuing to finalization. The backend stores only
 /// the token's hash, so losing it means the verified registration cannot be
 /// finished from this device.
+///
+/// The same screen serves manual and social registrations. [socialRegistration]
+/// only changes the finalization route; status, cooldown, resend and PIN
+/// verification are the same backend contract for both.
 class PinEntryScreen extends ConsumerStatefulWidget {
-  const PinEntryScreen({super.key, required this.verificationId, this.email});
+  const PinEntryScreen({
+    super.key,
+    required this.verificationId,
+    this.email,
+    this.socialRegistration = false,
+    this.suggestedDisplayName,
+  });
 
   final String verificationId;
 
@@ -37,6 +47,14 @@ class PinEntryScreen extends ConsumerStatefulWidget {
   /// Null for a direct entry: verification still works, but the token cannot be
   /// persisted and the flow survives only while the app does.
   final String? email;
+
+  /// Whether successful verification continues to social finalization instead
+  /// of the manual display-name/password form.
+  final bool socialRegistration;
+
+  /// The Google profile name, used only to pre-fill the social finalization
+  /// form. It is not identity proof and may be absent.
+  final String? suggestedDisplayName;
 
   @override
   ConsumerState<PinEntryScreen> createState() => _PinEntryScreenState();
@@ -464,6 +482,17 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
       if (!mounted) return;
 
       if (GoRouter.maybeOf(context) != null) {
+        if (widget.socialRegistration) {
+          context.go(
+            AppRoutes.finalizeSocialRegistration,
+            extra: FinalizeSocialRegistrationArgs(
+              continuationToken: token,
+              suggestedDisplayName: widget.suggestedDisplayName,
+            ),
+          );
+          return;
+        }
+
         context.go(AppRoutes.finalizeRegistration, extra: token);
         return;
       }

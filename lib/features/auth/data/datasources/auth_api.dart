@@ -2,12 +2,17 @@ import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
 import '../../../../core/error/api_envelope.dart';
-import '../models/login_request.dart';
-import '../models/login_response.dart';
-import '../models/logout_data.dart';
+import '../models/account_link_confirmation_response.dart';
+import '../models/confirm_account_link_request.dart';
 import '../models/finalize_manual_registration_request.dart';
 import '../models/finalize_manual_registration_response.dart';
 import '../models/finalize_password_reset_request.dart';
+import '../models/finalize_social_registration_request.dart';
+import '../models/login_google_request.dart';
+import '../models/login_google_response.dart';
+import '../models/login_request.dart';
+import '../models/login_response.dart';
+import '../models/logout_data.dart';
 import '../models/password_reset_continuation_response.dart';
 import '../models/register_manual_request.dart';
 import '../models/register_manual_response.dart';
@@ -38,6 +43,47 @@ abstract class AuthApi {
   /// (30/10min and 10/15min). A `429` here is a real budget, not a defect.
   @POST('/auth/login')
   Future<ApiEnvelope<LoginResponse>> login(@Body() LoginRequest request);
+
+  /// `POST /auth/login/google`
+  ///
+  /// Unauthenticated. The response carries one of three outcomes:
+  /// `authenticated`, `account_link_required`, or `registration_required`.
+  /// Only the authenticated outcome includes access and refresh tokens.
+  @POST('/auth/login/google')
+  Future<ApiEnvelope<LoginGoogleResponse>> loginGoogle(
+    @Body() LoginGoogleRequest request,
+  );
+
+  /// `GET /auth/login/google/account-link/{confirmationId}`
+  ///
+  /// Reads a pending account-link confirmation. The confirmation id only names
+  /// the flow; the confirm route also requires the Google ID token.
+  @GET('/auth/login/google/account-link/{confirmationId}')
+  Future<ApiEnvelope<AccountLinkConfirmationResponse>>
+  getGoogleAccountLinkConfirmation(
+    @Path('confirmationId') String confirmationId,
+  );
+
+  /// `POST /auth/login/google/account-link/{confirmationId}/confirm`
+  ///
+  /// Confirms the link and returns the same authenticated shape as Google
+  /// login. The ID token must belong to the identity the confirmation was
+  /// created for.
+  @POST('/auth/login/google/account-link/{confirmationId}/confirm')
+  Future<ApiEnvelope<LoginGoogleResponse>> confirmGoogleAccountLink(
+    @Path('confirmationId') String confirmationId,
+    @Body() ConfirmAccountLinkRequest request,
+  );
+
+  /// `POST /auth/register/finalize/social`
+  ///
+  /// Completes a social registration and creates an authenticated session. The
+  /// continuation token header is the capability; no password is sent.
+  @POST('/auth/register/finalize/social')
+  Future<ApiEnvelope<LoginResponse>> finalizeSocialRegistration(
+    @Header('X-Registration-Continuation') String continuationToken,
+    @Body() FinalizeSocialRegistrationRequest request,
+  );
 
   /// `POST /auth/register/manual`
   ///

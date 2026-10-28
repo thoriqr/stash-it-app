@@ -205,6 +205,55 @@ final class ApiFailureInvalidRegistrationType extends ApiFailureRegistration {
   const ApiFailureInvalidRegistrationType({required super.code});
 }
 
+/// `REGISTRATION_IDENTITY_MISMATCH` — a social registration for the address is
+/// already open under a different provider identity.
+///
+/// The current Google attempt cannot take it over while it is live. This is not
+/// a retryable insert race and not a restart: the stored registration is valid,
+/// just owned by another identity. Nothing was written by the refused request.
+final class ApiFailureRegistrationIdentityMismatch
+    extends ApiFailureRegistration {
+  const ApiFailureRegistrationIdentityMismatch({required super.code});
+}
+
+/// A refusal from the Google authentication lifecycle.
+///
+/// These are not bearer-session failures and not registration-lifecycle
+/// failures. They are kept as one group so a screen can cover the whole Google
+/// flow in one arm.
+sealed class ApiFailureGoogleAuth extends ApiFailure {
+  const ApiFailureGoogleAuth({required this.code});
+
+  /// The backend code, retained for logging and tests, never for display.
+  final String code;
+}
+
+/// `INVALID_GOOGLE_TOKEN` — the token failed Google verification.
+final class ApiFailureInvalidGoogleToken extends ApiFailureGoogleAuth {
+  const ApiFailureInvalidGoogleToken({required super.code});
+}
+
+/// `ACCOUNT_LINK_CONFIRMATION_INVALID` — the confirmation is expired, unknown
+/// or already consumed. A new Google login is required.
+final class ApiFailureAccountLinkConfirmationInvalid
+    extends ApiFailureGoogleAuth {
+  const ApiFailureAccountLinkConfirmationInvalid({required super.code});
+}
+
+/// `ACCOUNT_LINK_IDENTITY_MISMATCH` — the token is valid but belongs to a
+/// different Google identity than the confirmation. Retrying the same token
+/// cannot help; the correct identity can still complete the confirmation.
+final class ApiFailureAccountLinkIdentityMismatch extends ApiFailureGoogleAuth {
+  const ApiFailureAccountLinkIdentityMismatch({required super.code});
+}
+
+/// `ACCOUNT_LINK_SESSION_FAILED` — the link committed and the confirmation was
+/// consumed, but no session was created. Recovery is a fresh Google login, not a
+/// confirm retry.
+final class ApiFailureAccountLinkSessionFailed extends ApiFailureGoogleAuth {
+  const ApiFailureAccountLinkSessionFailed({required super.code});
+}
+
 /// A refusal from the password-reset lifecycle.
 ///
 /// The backend answers these with `409` (except

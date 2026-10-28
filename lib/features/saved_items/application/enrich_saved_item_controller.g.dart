@@ -89,7 +89,7 @@ final class EnrichSavedItemProvider
   }
 }
 
-String _$enrichSavedItemHash() => r'ff68e74e37673a103540e3f63c6000091ecea063';
+String _$enrichSavedItemHash() => r'72c977a918f72ec51e1049029c769d3c59c618f0';
 
 /// The re-read mutation: **one synchronous `POST` per explicit user action**.
 ///

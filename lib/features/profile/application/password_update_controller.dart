@@ -318,6 +318,7 @@ class PasswordUpdate extends _$PasswordUpdate {
           ApiFailureUnsortedCollectionProtected() ||
           ApiFailurePinEmailDeliveryFailed() ||
           ApiFailureRegistration() ||
+          ApiFailureGoogleAuth() ||
           ApiFailurePasswordReset() ||
           ApiFailureCollectionDeleteTargetNotFound():
         return const PasswordUpdateRejected(

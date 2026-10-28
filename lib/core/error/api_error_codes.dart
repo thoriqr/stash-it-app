@@ -166,6 +166,34 @@ abstract final class ApiErrorCode {
   static const String authIdentityAlreadyExists =
       'AUTH_IDENTITY_ALREADY_EXISTS';
 
+  /// 409. A social registration for the address is already open under a
+  /// different provider identity. `registration/error_codes.go`.
+  static const String registrationIdentityMismatch =
+      'REGISTRATION_IDENTITY_MISMATCH';
+
+  // ---------------------------------------------------------------------------
+  // Google authentication — `internal/api/auth/login/error_codes.go`.
+  // ---------------------------------------------------------------------------
+
+  /// 401. The Google ID token failed signature, audience, claim or
+  /// `email_verified` verification.
+  static const String invalidGoogleToken = 'INVALID_GOOGLE_TOKEN';
+
+  /// 409. The account-link confirmation is expired, unknown or already used.
+  static const String accountLinkConfirmationInvalid =
+      'ACCOUNT_LINK_CONFIRMATION_INVALID';
+
+  /// 409. The Google identity presented to confirm is not the identity the
+  /// confirmation was created for. The confirmation remains usable by the
+  /// correct identity.
+  static const String accountLinkIdentityMismatch =
+      'ACCOUNT_LINK_IDENTITY_MISMATCH';
+
+  /// 503. The link committed and the confirmation was consumed, but the session
+  /// could not be created. Retrying confirm cannot help; a fresh Google login
+  /// can, because the identity is now linked.
+  static const String accountLinkSessionFailed = 'ACCOUNT_LINK_SESSION_FAILED';
+
   // ---------------------------------------------------------------------------
   // Password reset — `internal/api/auth/password_reset/error_codes.go`.
   // ---------------------------------------------------------------------------

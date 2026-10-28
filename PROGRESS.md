@@ -1,3 +1,46 @@
+## Google Sign-In (2026-10-28)
+
+### Verified backend contract (stash-it-backend)
+
+- `POST /auth/login/google` `{id_token}` returns one of three outcomes in the same envelope: `authenticated` with `access_token`, `refresh_token` and `user`; `account_link_required` with `provider` and `confirmation_id`; or `registration_required` with `verification_id`. The actual handler/mapper includes `outcome` on every outcome; the generated Swagger success type omits it, so the client follows the code.
+- `GET /auth/login/google/account-link/{confirmation_id}` returns `{id, provider, display_name_snapshot, masked_user_email}`. `POST .../confirm` `{id_token}` links the identity and returns the authenticated shape. The confirmation is single-use: an identity mismatch leaves it usable by the correct Google identity, while a link that commits but cannot create a session consumes it and answers `ACCOUNT_LINK_SESSION_FAILED`.
+- `POST /auth/register/finalize/social` with `X-Registration-Continuation` and `{display_name}` returns `{access_token, refresh_token, user}`; a social account has no password. A new social registration uses the existing login → `/auth/register/verification/{id}/pin` → PIN verify continuation → social finalize chain.
+- Typed codes: `INVALID_GOOGLE_TOKEN`, `ACCOUNT_LINK_CONFIRMATION_INVALID`, `ACCOUNT_LINK_IDENTITY_MISMATCH`, `ACCOUNT_LINK_SESSION_FAILED`, `REGISTRATION_IDENTITY_MISMATCH`.
+
+### Flutter implementation
+
+- Added `google_sign_in` **7.2.0** and `GoogleAuthService` over the 7.x singleton: `initialize` once with the configured server client ID, then `authenticate()`. The service returns only the ID token plus local email/name hints; user cancellation returns null, and no token is logged, persisted, or placed in a URL. `GoogleAuthConfig` defaults to the public Web client ID `1011270119241-nd57rov2q3mv1cddqcit5jn5peon2c4r.apps.googleusercontent.com` and can be overridden with `--dart-define=GOOGLE_SERVER_CLIENT_ID=...`.
+- Added DTOs, Retrofit methods and repository methods for Google login, account-link confirmation read/confirm, and social finalization. `AuthState` writes the token pair through the existing `SecureCredentialStore` and adopts the existing session only for an authenticated outcome or successful link/finalization. Account-link and registration outcomes create no session and store no pair.
+- Entry screen: **Continue with Google** starts the picker and branches. Authenticated → existing session redirect. Account-link required → `/sign-in/google/account-link/:confirmationId` with the ID token in route `extra`. Registration required → request the first PIN and enter the existing `/sign-up/verify/:verificationId` route with a `SocialRegistrationVerification` extra.
+- Account-link screen: loads the masked confirmation and confirms with the in-memory ID token. Terminal copy distinguishes invalid/used, identity mismatch, expired Google token, a committed link with no session, and an already-linked Google identity. Rate limits, server unavailability and transport failures keep the confirmation and offer manual recovery; no automatic retry.
+- PIN screen: status, cooldown, resend and verification are unchanged. A social extra routes successful verification to `/sign-up/finalize/social` instead of manual finalization. Manual registration and password reset continue to use their existing paths.
+- Social finalize screen: reads the continuation with the existing header, rejects a non-social registration, pre-fills the Google profile name (editable, 2–100 characters), and submits without a password. A successful finalization clears the matching registration continuation; a finalization that creates the account but fails to save the session also clears it, because the account exists. Consumed, expired, invalid-type and already-created outcomes are terminal and clear it; uncertain/transient outcomes keep it. No automatic retry.
+- Router: both new routes are signed-out auth routes and redirect a signed-in user. The social finalize route requires its in-memory args; the account-link route requires the in-memory ID token. The confirmation id alone is insufficient.
+- Error taxonomy: added the `ApiFailureGoogleAuth` sealed group, `ApiFailureRegistrationIdentityMismatch`, mapper arms, and exhaustive-switch coverage. No backend, SQL, migration, or API-contract change.
+
+### Platform configuration
+
+- **Android:** no manifest change is required for `google_sign_in` 7.x; the Web/server client ID is passed at initialization. **Still required externally:** an Android OAuth client in the same Google Cloud project as the Web client, registered for package `id.my.thoriqr.stashit` and the SHA-1 fingerprint(s) of the debug/release signing keys. No SHA-1 is stored in this repository.
+- **iOS:** **blocked externally.** `google_sign_in` 7.x needs an iOS OAuth client ID and its reversed-client-ID URL scheme (`GIDClientID` plus `CFBundleURLTypes`). The current iOS bundle identifier is the placeholder `com.example.stashItApp`; the Web client ID cannot substitute for an iOS client ID. No iOS client ID, reversed scheme, bundle identifier or SHA was invented. The Dart initialization already passes the Web/server client ID for ID-token audience.
+- Real Google authentication has not been run or verified. Manual end-to-end testing follows platform OAuth client configuration.
+
+### Verification
+
+- `flutter pub add google_sign_in` resolved `google_sign_in 7.2.0` with its platform implementations.
+- `dart run build_runner build` wrote 197 outputs after adding the Freezed/Retrofit declarations; no generated file was hand-edited.
+- `dart format` on every hand-edited Dart file — 0 changed on the final run.
+- `flutter analyze` — no issues found (final run).
+- Focused auth/Google regression suite (repository, mapper, model, state, entry screen, app router, Google routes, PIN) — **213 passed** (final run).
+- `flutter test` — **1420 passed** (final run).
+- No app, device, emulator or real Google account was used. Nothing staged or committed.
+
+### Remaining limitations
+
+- Platform OAuth client setup above is external and required before on-device testing. On Android, a wrong/missing package, SHA-1 or server client ID commonly surfaces as `GoogleSignInExceptionCode.canceled` after account selection; the client treats cancellation as a no-op.
+- A transport loss after account-link confirmation is ambiguous. The screen states that and offers manual retry/back; a retry after a committed link returns `ACCOUNT_LINK_CONFIRMATION_INVALID`, and the user continues with Google.
+- Social registration relies on the existing PIN issuance/verification and continuation lifetime. No new recovery endpoint or continuation renewal was added. The secure-store write is best-effort recovery within the session, not a supported cross-restart resume path: a later Google login after a terminal social verification force-expires and replaces the old registration.
+- All new copy is hardcoded English; the l10n layer still does not exist.
+
 ## Password reset (2026-10-27)
 
 ### Verified backend contract (stash-it-backend)
@@ -210,7 +253,7 @@
 ## Auth entry screen (2026-10-25)
 
 ### Flutter implementation
-- Added `AppRoutes.auth = '/auth'` and `AuthEntryScreen`: heading, `Sign in` (`context.go` to the existing form), a disabled `Create an account` with its caption, and no Google UI. Registration does not exist, so the control promises nothing.
+- Added `AppRoutes.auth = '/auth'` and `AuthEntryScreen`: heading, `Sign in` (`context.go` to the existing form), and a disabled `Create an account` with its caption. At that stage there was no Google UI and registration did not exist, so the control promised nothing; both have since been implemented.
 - `redirectFor` now allows **both** `/auth` and `/sign-in` while signed out; every other signed-out location goes to `/auth`. Signed-in users at either auth route go to `AppRoutes.initial`, which still points at the Inbox. `restoring` still returns no redirect, so a cold start does not flash the entry screen.
 - Moved `sessionEndedMessage` to `auth_messages.dart` and the one-shot `consumeSessionEnded()` consumer from `SignInScreen` to `AuthEntryScreen.initState`. `messageFor` still maps `ApiFailureSessionEnded`; deliberate sign-out and ambiguous/transport renewal failures remain silent.
 - Extracted `AuthBrandRow` and `AuthMessageBand`/`AuthMessageTone` for the two auth screens only. The band's layout, padding, Dismiss target and styling are unchanged; sign-in failures keep the danger tone.
@@ -222,7 +265,7 @@
 - No build_runner (no generated-code annotation changed), no app/device/emulator run. Nothing staged or committed.
 
 ### Remaining limitations
-- Registration and Google sign-in are not implemented; the account-creation control stays disabled until one exists.
+- At that stage registration and Google sign-in were not implemented; both have since been completed (see the registration and 2026-10-28 sections).
 - **Pre-existing, unchanged:** a bearer refusal other than `ACCESS_TOKEN_EXPIRED` (`INVALID_ACCESS_TOKEN`, `INVALID_AUTHORIZATION_HEADER`) does not end the session; the requesting screen reports it and the stored pair remains.
 - All new copy is hardcoded English; the l10n layer still does not exist.
 

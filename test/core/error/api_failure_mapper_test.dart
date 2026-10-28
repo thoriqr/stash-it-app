@@ -598,6 +598,60 @@ void main() {
     });
   });
 
+  group('Google authentication codes', () {
+    test('each keeps its own typed outcome and code', () {
+      final expected = <String, Type>{
+        ApiErrorCode.invalidGoogleToken: ApiFailureInvalidGoogleToken,
+        ApiErrorCode.accountLinkConfirmationInvalid:
+            ApiFailureAccountLinkConfirmationInvalid,
+        ApiErrorCode.accountLinkIdentityMismatch:
+            ApiFailureAccountLinkIdentityMismatch,
+        ApiErrorCode.accountLinkSessionFailed:
+            ApiFailureAccountLinkSessionFailed,
+      };
+
+      for (final entry in expected.entries) {
+        final failure = mapApiFailure(badResponse(409, errorBody(entry.key)));
+
+        expect(
+          failure,
+          isA<ApiFailureGoogleAuth>(),
+          reason: '${entry.key} belongs to the Google group',
+        );
+        expect(
+          failure.runtimeType,
+          entry.value,
+          reason: '${entry.key} must not collapse into another Google refusal',
+        );
+        expect((failure as ApiFailureGoogleAuth).code, entry.key);
+      }
+    });
+
+    test('INVALID_GOOGLE_TOKEN is not a session-ending event', () {
+      final failure = mapApiFailure(
+        badResponse(401, errorBody(ApiErrorCode.invalidGoogleToken)),
+      );
+
+      expect(failure, isA<ApiFailureInvalidGoogleToken>());
+      expect(failure, isNot(isA<ApiFailureSessionEnded>()));
+      expect(failure, isNot(isA<ApiFailureAuthRequired>()));
+    });
+
+    test('REGISTRATION_IDENTITY_MISMATCH is a registration refusal', () {
+      final failure = mapApiFailure(
+        badResponse(409, errorBody(ApiErrorCode.registrationIdentityMismatch)),
+      );
+
+      expect(failure, isA<ApiFailureRegistrationIdentityMismatch>());
+      expect(failure, isA<ApiFailureRegistration>());
+      expect(failure, isNot(isA<ApiFailureGoogleAuth>()));
+      expect(
+        (failure as ApiFailureRegistration).code,
+        ApiErrorCode.registrationIdentityMismatch,
+      );
+    });
+  });
+
   group('unreadable and unknown responses', () {
     test('a non-JSON body is unreadable, never surfaced', () {
       // Fiber's default handler answers text/plain for a *fiber.Error.

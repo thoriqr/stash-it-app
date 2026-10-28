@@ -1821,4 +1821,248 @@ void main() {
       });
     });
   });
+
+  group('Google authentication', () {
+    Map<String, dynamic> authenticatedData() => {
+      'outcome': 'authenticated',
+      'access_token': 'access-google',
+      'refresh_token': 'refresh-google',
+      'user': {
+        'id': '01a0f359-093b-737a-963a-80f7ca6768ed',
+        'email': 'google@example.com',
+        'display_name': 'Google User',
+      },
+    };
+
+    test('authenticated decodes the session and sends only id_token', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/login/google',
+        body: {'data': authenticatedData(), 'message': 'login successful'},
+      );
+
+      final result = await repository.loginGoogle(idToken: 'google-id-token');
+
+      expect(result, isA<GoogleSignInAuthenticated>());
+      final session = (result as GoogleSignInAuthenticated).session;
+      expect(
+        session.tokens,
+        const AuthTokens(
+          accessToken: 'access-google',
+          refreshToken: 'refresh-google',
+        ),
+      );
+      expect(session.user.email, 'google@example.com');
+
+      final sent = adapter.lastRequestTo('/auth/login/google')!;
+      expect(sent.method, 'POST');
+      expect(sent.jsonField('id_token'), 'google-id-token');
+      expect((sent.body as Map).keys, {'id_token'});
+    });
+
+    test('account-link-required carries the confirmation id', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/login/google',
+        body: {
+          'data': {
+            'outcome': 'account_link_required',
+            'provider': 'google',
+            'confirmation_id': 'confirmation-1',
+          },
+          'message': 'account link required',
+        },
+      );
+
+      final result = await repository.loginGoogle(idToken: 'google-id-token');
+
+      expect(result, isA<GoogleAccountLinkRequired>());
+      final link = result as GoogleAccountLinkRequired;
+      expect(link.confirmationId, 'confirmation-1');
+      expect(link.provider, 'google');
+    });
+
+    test('registration-required carries the verification id', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/login/google',
+        body: {
+          'data': {
+            'outcome': 'registration_required',
+            'verification_id': 'verification-1',
+          },
+          'message': 'registration required',
+        },
+      );
+
+      final result = await repository.loginGoogle(idToken: 'google-id-token');
+
+      expect(result, isA<GoogleRegistrationRequired>());
+      expect(
+        (result as GoogleRegistrationRequired).verificationId,
+        'verification-1',
+      );
+    });
+
+    test('an unknown outcome is unreadable, never an empty session', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/login/google',
+        body: {
+          'data': {'outcome': 'something_new'},
+          'message': 'unexpected',
+        },
+      );
+
+      await expectLater(
+        repository.loginGoogle(idToken: 'google-id-token'),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+
+    test('INVALID_GOOGLE_TOKEN keeps its typed Google failure', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/login/google',
+        status: 401,
+        body: errorBody(ApiErrorCode.invalidGoogleToken),
+      );
+
+      await expectLater(
+        repository.loginGoogle(idToken: 'bad-token'),
+        throwsA(isA<ApiFailureInvalidGoogleToken>()),
+      );
+    });
+
+    test('reads the masked account-link confirmation', () async {
+      adapter.onMethod(
+        'GET',
+        '/auth/login/google/account-link/confirmation-1',
+        body: {
+          'data': {
+            'id': 'confirmation-1',
+            'provider': 'google',
+            'display_name_snapshot': 'Google User',
+            'masked_user_email': 'g***@example.com',
+          },
+          'message': 'confirmation retrieved',
+        },
+      );
+
+      final confirmation = await repository.getGoogleAccountLinkConfirmation(
+        confirmationId: 'confirmation-1',
+      );
+
+      expect(confirmation.id, 'confirmation-1');
+      expect(confirmation.provider, 'google');
+      expect(confirmation.displayNameSnapshot, 'Google User');
+      expect(confirmation.maskedUserEmail, 'g***@example.com');
+    });
+
+    test('confirms the link and returns the authenticated session', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/login/google/account-link/confirmation-1/confirm',
+        body: {'data': authenticatedData(), 'message': 'account linked'},
+      );
+
+      final outcome = await repository.confirmGoogleAccountLink(
+        confirmationId: 'confirmation-1',
+        idToken: 'google-id-token',
+      );
+
+      expect(outcome.tokens.accessToken, 'access-google');
+      expect(outcome.user.email, 'google@example.com');
+
+      final sent = adapter.lastRequestTo('/confirm')!;
+      expect(sent.method, 'POST');
+      expect(sent.path, contains('/account-link/confirmation-1/confirm'));
+      expect(sent.jsonField('id_token'), 'google-id-token');
+      expect((sent.body as Map).keys, {'id_token'});
+    });
+
+    test(
+      'a confirm response without an authenticated outcome is unreadable',
+      () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/login/google/account-link/confirmation-1/confirm',
+          body: {
+            'data': {
+              'outcome': 'registration_required',
+              'verification_id': 'verification-1',
+            },
+            'message': 'unexpected',
+          },
+        );
+
+        await expectLater(
+          repository.confirmGoogleAccountLink(
+            confirmationId: 'confirmation-1',
+            idToken: 'google-id-token',
+          ),
+          throwsA(isA<ApiFailureUnreadableResponse>()),
+        );
+      },
+    );
+
+    test(
+      'a committed link without a session keeps its typed failure',
+      () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/login/google/account-link/confirmation-1/confirm',
+          status: 503,
+          body: errorBody(ApiErrorCode.accountLinkSessionFailed),
+        );
+
+        await expectLater(
+          repository.confirmGoogleAccountLink(
+            confirmationId: 'confirmation-1',
+            idToken: 'google-id-token',
+          ),
+          throwsA(isA<ApiFailureAccountLinkSessionFailed>()),
+        );
+      },
+    );
+
+    test('social finalization sends the header and display name', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/finalize/social',
+        body: loginEnvelope(),
+      );
+
+      final outcome = await repository.finalizeSocialRegistration(
+        continuationToken: 'social-token',
+        displayName: 'Google User',
+      );
+
+      expect(outcome.tokens.accessToken, 'access-1');
+      expect(outcome.user.email, 'user@example.com');
+
+      final sent = adapter.lastRequestTo('/auth/register/finalize/social')!;
+      expect(sent.method, 'POST');
+      expect(sent.headers['X-Registration-Continuation'], 'social-token');
+      expect(sent.jsonField('display_name'), 'Google User');
+      expect((sent.body as Map).keys, {'display_name'});
+    });
+
+    test('a social identity collision is already completed', () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/register/finalize/social',
+        status: 409,
+        body: errorBody(ApiErrorCode.authIdentityAlreadyExists),
+      );
+
+      await expectLater(
+        repository.finalizeSocialRegistration(
+          continuationToken: 'social-token',
+          displayName: 'Google User',
+        ),
+        throwsA(isA<ApiFailureRegistrationAlreadyCompleted>()),
+      );
+    });
+  });
 }

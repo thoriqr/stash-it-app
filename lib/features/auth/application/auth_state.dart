@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../data/auth_api_providers.dart';
 import '../data/auth_repository.dart';
+import '../data/models/auth_tokens.dart';
 import 'session_controller.dart';
 
 part 'auth_state.g.dart';
@@ -76,11 +77,61 @@ class AuthState extends _$AuthState {
         .read(authRepositoryProvider)
         .login(email: email, password: password);
 
-    await ref.read(credentialStoreProvider).write(outcome.tokens);
+    await _persistAndAdopt(outcome.tokens);
+  }
 
-    // Adopting updates the watched session, which rebuilds this provider into
-    // `signedIn`. Nothing assigns the status directly.
-    ref.read(sessionControllerProvider.notifier).adopt(outcome.tokens);
+  /// Signs in with a Google ID token.
+  ///
+  /// Only an authenticated outcome is persisted. Account-link and registration
+  /// outcomes leave the app signed out and are returned for the caller to
+  /// continue the named flow.
+  Future<GoogleSignInResult> signInWithGoogle(String idToken) async {
+    final result = await ref
+        .read(authRepositoryProvider)
+        .loginGoogle(idToken: idToken);
+
+    if (result is GoogleSignInAuthenticated) {
+      await _persistAndAdopt(result.session.tokens);
+    }
+
+    return result;
+  }
+
+  /// Confirms a pending Google account link and adopts the returned session.
+  Future<void> confirmGoogleAccountLink({
+    required String confirmationId,
+    required String idToken,
+  }) async {
+    final outcome = await ref
+        .read(authRepositoryProvider)
+        .confirmGoogleAccountLink(
+          confirmationId: confirmationId,
+          idToken: idToken,
+        );
+
+    await _persistAndAdopt(outcome.tokens);
+  }
+
+  /// Completes a social registration and adopts the returned session.
+  Future<void> finalizeSocialRegistration({
+    required String continuationToken,
+    required String displayName,
+  }) async {
+    final outcome = await ref
+        .read(authRepositoryProvider)
+        .finalizeSocialRegistration(
+          continuationToken: continuationToken,
+          displayName: displayName,
+        );
+
+    await _persistAndAdopt(outcome.tokens);
+  }
+
+  /// Persists the pair before adopting it, so `signedIn` never describes
+  /// credentials that failed to reach secure storage.
+  Future<void> _persistAndAdopt(AuthTokens tokens) async {
+    await ref.read(credentialStoreProvider).write(tokens);
+    ref.read(sessionControllerProvider.notifier).adopt(tokens);
   }
 
   /// Signs out, clearing local credentials whether or not the server call

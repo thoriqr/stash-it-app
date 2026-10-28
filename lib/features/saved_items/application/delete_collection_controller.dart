@@ -325,6 +325,7 @@ class CollectionDeletion extends _$CollectionDeletion {
           ApiFailurePasswordAlreadyChanged() ||
           ApiFailurePinEmailDeliveryFailed() ||
           ApiFailureRegistration() ||
+          ApiFailureGoogleAuth() ||
           ApiFailurePasswordReset() ||
           ApiFailureCollectionNameAlreadyExists():
         _publish(

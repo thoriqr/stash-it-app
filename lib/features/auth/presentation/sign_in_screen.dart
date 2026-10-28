@@ -17,9 +17,9 @@ import 'package:stash_it_app/shared/widgets/app_field.dart';
 /// so this screen does not check whether a session exists — doing so in both
 /// places is how the two drift apart.
 ///
-/// Covers only manual sign-in. Registration and password reset exist as peer
-/// auth routes; Google sign-in and social registration are not implemented, and
-/// no route for them is registered. The Forgot password action opens the
+/// Covers only manual sign-in. Registration, password reset, Google sign-in and
+/// social registration exist as peer auth routes; Google is entered from the auth
+/// entry screen, not from this form. The Forgot password action opens the
 /// password-reset request screen.
 ///
 /// The behaviour is unchanged from the prototype: the same validators, the same
@@ -353,6 +353,7 @@ String messageFor(ApiFailure failure) {
     ApiFailureMalformedRequest() ||
     ApiFailurePinEmailDeliveryFailed() ||
     ApiFailureRegistration() ||
+    ApiFailureGoogleAuth() ||
     ApiFailurePasswordReset() ||
     ApiFailureUnreadableResponse() =>
       "We couldn't read the server's reply. Try again.",

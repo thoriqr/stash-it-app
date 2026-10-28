@@ -71,7 +71,7 @@ final class DisplayNameUpdateProvider
   }
 }
 
-String _$displayNameUpdateHash() => r'92f115478f00323468eab1bf6341c38ee8ef015d';
+String _$displayNameUpdateHash() => r'670afa8bec35a22bc7f894d5346fc18a1527918d';
 
 /// One `PATCH /users/me` per explicit Save.
 ///

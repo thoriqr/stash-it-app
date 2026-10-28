@@ -5,15 +5,18 @@ import 'auth_user.dart';
 part 'login_response.freezed.dart';
 part 'login_response.g.dart';
 
-/// `data` of a successful `POST /auth/login`.
+/// `data` of a successful sign-in-shaped response.
+///
+/// Used by `POST /auth/login`, `POST /auth/login/google` when authenticated, and
+/// `POST /auth/register/finalize/social`. All three return exactly the same three
+/// keys:
 ///
 /// ```json
 /// { "access_token": "...", "refresh_token": "...", "user": { ... } }
 /// ```
 ///
-/// Exactly the three documented keys. Nothing is read from the request context —
-/// the backend derives the user from the verified credentials, never from a body
-/// field a caller could choose.
+/// Nothing is read from the request context — the backend derives the user from
+/// the verified credentials, never from a body field a caller could choose.
 ///
 /// **Every field names its wire key explicitly.** The backend's JSON is
 /// snake_case; without `@JsonKey` the generated decoder looks for camelCase and

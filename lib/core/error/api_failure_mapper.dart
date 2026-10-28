@@ -171,6 +171,26 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.invalidRegistrationType:
       return ApiFailureInvalidRegistrationType(code: code);
 
+    case ApiErrorCode.registrationIdentityMismatch:
+      return ApiFailureRegistrationIdentityMismatch(code: code);
+
+    // Google authentication lifecycle refusals. They are deliberately separate
+    // from bearer and registration failures: an invalid Google token can be
+    // retried with a fresh token, a confirmation mismatch cannot, and a
+    // committed link with no session is recovered by logging in with Google
+    // again rather than by retrying confirm.
+    case ApiErrorCode.invalidGoogleToken:
+      return ApiFailureInvalidGoogleToken(code: code);
+
+    case ApiErrorCode.accountLinkConfirmationInvalid:
+      return ApiFailureAccountLinkConfirmationInvalid(code: code);
+
+    case ApiErrorCode.accountLinkIdentityMismatch:
+      return ApiFailureAccountLinkIdentityMismatch(code: code);
+
+    case ApiErrorCode.accountLinkSessionFailed:
+      return ApiFailureAccountLinkSessionFailed(code: code);
+
     // Password-reset lifecycle refusals. They are a separate group because the
     // correction and the screens are separate: a reset can be retried, restarted
     // or is already complete, and none of those should ever select registration

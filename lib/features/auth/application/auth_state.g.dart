@@ -79,7 +79,7 @@ final class AuthStateProvider extends $NotifierProvider<AuthState, AuthStatus> {
   }
 }
 
-String _$authStateHash() => r'6bffe33f91b051824fcb0b22ff6c997593b1de72';
+String _$authStateHash() => r'0c7a2b19fda92765641ddcecd8e33780ce1cf527';
 
 /// The authentication state, and the operations that change it.
 ///

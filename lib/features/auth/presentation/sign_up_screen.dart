@@ -841,6 +841,12 @@ String registrationMessageFor(ApiFailure failure) {
     ApiFailureRegistrationRetryable() =>
       'Another sign-up attempt was already in progress. Try again.',
 
+    // A social registration for this address is live under another Google
+    // identity. The current attempt cannot take it over while it is pending.
+    ApiFailureRegistrationIdentityMismatch() =>
+      'A sign-up for this email is already in progress with a different '
+          'Google account. Try again after it expires.',
+
     ApiFailureRegistrationRestartRequired() =>
       'That registration can no longer continue. Start a new one.',
 
@@ -921,7 +927,8 @@ String registrationMessageFor(ApiFailure failure) {
     ApiFailureSessionEnded() ||
     ApiFailureRefreshUncertain() ||
     ApiFailureCredentialStorage() ||
-    ApiFailurePasswordReset() =>
+    ApiFailurePasswordReset() ||
+    ApiFailureGoogleAuth() =>
       'We could not start your registration. Try again.',
   };
 }

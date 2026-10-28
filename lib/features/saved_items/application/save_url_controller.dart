@@ -229,6 +229,7 @@ AppFeedback? saveFeedbackFor(ApiFailure failure, {required bool sessionEnded}) {
     ApiFailureUnsortedCollectionProtected() ||
     ApiFailurePinEmailDeliveryFailed() ||
     ApiFailureRegistration() ||
+    ApiFailureGoogleAuth() ||
     ApiFailurePasswordReset() ||
     ApiFailureCollectionDeleteTargetNotFound() => const AppFeedback(
       tone: FeedbackTone.danger,

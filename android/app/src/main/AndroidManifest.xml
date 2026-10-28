@@ -14,7 +14,7 @@
       this together with that change.
     -->
     <application
-        android:label="stash_it_app"
+        android:label="Stash-it"
         android:usesCleartextTraffic="true"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"

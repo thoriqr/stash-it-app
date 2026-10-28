@@ -3,8 +3,13 @@ import 'package:dio/dio.dart';
 import '../../../core/error/api_failure.dart';
 import '../../../core/error/api_failure_mapper.dart';
 import 'datasources/auth_api.dart';
+import 'models/account_link_confirmation_response.dart';
 import 'models/auth_tokens.dart';
 import 'models/auth_user.dart';
+import 'models/confirm_account_link_request.dart';
+import 'models/finalize_social_registration_request.dart';
+import 'models/login_google_request.dart';
+import 'models/login_google_response.dart';
 import 'models/login_request.dart';
 import 'models/finalize_manual_registration_request.dart';
 import 'models/finalize_manual_registration_response.dart';
@@ -27,6 +32,39 @@ class LoginOutcome {
 
   final AuthTokens tokens;
   final AuthUser user;
+}
+
+/// The three documented outcomes of `POST /auth/login/google`.
+///
+/// Only [GoogleSignInAuthenticated] carries a session. The other two are
+/// intermediate states: the app must remain signed out and continue the named
+/// flow.
+sealed class GoogleSignInResult {
+  const GoogleSignInResult();
+}
+
+final class GoogleSignInAuthenticated extends GoogleSignInResult {
+  const GoogleSignInAuthenticated(this.session);
+
+  final LoginOutcome session;
+}
+
+final class GoogleAccountLinkRequired extends GoogleSignInResult {
+  const GoogleAccountLinkRequired({
+    required this.confirmationId,
+    required this.provider,
+  });
+
+  final String confirmationId;
+
+  /// The provider string the backend returned for the pending link.
+  final String provider;
+}
+
+final class GoogleRegistrationRequired extends GoogleSignInResult {
+  const GoogleRegistrationRequired({required this.verificationId});
+
+  final String verificationId;
 }
 
 /// Auth operations, with failures already translated.
@@ -82,6 +120,154 @@ class AuthRepository {
     } on DioException catch (error) {
       throw mapApiFailure(error);
     }
+  }
+
+  /// Signs in with a Google ID token.
+  ///
+  /// Only the authenticated outcome produces a session. The account-link and
+  /// registration outcomes are returned as intermediate states, and the caller
+  /// must not store or adopt anything for them.
+  Future<GoogleSignInResult> loginGoogle({required String idToken}) async {
+    try {
+      final response = await authApi.loginGoogle(
+        LoginGoogleRequest(idToken: idToken),
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+
+      switch (data.outcome) {
+        case 'authenticated':
+          return GoogleSignInAuthenticated(_googleSession(data));
+
+        case 'account_link_required':
+          final confirmationId = data.confirmationId;
+          final provider = data.provider;
+          if (confirmationId == null ||
+              confirmationId.isEmpty ||
+              provider == null ||
+              provider.isEmpty) {
+            throw const ApiFailureUnreadableResponse();
+          }
+          return GoogleAccountLinkRequired(
+            confirmationId: confirmationId,
+            provider: provider,
+          );
+
+        case 'registration_required':
+          final verificationId = data.verificationId;
+          if (verificationId == null || verificationId.isEmpty) {
+            throw const ApiFailureUnreadableResponse();
+          }
+          return GoogleRegistrationRequired(verificationId: verificationId);
+
+        default:
+          // An outcome this client does not understand cannot be acted on.
+          throw const ApiFailureUnreadableResponse();
+      }
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Reads the account-link confirmation details without authorizing anything.
+  Future<AccountLinkConfirmationResponse> getGoogleAccountLinkConfirmation({
+    required String confirmationId,
+  }) async {
+    try {
+      final response = await authApi.getGoogleAccountLinkConfirmation(
+        confirmationId,
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+      return data;
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Confirms a Google account link and returns the newly created session.
+  Future<LoginOutcome> confirmGoogleAccountLink({
+    required String confirmationId,
+    required String idToken,
+  }) async {
+    try {
+      final response = await authApi.confirmGoogleAccountLink(
+        confirmationId,
+        ConfirmAccountLinkRequest(idToken: idToken),
+      );
+      final data = response.data;
+      if (data == null || data.outcome != 'authenticated') {
+        throw const ApiFailureUnreadableResponse();
+      }
+      return _googleSession(data);
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Completes a social registration and returns its authenticated session.
+  Future<LoginOutcome> finalizeSocialRegistration({
+    required String continuationToken,
+    required String displayName,
+  }) async {
+    try {
+      final response = await authApi.finalizeSocialRegistration(
+        continuationToken,
+        FinalizeSocialRegistrationRequest(displayName: displayName),
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+      return LoginOutcome(
+        tokens: AuthTokens(
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+        ),
+        user: data.user,
+      );
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  LoginOutcome _googleSession(LoginGoogleResponse data) {
+    final accessToken = data.accessToken;
+    final refreshToken = data.refreshToken;
+    final user = data.user;
+
+    if (accessToken == null ||
+        accessToken.isEmpty ||
+        refreshToken == null ||
+        refreshToken.isEmpty ||
+        user == null) {
+      throw const ApiFailureUnreadableResponse();
+    }
+
+    return LoginOutcome(
+      tokens: AuthTokens(accessToken: accessToken, refreshToken: refreshToken),
+      user: user,
+    );
   }
 
   /// Starts (or resumes) manual registration.

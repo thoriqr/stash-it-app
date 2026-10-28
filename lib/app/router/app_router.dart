@@ -6,6 +6,8 @@ import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_entry_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/finalize_registration_screen.dart';
+import 'package:stash_it_app/features/auth/presentation/finalize_social_registration_screen.dart';
+import 'package:stash_it_app/features/auth/presentation/google_account_link_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/password_reset_finalize_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/password_reset_pin_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/password_reset_request_screen.dart';
@@ -82,6 +84,10 @@ String? redirectFor(AuthStatus auth, String location) {
   final atSignUp = location == AppRoutes.signUp;
   final atSignUpVerify = location.startsWith('/sign-up/verify/');
   final atFinalize = location == AppRoutes.finalizeRegistration;
+  final atFinalizeSocial = location == AppRoutes.finalizeSocialRegistration;
+  final atGoogleAccountLink = location.startsWith(
+    '/sign-in/google/account-link/',
+  );
   final atForgotPassword = location == AppRoutes.forgotPassword;
   final atForgotPasswordVerify = location.startsWith(
     '/forgot-password/verify/',
@@ -95,6 +101,8 @@ String? redirectFor(AuthStatus auth, String location) {
         atSignUp ||
         atSignUpVerify ||
         atFinalize ||
+        atFinalizeSocial ||
+        atGoogleAccountLink ||
         atForgotPassword ||
         atForgotPasswordVerify ||
         atForgotPasswordFinalize) {
@@ -110,6 +118,8 @@ String? redirectFor(AuthStatus auth, String location) {
       atSignUp ||
       atSignUpVerify ||
       atFinalize ||
+      atFinalizeSocial ||
+      atGoogleAccountLink ||
       atForgotPassword ||
       atForgotPasswordVerify ||
       atForgotPasswordFinalize) {
@@ -138,14 +148,20 @@ final List<RouteBase> _routes = [
   GoRoute(
     path: AppRoutes.signUpVerify,
     builder: (context, state) {
-      // The email is carried in `extra`, not in the location: the route still
-      // names one verification and nothing else. It is needed to scope the
-      // continuation token written after a successful verification, so a direct
-      // entry (no extra) simply cannot persist and stays an in-memory flow.
+      // The manual route carries the email as a String. The social route uses
+      // the typed in-memory object so the same generic PIN screen can branch to
+      // social finalization without changing the manual route's extra.
       final extra = state.extra;
+      final social = extra is SocialRegistrationVerification;
       return PinEntryScreen(
         verificationId: state.pathParameters['verificationId']!,
-        email: extra is String && extra.isNotEmpty ? extra : null,
+        email: social
+            ? extra.email
+            : extra is String && extra.isNotEmpty
+            ? extra
+            : null,
+        socialRegistration: social,
+        suggestedDisplayName: social ? extra.displayName : null,
       );
     },
   ),
@@ -160,6 +176,41 @@ final List<RouteBase> _routes = [
     },
     builder: (context, state) =>
         FinalizeRegistrationScreen(continuationToken: state.extra as String),
+  ),
+  GoRoute(
+    path: AppRoutes.finalizeSocialRegistration,
+    redirect: (context, state) {
+      final extra = state.extra;
+      if (extra is! FinalizeSocialRegistrationArgs ||
+          extra.continuationToken.isEmpty) {
+        return AppRoutes.auth;
+      }
+      return null;
+    },
+    builder: (context, state) {
+      final extra = state.extra! as FinalizeSocialRegistrationArgs;
+      return FinalizeSocialRegistrationScreen(
+        continuationToken: extra.continuationToken,
+        suggestedDisplayName: extra.suggestedDisplayName,
+      );
+    },
+  ),
+  GoRoute(
+    path: AppRoutes.googleAccountLinkPattern,
+    redirect: (context, state) {
+      final extra = state.extra;
+      if (extra is! GoogleAccountLinkArgs || extra.idToken.isEmpty) {
+        return AppRoutes.auth;
+      }
+      return null;
+    },
+    builder: (context, state) {
+      final extra = state.extra! as GoogleAccountLinkArgs;
+      return GoogleAccountLinkScreen(
+        confirmationId: state.pathParameters['confirmationId']!,
+        idToken: extra.idToken,
+      );
+    },
   ),
   GoRoute(
     path: AppRoutes.forgotPassword,

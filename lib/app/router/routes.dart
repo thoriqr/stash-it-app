@@ -22,6 +22,45 @@ final class PasswordResetEmailSelection {
   const PasswordResetEmailSelection();
 }
 
+/// The Google ID token for a pending account-link confirmation.
+///
+/// **In-memory only.** It travels through `GoRouterState.extra`, never through
+/// the location or a query parameter. The confirmation id is the path parameter;
+/// this token is the proof of the Google identity that may complete it.
+final class GoogleAccountLinkArgs {
+  const GoogleAccountLinkArgs({required this.idToken});
+
+  final String idToken;
+}
+
+/// The local Google hints for the existing registration PIN route.
+///
+/// Their presence identifies the route as a social registration. [email] scopes
+/// the continuation record for recovery; [displayName] pre-fills the social
+/// finalization form. Neither value is trusted as backend identity: only the
+/// Google ID token submitted to the login route is.
+final class SocialRegistrationVerification {
+  const SocialRegistrationVerification({this.email, this.displayName});
+
+  final String? email;
+  final String? displayName;
+}
+
+/// The single-use continuation and display-name hint for social finalization.
+///
+/// **In-memory only.** The token is never in the location. The finalization
+/// screen reads it from this route extra, exactly as the manual finalization
+/// route does.
+final class FinalizeSocialRegistrationArgs {
+  const FinalizeSocialRegistrationArgs({
+    required this.continuationToken,
+    this.suggestedDisplayName,
+  });
+
+  final String continuationToken;
+  final String? suggestedDisplayName;
+}
+
 /// Route definitions for the application.
 ///
 /// All paths are declared here so navigation stays centralised, as required by
@@ -93,6 +132,24 @@ abstract final class AppRoutes {
   /// Finalize a manual registration using a continuation token passed via route
   /// extra. Sits outside the shell and is reachable only while signed out.
   static const String finalizeRegistration = '/sign-up/finalize';
+
+  /// Finalize a social registration using the continuation token from the
+  /// existing registration PIN verification.
+  ///
+  /// Sits outside the shell, is signed-out only, and receives the single-use
+  /// continuation token in route `extra` — never in the location.
+  static const String finalizeSocialRegistration = '/sign-up/finalize/social';
+
+  /// Confirm linking a Google identity to an existing Stash-it account.
+  ///
+  /// The confirmation id is the path parameter; the Google ID token that proves
+  /// control of the identity travels in route `extra` only.
+  static const String googleAccountLinkPattern =
+      '/sign-in/google/account-link/:confirmationId';
+
+  /// The location of the account-link confirmation for [confirmationId].
+  static String googleAccountLinkFor(String confirmationId) =>
+      '/sign-in/google/account-link/${Uri.encodeComponent(confirmationId)}';
 
   /// Start or resume a password reset.
   ///
