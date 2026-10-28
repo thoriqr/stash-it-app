@@ -9,6 +9,7 @@ import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/auth_repository.dart';
 import 'package:stash_it_app/features/auth/data/datasources/auth_api.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
+import 'package:stash_it_app/features/auth/data/password_reset_continuation_store.dart';
 import 'package:stash_it_app/features/auth/data/registration_continuation_store.dart';
 
 import '../support/fake_http.dart';
@@ -95,6 +96,9 @@ void main() {
           registrationContinuationStoreProvider.overrideWithValue(
             RegistrationContinuationStore(sharedStorage),
           ),
+          passwordResetContinuationStoreProvider.overrideWithValue(
+            PasswordResetContinuationStore(sharedStorage),
+          ),
           restoredTokensProvider.overrideWithValue(restored),
           authRepositoryProvider.overrideWith(
             (ref) =>
@@ -144,6 +148,15 @@ void main() {
       expect(
         container.read(registrationContinuationStoreProvider),
         isA<RegistrationContinuationStore>(),
+      );
+    });
+
+    test('the password reset continuation store resolves', () {
+      final container = wiredContainer();
+
+      expect(
+        container.read(passwordResetContinuationStoreProvider),
+        isA<PasswordResetContinuationStore>(),
       );
     });
 

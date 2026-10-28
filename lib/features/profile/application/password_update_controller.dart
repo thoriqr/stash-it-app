@@ -318,6 +318,7 @@ class PasswordUpdate extends _$PasswordUpdate {
           ApiFailureUnsortedCollectionProtected() ||
           ApiFailurePinEmailDeliveryFailed() ||
           ApiFailureRegistration() ||
+          ApiFailurePasswordReset() ||
           ApiFailureCollectionDeleteTargetNotFound():
         return const PasswordUpdateRejected(
           "We couldn't set your password. Try again.",

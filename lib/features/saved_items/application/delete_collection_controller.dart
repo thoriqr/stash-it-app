@@ -325,6 +325,7 @@ class CollectionDeletion extends _$CollectionDeletion {
           ApiFailurePasswordAlreadyChanged() ||
           ApiFailurePinEmailDeliveryFailed() ||
           ApiFailureRegistration() ||
+          ApiFailurePasswordReset() ||
           ApiFailureCollectionNameAlreadyExists():
         _publish(
           const AppFeedback(

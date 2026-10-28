@@ -8,9 +8,13 @@ import 'models/auth_user.dart';
 import 'models/login_request.dart';
 import 'models/finalize_manual_registration_request.dart';
 import 'models/finalize_manual_registration_response.dart';
+import 'models/finalize_password_reset_request.dart';
+import 'models/password_reset_continuation_response.dart';
 import 'models/register_manual_request.dart';
 import 'models/register_manual_response.dart';
 import 'models/registration_continuation_response.dart';
+import 'models/request_password_reset_request.dart';
+import 'models/verify_password_reset_request.dart';
 import 'models/verify_registration_request.dart';
 import 'models/verification_status_response.dart';
 
@@ -292,6 +296,161 @@ class AuthRepository {
       await authApi.logout();
     } on DioException catch (error) {
       throw mapApiFailure(error);
+    }
+  }
+
+  /// Starts (or resumes) a password reset and returns the server-issued
+  /// verification id.
+  ///
+  /// The id is identical in shape for an address with no account; the client must
+  /// not use the response to infer account existence.
+  Future<String> requestPasswordReset({required String email}) async {
+    try {
+      final response = await authApi.requestPasswordReset(
+        RequestPasswordResetRequest(email: email),
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+      return data.verificationId;
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Reads the current password-reset verification status.
+  ///
+  /// A body is returned only while the verification is pending; a terminal
+  /// verification surfaces as a typed refusal.
+  Future<VerificationStatusResponse> getPasswordResetVerification({
+    required String verificationId,
+  }) async {
+    try {
+      final response = await authApi.getPasswordResetVerification(
+        verificationId,
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+      return data;
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Issues the first PIN for a pending password reset.
+  ///
+  /// The `201` body repeats the id the caller already has, so this returns
+  /// nothing. An unreadable `201` is not proof that no PIN was issued.
+  Future<void> createPasswordResetPin({required String verificationId}) async {
+    try {
+      await authApi.createPasswordResetPin(verificationId);
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Issues a replacement PIN for a pending password reset.
+  Future<String> resendPasswordResetPin({
+    required String verificationId,
+  }) async {
+    try {
+      final response = await authApi.resendPasswordResetPin(verificationId);
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+      return data.verificationId;
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Verifies a password-reset PIN and returns the raw continuation token.
+  ///
+  /// The token is returned exactly once; the caller must persist it immediately.
+  Future<String> verifyPasswordReset({
+    required String verificationId,
+    required String pin,
+  }) async {
+    try {
+      final response = await authApi.verifyPasswordReset(
+        verificationId,
+        VerifyPasswordResetRequest(pin: pin),
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+      return data.passwordResetContinuationToken;
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Validates a password-reset continuation token.
+  Future<PasswordResetContinuationResponse> getPasswordResetContinuation({
+    required String continuationToken,
+  }) async {
+    try {
+      final response = await authApi.getPasswordResetContinuation(
+        continuationToken,
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailureUnreadableResponse();
+      }
+      return data;
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Completes the reset with the continuation token and new password.
+  ///
+  /// A successful `200` is the only receipt; the backend returns no payload and
+  /// revokes every session for the account.
+  Future<void> finalizePasswordReset({
+    required String continuationToken,
+    required String password,
+  }) async {
+    try {
+      await authApi.finalizePasswordReset(
+        continuationToken,
+        FinalizePasswordResetRequest(password: password),
+      );
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
     }
   }
 }

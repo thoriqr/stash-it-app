@@ -167,6 +167,42 @@ abstract final class ApiErrorCode {
       'AUTH_IDENTITY_ALREADY_EXISTS';
 
   // ---------------------------------------------------------------------------
+  // Password reset — `internal/api/auth/password_reset/error_codes.go`.
+  // ---------------------------------------------------------------------------
+
+  /// 409. A concurrent request created a pending reset for the address first.
+  ///
+  /// The service normally resolves this race internally by returning the existing
+  /// verification id; reaching the client means the single retry also lost. The
+  /// correction is to repeat the request, not to treat the reset as invalid.
+  static const String passwordResetAlreadyPending =
+      'PASSWORD_RESET_ALREADY_PENDING';
+
+  /// 409. The pending reset is no longer pending: it completed, expired, or was
+  /// replaced. Recovery is to request a new reset.
+  static const String passwordResetNotPending = 'PASSWORD_RESET_NOT_PENDING';
+
+  /// 409. The reset is past its 15-minute lifetime. Requesting a new reset opens
+  /// a new one; the old id cannot continue.
+  static const String passwordResetExpired = 'PASSWORD_RESET_EXPIRED';
+
+  /// 409. The continuation was already used by a successful finalization.
+  static const String passwordResetContinuationConsumed =
+      'PASSWORD_RESET_CONTINUATION_CONSUMED';
+
+  /// 401. The `X-Password-Reset-Continuation` header was absent or empty.
+  ///
+  /// A capability-header refusal, not a session event: the mapper must not turn
+  /// this into an auth-required failure.
+  static const String passwordResetContinuationRequired =
+      'PASSWORD_RESET_CONTINUATION_REQUIRED';
+
+  /// 409. The continuation's own 15-minute lifetime elapsed. The reset may still
+  /// be pending, but this token can no longer finalize it.
+  static const String passwordResetContinuationExpired =
+      'PASSWORD_RESET_CONTINUATION_EXPIRED';
+
+  // ---------------------------------------------------------------------------
   // Generic — `internal/apperror/error.go`.
   // ---------------------------------------------------------------------------
 

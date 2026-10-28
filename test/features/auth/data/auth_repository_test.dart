@@ -1174,4 +1174,651 @@ void main() {
       );
     });
   });
+
+  group('password reset', () {
+    const verificationId = '01a0f359-093b-737a-963a-80f7ca6768ed';
+    const token = 'raw-password-reset-token';
+
+    Map<String, dynamic> statusEnvelope({
+      String status = 'pending',
+      bool pinIssued = true,
+      int resendInSeconds = 42,
+    }) => {
+      'data': {
+        'verification_id': verificationId,
+        'status': status,
+        'pin_issued': pinIssued,
+        'resend_in_seconds': resendInSeconds,
+      },
+      'message': 'verification retrieved',
+    };
+
+    Map<String, dynamic> continuationEnvelope() => {
+      'data': {'email': 'user@example.com', 'has_password_credential': true},
+      'message': 'password reset continuation is valid',
+    };
+
+    group('request', () {
+      test('sends only the email and decodes the verification id', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset',
+          status: 201,
+          body: {
+            'data': {'verification_id': verificationId},
+            'message': 'password reset requested',
+          },
+        );
+
+        final id = await repository.requestPasswordReset(
+          email: 'user@example.com',
+        );
+
+        expect(id, verificationId);
+        final sent = adapter.lastRequestTo('/auth/password-reset')!;
+        expect(sent.method, 'POST');
+        expect(sent.jsonField('email'), 'user@example.com');
+        expect((sent.body as Map).keys, {'email'});
+      });
+
+      test('a 201 without data is unreadable', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset',
+          status: 201,
+          body: {'data': null, 'message': 'password reset requested'},
+        );
+
+        await expectLater(
+          repository.requestPasswordReset(email: 'user@example.com'),
+          throwsA(isA<ApiFailureUnreadableResponse>()),
+        );
+      });
+
+      test('a rejected address is validation', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset',
+          status: 400,
+          body: errorBody(ApiErrorCode.validationError),
+        );
+
+        await expectLater(
+          repository.requestPasswordReset(email: 'not-an-email'),
+          throwsA(isA<ApiFailureValidation>()),
+        );
+      });
+
+      test('a spent request budget carries Retry-After', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset',
+          status: 429,
+          body: errorBody(ApiErrorCode.ipRateLimitExceeded),
+          headers: {
+            'retry-after': ['30'],
+          },
+        );
+
+        await expectLater(
+          repository.requestPasswordReset(email: 'user@example.com'),
+          throwsA(
+            isA<ApiFailureRateLimited>().having(
+              (failure) => failure.retryAfter,
+              'retryAfter',
+              const Duration(seconds: 30),
+            ),
+          ),
+        );
+      });
+
+      test('a concurrent pending reset is its own retryable refusal', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset',
+          status: 409,
+          body: errorBody(ApiErrorCode.passwordResetAlreadyPending),
+        );
+
+        await expectLater(
+          repository.requestPasswordReset(email: 'user@example.com'),
+          throwsA(isA<ApiFailurePasswordResetAlreadyPending>()),
+        );
+      });
+
+      test('a lost request is an uncertain transport failure', () async {
+        adapter.onOffline('/auth/password-reset');
+
+        await expectLater(
+          repository.requestPasswordReset(email: 'user@example.com'),
+          throwsA(isA<ApiFailureTransport>()),
+        );
+      });
+    });
+
+    group('verification status', () {
+      test('decodes every documented field', () async {
+        adapter.onMethod(
+          'GET',
+          '/auth/password-reset/verification/$verificationId',
+          status: 200,
+          body: statusEnvelope(),
+        );
+
+        final status = await repository.getPasswordResetVerification(
+          verificationId: verificationId,
+        );
+
+        expect(status.verificationId, verificationId);
+        expect(status.status, 'pending');
+        expect(status.pinIssued, isTrue);
+        expect(status.resendInSeconds, 42);
+      });
+
+      test('an unknown id is not found', () async {
+        adapter.onMethod(
+          'GET',
+          '/auth/password-reset/verification/$verificationId',
+          status: 404,
+          body: errorBody(ApiErrorCode.resourceNotFound),
+        );
+
+        await expectLater(
+          repository.getPasswordResetVerification(
+            verificationId: verificationId,
+          ),
+          throwsA(isA<ApiFailureNotFound>()),
+        );
+      });
+
+      test(
+        'a verified request is the shared verification-terminal refusal',
+        () async {
+          adapter.onMethod(
+            'GET',
+            '/auth/password-reset/verification/$verificationId',
+            status: 409,
+            body: errorBody(ApiErrorCode.verificationNotPending),
+          );
+
+          await expectLater(
+            repository.getPasswordResetVerification(
+              verificationId: verificationId,
+            ),
+            throwsA(isA<ApiFailureRegistrationRestartRequired>()),
+          );
+        },
+      );
+
+      test('an ended reset keeps its own password-reset variant', () async {
+        for (final entry in {
+          ApiErrorCode.passwordResetNotPending:
+              ApiFailurePasswordResetNotPending,
+          ApiErrorCode.passwordResetExpired: ApiFailurePasswordResetExpired,
+        }.entries) {
+          adapter.onMethod(
+            'GET',
+            '/auth/password-reset/verification/$verificationId',
+            status: 409,
+            body: errorBody(entry.key),
+          );
+
+          await expectLater(
+            repository.getPasswordResetVerification(
+              verificationId: verificationId,
+            ),
+            throwsA(isA<ApiFailurePasswordReset>()),
+          );
+        }
+      });
+    });
+
+    group('PIN issuance', () {
+      test('uses the path with no request body', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset/verification/$verificationId/pin',
+          status: 201,
+          body: {
+            'data': {'verification_id': verificationId},
+            'message': 'verification code created',
+          },
+        );
+
+        await expectLater(
+          repository.createPasswordResetPin(verificationId: verificationId),
+          completes,
+        );
+
+        final sent = adapter.lastRequestTo(
+          '/auth/password-reset/verification/$verificationId/pin',
+        )!;
+        expect(sent.method, 'POST');
+        expect(sent.body, isNull);
+      });
+
+      test('the resend cooldown is its own typed refusal', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset/verification/$verificationId/pin',
+          status: 409,
+          body: errorBody(ApiErrorCode.verificationResendCooldown),
+        );
+
+        await expectLater(
+          repository.createPasswordResetPin(verificationId: verificationId),
+          throwsA(isA<ApiFailureVerificationResendCooldown>()),
+        );
+      });
+
+      test('a delivery failure keeps its server cooldown', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset/verification/$verificationId/pin',
+          status: 503,
+          body: errorBody(ApiErrorCode.pinEmailDeliveryFailed),
+          headers: {
+            'retry-after': ['60'],
+          },
+        );
+
+        await expectLater(
+          repository.createPasswordResetPin(verificationId: verificationId),
+          throwsA(
+            isA<ApiFailurePinEmailDeliveryFailed>().having(
+              (failure) => failure.retryAfter,
+              'retryAfter',
+              const Duration(seconds: 60),
+            ),
+          ),
+        );
+      });
+
+      test('a spent PIN budget carries Retry-After', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset/verification/$verificationId/pin',
+          status: 429,
+          body: errorBody(ApiErrorCode.pinRateLimitExceeded),
+          headers: {
+            'retry-after': ['15'],
+          },
+        );
+
+        await expectLater(
+          repository.createPasswordResetPin(verificationId: verificationId),
+          throwsA(isA<ApiFailureRateLimited>()),
+        );
+      });
+    });
+
+    group('resend', () {
+      test('uses the path and returns the unchanged id', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset/verification/$verificationId/resend',
+          status: 200,
+          body: {
+            'data': {'verification_id': verificationId},
+            'message': 'verification code resent',
+          },
+        );
+
+        final id = await repository.resendPasswordResetPin(
+          verificationId: verificationId,
+        );
+
+        expect(id, verificationId);
+        expect(
+          adapter
+              .lastRequestTo(
+                '/auth/password-reset/verification/$verificationId/resend',
+              )!
+              .body,
+          isNull,
+        );
+      });
+
+      test('a cooldown keeps no invented duration', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset/verification/$verificationId/resend',
+          status: 409,
+          body: errorBody(ApiErrorCode.verificationResendCooldown),
+        );
+
+        await expectLater(
+          repository.resendPasswordResetPin(verificationId: verificationId),
+          throwsA(isA<ApiFailureVerificationResendCooldown>()),
+        );
+      });
+    });
+
+    group('PIN verification', () {
+      test('sends the pin and returns the raw continuation token', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset/verification/$verificationId/verify',
+          status: 200,
+          body: {
+            'data': {'password_reset_continuation_token': token},
+            'message': 'password reset verified',
+          },
+        );
+
+        final returned = await repository.verifyPasswordReset(
+          verificationId: verificationId,
+          pin: '123456',
+        );
+
+        expect(returned, token);
+        final sent = adapter.lastRequestTo('/verify')!;
+        expect(sent.jsonField('pin'), '123456');
+      });
+
+      test('a wrong PIN and exhausted attempts stay distinct', () async {
+        for (final entry in {
+          ApiErrorCode.invalidVerificationCode:
+              ApiFailureInvalidVerificationCode,
+          ApiErrorCode.verificationCodeAttemptsExceeded:
+              ApiFailureVerificationCodeAttemptsExceeded,
+        }.entries) {
+          adapter.onMethod(
+            'POST',
+            '/auth/password-reset/verification/$verificationId/verify',
+            status: 409,
+            body: errorBody(entry.key),
+          );
+
+          await expectLater(
+            repository.verifyPasswordReset(
+              verificationId: verificationId,
+              pin: '000000',
+            ),
+            throwsA(isA<ApiFailure>()),
+          );
+        }
+      });
+
+      test(
+        'a terminal verification keeps the shared restart refusal',
+        () async {
+          adapter.onMethod(
+            'POST',
+            '/auth/password-reset/verification/$verificationId/verify',
+            status: 409,
+            body: errorBody(ApiErrorCode.verificationNotPending),
+          );
+
+          await expectLater(
+            repository.verifyPasswordReset(
+              verificationId: verificationId,
+              pin: '123456',
+            ),
+            throwsA(isA<ApiFailureRegistrationRestartRequired>()),
+          );
+        },
+      );
+
+      test('a 200 with no data is unreadable', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset/verification/$verificationId/verify',
+          status: 200,
+          body: {'data': null, 'message': 'password reset verified'},
+        );
+
+        await expectLater(
+          repository.verifyPasswordReset(
+            verificationId: verificationId,
+            pin: '123456',
+          ),
+          throwsA(isA<ApiFailureUnreadableResponse>()),
+        );
+      });
+    });
+
+    group('continuation', () {
+      test('sends the header and decodes both fields', () async {
+        adapter.onMethod(
+          'GET',
+          '/auth/password-reset/continuation',
+          status: 200,
+          body: continuationEnvelope(),
+        );
+
+        final continuation = await repository.getPasswordResetContinuation(
+          continuationToken: token,
+        );
+
+        expect(continuation.email, 'user@example.com');
+        expect(continuation.hasPasswordCredential, isTrue);
+        final sent = adapter.lastRequestTo(
+          '/auth/password-reset/continuation',
+        )!;
+        expect(sent.method, 'GET');
+        expect(sent.headers['X-Password-Reset-Continuation'], token);
+      });
+
+      test('the required-header refusal stays a capability refusal', () async {
+        adapter.onMethod(
+          'GET',
+          '/auth/password-reset/continuation',
+          status: 401,
+          body: errorBody(ApiErrorCode.passwordResetContinuationRequired),
+        );
+
+        await expectLater(
+          repository.getPasswordResetContinuation(continuationToken: token),
+          throwsA(isA<ApiFailurePasswordResetContinuationRequired>()),
+        );
+      });
+
+      test('consumed and expired tokens stay distinct', () async {
+        adapter.onSequence('/auth/password-reset/continuation', [
+          FakeReply(
+            409,
+            errorBody(ApiErrorCode.passwordResetContinuationConsumed),
+          ),
+          FakeReply(
+            409,
+            errorBody(ApiErrorCode.passwordResetContinuationExpired),
+          ),
+        ]);
+
+        await expectLater(
+          repository.getPasswordResetContinuation(continuationToken: token),
+          throwsA(isA<ApiFailurePasswordResetContinuationConsumed>()),
+        );
+
+        await expectLater(
+          repository.getPasswordResetContinuation(continuationToken: token),
+          throwsA(isA<ApiFailurePasswordResetContinuationExpired>()),
+        );
+      });
+
+      test('an ended reset stays a password-reset refusal', () async {
+        adapter.onMethod(
+          'GET',
+          '/auth/password-reset/continuation',
+          status: 409,
+          body: errorBody(ApiErrorCode.passwordResetExpired),
+        );
+
+        await expectLater(
+          repository.getPasswordResetContinuation(continuationToken: token),
+          throwsA(isA<ApiFailurePasswordResetExpired>()),
+        );
+      });
+
+      test('the generic conflict for an unknown token is unreadable', () async {
+        adapter.onMethod(
+          'GET',
+          '/auth/password-reset/continuation',
+          status: 409,
+          body: errorBody('CONFLICT'),
+        );
+
+        await expectLater(
+          repository.getPasswordResetContinuation(continuationToken: token),
+          throwsA(
+            isA<ApiFailureUnreadableResponse>().having(
+              (failure) => failure.code,
+              'code',
+              'CONFLICT',
+            ),
+          ),
+        );
+      });
+
+      test('a lost check is an uncertain transport failure', () async {
+        adapter.onOffline('/auth/password-reset/continuation');
+
+        await expectLater(
+          repository.getPasswordResetContinuation(continuationToken: token),
+          throwsA(isA<ApiFailureTransport>()),
+        );
+      });
+    });
+
+    group('finalize', () {
+      test(
+        'sends the header and password, and accepts the empty 200',
+        () async {
+          adapter.onMethod(
+            'POST',
+            '/auth/password-reset/finalize',
+            status: 200,
+            body: {
+              'data': null,
+              'message': 'password reset completed successfully',
+            },
+          );
+
+          await expectLater(
+            repository.finalizePasswordReset(
+              continuationToken: token,
+              password: 'password123',
+            ),
+            completes,
+          );
+
+          final sent = adapter.lastRequestTo('/auth/password-reset/finalize')!;
+          expect(sent.method, 'POST');
+          expect(sent.headers['X-Password-Reset-Continuation'], token);
+          expect(sent.jsonField('password'), 'password123');
+          expect((sent.body as Map).keys, {'password'});
+        },
+      );
+
+      test('a consumed token keeps the completed outcome distinct', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset/finalize',
+          status: 409,
+          body: errorBody(ApiErrorCode.passwordResetContinuationConsumed),
+        );
+
+        await expectLater(
+          repository.finalizePasswordReset(
+            continuationToken: token,
+            password: 'password123',
+          ),
+          throwsA(isA<ApiFailurePasswordResetContinuationConsumed>()),
+        );
+      });
+
+      test('an expired continuation keeps the expired outcome', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset/finalize',
+          status: 409,
+          body: errorBody(ApiErrorCode.passwordResetContinuationExpired),
+        );
+
+        await expectLater(
+          repository.finalizePasswordReset(
+            continuationToken: token,
+            password: 'password123',
+          ),
+          throwsA(isA<ApiFailurePasswordResetContinuationExpired>()),
+        );
+      });
+
+      test('password-work capacity carries Retry-After', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset/finalize',
+          status: 503,
+          body: errorBody(ApiErrorCode.passwordWorkUnavailable),
+          headers: {
+            'retry-after': ['5'],
+          },
+        );
+
+        await expectLater(
+          repository.finalizePasswordReset(
+            continuationToken: token,
+            password: 'password123',
+          ),
+          throwsA(
+            isA<ApiFailureRateLimited>().having(
+              (failure) => failure.retryAfter,
+              'retryAfter',
+              const Duration(seconds: 5),
+            ),
+          ),
+        );
+      });
+
+      test('an IP limit carries Retry-After', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset/finalize',
+          status: 429,
+          body: errorBody(ApiErrorCode.ipRateLimitExceeded),
+          headers: {
+            'retry-after': ['20'],
+          },
+        );
+
+        await expectLater(
+          repository.finalizePasswordReset(
+            continuationToken: token,
+            password: 'password123',
+          ),
+          throwsA(isA<ApiFailureRateLimited>()),
+        );
+      });
+
+      test('a lost finalization is an uncertain transport failure', () async {
+        adapter.onOffline('/auth/password-reset/finalize');
+
+        await expectLater(
+          repository.finalizePasswordReset(
+            continuationToken: token,
+            password: 'password123',
+          ),
+          throwsA(isA<ApiFailureTransport>()),
+        );
+      });
+
+      test('an unreadable 200 is not claimed as success', () async {
+        adapter.onMethod(
+          'POST',
+          '/auth/password-reset/finalize',
+          status: 200,
+          body: 'not JSON',
+        );
+
+        await expectLater(
+          repository.finalizePasswordReset(
+            continuationToken: token,
+            password: 'password123',
+          ),
+          throwsA(isA<ApiFailureUnreadableResponse>()),
+        );
+      });
+    });
+  });
 }

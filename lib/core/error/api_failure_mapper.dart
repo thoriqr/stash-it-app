@@ -171,6 +171,30 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.invalidRegistrationType:
       return ApiFailureInvalidRegistrationType(code: code);
 
+    // Password-reset lifecycle refusals. They are a separate group because the
+    // correction and the screens are separate: a reset can be retried, restarted
+    // or is already complete, and none of those should ever select registration
+    // copy. `PASSWORD_RESET_CONTINUATION_REQUIRED` is a 401 but is mapped here
+    // before any auth-required handling: it names a missing capability header,
+    // not a bearer-session problem.
+    case ApiErrorCode.passwordResetAlreadyPending:
+      return ApiFailurePasswordResetAlreadyPending(code: code);
+
+    case ApiErrorCode.passwordResetNotPending:
+      return ApiFailurePasswordResetNotPending(code: code);
+
+    case ApiErrorCode.passwordResetExpired:
+      return ApiFailurePasswordResetExpired(code: code);
+
+    case ApiErrorCode.passwordResetContinuationConsumed:
+      return ApiFailurePasswordResetContinuationConsumed(code: code);
+
+    case ApiErrorCode.passwordResetContinuationRequired:
+      return ApiFailurePasswordResetContinuationRequired(code: code);
+
+    case ApiErrorCode.passwordResetContinuationExpired:
+      return ApiFailurePasswordResetContinuationExpired(code: code);
+
     case ApiErrorCode.userAlreadyExists:
     case ApiErrorCode.authIdentityAlreadyExists:
       return ApiFailureRegistrationAlreadyCompleted(code: code);

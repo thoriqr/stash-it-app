@@ -335,6 +335,7 @@ class DeleteSavedItem extends _$DeleteSavedItem {
           ApiFailureUnsortedCollectionProtected() ||
           ApiFailurePinEmailDeliveryFailed() ||
           ApiFailureRegistration() ||
+          ApiFailurePasswordReset() ||
           ApiFailureCollectionDeleteTargetNotFound():
         _publish(
           const AppFeedback(
@@ -484,6 +485,7 @@ class DeleteSavedItem extends _$DeleteSavedItem {
           ApiFailureCollectionNameAlreadyExists() ||
           ApiFailurePinEmailDeliveryFailed() ||
           ApiFailureRegistration() ||
+          ApiFailurePasswordReset() ||
           ApiFailureCollectionDeleteTargetNotFound():
         _publish(
           AppFeedback(

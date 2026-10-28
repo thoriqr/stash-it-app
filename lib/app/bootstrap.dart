@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/storage/secure_credential_store.dart';
 import '../features/auth/application/session_controller.dart';
+import '../features/auth/data/password_reset_continuation_store.dart';
 import '../features/auth/data/registration_continuation_store.dart';
 import '../features/settings/application/theme_mode_controller.dart';
 import '../features/settings/data/theme_preference_store.dart';
@@ -51,15 +52,18 @@ Future<List<Override>> bootstrap() async {
   const registrationContinuationStore = RegistrationContinuationStore(
     secureStorage,
   );
+  const passwordResetContinuationStore = PasswordResetContinuationStore(
+    secureStorage,
+  );
 
   // Read directly rather than through a provider: `credentialStoreProvider` is
   // overridden only by the overrides returned below, so reading it from a fresh
   // container would hit the deliberate `UnimplementedError` its default carries.
   final restoredTokens = await credentialStore.read();
 
-  // The registration continuation is deliberately not read here. It is only
-  // needed when the user submits the sign-up form, and an unfinished
-  // registration is not resumed automatically on launch.
+  // Neither continuation store is read here. They are needed only when the user
+  // opens the corresponding auth flow, and an unfinished registration or reset is
+  // not resumed automatically on launch.
 
   // A non-sensitive UI preference lives in shared preferences, not in the
   // credential store. Reading it here, rather than inside a provider build,
@@ -71,6 +75,9 @@ Future<List<Override>> bootstrap() async {
     credentialStoreProvider.overrideWithValue(credentialStore),
     registrationContinuationStoreProvider.overrideWithValue(
       registrationContinuationStore,
+    ),
+    passwordResetContinuationStoreProvider.overrideWithValue(
+      passwordResetContinuationStore,
     ),
     restoredTokensProvider.overrideWithValue(restoredTokens),
     themePreferenceStoreProvider.overrideWithValue(themeStore),

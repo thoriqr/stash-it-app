@@ -6,6 +6,9 @@ import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_entry_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/finalize_registration_screen.dart';
+import 'package:stash_it_app/features/auth/presentation/password_reset_finalize_screen.dart';
+import 'package:stash_it_app/features/auth/presentation/password_reset_pin_screen.dart';
+import 'package:stash_it_app/features/auth/presentation/password_reset_request_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/pin_entry_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_up_screen.dart';
@@ -79,10 +82,22 @@ String? redirectFor(AuthStatus auth, String location) {
   final atSignUp = location == AppRoutes.signUp;
   final atSignUpVerify = location.startsWith('/sign-up/verify/');
   final atFinalize = location == AppRoutes.finalizeRegistration;
+  final atForgotPassword = location == AppRoutes.forgotPassword;
+  final atForgotPasswordVerify = location.startsWith(
+    '/forgot-password/verify/',
+  );
+  final atForgotPasswordFinalize = location == AppRoutes.forgotPasswordFinalize;
 
   if (auth.isSignedOut) {
     // The auth screens are reachable without a session.
-    if (atAuthEntry || atSignIn || atSignUp || atSignUpVerify || atFinalize) {
+    if (atAuthEntry ||
+        atSignIn ||
+        atSignUp ||
+        atSignUpVerify ||
+        atFinalize ||
+        atForgotPassword ||
+        atForgotPasswordVerify ||
+        atForgotPasswordFinalize) {
       return null;
     }
     return AppRoutes.auth;
@@ -90,7 +105,14 @@ String? redirectFor(AuthStatus auth, String location) {
 
   // Signed in and looking at an auth screen: there is nothing to sign in to or
   // register.
-  if (atAuthEntry || atSignIn || atSignUp || atSignUpVerify || atFinalize) {
+  if (atAuthEntry ||
+      atSignIn ||
+      atSignUp ||
+      atSignUpVerify ||
+      atFinalize ||
+      atForgotPassword ||
+      atForgotPasswordVerify ||
+      atForgotPasswordFinalize) {
     return AppRoutes.initial;
   }
 
@@ -138,6 +160,28 @@ final List<RouteBase> _routes = [
     },
     builder: (context, state) =>
         FinalizeRegistrationScreen(continuationToken: state.extra as String),
+  ),
+  GoRoute(
+    path: AppRoutes.forgotPassword,
+    builder: (context, state) => PasswordResetRequestScreen(
+      startWithEmailForm: state.extra is PasswordResetEmailSelection,
+    ),
+  ),
+  GoRoute(
+    path: AppRoutes.forgotPasswordVerify,
+    builder: (context, state) {
+      // The email is local scoping only; the continuation token is persisted in
+      // secure storage by the PIN screen and never travels in the location.
+      final extra = state.extra;
+      return PasswordResetPinScreen(
+        verificationId: state.pathParameters['verificationId']!,
+        email: extra is String && extra.isNotEmpty ? extra : null,
+      );
+    },
+  ),
+  GoRoute(
+    path: AppRoutes.forgotPasswordFinalize,
+    builder: (context, state) => const PasswordResetFinalizeScreen(),
   ),
   // A top-level route, not a shell branch: Settings is pushed above the shell
   // and popped back to the destination that opened it. The redirect above still

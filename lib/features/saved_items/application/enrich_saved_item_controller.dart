@@ -257,6 +257,7 @@ class EnrichSavedItem extends _$EnrichSavedItem {
           ApiFailureUnsortedCollectionProtected() ||
           ApiFailurePinEmailDeliveryFailed() ||
           ApiFailureRegistration() ||
+          ApiFailurePasswordReset() ||
           ApiFailureCollectionDeleteTargetNotFound():
         _publish(
           const AppFeedback(

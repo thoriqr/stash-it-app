@@ -3,7 +3,11 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'verification_status_response.freezed.dart';
 part 'verification_status_response.g.dart';
 
-/// `data` of a successful `GET /auth/register/verification/{verification_id}`.
+/// `data` of a successful verification-status read.
+///
+/// Shared by `GET /auth/register/verification/{verification_id}` and
+/// `GET /auth/password-reset/verification/{verification_id}`; both endpoints
+/// return this shape.
 ///
 /// ```json
 /// {
@@ -14,10 +18,11 @@ part 'verification_status_response.g.dart';
 /// }
 /// ```
 ///
-/// `status` is either `pending` or `verified` (backend `types.go`). `pin_issued`
-/// reports whether a PIN has been issued, not whether an email reached the
-/// inbox. `resend_in_seconds` is the authoritative remaining cooldown; zero
-/// means no wait.
+/// The backend only returns a body while the verification is `pending`; a
+/// verified request answers `409 VERIFICATION_NOT_PENDING`. `pin_issued` reports
+/// whether a PIN has been issued, not whether an email reached the inbox.
+/// `resend_in_seconds` is the authoritative remaining cooldown; zero means no
+/// wait.
 @freezed
 abstract class VerificationStatusResponse with _$VerificationStatusResponse {
   const factory VerificationStatusResponse({

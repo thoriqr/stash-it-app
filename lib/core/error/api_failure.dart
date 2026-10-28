@@ -205,6 +205,78 @@ final class ApiFailureInvalidRegistrationType extends ApiFailureRegistration {
   const ApiFailureInvalidRegistrationType({required super.code});
 }
 
+/// A refusal from the password-reset lifecycle.
+///
+/// The backend answers these with `409` (except
+/// [ApiFailurePasswordResetContinuationRequired], a `401` capability-header
+/// refusal), and they do not share a correction. Kept separate from
+/// [ApiFailureRegistration] so a password-reset screen never accidentally uses
+/// registration copy, and so the code remains available for diagnosis.
+sealed class ApiFailurePasswordReset extends ApiFailure {
+  const ApiFailurePasswordReset({required this.code});
+
+  /// The backend code, retained for logging and tests, never for display.
+  final String code;
+}
+
+/// `PASSWORD_RESET_ALREADY_PENDING` — a concurrent request opened the reset
+/// first, and the service's single internal retry also lost.
+///
+/// The reset is active and usable. Repeating the request is expected to return
+/// its existing verification id, so this is a retryable conflict rather than a
+/// lifecycle end. Nothing was created by the losing request.
+final class ApiFailurePasswordResetAlreadyPending
+    extends ApiFailurePasswordReset {
+  const ApiFailurePasswordResetAlreadyPending({required super.code});
+}
+
+/// `PASSWORD_RESET_NOT_PENDING` — the reset is no longer pending (completed,
+/// expired, or replaced).
+///
+/// The only correction is to request a new reset. Repeating the same
+/// verification or finalization call cannot succeed.
+final class ApiFailurePasswordResetNotPending extends ApiFailurePasswordReset {
+  const ApiFailurePasswordResetNotPending({required super.code});
+}
+
+/// `PASSWORD_RESET_EXPIRED` — the reset is past its 15-minute lifetime.
+///
+/// Requesting a new reset opens a replacement. The old verification id and any
+/// continuation it produced can no longer advance.
+final class ApiFailurePasswordResetExpired extends ApiFailurePasswordReset {
+  const ApiFailurePasswordResetExpired({required super.code});
+}
+
+/// `PASSWORD_RESET_CONTINUATION_CONSUMED` — the continuation was used by a
+/// successful finalization.
+///
+/// The password was changed. The correction is to sign in with the new password,
+/// not to retry the finalization.
+final class ApiFailurePasswordResetContinuationConsumed
+    extends ApiFailurePasswordReset {
+  const ApiFailurePasswordResetContinuationConsumed({required super.code});
+}
+
+/// `PASSWORD_RESET_CONTINUATION_REQUIRED` — the continuation header was absent.
+///
+/// It is a `401`, but it is a capability refusal, not a bearer-session expiry:
+/// it must never trigger the refresh path or be presented as "sign in again" for
+/// a session problem.
+final class ApiFailurePasswordResetContinuationRequired
+    extends ApiFailurePasswordReset {
+  const ApiFailurePasswordResetContinuationRequired({required super.code});
+}
+
+/// `PASSWORD_RESET_CONTINUATION_EXPIRED` — the continuation's 15-minute lifetime
+/// elapsed.
+///
+/// The reset itself may still be pending, but this token cannot finalize it. A
+/// new reset is the only recovery.
+final class ApiFailurePasswordResetContinuationExpired
+    extends ApiFailurePasswordReset {
+  const ApiFailurePasswordResetContinuationExpired({required super.code});
+}
+
 /// `VALIDATION_ERROR`, `INVALID_URL`, `INVALID_SEARCH_QUERY`, and
 /// `INVALID_COLLECTION_NAME` — an input that parses but names nothing usable,
 /// or is outside its documented bounds.

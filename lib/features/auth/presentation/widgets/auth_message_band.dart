@@ -26,13 +26,16 @@ enum AuthMessageTone {
   warning,
 }
 
-/// A message the user can dismiss.
+/// A message band, optionally dismissible.
 ///
-/// Shared by the auth entry screen and the sign-in form so the session-expiry
-/// notice and an ordinary sign-in failure are the same band, differing only in
-/// tone. The tone decides the fill, border and mark; the layout is identical
-/// either way, so a change of treatment never changes the band's height or its
-/// wrapping.
+/// Shared by the auth screens so the session-expiry notice and an ordinary
+/// sign-in failure are the same band, differing only in tone. The tone decides
+/// the fill, border and mark; the layout is identical either way, so a change of
+/// treatment never changes the band's height or its wrapping.
+///
+/// A band with no [onDismiss] has no Dismiss action. That is for a state whose
+/// only escape is the Retry action beside it — dismissing the explanation
+/// without loading anything would leave the screen with nothing to show.
 ///
 /// The message and Dismiss share one row. They were stacked, and because
 /// Material gives a `TextButton` a 48 px minimum target the dismiss row alone
@@ -43,13 +46,15 @@ enum AuthMessageTone {
 class AuthMessageBand extends StatelessWidget {
   const AuthMessageBand({
     required this.message,
-    required this.onDismiss,
+    this.onDismiss,
     this.tone = AuthMessageTone.danger,
     super.key,
   });
 
   final String message;
-  final VoidCallback onDismiss;
+
+  /// Null for a band that must stay visible until the state behind it changes.
+  final VoidCallback? onDismiss;
 
   /// Defaults to [AuthMessageTone.danger], so an ordinary sign-in failure keeps
   /// the treatment it has always had without each call site naming it.
@@ -107,22 +112,24 @@ class AuthMessageBand extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: AppMetrics.space2),
-          TextButton(
-            onPressed: onDismiss,
-            style: TextButton.styleFrom(
-              // 32 px rather than Material's 48: the band is a confirmation of
-              // a failure, not the primary action, and its own target still
-              // clears WCAG 2.5.8's 24 px minimum by a comfortable margin.
-              minimumSize: const Size(0, 32),
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppMetrics.space2,
+          if (onDismiss case final onDismiss?) ...[
+            const SizedBox(width: AppMetrics.space2),
+            TextButton(
+              onPressed: onDismiss,
+              style: TextButton.styleFrom(
+                // 32 px rather than Material's 48: the band is a confirmation of
+                // a failure, not the primary action, and its own target still
+                // clears WCAG 2.5.8's 24 px minimum by a comfortable margin.
+                minimumSize: const Size(0, 32),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppMetrics.space2,
+                ),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
               ),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
+              child: const Text('Dismiss'),
             ),
-            child: const Text('Dismiss'),
-          ),
+          ],
         ],
       ),
     );

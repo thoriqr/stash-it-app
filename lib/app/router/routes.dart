@@ -12,6 +12,16 @@ final class SavedItemDetailOrigin {
   final String collectionId;
 }
 
+/// Opens the password-reset request screen on the email form even when a
+/// continuation is stored.
+///
+/// **In-memory only.** It travels through `GoRouterState.extra` and carries no
+/// token. The finalization screen uses it to return to email selection without
+/// clearing or exposing the saved continuation.
+final class PasswordResetEmailSelection {
+  const PasswordResetEmailSelection();
+}
+
 /// Route definitions for the application.
 ///
 /// All paths are declared here so navigation stays centralised, as required by
@@ -83,6 +93,33 @@ abstract final class AppRoutes {
   /// Finalize a manual registration using a continuation token passed via route
   /// extra. Sits outside the shell and is reachable only while signed out.
   static const String finalizeRegistration = '/sign-up/finalize';
+
+  /// Start or resume a password reset.
+  ///
+  /// **Not a fifth destination.** Sits outside the shell, reachable only while
+  /// signed out, and reached from the sign-in form's Forgot password action.
+  ///
+  /// If this device holds a saved reset continuation, the screen offers to
+  /// continue it; otherwise it shows the email form. It never puts a token in
+  /// the location.
+  static const String forgotPassword = '/forgot-password';
+
+  /// Enter the PIN sent for a password reset.
+  ///
+  /// The server-issued verification id is a path parameter; the email travels in
+  /// route `extra` for local scoping. The continuation token is not in the route.
+  static const String forgotPasswordVerify =
+      '/forgot-password/verify/:verificationId';
+
+  /// The location of the password-reset PIN screen for [verificationId].
+  static String forgotPasswordVerifyFor(String verificationId) =>
+      '/forgot-password/verify/${Uri.encodeComponent(verificationId)}';
+
+  /// Choose and submit the new password.
+  ///
+  /// The continuation token is read from secure storage, never from the route or
+  /// query. A direct entry without a stored reset shows the no-reset state.
+  static const String forgotPasswordFinalize = '/forgot-password/finalize';
 
   /// Create or change the account's password.
   ///

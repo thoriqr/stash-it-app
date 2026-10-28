@@ -31,6 +31,11 @@ void main() {
         AppRoutes.signUp,
         AppRoutes.signUpVerifyFor('01a0f359-093b-737a-963a-80f7ca6768ed'),
         AppRoutes.finalizeRegistration,
+        AppRoutes.forgotPassword,
+        AppRoutes.forgotPasswordVerifyFor(
+          '01a0f359-093b-737a-963a-80f7ca6768ed',
+        ),
+        AppRoutes.forgotPasswordFinalize,
       ]) {
         expect(
           redirectFor(AuthStatus.signedOut, location),
@@ -47,6 +52,11 @@ void main() {
         AppRoutes.signUp,
         AppRoutes.signUpVerifyFor('01a0f359-093b-737a-963a-80f7ca6768ed'),
         AppRoutes.finalizeRegistration,
+        AppRoutes.forgotPassword,
+        AppRoutes.forgotPasswordVerifyFor(
+          '01a0f359-093b-737a-963a-80f7ca6768ed',
+        ),
+        AppRoutes.forgotPasswordFinalize,
       ]) {
         expect(
           redirectFor(AuthStatus.signedIn, location),
@@ -107,6 +117,8 @@ void main() {
         AppRoutes.auth,
         AppRoutes.signIn,
         AppRoutes.signUp,
+        AppRoutes.forgotPassword,
+        AppRoutes.forgotPasswordFinalize,
       ]) {
         expect(
           location,

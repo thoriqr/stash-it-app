@@ -7,10 +7,16 @@ import '../models/login_response.dart';
 import '../models/logout_data.dart';
 import '../models/finalize_manual_registration_request.dart';
 import '../models/finalize_manual_registration_response.dart';
+import '../models/finalize_password_reset_request.dart';
+import '../models/password_reset_continuation_response.dart';
 import '../models/register_manual_request.dart';
 import '../models/register_manual_response.dart';
 import '../models/registration_continuation_response.dart';
+import '../models/request_password_reset_request.dart';
+import '../models/request_password_reset_response.dart';
 import '../models/resend_verification_response.dart';
+import '../models/verify_password_reset_request.dart';
+import '../models/verify_password_reset_response.dart';
 import '../models/verify_registration_request.dart';
 import '../models/verify_registration_response.dart';
 import '../models/verification_status_response.dart';
@@ -117,6 +123,79 @@ abstract class AuthApi {
   finalizeManualRegistration(
     @Header('X-Registration-Continuation') String continuationToken,
     @Body() FinalizeManualRegistrationRequest request,
+  );
+
+  /// `POST /auth/password-reset`
+  ///
+  /// Starts (or resumes) a password reset and returns the verification id needed
+  /// to request its PIN. The response is identical for an address with no
+  /// account — the id is then a random, unpersisted placeholder — so this call
+  /// cannot be used to discover which addresses are registered.
+  ///
+  /// Bounded per client address (10/10min). A `429` is a real budget.
+  @POST('/auth/password-reset')
+  Future<ApiEnvelope<RequestPasswordResetResponse>> requestPasswordReset(
+    @Body() RequestPasswordResetRequest request,
+  );
+
+  /// `GET /auth/password-reset/verification/{verificationId}`
+  ///
+  /// Read-only status. Returns a body only while the verification is `pending`;
+  /// a verified request answers `409 VERIFICATION_NOT_PENDING`. This is the
+  /// client's first validation step and is bounded per address (60/10min).
+  @GET('/auth/password-reset/verification/{verificationId}')
+  Future<ApiEnvelope<VerificationStatusResponse>> getPasswordResetVerification(
+    @Path('verificationId') String verificationId,
+  );
+
+  /// `POST /auth/password-reset/verification/{verificationId}/pin`
+  ///
+  /// Issues the first PIN. No request body. Bounded per address and by the shared
+  /// PIN email budgets, like the registration issuance route.
+  @POST('/auth/password-reset/verification/{verificationId}/pin')
+  Future<void> createPasswordResetPin(
+    @Path('verificationId') String verificationId,
+  );
+
+  /// `POST /auth/password-reset/verification/{verificationId}/resend`
+  ///
+  /// Issues a replacement PIN. The verification id is unchanged.
+  @POST('/auth/password-reset/verification/{verificationId}/resend')
+  Future<ApiEnvelope<ResendVerificationResponse>> resendPasswordResetPin(
+    @Path('verificationId') String verificationId,
+  );
+
+  /// `POST /auth/password-reset/verification/{verificationId}/verify`
+  ///
+  /// Verifies the PIN and returns the raw password-reset continuation token,
+  /// which the client must persist immediately. The backend stores only its
+  /// hash.
+  @POST('/auth/password-reset/verification/{verificationId}/verify')
+  Future<ApiEnvelope<VerifyPasswordResetResponse>> verifyPasswordReset(
+    @Path('verificationId') String verificationId,
+    @Body() VerifyPasswordResetRequest request,
+  );
+
+  /// `GET /auth/password-reset/continuation`
+  ///
+  /// Validates the continuation token supplied in the
+  /// `X-Password-Reset-Continuation` header. Deliberately unlimited server-side.
+  @GET('/auth/password-reset/continuation')
+  Future<ApiEnvelope<PasswordResetContinuationResponse>>
+  getPasswordResetContinuation(
+    @Header('X-Password-Reset-Continuation') String continuationToken,
+  );
+
+  /// `POST /auth/password-reset/finalize`
+  ///
+  /// Completes the reset with the continuation header and the new password. A
+  /// `200` is the receipt; the body carries no payload. The backend revokes every
+  /// session for the account in the same transaction, so this flow never signs
+  /// the user in.
+  @POST('/auth/password-reset/finalize')
+  Future<void> finalizePasswordReset(
+    @Header('X-Password-Reset-Continuation') String continuationToken,
+    @Body() FinalizePasswordResetRequest request,
   );
 
   /// `POST /auth/logout`

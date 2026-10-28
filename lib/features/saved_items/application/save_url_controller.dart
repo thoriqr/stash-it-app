@@ -229,6 +229,7 @@ AppFeedback? saveFeedbackFor(ApiFailure failure, {required bool sessionEnded}) {
     ApiFailureUnsortedCollectionProtected() ||
     ApiFailurePinEmailDeliveryFailed() ||
     ApiFailureRegistration() ||
+    ApiFailurePasswordReset() ||
     ApiFailureCollectionDeleteTargetNotFound() => const AppFeedback(
       tone: FeedbackTone.danger,
       copy: "We couldn't save this link just now. Try again shortly.",

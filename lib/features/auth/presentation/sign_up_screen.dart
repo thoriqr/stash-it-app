@@ -920,7 +920,8 @@ String registrationMessageFor(ApiFailure failure) {
     ApiFailureVerificationCodeAttemptsExceeded() ||
     ApiFailureSessionEnded() ||
     ApiFailureRefreshUncertain() ||
-    ApiFailureCredentialStorage() =>
+    ApiFailureCredentialStorage() ||
+    ApiFailurePasswordReset() =>
       'We could not start your registration. Try again.',
   };
 }

@@ -17,9 +17,10 @@ import 'package:stash_it_app/shared/widgets/app_field.dart';
 /// so this screen does not check whether a session exists — doing so in both
 /// places is how the two drift apart.
 ///
-/// Covers only manual sign-in. Registration, Google sign-in and password reset
-/// all exist in the backend and are out of scope for this milestone; none of
-/// their routes is registered, so none can be reached.
+/// Covers only manual sign-in. Registration and password reset exist as peer
+/// auth routes; Google sign-in and social registration are not implemented, and
+/// no route for them is registered. The Forgot password action opens the
+/// password-reset request screen.
 ///
 /// The behaviour is unchanged from the prototype: the same validators, the same
 /// client-side email and password rules that mirror the server's, the same
@@ -46,12 +47,22 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     _contextualMessageSet = true;
     final extra = widget.contextualMessage;
     if (extra == 'registration-success') {
-      _message = 'Registration successful. Please sign in with your new account.';
+      _message =
+          'Registration successful. Please sign in with your new account.';
       _messageTone = AuthMessageTone.warning;
     } else if (extra == 'registration-uncertain') {
       _message =
           'We could not confirm whether registration completed. '
           'Try signing in; if it fails, start again.';
+      _messageTone = AuthMessageTone.warning;
+    } else if (extra == 'password-reset-success') {
+      _message =
+          'Your password has been reset. Please sign in with your new password.';
+      _messageTone = AuthMessageTone.warning;
+    } else if (extra == 'password-reset-uncertain') {
+      _message =
+          'We could not confirm whether the password reset completed. '
+          'Try signing in with your new password.';
       _messageTone = AuthMessageTone.warning;
     }
   }
@@ -223,6 +234,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         return null;
                       },
                     ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: AppButton(
+                        label: 'Forgot password?',
+                        variant: AppButtonVariant.quiet,
+                        small: true,
+                        block: false,
+                        onPressed: _submitting ? null : _openForgotPassword,
+                      ),
+                    ),
                     if (_message case final message?) ...[
                       const SizedBox(height: AppMetrics.space4),
                       AuthMessageBand(
@@ -269,6 +290,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   /// Replaces this form with the registration start screen, as a peer.
   void _openSignUp() => context.go(AppRoutes.signUp);
+
+  /// Opens the password-reset request screen, as a peer.
+  void _openForgotPassword() => context.go(AppRoutes.forgotPassword);
 }
 
 /// Client-owned copy for a failed sign-in.
@@ -329,6 +353,7 @@ String messageFor(ApiFailure failure) {
     ApiFailureMalformedRequest() ||
     ApiFailurePinEmailDeliveryFailed() ||
     ApiFailureRegistration() ||
+    ApiFailurePasswordReset() ||
     ApiFailureUnreadableResponse() =>
       "We couldn't read the server's reply. Try again.",
 

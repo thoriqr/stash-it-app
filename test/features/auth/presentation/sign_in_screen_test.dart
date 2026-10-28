@@ -491,10 +491,13 @@ void main() {
       await tester.tap(find.widgetWithText(AppButton, 'Sign in'));
       await tester.pump();
 
-      // Found by type, not by label: a busy button replaces its label with a
-      // spinner, so `widgetWithText` would find nothing at exactly the moment
-      // this test needs to look.
-      final button = tester.widget<AppButton>(find.byType(AppButton).first);
+      // Found by type and busy state, not by label: a busy button replaces its
+      // label with a spinner, and the screen now has more than one quiet action.
+      final button = tester.widget<AppButton>(
+        find.byWidgetPredicate(
+          (widget) => widget is AppButton && widget.busy,
+        ),
+      );
       expect(button.busy, isTrue);
       expect(
         button.onPressed,
@@ -594,9 +597,23 @@ void main() {
         reason: 'registration is reachable from this screen',
       );
     });
+
+    testWidgets('shows an enabled forgot-password action', (tester) async {
+      await pumpSignIn(tester);
+
+      final forgot = find.widgetWithText(AppButton, 'Forgot password?');
+      expect(forgot, findsOneWidget);
+      expect(
+        tester.widget<AppButton>(forgot).onPressed,
+        isNotNull,
+        reason: 'the password-reset flow is reachable from sign-in',
+      );
+    });
   });
 
-  testWidgets('shows a dismissible registration success message', (tester) async {
+  testWidgets('shows a dismissible registration success message', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light(),
@@ -607,7 +624,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('Registration successful. Please sign in with your new account.'),
+      find.text(
+        'Registration successful. Please sign in with your new account.',
+      ),
       findsOneWidget,
     );
     expect(find.widgetWithText(TextButton, 'Dismiss'), findsOneWidget);
@@ -615,7 +634,9 @@ void main() {
     await tester.tap(find.widgetWithText(TextButton, 'Dismiss'));
     await tester.pumpAndSettle();
     expect(
-      find.text('Registration successful. Please sign in with your new account.'),
+      find.text(
+        'Registration successful. Please sign in with your new account.',
+      ),
       findsNothing,
     );
   });
@@ -640,6 +661,60 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       find.textContaining('could not confirm whether registration completed'),
+      findsNothing,
+    );
+  });
+
+  testWidgets('shows a dismissible password reset success message', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        home: const SignInScreen(contextualMessage: 'password-reset-success'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Your password has been reset. Please sign in with your new password.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(TextButton, 'Dismiss'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Dismiss'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'Your password has been reset. Please sign in with your new password.',
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('shows a dismissible uncertain password reset message', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        home: const SignInScreen(contextualMessage: 'password-reset-uncertain'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('could not confirm whether the password reset'),
+      findsOneWidget,
+    );
+    await tester.tap(find.widgetWithText(TextButton, 'Dismiss'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('could not confirm whether the password reset'),
       findsNothing,
     );
   });
