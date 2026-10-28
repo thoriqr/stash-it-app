@@ -10,6 +10,7 @@ import 'package:stash_it_app/features/auth/data/auth_repository.dart';
 import 'package:stash_it_app/features/auth/data/registration_continuation_store.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
+import 'package:stash_it_app/features/auth/presentation/widgets/google_sign_in_button.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -65,6 +66,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   /// run twice for one press.
   bool _submitting = false;
 
+  /// Whether the shared Google button is mid-action.
+  bool _googleBusy = false;
+
   /// Client-owned copy for the failure that stopped this attempt.
   String? _failureMessage;
 
@@ -88,7 +92,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 
   Future<void> _submit() async {
-    if (_submitting) return;
+    if (_submitting || _googleBusy) return;
 
     // Empty and malformed input only. The backend owns the address rule and its
     // normalization (`required,email,max=255`), so this deliberately does not
@@ -607,7 +611,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           AppField(
             label: 'Email',
             controller: _emailController,
-            enabled: !_submitting,
+            enabled: !_submitting && !_googleBusy,
             keyboardType: TextInputType.emailAddress,
             autofillHints: const [AutofillHints.email],
             textInputAction: TextInputAction.done,
@@ -634,10 +638,17 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             label: 'Send PIN',
             variant: AppButtonVariant.primary,
             busy: _submitting,
-            onPressed: _submit,
+            onPressed: _googleBusy ? null : _submit,
           ),
           const SizedBox(height: AppMetrics.space3),
-          _SignInPrompt(onPressed: _openSignIn),
+          GoogleSignInButton(
+            enabled: !_submitting,
+            onBusyChanged: _setGoogleBusy,
+          ),
+          const SizedBox(height: AppMetrics.space3),
+          _SignInPrompt(
+            onPressed: _submitting || _googleBusy ? null : _openSignIn,
+          ),
         ],
       ),
     );
@@ -778,6 +789,16 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   /// outcome the server has already refused, and the user edits and submits
   /// deliberately.
   void _dismissFailure() => setState(() => _failureMessage = null);
+
+  /// Tracks the shared Google button so this form cannot start a competing
+  /// request while the picker or one of its follow-up calls is in flight.
+  void _setGoogleBusy(bool busy) {
+    if (!mounted) return;
+    setState(() {
+      _googleBusy = busy;
+      if (busy) _failureMessage = null;
+    });
+  }
 }
 
 /// The quiet route to the sign-in form, kept on the sign-up screen so an existing
@@ -785,7 +806,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 class _SignInPrompt extends StatelessWidget {
   const _SignInPrompt({required this.onPressed});
 
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {

@@ -8,6 +8,7 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
+import 'package:stash_it_app/features/auth/presentation/widgets/google_sign_in_button.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -17,10 +18,10 @@ import 'package:stash_it_app/shared/widgets/app_field.dart';
 /// so this screen does not check whether a session exists — doing so in both
 /// places is how the two drift apart.
 ///
-/// Covers only manual sign-in. Registration, password reset, Google sign-in and
-/// social registration exist as peer auth routes; Google is entered from the auth
-/// entry screen, not from this form. The Forgot password action opens the
-/// password-reset request screen.
+/// Covers manual sign-in and offers the shared Google entry point. Registration,
+/// password reset and social registration exist as peer auth routes; Google
+/// sign-in and social registration start from this form's shared button. The
+/// Forgot password action opens the password-reset request screen.
 ///
 /// The behaviour is unchanged from the prototype: the same validators, the same
 /// client-side email and password rules that mirror the server's, the same
@@ -71,6 +72,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _passwordController = TextEditingController();
 
   bool _submitting = false;
+  bool _googleBusy = false;
   String? _message;
 
   /// Whether the password is masked. The field starts obscured, and only this
@@ -90,7 +92,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   Future<void> _submit() async {
-    if (_submitting) return;
+    if (_submitting || _googleBusy) return;
 
     // Client-side validation mirrors the server's rules
     // (`login/request.go`: `required,email,max=254` and `required,min=8,max=128`)
@@ -178,7 +180,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     AppField(
                       label: 'Email',
                       controller: _emailController,
-                      enabled: !_submitting,
+                      enabled: !_submitting && !_googleBusy,
                       keyboardType: TextInputType.emailAddress,
                       autofillHints: const [AutofillHints.email],
                       textInputAction: TextInputAction.next,
@@ -198,7 +200,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     AppField(
                       label: 'Password',
                       controller: _passwordController,
-                      enabled: !_submitting,
+                      enabled: !_submitting && !_googleBusy,
                       obscureText: _obscurePassword,
                       autofillHints: const [AutofillHints.password],
                       textInputAction: TextInputAction.done,
@@ -207,7 +209,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         // Inline and inside the field: a separate control outside
                         // would read as another form action. It only flips the
                         // mask, so it can neither submit nor validate.
-                        onPressed: _submitting
+                        onPressed: _submitting || _googleBusy
                             ? null
                             : _togglePasswordVisibility,
                         tooltip: _obscurePassword
@@ -241,7 +243,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         variant: AppButtonVariant.quiet,
                         small: true,
                         block: false,
-                        onPressed: _submitting ? null : _openForgotPassword,
+                        onPressed: _submitting || _googleBusy
+                            ? null
+                            : _openForgotPassword,
                       ),
                     ),
                     if (_message case final message?) ...[
@@ -257,10 +261,19 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       label: 'Sign in',
                       variant: AppButtonVariant.primary,
                       busy: _submitting,
-                      onPressed: _submit,
+                      onPressed: _googleBusy ? null : _submit,
                     ),
                     const SizedBox(height: AppMetrics.space3),
-                    _SignUpPrompt(onPressed: _submitting ? null : _openSignUp),
+                    GoogleSignInButton(
+                      enabled: !_submitting,
+                      onBusyChanged: _setGoogleBusy,
+                    ),
+                    const SizedBox(height: AppMetrics.space3),
+                    _SignUpPrompt(
+                      onPressed: _submitting || _googleBusy
+                          ? null
+                          : _openSignUp,
+                    ),
                   ],
                 ),
               ),
@@ -286,6 +299,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   /// failure in the first place. The user edits and submits deliberately.
   void _dismissMessage() {
     setState(() => _message = null);
+  }
+
+  /// Tracks the shared Google button so this form cannot start a competing
+  /// request while the picker or one of its follow-up calls is in flight.
+  void _setGoogleBusy(bool busy) {
+    if (!mounted) return;
+    setState(() {
+      _googleBusy = busy;
+      if (busy) _message = null;
+    });
   }
 
   /// Replaces this form with the registration start screen, as a peer.

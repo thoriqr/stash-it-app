@@ -6,11 +6,24 @@ import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
+import 'package:stash_it_app/features/auth/data/google_auth_service.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
+import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
 import '../../../support/fake_http.dart';
+
+class _FakeGoogleAuthService extends GoogleAuthService {
+  Future<GoogleAuthCredential?> Function()? result;
+
+  @override
+  Future<GoogleAuthCredential?> signIn() async {
+    final handler = result;
+    if (handler == null) return null;
+    return handler();
+  }
+}
 
 /// Manual sign-in, under the approved design system.
 ///
@@ -22,16 +35,19 @@ void main() {
   late InMemorySecureStorage backend;
   late FakeHttpAdapter adapter;
   late ProviderContainer container;
+  late _FakeGoogleAuthService google;
 
   setUp(() {
     backend = InMemorySecureStorage();
     adapter = FakeHttpAdapter();
+    google = _FakeGoogleAuthService();
     container = ProviderContainer(
       overrides: [
         credentialStoreProvider.overrideWithValue(
           SecureCredentialStore(backend),
         ),
         restoredTokensProvider.overrideWithValue(null),
+        googleAuthServiceProvider.overrideWithValue(google),
       ],
       retry: (_, _) => null,
     );
@@ -234,6 +250,48 @@ void main() {
         AppTokens.dark.accent,
         reason: 'a dark platform must not render light-token colours',
       );
+    });
+  });
+
+  group('Google sign-in', () {
+    testWidgets('offers Google sign-in', (tester) async {
+      await pumpSignIn(tester);
+
+      expect(
+        find.widgetWithText(AppButton, 'Continue with Google'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a cancelled Google sign-in shows no error and no session', (
+      tester,
+    ) async {
+      google.result = () async => null;
+      await pumpSignIn(tester);
+
+      await tester.tap(find.widgetWithText(AppButton, 'Continue with Google'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AuthMessageBand), findsNothing);
+      expect(container.read(authStateProvider), AuthStatus.signedOut);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a Google client failure shows a client-owned message', (
+      tester,
+    ) async {
+      google.result = () async =>
+          throw const GoogleAuthException(GoogleAuthFailure.unavailable);
+      await pumpSignIn(tester);
+
+      await tester.tap(find.widgetWithText(AppButton, 'Continue with Google'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Google sign-in could not start. Try again.'),
+        findsOneWidget,
+      );
+      expect(container.read(authStateProvider), AuthStatus.signedOut);
     });
   });
 
@@ -494,9 +552,7 @@ void main() {
       // Found by type and busy state, not by label: a busy button replaces its
       // label with a spinner, and the screen now has more than one quiet action.
       final button = tester.widget<AppButton>(
-        find.byWidgetPredicate(
-          (widget) => widget is AppButton && widget.busy,
-        ),
+        find.byWidgetPredicate((widget) => widget is AppButton && widget.busy),
       );
       expect(button.busy, isTrue);
       expect(

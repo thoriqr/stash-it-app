@@ -343,14 +343,10 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
 
   String _helperCopy(AsyncValue<CollectionPage> destinations) {
     if (destinations.hasError && !destinations.isLoading) {
-      return 'You can still create one by name, or browse all collections. '
-          'If the name is already taken, the server will ask you to choose '
-          'another.';
+      return 'You can still create a collection by name, or browse all '
+          'collections.';
     }
-    return 'Names are matched without regard to case against the collections '
-        'loaded for this sheet. A loaded match moves the item; any other name '
-        'asks the server to create it. Browse all first if it may already '
-        'exist elsewhere.';
+    return 'Choose an existing collection, or enter a name to create a new one.';
   }
 
   /// What a typed submission means.

@@ -4,49 +4,32 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/network/token_provider.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
-import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
-import 'package:stash_it_app/features/auth/data/google_auth_service.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_entry_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
-import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_http.dart';
-
-class _FakeGoogleAuthService extends GoogleAuthService {
-  Future<GoogleAuthCredential?> Function()? result;
-
-  @override
-  Future<GoogleAuthCredential?> signIn() async {
-    final handler = result;
-    if (handler == null) return null;
-    return handler();
-  }
-}
 
 /// The signed-out landing screen.
 ///
 /// The routing behaviour — where a signed-out or signed-in user is sent, and
 /// that Sign in and Create an account do not bounce back — lives in
 /// `test/app/auth_redirect_widget_test.dart`, because it needs the provider-built
-/// router. This file covers the screen itself: its copy, the enabled
-/// account-creation control, the one-shot expiry explanation, and the
-/// small-screen layout.
+/// router. This file covers the screen itself: its copy, the two auth actions,
+/// the one-shot expiry explanation, and the small-screen layout. Google sign-in
+/// now lives on the sign-in and sign-up forms and is covered there.
 void main() {
   const entryHeading = 'A place for things you find on the internet.';
 
   late ProviderContainer container;
-  late _FakeGoogleAuthService google;
 
   setUp(() {
-    google = _FakeGoogleAuthService();
     container = ProviderContainer(
       overrides: [
         credentialStoreProvider.overrideWithValue(
           SecureCredentialStore(InMemorySecureStorage()),
         ),
-        googleAuthServiceProvider.overrideWithValue(google),
       ],
     );
     addTearDown(container.dispose);
@@ -93,7 +76,8 @@ void main() {
     );
     expect(
       find.widgetWithText(AppButton, 'Continue with Google'),
-      findsOneWidget,
+      findsNothing,
+      reason: 'Google sign-in lives on the two credential forms',
     );
     expect(find.widgetWithText(AppButton, 'Sign in'), findsOneWidget);
     expect(find.widgetWithText(AppButton, 'Create an account'), findsOneWidget);
@@ -115,46 +99,6 @@ void main() {
     // No router is attached here; navigation itself is covered by
     // `auth_redirect_widget_test.dart`, which pumps the real router.
     expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('offers Google sign-in', (tester) async {
-    await pumpEntry(tester);
-
-    expect(
-      find.widgetWithText(AppButton, 'Continue with Google'),
-      findsOneWidget,
-    );
-  });
-
-  testWidgets('a cancelled Google sign-in shows no error and no session', (
-    tester,
-  ) async {
-    google.result = () async => null;
-    await pumpEntry(tester);
-
-    await tester.tap(find.widgetWithText(AppButton, 'Continue with Google'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(AuthMessageBand), findsNothing);
-    expect(container.read(authStateProvider), AuthStatus.signedOut);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('a Google client failure shows a client-owned message', (
-    tester,
-  ) async {
-    google.result = () async =>
-        throw const GoogleAuthException(GoogleAuthFailure.unavailable);
-    await pumpEntry(tester);
-
-    await tester.tap(find.widgetWithText(AppButton, 'Continue with Google'));
-    await tester.pumpAndSettle();
-
-    expect(
-      find.text('Google sign-in could not start. Try again.'),
-      findsOneWidget,
-    );
-    expect(container.read(authStateProvider), AuthStatus.signedOut);
   });
 
   testWidgets('shows the session-ended warning once and can dismiss it', (

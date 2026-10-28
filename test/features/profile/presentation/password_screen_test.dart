@@ -85,7 +85,7 @@ void main() {
     expect(visible[1].autofillHints, isNull);
   });
 
-  testWidgets('change mode shows three fields and the accurate note', (
+  testWidgets('change mode shows three fields and no session note', (
     tester,
   ) async {
     final repository = FakeProfileRepository(
@@ -97,7 +97,7 @@ void main() {
     expect(find.text('Current password'), findsOneWidget);
     expect(find.text('New password'), findsOneWidget);
     expect(find.text('Confirm new password'), findsOneWidget);
-    expect(find.textContaining('about 15 minutes'), findsOneWidget);
+    expect(find.textContaining('15 minutes'), findsNothing);
 
     final visible = fields(tester);
     expect(visible, hasLength(3));

@@ -698,7 +698,12 @@ void main() {
     await openPicker(tester);
 
     expect(find.text("We couldn't load your collections."), findsOneWidget);
-    expect(find.textContaining('If the name is already taken'), findsOneWidget);
+    expect(
+      find.text(
+        'You can still create a collection by name, or browse all collections.',
+      ),
+      findsOneWidget,
+    );
     expect(find.widgetWithText(AppButton, 'Retry'), findsOneWidget);
 
     await typeName(tester, 'Reading List');

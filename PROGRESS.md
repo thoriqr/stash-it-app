@@ -1,3 +1,20 @@
+## Auth entry-point relocation and UI copy (2026-10-28)
+
+### Flutter implementation
+- **Google sign-in relocation:** removed **Continue with Google** from the auth entry screen and placed the same action on both `SignInScreen` and `SignUpScreen`. The existing flow was moved intact into the shared `GoogleSignInButton`: picker → `AuthState.signInWithGoogle`, the authenticated session redirect, the account-link route with the in-memory ID token, the social-registration PIN route, and the existing client-owned error mapping. No authentication behaviour, request, DTO, repository method, `AuthState`, token handling, session adoption, link confirmation, PIN verification, finalization, error copy, or routing changed. A Google action in flight disables the surrounding form actions; an email action in flight disables the Google button.
+- **Move-to-collection helper copy:** replaced the explanation of case-insensitive matching and server-side creation with `Choose an existing collection, or enter a name to create a new one.` When the list cannot be loaded it now says `You can still create a collection by name, or browse all collections.` Selection, matching, creation, loading and error handling are unchanged.
+- **Password-change notice:** removed the note about other sessions and the ~15-minute access-token window. No product decision requires it (D10 defers device/session management), and it exposed technical session behaviour. Create and change modes remain distinguished by the title, fields and button label; password behaviour and backend semantics are unchanged.
+
+### Tests
+- The existing Google route tests now enter through the sign-in screen, and the existing screen assertions were retargeted to the relocated button. No new Google sign-in tests were added and no flow assertion changed.
+
+### Verification
+- `dart format` on every changed Dart file — clean.
+- `flutter analyze` — no issues found.
+- Focused suites passed: auth entry, sign-in, sign-up, Google routes, move-to-collection sheet and password screen — **138 tests**.
+- `flutter test` — **1420 passed**.
+- No app, device or emulator run. Nothing staged or committed.
+
 ## Google Sign-In (2026-10-28)
 
 ### Verified backend contract (stash-it-backend)

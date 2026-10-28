@@ -116,7 +116,7 @@ void main() {
     );
     scriptAuthenticatedGoogleLogin();
 
-    await pumpApp(tester);
+    await pumpApp(tester, location: AppRoutes.signIn);
     await tester.tap(find.widgetWithText(AppButton, 'Continue with Google'));
     await tester.pumpAndSettle();
 
@@ -170,7 +170,7 @@ void main() {
         },
       );
 
-      await pumpApp(tester);
+      await pumpApp(tester, location: AppRoutes.signIn);
       await tester.tap(find.widgetWithText(AppButton, 'Continue with Google'));
       await tester.pumpAndSettle();
 
@@ -350,7 +350,7 @@ void main() {
         },
       );
 
-      await pumpApp(tester);
+      await pumpApp(tester, location: AppRoutes.signIn);
       await tester.tap(find.widgetWithText(AppButton, 'Continue with Google'));
       await tester.pumpAndSettle();
 

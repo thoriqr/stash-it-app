@@ -216,9 +216,12 @@ void main() {
         expect(labelY, lessThan(fieldY));
 
         expect(find.widgetWithText(AppButton, 'Send PIN'), findsOneWidget);
+        expect(
+          find.widgetWithText(AppButton, 'Continue with Google'),
+          findsOneWidget,
+        );
         expect(find.widgetWithText(AppButton, 'Sign in'), findsOneWidget);
         expect(find.byType(NavigationBar), findsNothing);
-        expect(find.textContaining('Google'), findsNothing);
       },
     );
 

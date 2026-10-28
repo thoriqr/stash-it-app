@@ -196,20 +196,6 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
                         'address.',
               style: AppTypography.body.copyWith(color: tokens.textSecondary),
             ),
-            if (change) ...[
-              const SizedBox(height: AppMetrics.space4),
-              // Accurate, and shown only where it is true. A change revokes the
-              // account's other sessions; the access tokens those devices already
-              // hold are stateless and keep working until their own expiry. A
-              // password *create* revokes nothing, so it must not carry this.
-              _Note(
-                copy:
-                    'Changing your password signs out your other sessions. A '
-                    'device that is already signed in may keep working for up '
-                    'to about 15 minutes.',
-                tokens: tokens,
-              ),
-            ],
             const SizedBox(height: AppMetrics.space5),
             if (change) ...[
               AppField(
@@ -409,30 +395,6 @@ String _modeFailureCopy(Object error) => switch (error) {
   ApiFailureTransport() => 'No connection. We could not load your profile.',
   _ => 'We could not load your profile. Try again.',
 };
-
-class _Note extends StatelessWidget {
-  const _Note({required this.copy, required this.tokens});
-
-  final String copy;
-  final AppTokens tokens;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppMetrics.space3),
-      decoration: BoxDecoration(
-        color: tokens.surfaceInset,
-        border: Border.all(color: tokens.border),
-        borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
-      ),
-      child: Text(
-        copy,
-        style: AppTypography.meta.copyWith(color: tokens.textSecondary),
-      ),
-    );
-  }
-}
 
 /// A known not-set refusal that is not tied to one field.
 class _PasswordNotice extends StatelessWidget {
