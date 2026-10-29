@@ -7,6 +7,7 @@ import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/core/error/api_failure_messages.dart';
 import 'package:stash_it_app/features/inbox/presentation/widgets/inbox_intake.dart';
 import 'package:stash_it_app/features/pending_urls/application/pending_urls_controller.dart';
+import 'package:stash_it_app/features/pending_urls/presentation/widgets/pending_urls_entry.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_state.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
@@ -116,41 +117,33 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const InboxIntake(),
+          if (pendingCount > 0)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppMetrics.space3,
+                AppMetrics.space2,
+                AppMetrics.space3,
+                0,
+              ),
+              child: PendingUrlsEntry(
+                count: pendingCount,
+                onTap: () => context.push(AppRoutes.savedOnDevice),
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppMetrics.space3,
-              AppMetrics.space2,
+              AppMetrics.space3,
               AppMetrics.space3,
               0,
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'RECENTLY SAVED',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.sectionLabel.copyWith(
-                      color: tokens.textTertiary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppMetrics.space2),
-                Flexible(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: AppButton(
-                      label: pendingCount > 0
-                          ? 'Saved on this device ($pendingCount)'
-                          : 'Saved on this device',
-                      variant: AppButtonVariant.quiet,
-                      small: true,
-                      block: false,
-                      onPressed: () => context.push(AppRoutes.savedOnDevice),
-                    ),
-                  ),
-                ),
-              ],
+            child: Text(
+              'RECENTLY SAVED',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.sectionLabel.copyWith(
+                color: tokens.textTertiary,
+              ),
             ),
           ),
           Expanded(child: _body(context, listing)),

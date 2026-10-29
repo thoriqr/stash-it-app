@@ -8,6 +8,7 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/application/registration_recovery.dart';
 import 'package:stash_it_app/features/auth/data/auth_repository.dart';
 import 'package:stash_it_app/features/auth/data/registration_continuation_store.dart';
+import 'package:stash_it_app/features/auth/presentation/widgets/auth_back_button.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/google_sign_in_button.dart';
@@ -557,32 +558,49 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       // The brand row replaces the app bar: auth sits outside the four
       // destinations, so it carries the wordmark rather than a screen title.
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            // The whole screen scrolls, so a keyboard inset on a short device
-            // does not clip the form or the failure band.
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppMetrics.screenPadding,
-              vertical: AppMetrics.space6,
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const AuthBrandRow(),
-                  const SizedBox(height: AppMetrics.space5),
-                  if (_pinSentTo case final email?)
-                    _buildPinSent(tokens, email)
-                  else if (_verifiedBlockedEmail case final email?)
-                    _buildVerifiedBlocked(tokens, email)
-                  else
-                    _buildForm(tokens),
-                ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppMetrics.screenPadding,
+              ),
+              child: AuthBackButton(
+                onPressed: _submitting || _googleBusy
+                    ? null
+                    : () => context.go(AppRoutes.auth),
               ),
             ),
-          ),
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  // The whole screen scrolls, so a keyboard inset on a short
+                  // device does not clip the form or the failure band.
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppMetrics.screenPadding,
+                    vertical: AppMetrics.space6,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const AuthBrandRow(),
+                        const SizedBox(height: AppMetrics.space5),
+                        if (_pinSentTo case final email?)
+                          _buildPinSent(tokens, email)
+                        else if (_verifiedBlockedEmail case final email?)
+                          _buildVerifiedBlocked(tokens, email)
+                        else
+                          _buildForm(tokens),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

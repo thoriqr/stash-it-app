@@ -5,6 +5,7 @@ import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/pending_urls/application/pending_urls_controller.dart';
+import 'package:stash_it_app/features/pending_urls/presentation/widgets/pending_urls_entry.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
@@ -117,11 +118,10 @@ class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
                     onPressed: () => context.go(AppRoutes.signUp),
                   ),
                   if (pendingCount > 0) ...[
-                    const SizedBox(height: AppMetrics.space3),
-                    AppButton(
-                      label: 'Links saved on this device ($pendingCount)',
-                      variant: AppButtonVariant.quiet,
-                      onPressed: () => context.push(AppRoutes.savedOnDevice),
+                    const SizedBox(height: AppMetrics.space4),
+                    PendingUrlsEntry(
+                      count: pendingCount,
+                      onTap: () => context.push(AppRoutes.savedOnDevice),
                     ),
                   ],
                 ],

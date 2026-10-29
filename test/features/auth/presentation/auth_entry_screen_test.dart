@@ -10,6 +10,7 @@ import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_entry_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
 import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
+import 'package:stash_it_app/features/pending_urls/presentation/widgets/pending_urls_entry.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_http.dart';
@@ -89,7 +90,7 @@ void main() {
     expect(find.widgetWithText(AppButton, 'Sign in'), findsOneWidget);
     expect(find.widgetWithText(AppButton, 'Create an account'), findsOneWidget);
     expect(
-      find.textContaining('Links saved on this device'),
+      find.byType(PendingUrlsEntry),
       findsNothing,
       reason: 'the local entry is hidden while the device holds no URLs',
     );
@@ -120,12 +121,12 @@ void main() {
     );
     await pumpEntry(tester);
 
-    final entry = find.widgetWithText(
-      AppButton,
-      'Links saved on this device (1)',
-    );
+    final entry = find.byType(PendingUrlsEntry);
     expect(entry, findsOneWidget);
-    expect(tester.widget<AppButton>(entry).onPressed, isNotNull);
+    expect(find.text('Saved on this device'), findsOneWidget);
+    expect(find.text('1'), findsOneWidget);
+    expect(tester.widget<PendingUrlsEntry>(entry).count, 1);
+    expect(tester.widget<PendingUrlsEntry>(entry).onTap, isNotNull);
   });
 
   testWidgets('the local entry opens without a session', (tester) async {
@@ -160,9 +161,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(
-      find.widgetWithText(AppButton, 'Links saved on this device (1)'),
-    );
+    await tester.tap(find.byType(PendingUrlsEntry));
     await tester.pumpAndSettle();
 
     expect(find.text('LOCAL URLS STUB'), findsOneWidget);
@@ -210,6 +209,29 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(AppButton, 'Create an account'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('does not overflow at 320x640 with the warning and the entry', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await pendingStore.upsert(
+      url: 'https://example.com/kept',
+      uncertain: false,
+    );
+    await armSessionEnded();
+    await pumpEntry(tester);
+
+    expect(find.text(sessionEndedMessage), findsOneWidget);
+    expect(find.byType(PendingUrlsEntry), findsOneWidget);
+
+    await tester.ensureVisible(find.byType(PendingUrlsEntry));
+    await tester.pumpAndSettle();
+
     expect(tester.takeException(), isNull);
   });
 }

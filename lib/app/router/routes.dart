@@ -180,10 +180,12 @@ abstract final class AppRoutes {
 
   /// URLs kept on this device after a shared save could not be confirmed.
   ///
-  /// **Not a fifth destination.** A read-only secondary route outside the shell,
-  /// pushed from the auth entry screen and the Inbox. It reads only the local
-  /// store, so it is allowed while signed out and before any account has ever
-  /// been created; it never requires a session or an API response.
+  /// **Not a fifth destination.** A secondary route outside the shell, pushed
+  /// from the auth entry screen and the Inbox. Its rows are inspect-only; the
+  /// one write is an explicit, user-initiated bulk save that reuses the existing
+  /// `POST /saved-items` path. Opening the screen reads only the local store, so
+  /// it is allowed while signed out and before any account has ever been
+  /// created; listing never requires a session or an API response.
   static const String savedOnDevice = '/saved-on-device';
 
   /// Create or change the account's password.

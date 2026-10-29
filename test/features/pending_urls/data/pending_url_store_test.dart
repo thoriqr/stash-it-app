@@ -206,6 +206,61 @@ void main() {
       expect(entries, hasLength(1));
       expect(entries.single.url, '$url?other=1');
     });
+
+    test(
+      'markUncertain flags only the exact URL and preserves its timestamp',
+      () async {
+        final preferences = await prefsWith({});
+        var now = DateTime.utc(2026, 10, 28, 12);
+        final store = PendingUrlStore(preferences, now: () => now);
+
+        await store.upsert(url: url, uncertain: false);
+        await store.upsert(url: '$url?other=1', uncertain: false);
+        final before = (await store.readAll()).entries.firstWhere(
+          (entry) => entry.url == url,
+        );
+
+        now = now.add(const Duration(hours: 1));
+        await store.markUncertain(url);
+
+        final entries = (await store.readAll()).entries;
+        final marked = entries.firstWhere((entry) => entry.url == url);
+        final other = entries.firstWhere(
+          (entry) => entry.url == '$url?other=1',
+        );
+
+        expect(marked.uncertain, isTrue);
+        expect(marked.addedAt, before.addedAt);
+        expect(other.uncertain, isFalse);
+      },
+    );
+
+    test('markUncertain is a no-op for an unknown entry', () async {
+      final preferences = await prefsWith({});
+      final store = PendingUrlStore(preferences);
+
+      await store.upsert(url: url, uncertain: false);
+
+      await store.markUncertain('https://example.com/missing');
+
+      final entries = (await store.readAll()).entries;
+      expect(entries.single.url, url);
+      expect(entries.single.uncertain, isFalse);
+    });
+
+    test(
+      'a failed markUncertain throws instead of claiming persistence',
+      () async {
+        final preferences = await prefsWith({});
+        await PendingUrlStore(preferences).upsert(url: url, uncertain: false);
+        final store = _FailingWriteStore(preferences);
+
+        await expectLater(
+          store.markUncertain(url),
+          throwsA(isA<PendingUrlStorageException>()),
+        );
+      },
+    );
   });
 
   group('retention', () {

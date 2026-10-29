@@ -6,6 +6,7 @@ import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
+import 'package:stash_it_app/features/auth/presentation/widgets/auth_back_button.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/google_sign_in_button.dart';
@@ -147,138 +148,161 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       // The brand row replaces the app bar: auth sits outside the four
       // destinations, so it carries the wordmark rather than a screen title.
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppMetrics.screenPadding,
-              vertical: AppMetrics.space6,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppMetrics.screenPadding,
+              ),
+              child: AuthBackButton(
+                onPressed: _submitting || _googleBusy
+                    ? null
+                    : () => context.go(AppRoutes.auth),
+              ),
             ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const AuthBrandRow(),
-                    const SizedBox(height: AppMetrics.space5),
-                    Text(
-                      'Sign in to Stash It',
-                      style: AppTypography.screenHeading.copyWith(
-                        color: tokens.textPrimary,
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppMetrics.screenPadding,
+                    vertical: AppMetrics.space6,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const AuthBrandRow(),
+                          const SizedBox(height: AppMetrics.space5),
+                          Text(
+                            'Sign in to Stash It',
+                            style: AppTypography.screenHeading.copyWith(
+                              color: tokens.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: AppMetrics.space1),
+                          Text(
+                            'Use the email and password on your Stash It account.',
+                            style: AppTypography.body.copyWith(
+                              color: tokens.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: AppMetrics.space6),
+                          AppField(
+                            label: 'Email',
+                            controller: _emailController,
+                            enabled: !_submitting && !_googleBusy,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.email],
+                            textInputAction: TextInputAction.next,
+                            validator: (value) {
+                              final email = value?.trim() ?? '';
+                              if (email.isEmpty) {
+                                return 'Enter your email address.';
+                              }
+                              if (!RegExp(
+                                r'^[^@\s]+@[^@\s]+$',
+                              ).hasMatch(email)) {
+                                return 'Enter a valid email address.';
+                              }
+                              if (email.length > 254) {
+                                return 'That email address is too long.';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: AppMetrics.space4),
+                          AppField(
+                            label: 'Password',
+                            controller: _passwordController,
+                            enabled: !_submitting && !_googleBusy,
+                            obscureText: _obscurePassword,
+                            autofillHints: const [AutofillHints.password],
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _submit(),
+                            suffixIcon: IconButton(
+                              // Inline and inside the field: a separate control outside
+                              // would read as another form action. It only flips the
+                              // mask, so it can neither submit nor validate.
+                              onPressed: _submitting || _googleBusy
+                                  ? null
+                                  : _togglePasswordVisibility,
+                              tooltip: _obscurePassword
+                                  ? 'Show password'
+                                  : 'Hide password',
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                              ),
+                              iconSize: AppMetrics.iconSize,
+                              color: tokens.textTertiary,
+                              padding: EdgeInsets.zero,
+                            ),
+                            validator: (value) {
+                              final password = value ?? '';
+                              if (password.isEmpty) {
+                                return 'Enter your password.';
+                              }
+                              if (password.length < 8) {
+                                return 'Your password is at least 8 characters.';
+                              }
+                              if (password.length > 128) {
+                                return 'That password is too long.';
+                              }
+                              return null;
+                            },
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: AppButton(
+                              label: 'Forgot password?',
+                              variant: AppButtonVariant.quiet,
+                              small: true,
+                              block: false,
+                              onPressed: _submitting || _googleBusy
+                                  ? null
+                                  : _openForgotPassword,
+                            ),
+                          ),
+                          if (_message case final message?) ...[
+                            const SizedBox(height: AppMetrics.space4),
+                            AuthMessageBand(
+                              message: message,
+                              onDismiss: _dismissMessage,
+                              tone: _messageTone,
+                            ),
+                          ],
+                          const SizedBox(height: AppMetrics.space6),
+                          AppButton(
+                            label: 'Sign in',
+                            variant: AppButtonVariant.primary,
+                            busy: _submitting,
+                            onPressed: _googleBusy ? null : _submit,
+                          ),
+                          const SizedBox(height: AppMetrics.space3),
+                          GoogleSignInButton(
+                            enabled: !_submitting,
+                            onBusyChanged: _setGoogleBusy,
+                          ),
+                          const SizedBox(height: AppMetrics.space3),
+                          _SignUpPrompt(
+                            onPressed: _submitting || _googleBusy
+                                ? null
+                                : _openSignUp,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: AppMetrics.space1),
-                    Text(
-                      'Use the email and password on your Stash It account.',
-                      style: AppTypography.body.copyWith(
-                        color: tokens.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: AppMetrics.space6),
-                    AppField(
-                      label: 'Email',
-                      controller: _emailController,
-                      enabled: !_submitting && !_googleBusy,
-                      keyboardType: TextInputType.emailAddress,
-                      autofillHints: const [AutofillHints.email],
-                      textInputAction: TextInputAction.next,
-                      validator: (value) {
-                        final email = value?.trim() ?? '';
-                        if (email.isEmpty) return 'Enter your email address.';
-                        if (!RegExp(r'^[^@\s]+@[^@\s]+$').hasMatch(email)) {
-                          return 'Enter a valid email address.';
-                        }
-                        if (email.length > 254) {
-                          return 'That email address is too long.';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: AppMetrics.space4),
-                    AppField(
-                      label: 'Password',
-                      controller: _passwordController,
-                      enabled: !_submitting && !_googleBusy,
-                      obscureText: _obscurePassword,
-                      autofillHints: const [AutofillHints.password],
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _submit(),
-                      suffixIcon: IconButton(
-                        // Inline and inside the field: a separate control outside
-                        // would read as another form action. It only flips the
-                        // mask, so it can neither submit nor validate.
-                        onPressed: _submitting || _googleBusy
-                            ? null
-                            : _togglePasswordVisibility,
-                        tooltip: _obscurePassword
-                            ? 'Show password'
-                            : 'Hide password',
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                        ),
-                        iconSize: AppMetrics.iconSize,
-                        color: tokens.textTertiary,
-                        padding: EdgeInsets.zero,
-                      ),
-                      validator: (value) {
-                        final password = value ?? '';
-                        if (password.isEmpty) return 'Enter your password.';
-                        if (password.length < 8) {
-                          return 'Your password is at least 8 characters.';
-                        }
-                        if (password.length > 128) {
-                          return 'That password is too long.';
-                        }
-                        return null;
-                      },
-                    ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: AppButton(
-                        label: 'Forgot password?',
-                        variant: AppButtonVariant.quiet,
-                        small: true,
-                        block: false,
-                        onPressed: _submitting || _googleBusy
-                            ? null
-                            : _openForgotPassword,
-                      ),
-                    ),
-                    if (_message case final message?) ...[
-                      const SizedBox(height: AppMetrics.space4),
-                      AuthMessageBand(
-                        message: message,
-                        onDismiss: _dismissMessage,
-                        tone: _messageTone,
-                      ),
-                    ],
-                    const SizedBox(height: AppMetrics.space6),
-                    AppButton(
-                      label: 'Sign in',
-                      variant: AppButtonVariant.primary,
-                      busy: _submitting,
-                      onPressed: _googleBusy ? null : _submit,
-                    ),
-                    const SizedBox(height: AppMetrics.space3),
-                    GoogleSignInButton(
-                      enabled: !_submitting,
-                      onBusyChanged: _setGoogleBusy,
-                    ),
-                    const SizedBox(height: AppMetrics.space3),
-                    _SignUpPrompt(
-                      onPressed: _submitting || _googleBusy
-                          ? null
-                          : _openSignUp,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

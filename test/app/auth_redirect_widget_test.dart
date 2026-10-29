@@ -58,6 +58,7 @@ void main() {
     WidgetTester tester,
     AuthStatus status, {
     String initialLocation = AppRoutes.inbox,
+    PendingUrlStore? pendingStore,
   }) async {
     final adapter = FakeHttpAdapter();
 
@@ -68,7 +69,7 @@ void main() {
     // The device-local list is independent of the auth status, but the auth
     // entry screen and Inbox both watch its count, so every container needs a
     // real in-memory store.
-    final pendingStore = await testPendingUrlStore();
+    final localUrls = pendingStore ?? await testPendingUrlStore();
 
     // `retry: (_, _) => null` because Riverpod 3 retries a failed provider up to
     // ten times with backoff; an unscripted listing would leave one of those
@@ -76,7 +77,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         ...authOverrides(status),
-        pendingUrlStoreProvider.overrideWithValue(pendingStore),
+        pendingUrlStoreProvider.overrideWithValue(localUrls),
       ],
       retry: (_, _) => null,
     );
@@ -263,6 +264,70 @@ void main() {
 
     expect(find.text(formHeading), findsOneWidget);
     expect(find.text(signUpHeading), findsNothing);
+  });
+
+  testWidgets('the sign-in form can return to the auth entry screen', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      AuthStatus.signedOut,
+      initialLocation: AppRoutes.signIn,
+    );
+
+    expect(find.text(formHeading), findsOneWidget);
+    await tester.tap(find.byTooltip('Back to welcome'));
+    await tester.pumpAndSettle();
+
+    expect(find.text(entryHeading), findsOneWidget);
+    expect(find.text(formHeading), findsNothing);
+
+    // No loop: the entry still reaches the form.
+    await tester.tap(find.widgetWithText(AppButton, 'Sign in'));
+    await tester.pumpAndSettle();
+    expect(find.text(formHeading), findsOneWidget);
+  });
+
+  testWidgets('the sign-up form can return to the auth entry screen', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      AuthStatus.signedOut,
+      initialLocation: AppRoutes.signUp,
+    );
+
+    expect(find.text(signUpHeading), findsOneWidget);
+    await tester.tap(find.byTooltip('Back to welcome'));
+    await tester.pumpAndSettle();
+
+    expect(find.text(entryHeading), findsOneWidget);
+    expect(find.text(signUpHeading), findsNothing);
+  });
+
+  testWidgets('the signed-out local list hands the user to sign-in', (
+    tester,
+  ) async {
+    final pendingStore = await testPendingUrlStore();
+    await pendingStore.upsert(
+      url: 'https://example.com/kept',
+      uncertain: false,
+    );
+
+    await pumpApp(
+      tester,
+      AuthStatus.signedOut,
+      initialLocation: AppRoutes.savedOnDevice,
+      pendingStore: pendingStore,
+    );
+
+    expect(find.text('SAVED ON THIS DEVICE'), findsOneWidget);
+    await tester.tap(
+      find.widgetWithText(AppButton, 'Sign in to save these links'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(formHeading), findsOneWidget);
   });
 
   testWidgets('a signed-in user sees the shell', (tester) async {

@@ -99,6 +99,10 @@ void main() {
           builder: (_, state) =>
               Scaffold(body: Text('FINALIZE ${state.extra ?? ''}')),
         ),
+        GoRoute(
+          path: AppRoutes.auth,
+          builder: (_, _) => const Scaffold(body: Text('WELCOME STUB')),
+        ),
       ],
     );
     addTearDown(router.dispose);
@@ -1673,6 +1677,35 @@ void main() {
       );
       expect(find.text('Check your email'), findsNothing);
     });
+  });
+
+  testWidgets('the back affordance returns to the welcome screen', (
+    tester,
+  ) async {
+    await pumpRoutedSignUp(tester);
+
+    expect(find.byTooltip('Back to welcome'), findsOneWidget);
+    await tester.tap(find.byTooltip('Back to welcome'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('WELCOME STUB'), findsOneWidget);
+    expect(
+      adapter.countFor('/auth/register/manual'),
+      0,
+      reason: 'navigation must not start a registration',
+    );
+  });
+
+  testWidgets('the back affordance is present in the recovery state', (
+    tester,
+  ) async {
+    await pumpRoutedSignUp(tester);
+    scriptRegistration(status: 'verified');
+
+    await submit(tester);
+
+    expect(find.text('Verification already complete'), findsOneWidget);
+    expect(find.byTooltip('Back to welcome'), findsOneWidget);
   });
 
   group('small screens', () {

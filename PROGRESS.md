@@ -1,16 +1,22 @@
-## Local URL fallback and Android share intake (2026-10-28)
+## Local URL fallback, Android share intake, and account save (2026-10-29)
 
 ### Product model
 - **Device-local, public within the app, account-independent.** The list stores only the exact trimmed URL, its UTC timestamp, and an `uncertain` flag. It contains no user id, account id, session, or auth state, is not partitioned by account, and is not cleared by sign-out, account switching, or session expiry.
-- The screen is reachable while signed out and before any account has ever been registered, and reads only local data. It never calls the API and never triggers an auth redirect.
-- Seven-day retention is enforced on every read and write. Expiry is pruned on read/write; no background timer exists. A one-shot in-app warning is shown when a prune is owed, including a prune performed by a share write.
+- The screen is reachable while signed out and before any account has ever been registered. Listing reads only local data; opening it never calls the API and never triggers an auth redirect. The only API write is an explicit bulk save while signed in.
+- Seven-day retention is enforced on every read and write. Expiry is pruned on read/write; no background timer exists. A one-shot in-app warning is shown when a prune is owed, including a prune performed by a share write or a bulk-save reconciliation.
+- **One explicit account-save action.** Signed out, it points at sign-in; signed in, it submits the local list sequentially through the existing `POST /saved-items`. A confirmed entry is removed; the run stops at the first refusal, including a validation refusal, so the failed URL and every unprocessed URL stay local. There is no per-row save, automatic sync, automatic retry, or attempt journal.
 
 ### Flutter implementation
 - Added `PendingUrl`, `PendingUrlStore`, and the `PendingUrls` provider/count provider under `lib/features/pending_urls/`. The store uses a JSON array under `stash_it.pending_urls.entries`: exact-string deduplication refreshes the timestamp and uncertainty, different query/path strings remain separate, malformed members are skipped, entries are newest first, and an empty list deletes the key. Write failures propagate so the share flow cannot claim local safety.
 - **Storage uses `shared_preferences`, not secure storage.** The data is non-secret, device-local application data, is intentionally available before and without an account, and must survive sign-out and account changes. The existing theme preferences are untouched. Credentials and auth-flow continuations remain in `flutter_secure_storage`; no secure-storage requirement was weakened. The earlier V5/§7.12 expectation that the pending queue would live in secure storage is superseded for this fallback, and `AGENTS.md` plus the `SecureCredentialStore` comment now record that.
 - Added `SharedUrlIntake`: it extracts a submittable URL using the existing `isSubmittableUrl`, calls the existing `SavedItemsRepository.create` and `AuthInterceptor`, removes an exact local entry after a confirmed save, and stores on every unconfirmed outcome. Transport/unreadable outcomes are stored with `uncertain = true`; the copy says the save could not be confirmed and never claims a definite failure. `SaveUrl.submit` is deliberately not used because it publishes foreground feedback, refreshes the Inbox, and collapses every outcome to `bool`.
-- Added `/saved-on-device` and the read-only **Saved on This Device** screen with loading, error, empty, and populated states. The auth entry screen shows `Links saved on this device (N)` only when N > 0; the Inbox always shows `Saved on this device` with the count when non-zero. Both push the same route. The screen has a direct-entry back fallback (sign-in while signed out, Inbox while signed in).
-- The local list is not cleared by `SessionBoundary`. On app resume the provider is invalidated so a share handled while the app was backgrounded appears without a restart.
+- Added `PendingUrlsEntry`, one shared card used by the auth entry screen and the Inbox. It uses the existing `warning` / `warningSoft` / `warningBorder` tokens; the count is exact up to 99 and `99+` above. Both entry points render it only when N > 0: the auth entry already did, and the Inbox now hides it at zero. The whole card is one button target with an icon, chevron, and accessible label. No new colour token or button variant was added.
+- Added `/saved-on-device` and the **Saved on This Device** screen with loading, error, empty, and populated states. Its rows are inspect-only; the one write is **Sign in to save these links** (signed out) or **Save all to my account** (signed in). A run shows a progress line and leaves one persistent `FeedbackNotice` summary, not a per-URL toast. The screen has a direct-entry back fallback (sign-in while signed out, Inbox while signed in).
+- Added `SavePendingUrls`, a keep-alive synchronous notifier. It captures the provider's newest-first snapshot, guards overlapping runs before the first `await`, re-checks the entry and the session before each request, and awaits one `SavedItemsRepository.create` at a time. It continues only after a confirmed create; any refusal, including `ApiFailureValidation`, stops the run. A request that receives `ACCESS_TOKEN_EXPIRED`, refreshes through `AuthInterceptor`, and replays to a confirmed `201` is a success and the run continues. Confirmed entries are removed by exact URL; transport/unreadable outcomes are kept and marked uncertain; a confirmed run refreshes the Inbox head once. No batch endpoint, new API client, retry loop, attempt journal, or background sync was added.
+- Added `PendingUrlStore.markUncertain`: it sets the flag on the exact URL without changing `addedAt`, so an ambiguous bulk attempt does not extend the seven-day clock. The `PendingUrls` notifier gained `removeConfirmed` and `markSaveUncertain`, both of which re-read the store and update the snapshot/count; the read path still publishes the one-shot expiry notice.
+- Added `AuthBackButton` above the brand row on `SignInScreen` and `SignUpScreen`, navigating with `context.go(AppRoutes.auth)` and disabled while a form request is in flight. No route or redirect rule changed; successful authentication still follows the existing `/inbox` redirect.
+- The app-resume invalidation skips while a bulk run is in progress, so it cannot replace the run's in-place reconciliation with a pre-removal snapshot.
+- The local list is not cleared by `SessionBoundary`. On a normal app resume the provider is invalidated so a share handled while the app was backgrounded appears without a restart.
 
 ### Android share intake
 - Added a transparent `ShareActivity` registered for `ACTION_SEND`/`text/plain`, in its own task with `excludeFromRecents` and a translucent theme. It never renders Flutter and finishes itself; no notification permission or notification infrastructure was added.
@@ -19,14 +25,12 @@
 - Added the missing `INTERNET` permission to the main manifest. Debug/profile already had it, but release builds had no network access.
 
 ### Verification
-- `dart run build_runner build --delete-conflicting-outputs` completed; the flag is reported as removed and ignored, and the new generated provider file was written.
-- `dart format` on the changed Dart files — clean on the final run.
-- `flutter analyze` — no issues found.
-- Focused `flutter test test/features/pending_urls` — **47 passed**.
-- Broader affected suites (auth entry, Inbox, auth redirect, router, Google routes, bootstrap, session-expiry feedback, widget shell, navigation, feedback, skeleton/theme) — **209 passed**.
-- Full `flutter test` — **1474 passed**.
-- `android\gradlew.bat :app:compileDebugKotlin` — **BUILD SUCCESSFUL** after correcting the Dart entrypoint constructor; only pre-existing Gradle/Kotlin deprecation warnings were emitted.
-- No app, device, or emulator run. Nothing staged or committed.
+- `dart format` on the changed Dart files — final run: **0 changed**.
+- `flutter analyze` — **no issues found**.
+- Focused `flutter test test/features/pending_urls/application/save_pending_urls_controller_test.dart test/features/inbox/presentation/inbox_screen_test.dart` — **63 passed**.
+- Full `flutter test` — **1538 passed** (final run).
+- No code generation was required for these corrections; no generated file was edited.
+- No app, device, or emulator run. Nothing staged or committed. The native share intake and Gradle configuration were unchanged, so the native compile was not rerun.
 
 ### Remaining limitations and manual device checks
 - **Toast is transient, not a system notification.** It is shown while the share activity is alive; a user who is not looking can miss it. The durable signal is the local entry on the auth entry screen and Inbox. A shade notification would require a notification package and a permission-request flow.
@@ -34,7 +38,18 @@
 - A share handled while the live UI engine exists but its channel handler is not yet installed falls back to the headless engine after a ping failure. A full cross-engine refresh lock is not implemented.
 - Process death during the network attempt can lose the URL; no native attempt journal was added.
 - iOS/macOS share intake is not implemented (D12 requires a separate native implementation with an App Group).
-- The full D7 pending-URL state machine and D23/D24 manual retry remain unimplemented; this is an inspect-only fallback.
+- **Ambiguous bulk outcomes can duplicate on a later explicit retry.** The backend has no idempotency key. The client keeps the entry, marks it uncertain, stops the run, and tells the user to check the Inbox before trying again; it cannot prevent a duplicate if the user retries. No attempt journal was added.
+- **No batch transaction.** Partial success is inherent. Confirmed entries are reconciled immediately and the summary reports saved, known-failed, uncertain, and remaining counts.
+- **Local store races remain.** `shared_preferences` has no compare-and-swap, and the headless share engine can write while the live engine runs. The run re-reads the provider after each outcome and re-checks presence before each request, but a narrow race remains.
+- **A local removal failure after a confirmed save** stops the run and leaves the entry. The remote save is still confirmed; the summary does not claim the entry was removed. A later retry may duplicate it.
+- **Account switch mid-run** stops when the session is signed out; a rapid sign-out/sign-in could let remaining URLs save to the new account. The entries themselves are account-independent.
+- **Expiry during a run** is pruned by the next store read; an entry can be submitted in the narrow window between the presence check and the request. The seven-day policy and exact-string rules are unchanged.
+- **A server-invalid URL now blocks the queue.** It stays local and stops the run, so later URLs are not attempted until it expires or the local list is otherwise cleared. The screen has no edit or delete action; that is the requested stop-on-first policy.
+- **The bulk summary is screen-local.** Leaving mid-run loses the final notice, though the list and count still reconcile. It is not a system notification or an app-wide toast.
+- **No automatic return after sign-in.** The user lands in the Inbox, where the pending card appears whenever entries exist and is one tap away. Adding an automatic return would require a post-auth destination intent and a router change.
+- **The auth back affordance replaces the form route**, so the form is disposed. That is deliberate; no draft-preservation provider was added.
+- All new copy is hardcoded English; the app still has no l10n layer.
+- The full D7 pending-URL state machine and D23/D24 automatic-retry work remain unimplemented; this is an explicit, manual bulk save, not the full state machine.
 
 ## Auth entry-point relocation and UI copy (2026-10-28)
 

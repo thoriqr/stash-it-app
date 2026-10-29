@@ -164,9 +164,10 @@ class PendingUrlStore {
 
   /// Removes the entry whose URL is exactly [url], if there is one.
   ///
-  /// Used only as best-effort cleanup after a later confirmed save. The caller
-  /// may ignore a failure: the remote save already succeeded, and a stale local
-  /// copy is preferable to turning that success into an error.
+  /// Used after a later confirmed save: the share intake treats a failure as
+  /// best-effort cleanup, while a bulk run stops so it cannot accumulate more
+  /// unremovable copies. The remote save already succeeded either way, so the
+  /// caller decides whether to report the local failure.
   Future<void> removeExact(String url) async {
     final trimmed = url.trim();
     if (trimmed.isEmpty) return;
@@ -178,6 +179,36 @@ class PendingUrlStore {
     if (remaining.length == current.entries.length) return;
 
     await writeEntries(remaining);
+  }
+
+  /// Marks the entry whose URL is exactly [url] as uncertain.
+  ///
+  /// **Does not refresh [PendingUrl.addedAt].** The seven-day retention window
+  /// belongs to when the URL was kept; an ambiguous bulk attempt is not a new
+  /// share. [upsert] refreshes both values, so it cannot be used here.
+  ///
+  /// A missing or already-uncertain entry is a no-op. A failed write throws, as
+  /// [upsert] does, so the caller cannot claim the flag was persisted.
+  Future<void> markUncertain(String url) async {
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) return;
+
+    final current = await readAll();
+    var changed = false;
+    final entries = <PendingUrl>[];
+    for (final entry in current.entries) {
+      if (entry.url == trimmed && !entry.uncertain) {
+        changed = true;
+        entries.add(
+          PendingUrl(url: entry.url, addedAt: entry.addedAt, uncertain: true),
+        );
+      } else {
+        entries.add(entry);
+      }
+    }
+
+    if (!changed) return;
+    await writeEntries(entries);
   }
 
   /// Writes [entries] as one JSON array, deleting the key when the list is empty.

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/saved_items/data/datasources/saved_items_api.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_repository.dart';
 import 'package:stash_it_app/features/saved_items/domain/collection_saved_items_page.dart';
@@ -14,19 +15,25 @@ import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart
 /// Extends the concrete repository rather than implementing an interface,
 /// because the production class deliberately has no interface for one
 /// implementation (`AGENTS.md` §2). The overridden methods are the whole of what
-/// the Inbox, Detail, collection detail and move sheet use; the inherited `create`
-/// is never reached by these tests and would fail loudly if it were.
+/// the Inbox, Detail, collection detail, move sheet and pending-URL save use.
 ///
 /// [detailResults] is read in order, with the last entry repeating, so a test can
 /// script "fail, then succeed" without counting calls by hand — the same shape
 /// as [FakeHttpAdapter.onSequence]. An entry is either a [SavedItemSummary] or an
-/// error to throw. [moveResults], [deleteResults], [enrichResults] and
+/// error to throw; an empty list means [getById] is not scripted and fails
+/// loudly. [moveResults], [deleteResults], [enrichResults] and
 /// [collectionResults] follow the same rule.
+///
+/// [createResults] is the same shape for the write: `null` means the create
+/// succeeded, and an [ApiFailure] is thrown. [onCreate] takes precedence so a
+/// test can hold the request open with a `Completer`.
 class FakeSavedItemsRepository extends SavedItemsRepository {
   FakeSavedItemsRepository({
     SavedItemPage? listPage,
     this.onList,
-    required this.detailResults,
+    this.detailResults = const [],
+    this.createResults = const [],
+    this.onCreate,
     this.moveResults = const [],
     this.onMove,
     this.deleteResults = const [],
@@ -35,8 +42,7 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
     this.onEnrich,
     this.collectionResults = const [],
     this.onListInCollection,
-  }) : assert(detailResults.isNotEmpty, 'provide at least one detail result'),
-       listPage =
+  }) : listPage =
            listPage ??
            const SavedItemPage(items: [], nextCursor: null, hasMore: false),
        super(api: SavedItemsApi(Dio()));
@@ -50,6 +56,12 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   /// next read must behave differently — for example, a gated read for the next
   /// account.
   Future<SavedItemPage> Function(String? cursor)? onList;
+
+  /// A `null` entry means the create succeeded; an [ApiFailure] is thrown.
+  final List<Object?> createResults;
+
+  /// An optional handler for one create, used to hold the request open.
+  final Future<void> Function(String url)? onCreate;
 
   /// A `SavedItemSummary` to return, or an error to throw.
   final List<Object> detailResults;
@@ -105,11 +117,15 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   onListInCollection;
 
   int listCalls = 0;
+  int createCalls = 0;
   int detailCalls = 0;
   int moveCalls = 0;
   int deleteCalls = 0;
   int enrichCalls = 0;
   int collectionCalls = 0;
+
+  /// The URLs passed to [create], in order.
+  final List<String> createUrls = [];
 
   /// The ids passed to [getById], in order.
   final List<String> detailIds = [];
@@ -131,6 +147,31 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
     ({String savedItemId, String collectionName, MoveToCollectionIntent intent})
   >
   moveRequests = [];
+
+  @override
+  Future<void> create({required String url}) async {
+    createCalls++;
+    createUrls.add(url);
+
+    final handler = onCreate;
+    if (handler != null) return handler(url);
+
+    if (createResults.isEmpty) {
+      throw StateError(
+        'FakeSavedItemsRepository has no create result scripted',
+      );
+    }
+
+    final result =
+        createResults[createCalls - 1 < createResults.length
+            ? createCalls - 1
+            : createResults.length - 1];
+
+    if (result is ApiFailure) throw result;
+    if (result != null) {
+      throw StateError('create results must be null or an ApiFailure');
+    }
+  }
 
   @override
   Future<SavedItemPage> list({String? cursor}) async {
@@ -173,6 +214,12 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   Future<SavedItemSummary> getById(String id) async {
     detailCalls++;
     detailIds.add(id);
+
+    if (detailResults.isEmpty) {
+      throw StateError(
+        'FakeSavedItemsRepository has no detail result scripted',
+      );
+    }
 
     final result =
         detailResults[detailCalls - 1 < detailResults.length

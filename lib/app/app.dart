@@ -10,6 +10,7 @@ import 'package:stash_it_app/app/router/app_router.dart';
 import 'package:stash_it_app/app/session/session_boundary.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/pending_urls/application/pending_urls_controller.dart';
+import 'package:stash_it_app/features/pending_urls/application/save_pending_urls_controller.dart';
 import 'package:stash_it_app/features/pending_urls/application/shared_url_intake.dart';
 import 'package:stash_it_app/features/pending_urls/presentation/share_intake_channel.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
@@ -69,10 +70,15 @@ class _StashItAppState extends ConsumerState<StashItApp>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed &&
+        !ref.read(savePendingUrlsProvider).isRunning) {
       // Local data can change while the app is backgrounded (a share handled by
       // the headless path), and seven-day expiry is enforced on read. Rebuild
       // the list once on return; the Inbox listing keeps its own refresh rules.
+      //
+      // A bulk save reconciles the list in place as each entry is confirmed.
+      // Invalidating during one could replace the run's current snapshot with a
+      // pre-removal read, so the run owns the list until it finishes.
       ref.invalidate(pendingUrlsProvider);
     }
   }

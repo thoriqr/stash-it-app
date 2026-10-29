@@ -13,6 +13,9 @@ part of 'pending_urls_controller.dart';
 /// **Not user-scoped.** This provider deliberately depends on no session or
 /// account provider and is not cleared by `SessionBoundary`: the entries belong
 /// to the installation, not to a signed-in user.
+///
+/// The two mutations below are local reconciliation only. They never call the
+/// API, never require a session, and never change the list's ownership.
 
 @ProviderFor(PendingUrls)
 final pendingUrlsProvider = PendingUrlsProvider._();
@@ -22,6 +25,9 @@ final pendingUrlsProvider = PendingUrlsProvider._();
 /// **Not user-scoped.** This provider deliberately depends on no session or
 /// account provider and is not cleared by `SessionBoundary`: the entries belong
 /// to the installation, not to a signed-in user.
+///
+/// The two mutations below are local reconciliation only. They never call the
+/// API, never require a session, and never change the list's ownership.
 final class PendingUrlsProvider
     extends $AsyncNotifierProvider<PendingUrls, PendingUrlSnapshot> {
   /// The device-local fallback list.
@@ -29,6 +35,9 @@ final class PendingUrlsProvider
   /// **Not user-scoped.** This provider deliberately depends on no session or
   /// account provider and is not cleared by `SessionBoundary`: the entries belong
   /// to the installation, not to a signed-in user.
+  ///
+  /// The two mutations below are local reconciliation only. They never call the
+  /// API, never require a session, and never change the list's ownership.
   PendingUrlsProvider._()
     : super(
         from: null,
@@ -48,13 +57,16 @@ final class PendingUrlsProvider
   PendingUrls create() => PendingUrls();
 }
 
-String _$pendingUrlsHash() => r'c84229116145305ac6cc94b5c361ea8f1287d420';
+String _$pendingUrlsHash() => r'1cda85ed1107f8cd4e4acafbcb988468cf062460';
 
 /// The device-local fallback list.
 ///
 /// **Not user-scoped.** This provider deliberately depends on no session or
 /// account provider and is not cleared by `SessionBoundary`: the entries belong
 /// to the installation, not to a signed-in user.
+///
+/// The two mutations below are local reconciliation only. They never call the
+/// API, never require a session, and never change the list's ownership.
 
 abstract class _$PendingUrls extends $AsyncNotifier<PendingUrlSnapshot> {
   FutureOr<PendingUrlSnapshot> build();

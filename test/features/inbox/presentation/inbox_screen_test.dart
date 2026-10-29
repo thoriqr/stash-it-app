@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
 import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/app/feedback/feedback_host.dart';
 import 'package:stash_it_app/app/network/network_providers.dart';
+import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
@@ -14,6 +16,7 @@ import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 import 'package:stash_it_app/features/inbox/presentation/inbox_screen.dart';
 import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
+import 'package:stash_it_app/features/pending_urls/presentation/widgets/pending_urls_entry.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_skeleton.dart';
@@ -1563,25 +1566,20 @@ void main() {
   });
 
   group('device-local URLs', () {
-    testWidgets('always shows the entry, without a count when empty', (
-      tester,
-    ) async {
+    testWidgets('hides the entry when nothing is kept', (tester) async {
       useTallSurface(tester);
       adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
 
       await pumpInbox(tester);
       await tester.pumpAndSettle();
 
-      final entry = find.widgetWithText(AppButton, 'Saved on this device');
-      expect(entry, findsOneWidget);
-      expect(
-        tester.widget<AppButton>(entry).onPressed,
-        isNotNull,
-        reason: 'the local list is always reachable from the Inbox',
-      );
+      expect(find.byType(PendingUrlsEntry), findsNothing);
+      expect(find.text('0'), findsNothing);
     });
 
-    testWidgets('shows the count when URLs are kept locally', (tester) async {
+    testWidgets('shows the entry and its exact count when URLs are kept', (
+      tester,
+    ) async {
       useTallSurface(tester);
       adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
       final pendingStore = await testPendingUrlStore();
@@ -1593,10 +1591,77 @@ void main() {
       await pumpInbox(tester, pendingStore: pendingStore);
       await tester.pumpAndSettle();
 
-      expect(
-        find.widgetWithText(AppButton, 'Saved on this device (1)'),
-        findsOneWidget,
+      final entry = find.byType(PendingUrlsEntry);
+      expect(entry, findsOneWidget);
+      expect(find.text('1'), findsOneWidget);
+      expect(tester.widget<PendingUrlsEntry>(entry).count, 1);
+    });
+
+    for (final (count, label) in <(int, String)>[(99, '99'), (100, '99+')]) {
+      testWidgets('shows $label for $count kept URLs', (tester) async {
+        useTallSurface(tester);
+        adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+        final pendingStore = await testPendingUrlStore();
+        for (var index = 0; index < count; index++) {
+          await pendingStore.upsert(
+            url: 'https://example.com/kept/$index',
+            uncertain: false,
+          );
+        }
+
+        await pumpInbox(tester, pendingStore: pendingStore);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(PendingUrlsEntry), findsOneWidget);
+        expect(find.text(label), findsOneWidget);
+        expect(
+          tester.widget<PendingUrlsEntry>(find.byType(PendingUrlsEntry)).count,
+          count,
+        );
+      });
+    }
+
+    testWidgets('the entry opens the local list', (tester) async {
+      useTallSurface(tester);
+      adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+      final pendingStore = await testPendingUrlStore();
+      await pendingStore.upsert(
+        url: 'https://example.com/kept',
+        uncertain: false,
       );
+
+      final container = await makeContainer(pendingStore: pendingStore);
+      addTearDown(container.dispose);
+      final router = GoRouter(
+        initialLocation: AppRoutes.inbox,
+        routes: [
+          GoRoute(
+            path: AppRoutes.inbox,
+            builder: (_, _) => const InboxScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.savedOnDevice,
+            builder: (_, _) => const Scaffold(body: Text('LOCAL URLS STUB')),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(
+            theme: AppTheme.light(),
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(PendingUrlsEntry));
+      await tester.pumpAndSettle();
+
+      expect(find.text('LOCAL URLS STUB'), findsOneWidget);
     });
   });
 }

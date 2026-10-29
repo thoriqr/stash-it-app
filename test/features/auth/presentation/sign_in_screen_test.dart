@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:stash_it_app/app/network/network_providers.dart';
+import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
@@ -565,10 +567,63 @@ void main() {
         isFalse,
         reason: 'the credentials cannot be edited mid-flight',
       );
+      expect(
+        tester
+            .widget<IconButton>(
+              find.widgetWithIcon(IconButton, Icons.arrow_back),
+            )
+            .onPressed,
+        isNull,
+        reason: 'the other navigation actions are disabled too',
+      );
 
       adapter.releaseBlocked();
       await tester.pumpAndSettle();
     });
+
+    testWidgets('the back affordance returns to the welcome screen', (
+      tester,
+    ) async {
+      final router = GoRouter(
+        initialLocation: AppRoutes.signIn,
+        routes: [
+          GoRoute(
+            path: AppRoutes.signIn,
+            builder: (_, _) => const SignInScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.auth,
+            builder: (_, _) => const Scaffold(body: Text('WELCOME STUB')),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      container.read(appDioProvider).httpClientAdapter = adapter;
+      container.read(refreshDioProvider).httpClientAdapter = adapter;
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(
+            theme: AppTheme.light(),
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Back to welcome'), findsOneWidget);
+      await tester.tap(find.byTooltip('Back to welcome'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('WELCOME STUB'), findsOneWidget);
+      expect(
+        adapter.countFor('/auth/login'),
+        0,
+        reason: 'navigation must not submit the form',
+      );
+    });
+
     testWidgets('a long failure message wraps without clipping or overflowing', (
       tester,
     ) async {

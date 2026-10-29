@@ -114,6 +114,94 @@ void main() {
     });
   });
 
+  group('reconciliation', () {
+    test(
+      'removeConfirmed removes only the exact entry and updates the count',
+      () async {
+        final store = await testPendingUrlStore();
+        await store.upsert(url: url, uncertain: false);
+        await store.upsert(url: '$url?other=1', uncertain: false);
+
+        final container = ProviderContainer(
+          overrides: [pendingUrlStoreProvider.overrideWithValue(store)],
+        );
+        addTearDown(container.dispose);
+        await container.read(pendingUrlsProvider.future);
+
+        await container.read(pendingUrlsProvider.notifier).removeConfirmed(url);
+
+        expect(container.read(pendingUrlCountProvider), 1);
+        expect((await store.readAll()).entries.single.url, '$url?other=1');
+      },
+    );
+
+    test(
+      'markSaveUncertain flags the entry without changing the count',
+      () async {
+        final store = await testPendingUrlStore();
+        await store.upsert(url: url, uncertain: false);
+
+        final container = ProviderContainer(
+          overrides: [pendingUrlStoreProvider.overrideWithValue(store)],
+        );
+        addTearDown(container.dispose);
+        await container.read(pendingUrlsProvider.future);
+        final before = container
+            .read(pendingUrlsProvider)
+            .value!
+            .entries
+            .single;
+
+        await container
+            .read(pendingUrlsProvider.notifier)
+            .markSaveUncertain(url);
+
+        final after = container.read(pendingUrlsProvider).value!.entries.single;
+        expect(after.uncertain, isTrue);
+        expect(after.addedAt, before.addedAt);
+        expect(container.read(pendingUrlCountProvider), 1);
+        expect((await store.readAll()).entries.single.uncertain, isTrue);
+      },
+    );
+
+    test('a prune during a mutation is announced once', () async {
+      final created = DateTime.utc(2026, 10, 1, 12);
+      var now = created;
+      final store = await testPendingUrlStore(now: () => now);
+      await store.upsert(url: url, uncertain: false);
+
+      final container = ProviderContainer(
+        overrides: [pendingUrlStoreProvider.overrideWithValue(store)],
+      );
+      addTearDown(container.dispose);
+      await container.read(pendingUrlsProvider.future);
+
+      now = created.add(const Duration(days: 8));
+      await container
+          .read(pendingUrlsProvider.notifier)
+          .removeConfirmed('https://example.com/missing');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(container.read(pendingUrlCountProvider), 0);
+      expect(
+        container.read(feedbackProvider)?.copy,
+        'Some links saved on this device expired after seven days.',
+      );
+
+      container.read(feedbackProvider.notifier).dismiss();
+      await container
+          .read(pendingUrlsProvider.notifier)
+          .removeConfirmed('https://example.com/missing');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        container.read(feedbackProvider),
+        isNull,
+        reason: 'the prune is not announced twice',
+      );
+    });
+  });
+
   group('authentication independence', () {
     const session = AuthTokens(
       accessToken: 'access-1',
