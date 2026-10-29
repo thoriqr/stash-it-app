@@ -13,8 +13,10 @@ import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
+import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
 
 import '../../support/fake_http.dart';
+import '../../support/pending_urls.dart';
 import '../../support/saved_items_fixtures.dart';
 
 /// The feedback presenter, in the app's **real** widget tree.
@@ -40,6 +42,7 @@ void main() {
   ) async {
     final adapter = FakeHttpAdapter();
     adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+    final pendingStore = await testPendingUrlStore();
 
     final container = ProviderContainer(
       // The app root keeps the session boundary alive, and `createAppRouter`
@@ -48,6 +51,7 @@ void main() {
         credentialStoreProvider.overrideWithValue(
           SecureCredentialStore(InMemorySecureStorage()),
         ),
+        pendingUrlStoreProvider.overrideWithValue(pendingStore),
       ],
       // Riverpod 3 retries a failed provider with backoff; an unscripted listing
       // would leave one of those timers pending past the test body.

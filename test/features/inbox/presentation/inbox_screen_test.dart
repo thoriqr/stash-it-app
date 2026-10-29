@@ -13,6 +13,7 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 import 'package:stash_it_app/features/inbox/presentation/inbox_screen.dart';
+import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_skeleton.dart';
@@ -20,6 +21,7 @@ import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
 import '../../../support/fake_http.dart';
+import '../../../support/pending_urls.dart';
 import '../../../support/saved_items_fixtures.dart';
 
 /// The Inbox against the real listing provider, driven by a scripted transport.
@@ -45,15 +47,20 @@ void main() {
   /// `SessionController` reads the refresh token from. A test that needs the
   /// renewal path must therefore start with a session, or there is nothing to
   /// renew and the run takes a different branch entirely.
-  Future<ProviderContainer> makeContainer({AuthTokens? session}) async {
+  Future<ProviderContainer> makeContainer({
+    AuthTokens? session,
+    PendingUrlStore? pendingStore,
+  }) async {
     backend = InMemorySecureStorage();
     final store = SecureCredentialStore(backend);
     if (session != null) await store.write(session);
+    final localUrls = pendingStore ?? await testPendingUrlStore();
 
     final made = ProviderContainer(
       overrides: [
         credentialStoreProvider.overrideWithValue(store),
         restoredTokensProvider.overrideWithValue(session),
+        pendingUrlStoreProvider.overrideWithValue(localUrls),
       ],
       retry: (_, _) => null,
     );
@@ -65,9 +72,13 @@ void main() {
   Future<ProviderContainer> pumpInbox(
     WidgetTester tester, {
     AuthTokens? session,
+    PendingUrlStore? pendingStore,
     bool withFeedbackHost = false,
   }) async {
-    final container = await makeContainer(session: session);
+    final container = await makeContainer(
+      session: session,
+      pendingStore: pendingStore,
+    );
     addTearDown(container.dispose);
 
     await tester.pumpWidget(
@@ -1548,6 +1559,44 @@ void main() {
       expect(postCount(), 1);
       expect(fieldText(tester), isEmpty);
       expect(container.read(feedbackProvider)!.copy, 'Saved.');
+    });
+  });
+
+  group('device-local URLs', () {
+    testWidgets('always shows the entry, without a count when empty', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+
+      await pumpInbox(tester);
+      await tester.pumpAndSettle();
+
+      final entry = find.widgetWithText(AppButton, 'Saved on this device');
+      expect(entry, findsOneWidget);
+      expect(
+        tester.widget<AppButton>(entry).onPressed,
+        isNotNull,
+        reason: 'the local list is always reachable from the Inbox',
+      );
+    });
+
+    testWidgets('shows the count when URLs are kept locally', (tester) async {
+      useTallSurface(tester);
+      adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+      final pendingStore = await testPendingUrlStore();
+      await pendingStore.upsert(
+        url: 'https://example.com/kept',
+        uncertain: false,
+      );
+
+      await pumpInbox(tester, pendingStore: pendingStore);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.widgetWithText(AppButton, 'Saved on this device (1)'),
+        findsOneWidget,
+      );
     });
   });
 }

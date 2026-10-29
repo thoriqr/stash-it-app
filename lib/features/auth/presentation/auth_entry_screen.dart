@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
+import 'package:stash_it_app/features/pending_urls/application/pending_urls_controller.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
@@ -57,6 +58,7 @@ class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
   @override
   Widget build(BuildContext context) {
     final tokens = AppTheme.tokensOf(context);
+    final pendingCount = ref.watch(pendingUrlCountProvider);
 
     return Scaffold(
       // The brand row replaces the app bar, as on the sign-in form: auth sits
@@ -114,6 +116,14 @@ class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
                     variant: AppButtonVariant.secondary,
                     onPressed: () => context.go(AppRoutes.signUp),
                   ),
+                  if (pendingCount > 0) ...[
+                    const SizedBox(height: AppMetrics.space3),
+                    AppButton(
+                      label: 'Links saved on this device ($pendingCount)',
+                      variant: AppButtonVariant.quiet,
+                      onPressed: () => context.push(AppRoutes.savedOnDevice),
+                    ),
+                  ],
                 ],
               ),
             ),

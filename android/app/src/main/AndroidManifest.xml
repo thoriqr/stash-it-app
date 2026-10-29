@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required by every API call, including the release build. The debug and
+         profile manifests declared this for the Flutter tool, but the main
+         manifest did not, so release builds had no network access. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <!--
       android:allowBackup="false" is required by flutter_secure_storage.
 
@@ -39,6 +44,24 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <!-- The invisible share target. It has no FlutterView and never shows
+             content. A separate task affinity and excludeFromRecents keep the
+             app's own task out of the foreground while the save runs. -->
+        <activity
+            android:name=".ShareActivity"
+            android:exported="true"
+            android:label="Stash-it"
+            android:launchMode="singleTask"
+            android:taskAffinity="id.my.thoriqr.stashit.share"
+            android:excludeFromRecents="true"
+            android:theme="@style/ShareTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/plain"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

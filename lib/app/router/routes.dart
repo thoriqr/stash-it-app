@@ -178,6 +178,14 @@ abstract final class AppRoutes {
   /// query. A direct entry without a stored reset shows the no-reset state.
   static const String forgotPasswordFinalize = '/forgot-password/finalize';
 
+  /// URLs kept on this device after a shared save could not be confirmed.
+  ///
+  /// **Not a fifth destination.** A read-only secondary route outside the shell,
+  /// pushed from the auth entry screen and the Inbox. It reads only the local
+  /// store, so it is allowed while signed out and before any account has ever
+  /// been created; it never requires a session or an API response.
+  static const String savedOnDevice = '/saved-on-device';
+
   /// Create or change the account's password.
   ///
   /// **Not a fifth destination.** A full-screen secondary route outside the

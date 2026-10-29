@@ -11,9 +11,11 @@ import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
+import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../support/fake_http.dart';
+import '../support/pending_urls.dart';
 import '../support/saved_items_fixtures.dart';
 
 void main() {
@@ -63,11 +65,19 @@ void main() {
     // scripted transport. `AGENTS.md` §5: no test opens a socket.
     adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
 
+    // The device-local list is independent of the auth status, but the auth
+    // entry screen and Inbox both watch its count, so every container needs a
+    // real in-memory store.
+    final pendingStore = await testPendingUrlStore();
+
     // `retry: (_, _) => null` because Riverpod 3 retries a failed provider up to
     // ten times with backoff; an unscripted listing would leave one of those
     // timers pending past the end of the test body.
     final container = ProviderContainer(
-      overrides: authOverrides(status),
+      overrides: [
+        ...authOverrides(status),
+        pendingUrlStoreProvider.overrideWithValue(pendingStore),
+      ],
       retry: (_, _) => null,
     );
     addTearDown(container.dispose);
@@ -172,6 +182,35 @@ void main() {
     expect(find.text(signUpHeading), findsOneWidget);
     expect(find.text(entryHeading), findsNothing);
     expect(find.text(formHeading), findsNothing);
+  });
+
+  testWidgets('a signed-out user may open the device-local URL list', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      AuthStatus.signedOut,
+      initialLocation: AppRoutes.savedOnDevice,
+    );
+
+    expect(find.text('SAVED ON THIS DEVICE'), findsOneWidget);
+    expect(find.text('Nothing saved on this device'), findsOneWidget);
+    expect(find.text(entryHeading), findsNothing);
+    expect(find.text(formHeading), findsNothing);
+  });
+
+  testWidgets('a signed-in user may open the device-local URL list', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      AuthStatus.signedIn,
+      initialLocation: AppRoutes.savedOnDevice,
+    );
+
+    expect(find.text('SAVED ON THIS DEVICE'), findsOneWidget);
+    expect(find.text('Nothing saved on this device'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
   });
 
   testWidgets('tapping Sign in opens the form without bouncing back', (

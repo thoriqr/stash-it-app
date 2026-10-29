@@ -11,14 +11,20 @@ import 'package:stash_it_app/features/auth/data/datasources/auth_api.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 import 'package:stash_it_app/features/auth/data/password_reset_continuation_store.dart';
 import 'package:stash_it_app/features/auth/data/registration_continuation_store.dart';
+import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
 
 import '../support/fake_http.dart';
+import '../support/pending_urls.dart';
 
 /// `bootstrap` is the one piece of wiring no other test reaches, because it runs
 /// before the app exists. A mistake there — a provider read from an unoverridden
 /// container, a missing override — is invisible until the app launches on a
 /// device, so its behaviour is pinned here.
 void main() {
+  // `bootstrap` calls `WidgetsFlutterBinding.ensureInitialized`; initialize the
+  // test binding first so the later `SharedPreferences` mock uses the same one.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   const accessKey = 'stash_it.auth.access_token';
   const refreshKey = 'stash_it.auth.refresh_token';
 
@@ -80,6 +86,12 @@ void main() {
   });
 
   group('the overrides bootstrap returns', () {
+    late PendingUrlStore pendingStore;
+
+    setUp(() async {
+      pendingStore = await testPendingUrlStore();
+    });
+
     // Assembled the way `bootstrap` assembles them, which is the only way to
     // check that the three together make a working container: each on its own
     // proves nothing.
@@ -100,6 +112,7 @@ void main() {
             PasswordResetContinuationStore(sharedStorage),
           ),
           restoredTokensProvider.overrideWithValue(restored),
+          pendingUrlStoreProvider.overrideWithValue(pendingStore),
           authRepositoryProvider.overrideWith(
             (ref) =>
                 AuthRepository(authApi: AuthApi(ref.watch(appDioProvider))),
@@ -158,6 +171,12 @@ void main() {
         container.read(passwordResetContinuationStoreProvider),
         isA<PasswordResetContinuationStore>(),
       );
+    });
+
+    test('the device-local URL store resolves', () {
+      final container = wiredContainer();
+
+      expect(container.read(pendingUrlStoreProvider), isA<PendingUrlStore>());
     });
 
     test('refreshDio carries no auth interceptor, so renewal cannot recurse', () {

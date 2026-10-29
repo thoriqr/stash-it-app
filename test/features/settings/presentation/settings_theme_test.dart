@@ -9,6 +9,7 @@ import 'package:stash_it_app/app/router/app_router.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
+import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
 import 'package:stash_it_app/features/settings/application/theme_mode_controller.dart';
 import 'package:stash_it_app/features/settings/data/theme_preference_store.dart';
 
@@ -26,7 +27,11 @@ void main() {
     Map<String, Object> storedValues = const {},
   }) async {
     SharedPreferences.setMockInitialValues(storedValues);
-    final store = ThemePreferenceStore(await SharedPreferences.getInstance());
+    final preferences = await SharedPreferences.getInstance();
+    final store = ThemePreferenceStore(preferences);
+    // Same preferences instance, different key: the device-local URL list must
+    // not reset the theme values this test seeds.
+    final pendingStore = PendingUrlStore(preferences);
 
     final adapter = FakeHttpAdapter();
     adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
@@ -38,6 +43,7 @@ void main() {
         credentialStoreProvider.overrideWithValue(
           SecureCredentialStore(InMemorySecureStorage()),
         ),
+        pendingUrlStoreProvider.overrideWithValue(pendingStore),
         themePreferenceStoreProvider.overrideWithValue(store),
         initialThemeModeProvider.overrideWithValue(store.read()),
       ],

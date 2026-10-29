@@ -9,6 +9,7 @@ import '../core/storage/secure_credential_store.dart';
 import '../features/auth/application/session_controller.dart';
 import '../features/auth/data/password_reset_continuation_store.dart';
 import '../features/auth/data/registration_continuation_store.dart';
+import '../features/pending_urls/data/pending_url_store.dart';
 import '../features/settings/application/theme_mode_controller.dart';
 import '../features/settings/data/theme_preference_store.dart';
 import 'config/api_config.dart';
@@ -71,6 +72,12 @@ Future<List<Override>> bootstrap() async {
   final preferences = await SharedPreferences.getInstance();
   final themeStore = ThemePreferenceStore(preferences);
 
+  // The device-local URL fallback is deliberately not in secure storage: it is
+  // non-secret application data, is available before and without an account, and
+  // must not be caught up in the credential store's lifecycle. It shares the one
+  // `SharedPreferences` instance the app already initializes.
+  final pendingUrlStore = PendingUrlStore(preferences);
+
   return [
     credentialStoreProvider.overrideWithValue(credentialStore),
     registrationContinuationStoreProvider.overrideWithValue(
@@ -82,5 +89,6 @@ Future<List<Override>> bootstrap() async {
     restoredTokensProvider.overrideWithValue(restoredTokens),
     themePreferenceStoreProvider.overrideWithValue(themeStore),
     initialThemeModeProvider.overrideWithValue(themeStore.read()),
+    pendingUrlStoreProvider.overrideWithValue(pendingUrlStore),
   ];
 }

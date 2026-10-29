@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/network/token_provider.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_entry_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
+import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_http.dart';
+import '../../../support/pending_urls.dart';
 
 /// The signed-out landing screen.
 ///
@@ -23,13 +27,16 @@ void main() {
   const entryHeading = 'A place for things you find on the internet.';
 
   late ProviderContainer container;
+  late PendingUrlStore pendingStore;
 
-  setUp(() {
+  setUp(() async {
+    pendingStore = await testPendingUrlStore();
     container = ProviderContainer(
       overrides: [
         credentialStoreProvider.overrideWithValue(
           SecureCredentialStore(InMemorySecureStorage()),
         ),
+        pendingUrlStoreProvider.overrideWithValue(pendingStore),
       ],
     );
     addTearDown(container.dispose);
@@ -81,6 +88,11 @@ void main() {
     );
     expect(find.widgetWithText(AppButton, 'Sign in'), findsOneWidget);
     expect(find.widgetWithText(AppButton, 'Create an account'), findsOneWidget);
+    expect(
+      find.textContaining('Links saved on this device'),
+      findsNothing,
+      reason: 'the local entry is hidden while the device holds no URLs',
+    );
 
     // An expiry is only shown when one happened; a plain visit is not an event.
     expect(find.text(sessionEndedMessage), findsNothing);
@@ -99,6 +111,61 @@ void main() {
     // No router is attached here; navigation itself is covered by
     // `auth_redirect_widget_test.dart`, which pumps the real router.
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('shows the local entry only when it has URLs', (tester) async {
+    await pendingStore.upsert(
+      url: 'https://example.com/kept',
+      uncertain: false,
+    );
+    await pumpEntry(tester);
+
+    final entry = find.widgetWithText(
+      AppButton,
+      'Links saved on this device (1)',
+    );
+    expect(entry, findsOneWidget);
+    expect(tester.widget<AppButton>(entry).onPressed, isNotNull);
+  });
+
+  testWidgets('the local entry opens without a session', (tester) async {
+    await pendingStore.upsert(
+      url: 'https://example.com/kept',
+      uncertain: false,
+    );
+
+    final router = GoRouter(
+      initialLocation: AppRoutes.auth,
+      routes: [
+        GoRoute(
+          path: AppRoutes.auth,
+          builder: (_, _) => const AuthEntryScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.savedOnDevice,
+          builder: (_, _) => const Scaffold(body: Text('LOCAL URLS STUB')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(
+          theme: AppTheme.light(),
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.widgetWithText(AppButton, 'Links saved on this device (1)'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('LOCAL URLS STUB'), findsOneWidget);
   });
 
   testWidgets('shows the session-ended warning once and can dismiss it', (

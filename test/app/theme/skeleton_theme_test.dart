@@ -8,8 +8,10 @@ import 'package:stash_it_app/app/router/app_router.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
+import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
 
 import '../../support/fake_http.dart';
+import '../../support/pending_urls.dart';
 import '../../support/saved_items_fixtures.dart';
 
 /// The shared loading treatment, and the fact that the app installs it.
@@ -143,6 +145,7 @@ void main() {
     }) async {
       final adapter = FakeHttpAdapter();
       adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+      final pendingStore = await testPendingUrlStore();
 
       final container = ProviderContainer(
         // The app root keeps the session boundary alive, and `createAppRouter`
@@ -151,6 +154,7 @@ void main() {
           credentialStoreProvider.overrideWithValue(
             SecureCredentialStore(InMemorySecureStorage()),
           ),
+          pendingUrlStoreProvider.overrideWithValue(pendingStore),
         ],
         // An unscripted provider would leave one of Riverpod's retry timers
         // pending past the end of the test body.

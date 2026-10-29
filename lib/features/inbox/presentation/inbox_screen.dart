@@ -6,6 +6,7 @@ import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/core/error/api_failure_messages.dart';
 import 'package:stash_it_app/features/inbox/presentation/widgets/inbox_intake.dart';
+import 'package:stash_it_app/features/pending_urls/application/pending_urls_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_state.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
@@ -107,6 +108,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   Widget build(BuildContext context) {
     final tokens = AppTheme.tokensOf(context);
     final listing = ref.watch(savedItemsProvider);
+    final pendingCount = ref.watch(pendingUrlCountProvider);
 
     return Scaffold(
       appBar: const DestinationAppBar(title: 'INBOX'),
@@ -121,11 +123,34 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
               AppMetrics.space3,
               0,
             ),
-            child: Text(
-              'RECENTLY SAVED',
-              style: AppTypography.sectionLabel.copyWith(
-                color: tokens.textTertiary,
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'RECENTLY SAVED',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.sectionLabel.copyWith(
+                      color: tokens.textTertiary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppMetrics.space2),
+                Flexible(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: AppButton(
+                      label: pendingCount > 0
+                          ? 'Saved on this device ($pendingCount)'
+                          : 'Saved on this device',
+                      variant: AppButtonVariant.quiet,
+                      small: true,
+                      block: false,
+                      onPressed: () => context.push(AppRoutes.savedOnDevice),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(child: _body(context, listing)),

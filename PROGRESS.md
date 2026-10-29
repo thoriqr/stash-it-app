@@ -1,3 +1,41 @@
+## Local URL fallback and Android share intake (2026-10-28)
+
+### Product model
+- **Device-local, public within the app, account-independent.** The list stores only the exact trimmed URL, its UTC timestamp, and an `uncertain` flag. It contains no user id, account id, session, or auth state, is not partitioned by account, and is not cleared by sign-out, account switching, or session expiry.
+- The screen is reachable while signed out and before any account has ever been registered, and reads only local data. It never calls the API and never triggers an auth redirect.
+- Seven-day retention is enforced on every read and write. Expiry is pruned on read/write; no background timer exists. A one-shot in-app warning is shown when a prune is owed, including a prune performed by a share write.
+
+### Flutter implementation
+- Added `PendingUrl`, `PendingUrlStore`, and the `PendingUrls` provider/count provider under `lib/features/pending_urls/`. The store uses a JSON array under `stash_it.pending_urls.entries`: exact-string deduplication refreshes the timestamp and uncertainty, different query/path strings remain separate, malformed members are skipped, entries are newest first, and an empty list deletes the key. Write failures propagate so the share flow cannot claim local safety.
+- **Storage uses `shared_preferences`, not secure storage.** The data is non-secret, device-local application data, is intentionally available before and without an account, and must survive sign-out and account changes. The existing theme preferences are untouched. Credentials and auth-flow continuations remain in `flutter_secure_storage`; no secure-storage requirement was weakened. The earlier V5/§7.12 expectation that the pending queue would live in secure storage is superseded for this fallback, and `AGENTS.md` plus the `SecureCredentialStore` comment now record that.
+- Added `SharedUrlIntake`: it extracts a submittable URL using the existing `isSubmittableUrl`, calls the existing `SavedItemsRepository.create` and `AuthInterceptor`, removes an exact local entry after a confirmed save, and stores on every unconfirmed outcome. Transport/unreadable outcomes are stored with `uncertain = true`; the copy says the save could not be confirmed and never claims a definite failure. `SaveUrl.submit` is deliberately not used because it publishes foreground feedback, refreshes the Inbox, and collapses every outcome to `bool`.
+- Added `/saved-on-device` and the read-only **Saved on This Device** screen with loading, error, empty, and populated states. The auth entry screen shows `Links saved on this device (N)` only when N > 0; the Inbox always shows `Saved on this device` with the count when non-zero. Both push the same route. The screen has a direct-entry back fallback (sign-in while signed out, Inbox while signed in).
+- The local list is not cleared by `SessionBoundary`. On app resume the provider is invalidated so a share handled while the app was backgrounded appears without a restart.
+
+### Android share intake
+- Added a transparent `ShareActivity` registered for `ACTION_SEND`/`text/plain`, in its own task with `excludeFromRecents` and a translucent theme. It never renders Flutter and finishes itself; no notification permission or notification infrastructure was added.
+- The activity prefers the live UI engine's `stash_it/share_intake` channel, so the live `SessionController` remains the only owner of refresh-token rotation. When no UI engine is alive it creates a headless engine running `shareIntakeMain` from `main.dart`, with the same repository, interceptor, DTOs, and local store. Kotlin contains no API or auth logic.
+- The result is shown as an Android Toast: success, fallback (safely stored), uncertain (kept but unconfirmed), invalid input, or not stored. A Toast is used because the app has no system-notification channel and Android 13+ requires a runtime notification permission that a silent share handler cannot request without a new interaction flow.
+- Added the missing `INTERNET` permission to the main manifest. Debug/profile already had it, but release builds had no network access.
+
+### Verification
+- `dart run build_runner build --delete-conflicting-outputs` completed; the flag is reported as removed and ignored, and the new generated provider file was written.
+- `dart format` on the changed Dart files — clean on the final run.
+- `flutter analyze` — no issues found.
+- Focused `flutter test test/features/pending_urls` — **47 passed**.
+- Broader affected suites (auth entry, Inbox, auth redirect, router, Google routes, bootstrap, session-expiry feedback, widget shell, navigation, feedback, skeleton/theme) — **209 passed**.
+- Full `flutter test` — **1474 passed**.
+- `android\gradlew.bat :app:compileDebugKotlin` — **BUILD SUCCESSFUL** after correcting the Dart entrypoint constructor; only pre-existing Gradle/Kotlin deprecation warnings were emitted.
+- No app, device, or emulator run. Nothing staged or committed.
+
+### Remaining limitations and manual device checks
+- **Toast is transient, not a system notification.** It is shown while the share activity is alive; a user who is not looking can miss it. The durable signal is the local entry on the auth entry screen and Inbox. A shade notification would require a notification package and a permission-request flow.
+- **Native share delivery is not device-verified here.** Per `AGENTS.md`, the emulator was not touched. Manual checks still needed: share while signed in with the app closed; share while signed out; expired access token; offline; duplicate share; share while the app is alive in the background; verify the Toast and both entry points.
+- A share handled while the live UI engine exists but its channel handler is not yet installed falls back to the headless engine after a ping failure. A full cross-engine refresh lock is not implemented.
+- Process death during the network attempt can lose the URL; no native attempt journal was added.
+- iOS/macOS share intake is not implemented (D12 requires a separate native implementation with an App Group).
+- The full D7 pending-URL state machine and D23/D24 manual retry remain unimplemented; this is an inspect-only fallback.
+
 ## Auth entry-point relocation and UI copy (2026-10-28)
 
 ### Flutter implementation

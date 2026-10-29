@@ -8,6 +8,7 @@ import 'package:stash_it_app/app/router/app_router.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
+import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/collection_saved_items_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
@@ -19,6 +20,7 @@ import 'package:stash_it_app/features/search/presentation/widgets/search_collect
 
 import '../support/fake_http.dart';
 import '../support/fake_saved_items_repository.dart';
+import '../support/pending_urls.dart';
 import '../support/search_fixtures.dart';
 
 /// Search results in the real route tree.
@@ -68,6 +70,7 @@ void main() {
       ..httpClientAdapter = adapter;
     final router = createAppRouter();
     addTearDown(router.dispose);
+    final pendingStore = await testPendingUrlStore();
 
     await tester.pumpWidget(
       ProviderScope(
@@ -78,6 +81,7 @@ void main() {
           credentialStoreProvider.overrideWithValue(
             SecureCredentialStore(InMemorySecureStorage()),
           ),
+          pendingUrlStoreProvider.overrideWithValue(pendingStore),
           searchRepositoryProvider.overrideWithValue(
             SearchRepository(
               api: SearchApi(dio),

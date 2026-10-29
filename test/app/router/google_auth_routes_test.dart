@@ -14,9 +14,11 @@ import 'package:stash_it_app/features/auth/data/registration_continuation_store.
 import 'package:stash_it_app/features/auth/presentation/finalize_social_registration_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/google_account_link_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/pin_entry_screen.dart';
+import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../support/fake_http.dart';
+import '../../support/pending_urls.dart';
 import '../../support/saved_items_fixtures.dart';
 
 class _FakeGoogleAuthService extends GoogleAuthService {
@@ -38,11 +40,13 @@ void main() {
   late FakeHttpAdapter adapter;
   late ProviderContainer container;
   late _FakeGoogleAuthService google;
+  late PendingUrlStore pendingStore;
 
-  setUp(() {
+  setUp(() async {
     backend = InMemorySecureStorage();
     adapter = FakeHttpAdapter();
     google = _FakeGoogleAuthService();
+    pendingStore = await testPendingUrlStore();
     container = ProviderContainer(
       overrides: [
         credentialStoreProvider.overrideWithValue(
@@ -53,6 +57,7 @@ void main() {
         ),
         restoredTokensProvider.overrideWithValue(null),
         googleAuthServiceProvider.overrideWithValue(google),
+        pendingUrlStoreProvider.overrideWithValue(pendingStore),
       ],
       retry: (_, _) => null,
     );

@@ -16,6 +16,7 @@ import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_up_screen.dart';
 import 'package:stash_it_app/features/collections/presentation/collections_screen.dart';
 import 'package:stash_it_app/features/inbox/presentation/inbox_screen.dart';
+import 'package:stash_it_app/features/pending_urls/presentation/pending_urls_screen.dart';
 import 'package:stash_it_app/features/profile/presentation/password_screen.dart';
 import 'package:stash_it_app/features/profile/presentation/profile_screen.dart';
 import 'package:stash_it_app/features/saved_items/presentation/collection_saved_items_screen.dart';
@@ -95,7 +96,8 @@ String? redirectFor(AuthStatus auth, String location) {
   final atForgotPasswordFinalize = location == AppRoutes.forgotPasswordFinalize;
 
   if (auth.isSignedOut) {
-    // The auth screens are reachable without a session.
+    // The auth screens and the device-local URL list are reachable without a
+    // session. The local list reads no account data and never calls the API.
     if (atAuthEntry ||
         atSignIn ||
         atSignUp ||
@@ -105,7 +107,8 @@ String? redirectFor(AuthStatus auth, String location) {
         atGoogleAccountLink ||
         atForgotPassword ||
         atForgotPasswordVerify ||
-        atForgotPasswordFinalize) {
+        atForgotPasswordFinalize ||
+        location == AppRoutes.savedOnDevice) {
       return null;
     }
     return AppRoutes.auth;
@@ -282,6 +285,13 @@ final List<RouteBase> _routes = [
   GoRoute(
     path: AppRoutes.password,
     builder: (context, state) => const PasswordScreen(),
+  ),
+  // The device-local fallback list. It is not an authenticated destination: the
+  // screen reads only local storage, and the redirect allows it while signed
+  // out so the auth entry screen can open it before any account exists.
+  GoRoute(
+    path: AppRoutes.savedOnDevice,
+    builder: (context, state) => const PendingUrlsScreen(),
   ),
   StatefulShellRoute.indexedStack(
     builder: (context, state, navigationShell) =>

@@ -19,9 +19,13 @@ class SecureCredentialStore {
 
   final FlutterSecureStorage _storage;
 
-  /// Namespaced so a future value written here cannot collide with an unrelated
-  /// key added to the same store later (the pending-URL queue is the likely
-  /// next, per D7).
+  /// Namespaced so a future credential value written here cannot collide with
+  /// an unrelated key added later.
+  ///
+  /// The device-local URL fallback deliberately does **not** use this store:
+  /// those entries are non-secret application data and are account-independent,
+  /// so they live in `shared_preferences`. Credentials and auth-flow
+  /// continuations remain here.
   static const String _accessTokenKey = 'stash_it.auth.access_token';
   static const String _refreshTokenKey = 'stash_it.auth.refresh_token';
 

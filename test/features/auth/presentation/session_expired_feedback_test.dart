@@ -15,9 +15,11 @@ import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_entry_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
+import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_http.dart';
+import '../../../support/pending_urls.dart';
 import '../../../support/saved_items_fixtures.dart';
 
 /// Telling the user *why* they are on the auth entry screen.
@@ -53,8 +55,9 @@ void main() {
 
   late InMemorySecureStorage backend;
   late FakeHttpAdapter adapter;
+  late PendingUrlStore pendingStore;
 
-  setUp(() {
+  setUp(() async {
     backend = InMemorySecureStorage();
     // The session goes into the **store**, not only into `restoredTokensProvider`,
     // because that is where the interceptor reads the bearer and the session
@@ -62,6 +65,7 @@ void main() {
     backend.values[accessKey] = session.accessToken;
     backend.values[refreshKey] = session.refreshToken;
     adapter = FakeHttpAdapter();
+    pendingStore = await testPendingUrlStore();
   });
 
   /// The overrides a signed-in container needs. The router comes from the
@@ -69,6 +73,7 @@ void main() {
   List<Override> signedIn() => [
     credentialStoreProvider.overrideWithValue(SecureCredentialStore(backend)),
     restoredTokensProvider.overrideWithValue(session),
+    pendingUrlStoreProvider.overrideWithValue(pendingStore),
   ];
 
   /// The Inbox's listing, which issues the first protected request and so

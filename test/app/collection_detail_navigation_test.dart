@@ -12,6 +12,7 @@ import 'package:stash_it_app/features/collections/data/collections_providers.dar
 import 'package:stash_it_app/features/collections/domain/collection_page.dart';
 import 'package:stash_it_app/features/collections/domain/collection_summary.dart';
 import 'package:stash_it_app/features/collections/presentation/widgets/collection_tile.dart';
+import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/collection_saved_items_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_page.dart';
@@ -22,6 +23,7 @@ import 'package:stash_it_app/shared/widgets/app_button.dart';
 import '../support/fake_collections_repository.dart';
 import '../support/fake_http.dart';
 import '../support/fake_saved_items_repository.dart';
+import '../support/pending_urls.dart';
 
 /// The collection detail route in the real route tree.
 ///
@@ -86,6 +88,7 @@ void main() {
   }) async {
     final router = createAppRouter();
     addTearDown(router.dispose);
+    final pendingStore = await testPendingUrlStore();
 
     await tester.pumpWidget(
       ProviderScope(
@@ -96,6 +99,7 @@ void main() {
           credentialStoreProvider.overrideWithValue(
             SecureCredentialStore(InMemorySecureStorage()),
           ),
+          pendingUrlStoreProvider.overrideWithValue(pendingStore),
           savedItemsRepositoryProvider.overrideWithValue(savedItems),
           collectionsRepositoryProvider.overrideWithValue(
             FakeCollectionsRepository(results: [collectionsPage()]),

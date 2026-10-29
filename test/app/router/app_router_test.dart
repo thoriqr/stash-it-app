@@ -38,6 +38,7 @@ void main() {
           '01a0f359-093b-737a-963a-80f7ca6768ed',
         ),
         AppRoutes.forgotPasswordFinalize,
+        AppRoutes.savedOnDevice,
       ]) {
         expect(
           redirectFor(AuthStatus.signedOut, location),
@@ -77,6 +78,7 @@ void main() {
         AppRoutes.search,
         AppRoutes.profile,
         AppRoutes.settings,
+        AppRoutes.savedOnDevice,
       ]) {
         expect(
           redirectFor(AuthStatus.signedIn, location),
@@ -127,6 +129,7 @@ void main() {
         AppRoutes.googleAccountLinkFor('confirmation-1'),
         AppRoutes.forgotPassword,
         AppRoutes.forgotPasswordFinalize,
+        AppRoutes.savedOnDevice,
       ]) {
         expect(
           location,

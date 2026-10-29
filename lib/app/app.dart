@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -6,10 +9,23 @@ import 'package:stash_it_app/app/feedback/feedback_host.dart';
 import 'package:stash_it_app/app/router/app_router.dart';
 import 'package:stash_it_app/app/session/session_boundary.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/features/pending_urls/application/pending_urls_controller.dart';
+import 'package:stash_it_app/features/pending_urls/application/shared_url_intake.dart';
+import 'package:stash_it_app/features/pending_urls/presentation/share_intake_channel.dart';
+import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/settings/application/theme_mode_controller.dart';
 
 /// The application widget.
-class StashItApp extends ConsumerWidget {
+///
+/// Stateful for two app-lifetime concerns that must outlive every route:
+///
+/// - the live engine's side of the Android share channel, so a share handled
+///   while the app is already open uses the existing session controller and its
+///   serialized refresh; and
+/// - a resume-time invalidation of the device-local URL list, so entries
+///   created or expired while the app was backgrounded are visible when the
+///   user returns.
+class StashItApp extends ConsumerStatefulWidget {
   const StashItApp({super.key, this.router});
 
   /// The router to use. Defaults to the one from [appRouterProvider].
@@ -20,10 +36,64 @@ class StashItApp extends ConsumerWidget {
   final GoRouter? router;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<StashItApp> createState() => _StashItAppState();
+}
+
+class _StashItAppState extends ConsumerState<StashItApp>
+    with WidgetsBindingObserver {
+  static const MethodChannel _shareChannel = MethodChannel(
+    shareIntakeChannelName,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    // This handler exists only in the UI engine. If the app is alive, the
+    // transparent ShareActivity invokes it instead of starting a second engine,
+    // so the live SessionController remains the only owner of token renewal.
+    bindShareIntakeChannel(
+      _shareChannel,
+      (raw) => ref.read(sharedUrlIntakeProvider).save(raw),
+      onOutcome: _afterShare,
+    );
+  }
+
+  @override
+  void dispose() {
+    _shareChannel.setMethodCallHandler(null);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Local data can change while the app is backgrounded (a share handled by
+      // the headless path), and seven-day expiry is enforced on read. Rebuild
+      // the list once on return; the Inbox listing keeps its own refresh rules.
+      ref.invalidate(pendingUrlsProvider);
+    }
+  }
+
+  void _afterShare(ShareSaveOutcome outcome) {
+    if (!mounted) return;
+    if (outcome.touchedStore) ref.invalidate(pendingUrlsProvider);
+
+    if (outcome == ShareSaveOutcome.saved) {
+      // Same best-effort head refresh the Inbox's own save uses. It never
+      // throws, so a refresh failure cannot turn a confirmed save into an error.
+      unawaited(ref.read(savedItemsProvider.notifier).refreshHead());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Watched at the app root so the listener that clears user-scoped caches on
     // an account change lives for as long as the app does. It holds no value;
-    // watching it is how it is kept alive.
+    // watching it is how it is kept alive. The device-local URL list is not one
+    // of the caches it clears.
     ref.watch(sessionBoundaryProvider);
 
     // Watched at the app root so a selection repaints every route immediately.
@@ -59,7 +129,7 @@ class StashItApp extends ConsumerWidget {
       // and `refreshListenable` needs that listener registered for the whole life
       // of the app. Watching keeps this widget subscribed so the notifier is
       // created and stays alive.
-      routerConfig: router ?? ref.watch(appRouterProvider),
+      routerConfig: widget.router ?? ref.watch(appRouterProvider),
     );
   }
 }

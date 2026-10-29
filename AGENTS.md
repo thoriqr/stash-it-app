@@ -333,7 +333,15 @@ blocker for a feature, and propose the specific package — do not work around a
 missing capability with a home-grown substitute.
 
 **Secure storage is now declared** (`flutter_secure_storage: ^11.2.0`), used by
-`core/storage/` for the token pair and available for the pending queue (V5, §7.12).
+`core/storage/` for the token pair and by the auth-flow continuation stores.
+**The device-local URL fallback is not stored there.** That list is non-secret,
+device-local application data, is intentionally available before and without an
+account, and must survive sign-out and account changes; it uses the existing
+`shared_preferences` dependency instead. This supersedes the earlier V5/§7.12
+expectation that the pending queue would live in secure storage. Credentials and
+auth continuations remain in secure storage, and the constraints below still
+apply to them:
+
 Two constraints follow from it and are not visible in the Dart:
 
 - `android:allowBackup="false"` is required in the manifest. Keystore keys are not
