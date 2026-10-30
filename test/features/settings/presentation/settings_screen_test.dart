@@ -5,27 +5,42 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/features/settings/application/language_preference_controller.dart';
 import 'package:stash_it_app/features/settings/application/theme_mode_controller.dart';
+import 'package:stash_it_app/features/settings/data/language_preference_store.dart';
 import 'package:stash_it_app/features/settings/data/theme_preference_store.dart';
+import 'package:stash_it_app/features/settings/domain/language_preference.dart';
 import 'package:stash_it_app/features/settings/presentation/settings_screen.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   Future<
-    ({ProviderContainer container, ThemePreferenceStore store, GoRouter router})
+    ({
+      ProviderContainer container,
+      ThemePreferenceStore store,
+      LanguagePreferenceStore languageStore,
+      GoRouter router,
+    })
   >
   pumpSettings(
     WidgetTester tester, {
     ThemeMode initial = ThemeMode.light,
   }) async {
     SharedPreferences.setMockInitialValues({});
-    final store = ThemePreferenceStore(await SharedPreferences.getInstance());
+    final preferences = await SharedPreferences.getInstance();
+    final store = ThemePreferenceStore(preferences);
+    final languageStore = LanguagePreferenceStore(preferences);
 
     final container = ProviderContainer(
       overrides: [
         themePreferenceStoreProvider.overrideWithValue(store),
         initialThemeModeProvider.overrideWithValue(initial),
+        languagePreferenceStoreProvider.overrideWithValue(languageStore),
+        initialLanguagePreferenceProvider.overrideWithValue(
+          languageStore.read(),
+        ),
       ],
       retry: (_, _) => null,
     );
@@ -54,18 +69,33 @@ void main() {
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: initial,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           routerConfig: router,
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    return (container: container, store: store, router: router);
+    return (
+      container: container,
+      store: store,
+      languageStore: languageStore,
+      router: router,
+    );
   }
 
   RadioGroup<ThemeMode> themeGroup(WidgetTester tester) {
     return tester.widget<RadioGroup<ThemeMode>>(
       find.byWidgetPredicate((widget) => widget is RadioGroup<ThemeMode>),
+    );
+  }
+
+  RadioGroup<LanguagePreference> languageGroup(WidgetTester tester) {
+    return tester.widget<RadioGroup<LanguagePreference>>(
+      find.byWidgetPredicate(
+        (widget) => widget is RadioGroup<LanguagePreference>,
+      ),
     );
   }
 
@@ -114,23 +144,42 @@ void main() {
     expect(app.store.read(), ThemeMode.system);
   });
 
-  testWidgets('the Language row is disabled and has no navigation affordance', (
+  testWidgets('all three language choices select and persist immediately', (
     tester,
   ) async {
     final app = await pumpSettings(tester);
 
-    final languageTile = tester.widget<ListTile>(
-      find.widgetWithText(ListTile, 'Language'),
-    );
-    expect(languageTile.enabled, isFalse);
-    expect(languageTile.onTap, isNull);
-    expect(find.text('Coming soon'), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_right), findsNothing);
+    expect(languageGroup(tester).groupValue, LanguagePreference.system);
 
-    await tester.tap(find.text('Language'));
+    await tester.tap(find.text('English'));
     await tester.pumpAndSettle();
 
-    expect(app.container.read(themeModeControllerProvider), ThemeMode.light);
+    expect(languageGroup(tester).groupValue, LanguagePreference.english);
+    expect(
+      app.container.read(languagePreferenceControllerProvider),
+      LanguagePreference.english,
+    );
+    expect(app.languageStore.read(), LanguagePreference.english);
+
+    await tester.tap(find.text('Bahasa Indonesia'));
+    await tester.pumpAndSettle();
+
+    expect(languageGroup(tester).groupValue, LanguagePreference.indonesian);
+    expect(
+      app.container.read(languagePreferenceControllerProvider),
+      LanguagePreference.indonesian,
+    );
+    expect(app.languageStore.read(), LanguagePreference.indonesian);
+
+    await tester.tap(find.text('System default'));
+    await tester.pumpAndSettle();
+
+    expect(languageGroup(tester).groupValue, LanguagePreference.system);
+    expect(
+      app.container.read(languagePreferenceControllerProvider),
+      LanguagePreference.system,
+    );
+    expect(app.languageStore.read(), LanguagePreference.system);
   });
 
   testWidgets('direct entry provides a back action to the Inbox', (

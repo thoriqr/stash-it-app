@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stash_it_app/app/bootstrap.dart';
 import 'package:stash_it_app/app/config/api_config.dart';
 import 'package:stash_it_app/app/network/network_providers.dart';
@@ -12,6 +14,11 @@ import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 import 'package:stash_it_app/features/auth/data/password_reset_continuation_store.dart';
 import 'package:stash_it_app/features/auth/data/registration_continuation_store.dart';
 import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
+import 'package:stash_it_app/features/settings/application/language_preference_controller.dart';
+import 'package:stash_it_app/features/settings/application/theme_mode_controller.dart';
+import 'package:stash_it_app/features/settings/data/language_preference_store.dart';
+import 'package:stash_it_app/features/settings/data/theme_preference_store.dart';
+import 'package:stash_it_app/features/settings/domain/language_preference.dart';
 
 import '../support/fake_http.dart';
 import '../support/pending_urls.dart';
@@ -87,9 +94,14 @@ void main() {
 
   group('the overrides bootstrap returns', () {
     late PendingUrlStore pendingStore;
+    late LanguagePreferenceStore languageStore;
+    late ThemePreferenceStore themeStore;
 
     setUp(() async {
       pendingStore = await testPendingUrlStore();
+      final preferences = await SharedPreferences.getInstance();
+      languageStore = LanguagePreferenceStore(preferences);
+      themeStore = ThemePreferenceStore(preferences);
     });
 
     // Assembled the way `bootstrap` assembles them, which is the only way to
@@ -112,6 +124,12 @@ void main() {
             PasswordResetContinuationStore(sharedStorage),
           ),
           restoredTokensProvider.overrideWithValue(restored),
+          themePreferenceStoreProvider.overrideWithValue(themeStore),
+          initialThemeModeProvider.overrideWithValue(themeStore.read()),
+          languagePreferenceStoreProvider.overrideWithValue(languageStore),
+          initialLanguagePreferenceProvider.overrideWithValue(
+            languageStore.read(),
+          ),
           pendingUrlStoreProvider.overrideWithValue(pendingStore),
           authRepositoryProvider.overrideWith(
             (ref) =>
@@ -178,6 +196,74 @@ void main() {
 
       expect(container.read(pendingUrlStoreProvider), isA<PendingUrlStore>());
     });
+
+    test('the theme preference store resolves', () {
+      final container = wiredContainer();
+
+      expect(
+        container.read(themePreferenceStoreProvider),
+        isA<ThemePreferenceStore>(),
+      );
+    });
+
+    test('the language preference store resolves', () {
+      final container = wiredContainer();
+
+      expect(
+        container.read(languagePreferenceStoreProvider),
+        isA<LanguagePreferenceStore>(),
+      );
+    });
+
+    test('the initial language preference defaults to system', () {
+      final container = wiredContainer();
+
+      expect(
+        container.read(initialLanguagePreferenceProvider),
+        LanguagePreference.system,
+      );
+    });
+
+    test('the initial theme mode defaults to system', () {
+      final container = wiredContainer();
+
+      expect(container.read(initialThemeModeProvider), ThemeMode.system);
+    });
+
+    test(
+      'a stored language preference is restored during bootstrap assembly',
+      () async {
+        // `testPendingUrlStore` already created the SharedPreferences singleton
+        // with empty values; reset it so a fresh instance picks up the stored 'id'.
+        SharedPreferences.resetStatic();
+        SharedPreferences.setMockInitialValues({
+          LanguagePreferenceStore.storageKey: 'id',
+        });
+        final preferences = await SharedPreferences.getInstance();
+
+        final container = ProviderContainer(
+          overrides: [
+            credentialStoreProvider.overrideWithValue(
+              SecureCredentialStore(InMemorySecureStorage()),
+            ),
+            languagePreferenceStoreProvider.overrideWithValue(
+              LanguagePreferenceStore(preferences),
+            ),
+            initialLanguagePreferenceProvider.overrideWithValue(
+              LanguagePreferenceStore(preferences).read(),
+            ),
+            pendingUrlStoreProvider.overrideWithValue(pendingStore),
+          ],
+          retry: (_, _) => null,
+        );
+        addTearDown(container.dispose);
+
+        expect(
+          container.read(initialLanguagePreferenceProvider),
+          LanguagePreference.indonesian,
+        );
+      },
+    );
 
     test('refreshDio carries no auth interceptor, so renewal cannot recurse', () {
       // The structural guarantee behind single-flight: a renewal response cannot

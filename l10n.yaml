@@ -1,0 +1,10 @@
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false
+
+# en is first so it is the template; id is the second supported locale (D20).
+preferred-supported-locales:
+  - en
+  - id

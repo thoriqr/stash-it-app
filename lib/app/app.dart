@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:stash_it_app/app/feedback/feedback_host.dart';
+import 'package:stash_it_app/app/localization/locale_resolution.dart';
 import 'package:stash_it_app/app/router/app_router.dart';
 import 'package:stash_it_app/app/session/session_boundary.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
@@ -14,7 +15,9 @@ import 'package:stash_it_app/features/pending_urls/application/save_pending_urls
 import 'package:stash_it_app/features/pending_urls/application/shared_url_intake.dart';
 import 'package:stash_it_app/features/pending_urls/presentation/share_intake_channel.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
+import 'package:stash_it_app/features/settings/application/language_preference_controller.dart';
 import 'package:stash_it_app/features/settings/application/theme_mode_controller.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 /// The application widget.
 ///
@@ -107,12 +110,30 @@ class _StashItAppState extends ConsumerState<StashItApp>
     // only `themeMode` does, so navigation state is not rebuilt from scratch.
     final themeMode = ref.watch(themeModeControllerProvider);
 
+    // Watched alongside the theme: a language change must repaint the whole
+    // app on the next frame, and like `themeMode` the controller is keepAlive
+    // so it survives route transitions.
+    final languageLocale = ref
+        .watch(languagePreferenceControllerProvider)
+        .locale;
+
     return MaterialApp.router(
       title: 'Stash-it',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
+      locale: languageLocale,
+      supportedLocales: supportedAppLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      // Fires only when `locale` is null (System preference). The framework
+      // passes the first device locale; we read the full ordered list from the
+      // platform dispatcher so `resolveAppLocale` can honor the complete
+      // preference order.
+      localeResolutionCallback: (locale, supported) => resolveAppLocale(
+        WidgetsBinding.instance.platformDispatcher.locales,
+        supported,
+      ),
       // Inside the builder, not around the MaterialApp: below it the app has a
       // `Theme` and a `MediaQuery` to read, and above the router so every route
       // inherits one treatment. See `skeleton_theme.dart`.

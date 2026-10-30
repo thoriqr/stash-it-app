@@ -13,9 +13,15 @@ part of 'save_pending_urls_controller.dart';
 /// ## One run at a time, one request at a time
 ///
 /// [saveAll] walks the snapshot it was given in order and awaits each
-/// `POST /saved-items` before starting the next. It never issues concurrent
-/// requests and never retries a URL. A second call while a run is in progress
-/// returns immediately; the screen also disables its button while [isRunning].
+/// `POST /saved-items` before starting the next. It moves to the next URL only
+/// after a confirmed create; every refusal — including a validation refusal —
+/// stops the run. A second call while a run is in progress returns immediately;
+/// the screen also disables its button while [isRunning].
+///
+/// The controller itself never retries. The `AuthInterceptor` may replay a
+/// request once after `ACCESS_TOKEN_EXPIRED`; that replay is the first and only
+/// request that can write, and a confirmed `201` from it is a normal success that
+/// lets the run continue.
 ///
 /// ## Why a sync [Notifier]
 ///
@@ -33,8 +39,9 @@ part of 'save_pending_urls_controller.dart';
 /// ## What is kept
 ///
 /// An entry is removed only after a confirmed create, and only by its exact URL
-/// (`PendingUrls.removeConfirmed`). A rejected entry stays; an ambiguous outcome
-/// stays and is marked uncertain without refreshing its seven-day timestamp.
+/// (`PendingUrls.removeConfirmed`). A refused entry stays; an ambiguous outcome
+/// stays and is marked uncertain without refreshing its seven-day timestamp. The
+/// run stops on the first refusal, so every unprocessed entry also stays.
 /// Confirmed entries are never submitted again by a later run because they are
 /// gone from the snapshot that run reads.
 ///
@@ -52,9 +59,15 @@ final savePendingUrlsProvider = SavePendingUrlsProvider._();
 /// ## One run at a time, one request at a time
 ///
 /// [saveAll] walks the snapshot it was given in order and awaits each
-/// `POST /saved-items` before starting the next. It never issues concurrent
-/// requests and never retries a URL. A second call while a run is in progress
-/// returns immediately; the screen also disables its button while [isRunning].
+/// `POST /saved-items` before starting the next. It moves to the next URL only
+/// after a confirmed create; every refusal — including a validation refusal —
+/// stops the run. A second call while a run is in progress returns immediately;
+/// the screen also disables its button while [isRunning].
+///
+/// The controller itself never retries. The `AuthInterceptor` may replay a
+/// request once after `ACCESS_TOKEN_EXPIRED`; that replay is the first and only
+/// request that can write, and a confirmed `201` from it is a normal success that
+/// lets the run continue.
 ///
 /// ## Why a sync [Notifier]
 ///
@@ -72,8 +85,9 @@ final savePendingUrlsProvider = SavePendingUrlsProvider._();
 /// ## What is kept
 ///
 /// An entry is removed only after a confirmed create, and only by its exact URL
-/// (`PendingUrls.removeConfirmed`). A rejected entry stays; an ambiguous outcome
-/// stays and is marked uncertain without refreshing its seven-day timestamp.
+/// (`PendingUrls.removeConfirmed`). A refused entry stays; an ambiguous outcome
+/// stays and is marked uncertain without refreshing its seven-day timestamp. The
+/// run stops on the first refusal, so every unprocessed entry also stays.
 /// Confirmed entries are never submitted again by a later run because they are
 /// gone from the snapshot that run reads.
 ///
@@ -89,9 +103,15 @@ final class SavePendingUrlsProvider
   /// ## One run at a time, one request at a time
   ///
   /// [saveAll] walks the snapshot it was given in order and awaits each
-  /// `POST /saved-items` before starting the next. It never issues concurrent
-  /// requests and never retries a URL. A second call while a run is in progress
-  /// returns immediately; the screen also disables its button while [isRunning].
+  /// `POST /saved-items` before starting the next. It moves to the next URL only
+  /// after a confirmed create; every refusal — including a validation refusal —
+  /// stops the run. A second call while a run is in progress returns immediately;
+  /// the screen also disables its button while [isRunning].
+  ///
+  /// The controller itself never retries. The `AuthInterceptor` may replay a
+  /// request once after `ACCESS_TOKEN_EXPIRED`; that replay is the first and only
+  /// request that can write, and a confirmed `201` from it is a normal success that
+  /// lets the run continue.
   ///
   /// ## Why a sync [Notifier]
   ///
@@ -109,8 +129,9 @@ final class SavePendingUrlsProvider
   /// ## What is kept
   ///
   /// An entry is removed only after a confirmed create, and only by its exact URL
-  /// (`PendingUrls.removeConfirmed`). A rejected entry stays; an ambiguous outcome
-  /// stays and is marked uncertain without refreshing its seven-day timestamp.
+  /// (`PendingUrls.removeConfirmed`). A refused entry stays; an ambiguous outcome
+  /// stays and is marked uncertain without refreshing its seven-day timestamp. The
+  /// run stops on the first refusal, so every unprocessed entry also stays.
   /// Confirmed entries are never submitted again by a later run because they are
   /// gone from the snapshot that run reads.
   ///
@@ -146,16 +167,22 @@ final class SavePendingUrlsProvider
   }
 }
 
-String _$savePendingUrlsHash() => r'33ccd434d2ed47825dc8778ce77b6c619c5eb25b';
+String _$savePendingUrlsHash() => r'5bc627d8980990974c5d7a021f0dc75444e35964';
 
 /// The explicit, user-initiated bulk save of the device-local URL list.
 ///
 /// ## One run at a time, one request at a time
 ///
 /// [saveAll] walks the snapshot it was given in order and awaits each
-/// `POST /saved-items` before starting the next. It never issues concurrent
-/// requests and never retries a URL. A second call while a run is in progress
-/// returns immediately; the screen also disables its button while [isRunning].
+/// `POST /saved-items` before starting the next. It moves to the next URL only
+/// after a confirmed create; every refusal — including a validation refusal —
+/// stops the run. A second call while a run is in progress returns immediately;
+/// the screen also disables its button while [isRunning].
+///
+/// The controller itself never retries. The `AuthInterceptor` may replay a
+/// request once after `ACCESS_TOKEN_EXPIRED`; that replay is the first and only
+/// request that can write, and a confirmed `201` from it is a normal success that
+/// lets the run continue.
 ///
 /// ## Why a sync [Notifier]
 ///
@@ -173,8 +200,9 @@ String _$savePendingUrlsHash() => r'33ccd434d2ed47825dc8778ce77b6c619c5eb25b';
 /// ## What is kept
 ///
 /// An entry is removed only after a confirmed create, and only by its exact URL
-/// (`PendingUrls.removeConfirmed`). A rejected entry stays; an ambiguous outcome
-/// stays and is marked uncertain without refreshing its seven-day timestamp.
+/// (`PendingUrls.removeConfirmed`). A refused entry stays; an ambiguous outcome
+/// stays and is marked uncertain without refreshing its seven-day timestamp. The
+/// run stops on the first refusal, so every unprocessed entry also stays.
 /// Confirmed entries are never submitted again by a later run because they are
 /// gone from the snapshot that run reads.
 ///

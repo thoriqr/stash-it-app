@@ -96,7 +96,7 @@ final class CollectionDeletionProvider
 }
 
 String _$collectionDeletionHash() =>
-    r'54746309bb926e729f4829360a967c6bcea07412';
+    r'b9c37d74b4f4f5ca310cb5f8cec0e20230bd1421';
 
 /// The destructive collection flow: one request, chosen by the disposition the
 /// user confirmed.

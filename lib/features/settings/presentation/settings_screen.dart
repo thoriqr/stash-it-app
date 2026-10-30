@@ -5,8 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
+import '../application/language_preference_controller.dart';
 import '../application/theme_mode_controller.dart';
+import '../domain/language_preference.dart';
 
 /// The app-wide Settings screen.
 ///
@@ -18,8 +21,10 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final themeMode = ref.watch(themeModeControllerProvider);
+    final language = ref.watch(languagePreferenceControllerProvider);
 
     // Direct entry (for example a future deep link) has no shell page beneath it
     // to pop to. The fallback is shown only in that case; a Settings route pushed
@@ -28,19 +33,19 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SETTINGS'),
+        title: Text(l10n.settingsTitle),
         leading: canPop
             ? null
             : IconButton(
                 icon: const Icon(Icons.arrow_back, size: AppMetrics.iconSize),
-                tooltip: 'Back to Inbox',
+                tooltip: l10n.settingsBackToInbox,
                 onPressed: () => context.go(AppRoutes.inbox),
               ),
       ),
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
-          _SectionLabelRow(label: 'APPEARANCE', tokens: tokens),
+          _SectionLabelRow(label: l10n.settingsAppearance, tokens: tokens),
           Material(
             color: tokens.surface,
             child: DecoratedBox(
@@ -63,10 +68,14 @@ class SettingsScreen extends ConsumerWidget {
                       index++
                     ) ...[
                       if (index > 0) _RowDivider(tokens: tokens),
-                      _ThemeOption(
-                        mode: _themeChoices[index].mode,
-                        label: _themeChoices[index].label,
-                        selected: themeMode == _themeChoices[index].mode,
+                      _SettingsRadioOption<ThemeMode>(
+                        value: _themeChoices[index],
+                        label: switch (_themeChoices[index]) {
+                          ThemeMode.light => l10n.themeLight,
+                          ThemeMode.dark => l10n.themeDark,
+                          ThemeMode.system => l10n.themeSystem,
+                        },
+                        selected: themeMode == _themeChoices[index],
                         tokens: tokens,
                       ),
                     ],
@@ -75,33 +84,45 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
-          _SectionLabelRow(label: 'LANGUAGE', tokens: tokens),
+          _SectionLabelRow(label: l10n.settingsLanguage, tokens: tokens),
           Material(
             color: tokens.surface,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: tokens.borderSubtle)),
               ),
-              child: Semantics(
-                enabled: false,
-                child: ListTile(
-                  enabled: false,
-                  dense: true,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppMetrics.space4,
-                  ),
-                  title: Text(
-                    'Language',
-                    style: AppTypography.itemTitle.copyWith(
-                      color: tokens.textDisabled,
-                    ),
-                  ),
-                  trailing: Text(
-                    'Coming soon',
-                    style: AppTypography.meta.copyWith(
-                      color: tokens.textDisabled,
-                    ),
-                  ),
+              child: RadioGroup<LanguagePreference>(
+                groupValue: language,
+                onChanged: (preference) {
+                  if (preference == null) return;
+                  unawaited(
+                    ref
+                        .read(languagePreferenceControllerProvider.notifier)
+                        .select(preference),
+                  );
+                },
+                child: Column(
+                  children: [
+                    for (
+                      var index = 0;
+                      index < _languageChoices.length;
+                      index++
+                    ) ...[
+                      if (index > 0) _RowDivider(tokens: tokens),
+                      _SettingsRadioOption<LanguagePreference>(
+                        value: _languageChoices[index],
+                        label: switch (_languageChoices[index]) {
+                          LanguagePreference.system =>
+                            l10n.languageSystemDefault,
+                          LanguagePreference.english => l10n.languageEnglish,
+                          LanguagePreference.indonesian =>
+                            l10n.languageIndonesian,
+                        },
+                        selected: language == _languageChoices[index],
+                        tokens: tokens,
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),
@@ -112,29 +133,35 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-const List<({ThemeMode mode, String label})> _themeChoices = [
-  (mode: ThemeMode.light, label: 'Light'),
-  (mode: ThemeMode.dark, label: 'Dark'),
-  (mode: ThemeMode.system, label: 'System'),
+const List<ThemeMode> _themeChoices = [
+  ThemeMode.light,
+  ThemeMode.dark,
+  ThemeMode.system,
 ];
 
-class _ThemeOption extends StatelessWidget {
-  const _ThemeOption({
-    required this.mode,
+const List<LanguagePreference> _languageChoices = [
+  LanguagePreference.system,
+  LanguagePreference.english,
+  LanguagePreference.indonesian,
+];
+
+class _SettingsRadioOption<T> extends StatelessWidget {
+  const _SettingsRadioOption({
+    required this.value,
     required this.label,
     required this.selected,
     required this.tokens,
   });
 
-  final ThemeMode mode;
+  final T value;
   final String label;
   final bool selected;
   final AppTokens tokens;
 
   @override
   Widget build(BuildContext context) {
-    return RadioListTile<ThemeMode>(
-      value: mode,
+    return RadioListTile<T>(
+      value: value,
       selected: selected,
       activeColor: tokens.accent,
       selectedTileColor: tokens.accentSoft,

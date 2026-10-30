@@ -1,0 +1,42 @@
+{
+  "settingsTitle": "SETTINGS",
+  "settingsBackToInbox": "Kembali ke Inbox",
+  "settingsAppearance": "TAMPILAN",
+  "themeLight": "Terang",
+  "themeDark": "Gelap",
+  "themeSystem": "Sistem",
+  "settingsLanguage": "BAHASA",
+  "languageSystemDefault": "Bawaan sistem",
+  "languageEnglish": "English",
+  "languageIndonesian": "Bahasa Indonesia",
+  "@settingsTitle": {
+    "description": "Settings screen title."
+  },
+  "@settingsBackToInbox": {
+    "description": "Tooltip for the back-to-Inbox button when Settings is entered directly."
+  },
+  "@settingsAppearance": {
+    "description": "Appearance section heading in Settings."
+  },
+  "@themeLight": {
+    "description": "Light theme option label."
+  },
+  "@themeDark": {
+    "description": "Dark theme option label."
+  },
+  "@themeSystem": {
+    "description": "System theme option label."
+  },
+  "@settingsLanguage": {
+    "description": "Language section heading in Settings."
+  },
+  "@languageSystemDefault": {
+    "description": "System default language option. Endonym — same in every locale."
+  },
+  "@languageEnglish": {
+    "description": "English language option. Endonym — same in every locale (D21)."
+  },
+  "@languageIndonesian": {
+    "description": "Indonesian language option. Endonym — same in every locale (D21)."
+  }
+}

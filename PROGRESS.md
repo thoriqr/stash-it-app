@@ -1,3 +1,46 @@
+## Localization foundation — Phase 0: language preference (2026-10-30)
+
+### What was implemented
+
+- **`flutter_localizations` SDK dependency and `generate: true`** added to `pubspec.yaml`.
+- **`l10n.yaml`** configures the centralized `gen-l10n` pipeline: one ARB per locale, one `AppLocalizations` class, `nullable-getter: false`, `en` as template.
+- **`lib/l10n/app_en.arb` + `lib/l10n/app_id.arb`** with the 10 shared/shell keys needed to demonstrate the language switch: Settings screen title, back tooltip, section headings, theme option labels, and the three language choices (System default / English / Bahasa Indonesia).
+- **`LanguagePreference` enum** (`system`, `english`, `indonesian`) with `languageCode`, `locale`, `storageValue`, and `fromStorage` — mirroring `ThemeMode`'s stable-word persistence pattern.
+- **`LanguagePreferenceStore`** (SharedPreferences, key `stash_it.settings.language`) — synchronous `read()`, async `write()` returning `bool`, same error semantics as `ThemePreferenceStore`.
+- **`LanguagePreferenceController`** — `@Riverpod(keepAlive: true)`, watches `initialLanguagePreferenceProvider`, `select()` applies synchronously before persisting, failed write publishes a warning feedback (same pattern as `ThemeModeController`).
+- **`resolveAppLocale`** in `lib/app/localization/locale_resolution.dart` — pure function over the full ordered device locale list, independently unit-tested. Uses `localeResolutionCallback` (not the deprecated `localeListResolutionCallback`), reading the device locale list from `WidgetsBinding.instance.platformDispatcher.locales`.
+- **`MaterialApp.router`** in `app.dart` wired with `locale`, `supportedLocales`, `localizationsDelegates`, and `localeResolutionCallback`.
+- **`bootstrap.dart`** constructs `LanguagePreferenceStore` from the same `SharedPreferences` instance and overrides both `languagePreferenceStoreProvider` and `initialLanguagePreferenceProvider`, before the first frame (no language flash).
+- **Settings screen** rewritten: disabled "Coming soon" Language row replaced with a functional `RadioGroup<LanguagePreference>`; `_ThemeOption` promoted to a generic `_SettingsRadioOption<T>` shared by both theme and language groups; all Settings screen copy localized.
+- **Tests:** 18 new tests (store, controller, locale resolution, Settings selector, bootstrap wiring) + 5 existing tests updated for the new overrides and localizations delegates.
+
+### Deviations from the audit
+
+- **`synthetic-package` is fully removed in Flutter 3.47.7** (not just deprecated). The option was omitted entirely; generated files were written to `lib/l10n/` automatically (not `.dart_tool/`). The plan's stated intent — "generated files live next to the ARB sources" — is satisfied without the option.
+- **`generate: true` must be inside the `flutter:` section** of `pubspec.yaml`, not top-level, for `flutter gen-l10n` to recognize it in this version.
+- **`SchedulerBinding` is not directly importable** from `package:flutter/widgets.dart` in this project's configuration; `WidgetsBinding` (available from `package:flutter/material.dart`) provides the same `platformDispatcher.locales` access.
+
+### Verification
+
+- `flutter pub get` — success.
+- `flutter gen-l10n` — generated `app_localizations.dart`, `app_localizations_en.dart`, `app_localizations_id.dart` in `lib/l10n/`.
+- `dart run build_runner build` — regenerated `language_preference_controller.g.dart`.
+- `dart format` on changed files — clean.
+- `flutter analyze` — **no issues found**.
+- Focused Phase 0 tests — **18 passed**.
+- Affected existing tests (settings screen, settings theme, widget test, bootstrap) — **32 passed**.
+- Full `flutter test` — **1561 passed** (was 1538; +23 new tests net of the replaced disabled-row test).
+
+### Scope boundaries respected
+
+Out of scope (deferred to Phases 1–4): feature copy localization, `AppFeedback.copy` type migration, `SavedTime` domain extraction, date/relative-time formatting, pending-URL messages, native Android strings, and all `find.text`/`find.byTooltip` test finder migration across the app.
+
+### Known limitations
+
+- Controller warning copy ("Language changed, but the preference could not be saved.") is hardcoded English; it will be migrated to a `FeedbackCopy` typedef in Phase 2 along with the `AppFeedback.copy` type change.
+- Indonesian locale rendering is verified at the unit level but not exercised on a device (per the execution policy). The `settings_theme_test.dart` and `widget_test.dart` suites pump `StashItApp` in the default English locale only.
+- The `Settings` tooltip on `DestinationAppBar` remains hardcoded English; it is a shared widget covered by Phase 1/2.
+
 ## Local URL fallback, Android share intake, and account save (2026-10-29)
 
 ### Product model
