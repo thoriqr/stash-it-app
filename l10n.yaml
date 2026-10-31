@@ -4,7 +4,7 @@ output-localization-file: app_localizations.dart
 output-class: AppLocalizations
 nullable-getter: false
 
-# en is first so it is the template; id is the second supported locale (D20).
+# en is first so it is the template; id is the second supported locale
 preferred-supported-locales:
   - en
   - id

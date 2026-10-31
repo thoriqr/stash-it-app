@@ -1,78 +1,70 @@
-# Stash-it — Flutter client
+# Stash-it — Flutter App
 
-The Flutter mobile client for Stash-it: a place to save things found on the internet
-and come back to them later.
+The Flutter application for **Stash-it**, a mobile app for saving and organizing links and other content found on the internet.
 
-**This repository is not a monorepo.** The Go backend is maintained separately (a
-sibling checkout, conventionally `../stash-it-backend`) and is authoritative for every
-API contract.
+## Tech Stack
 
-## Current state
-
-An application shell with a provisional visual direction, plus one presentation
-prototype. **No product feature is implemented.**
-
-- Four destinations — Inbox, Collections, Search, Profile — behind a
-  `StatefulShellRoute`.
-- A provisional **Paper & Ink** visual baseline. Provisional: the visual language is
-  not designed, so these values are expected to change.
-- One reusable saved-item row, demonstrated on the Inbox over **explicitly labelled
-  mock data**. The backend listing (`GET /saved-items`) now exists, but no Flutter
-  API client, DTO or repository has been written yet.
-- No authentication, networking, localization, or persistence.
-
-[`PROGRESS.md`](./PROGRESS.md) is the current handoff document: what exists, what was
-verified, what is blocked, and what comes next.
+- Flutter and Dart
+- Riverpod for state management
+- Dio and Retrofit for API communication
+- Freezed for immutable models and serialization
+- GoRouter for navigation
 
 ## Requirements
 
-Flutter **3.47.7** / Dart **3.13.5** (`environment: sdk: ^3.12.2`). Android and iOS
-targets (**D12**).
+- Flutter SDK compatible with the version specified in `pubspec.yaml`
+- Dart SDK compatible with the version specified in `pubspec.yaml`
 
-## Development commands
+## Getting Started
+
+Install dependencies:
 
 ```bash
-flutter pub get                  # fetch dependencies
-
-dart format <changed dart files> # formatting
-flutter analyze                  # static analysis
-flutter test                     # unit and widget tests
-
-dart run build_runner build      # code generation, after changing an annotation
+flutter pub get
 ```
 
-Running the app is the user's job. Nothing here launches an emulator or a device;
-see the execution policy in [`AGENTS.md`](./AGENTS.md) before running anything.
+Run the application:
 
-## Where things live
-
+```bash
+flutter run
 ```
+
+## Development Commands
+
+```bash
+# Format Dart files
+dart format .
+
+# Static analysis
+flutter analyze
+
+# Run tests
+flutter test
+
+# Generate code
+dart run build_runner build
+```
+
+Run code generation after modifying annotations or source files that require generated output.
+
+## Project Structure
+
+```text
 lib/
-├── main.dart              Thin entry point
-├── app/                   Composition root: app widget, router, theme
-└── features/<feature>/    One slice per destination
-test/                      Mirrors lib/
-docs/                      Product discovery and wireframes
+├── app/          # Application configuration, routing and theme
+├── core/         # Core application infrastructure
+├── features/     # Feature-specific implementation
+└── shared/       # Reusable components and utilities
+
+test/             # Application tests
+docs/             # Supporting project references
 ```
 
-`core/`, `l10n/` and `shared/` appear only when a real file first needs them — see
-`AGENTS.md` §2 for the dependency rules that keep them from becoming junk drawers.
+## Backend
 
-## Documentation
+The Go backend is maintained in a separate repository. Backend API contracts and behavior are defined by the backend implementation.
 
-| Document | What it is |
-| --- | --- |
-| [`AGENTS.md`](./AGENTS.md) | Working rules for coding agents. **Read this first.** |
-| [`PROGRESS.md`](./PROGRESS.md) | Current milestone, verification status, next step. |
-| [`docs/product-discovery/decisions.md`](./docs/product-discovery/decisions.md) | **Binding** product decisions. |
-| [`docs/product-discovery/ux-discovery.md`](./docs/product-discovery/ux-discovery.md) | Reasoning, API mapping, interaction-state matrix. |
-| [`docs/wireframes/`](./docs/wireframes/) | UX baseline. Open `index.html` in a browser. |
+## Project Guidance
 
-## Working rules that are easy to get wrong
-
-- **Never invent a backend contract.** Endpoints, fields, pagination and ordering come
-  from the backend repository.
-- **Branch on `error.code`, never on `error.message`.** Backend messages are never shown
-  to users (D22).
-- **Mock data must always be labelled as mock**, in code and on screen.
-- **Do not run the app or touch the emulator** without an explicit instruction.
+- `AGENTS.md` — Instructions and conventions for coding agents.
+- `PROGRESS.md` — Current project status and development handoff.

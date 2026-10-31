@@ -9,6 +9,153 @@
   "languageSystemDefault": "System default",
   "languageEnglish": "English",
   "languageIndonesian": "Bahasa Indonesia",
+  "navInbox": "Inbox",
+  "navCollections": "Collections",
+  "navSearch": "Search",
+  "navProfile": "Profile",
+  "settingsTooltip": "Settings",
+  "clearTooltip": "Clear",
+  "dismissAction": "Dismiss",
+  "sessionEnded": "Your session has ended. Sign in again to continue.",
+  "genericReadRateLimited": "Too many attempts. Try again shortly.",
+  "genericReadServerFault": "We could not reach the server. Try again shortly.",
+  "genericReadUnreadable": "We couldn't read the server's reply. Try again.",
+  "retryAfterSecond": "a second",
+  "retryAfterSeconds": "{count, plural, =1{1 second} other{{count} seconds}}",
+  "retryAfterMinutes": "{count, plural, =1{1 minute} other{{count} minutes}}",
+  "retryAfterHours": "{count, plural, =1{1 hour} other{{count} hours}}",
+  "themePreferenceNotSaved": "Theme changed, but the preference could not be saved.",
+  "languagePreferenceNotSaved": "Language changed, but the preference could not be saved.",
+  "savedJustNow": "Saved just now",
+  "savedMinutesAgo": "{count, plural, =1{Saved 1 min ago} other{Saved {count} min ago}}",
+  "savedHoursAgo": "{count, plural, =1{Saved 1 hour ago} other{Saved {count} hours ago}}",
+  "savedYesterday": "Saved yesterday",
+  "savedDaysAgo": "{count, plural, =1{Saved 1 day ago} other{Saved {count} days ago}}",
+  "profileIdentityEmailPassword": "Email & password",
+  "profileIdentityUnknown": "Unknown",
+  "pendingUrlsExpired": "Some links saved on this device expired after seven days.",
+  "pendingSummaryLocalList": "Saved {saved, plural, =1{1 link} other{{saved} links}}, but this device couldn't update the list. Check the list before trying again.",
+  "pendingSummaryUncertainSingle": "We couldn't confirm the save. The link is still on this device. Check your Inbox before trying again.",
+  "pendingSummaryUncertainNoneSaved": "We couldn't confirm saving these links.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}} Check your Inbox before trying again.",
+  "pendingSummaryUncertainPartial": "Saved {saved} of {total} links. We couldn't confirm {uncertain, plural, =1{1 link} other{{uncertain} links}}.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}} Check your Inbox before trying again.",
+  "pendingSummaryRateLimitedSingleNoneSavedNoWait": "The link wasn't saved. You're saving too quickly. Try again shortly.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}}",
+  "pendingSummaryRateLimitedSingleNoneSavedWithWait": "The link wasn't saved. You're saving too quickly. Try again in {wait}.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}}",
+  "pendingSummaryRateLimitedNoneSavedNoWait": "No links were saved. You're saving too quickly. Try again shortly.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}}",
+  "pendingSummaryRateLimitedNoneSavedWithWait": "No links were saved. You're saving too quickly. Try again in {wait}.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}}",
+  "pendingSummaryRateLimitedPartialNoWait": "Saved {saved} of {total} links. You're saving too quickly. Try again shortly.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}}",
+  "pendingSummaryRateLimitedPartialWithWait": "Saved {saved} of {total} links. You're saving too quickly. Try again in {wait}.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}}",
+  "pendingSummaryAuthSingleNoneSaved": "The link wasn't saved. Sign in again to save the rest.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}}",
+  "pendingSummaryAuthNoneSaved": "No links were saved. Sign in again to save the rest.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}}",
+  "pendingSummaryAuthPartial": "Saved {saved} of {total} links. Sign in again to save the rest.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}}",
+  "pendingSummaryRetrySingleNoneSaved": "The link wasn't saved. Try again.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}}",
+  "pendingSummaryRetryNoneSaved": "No links were saved. Try again.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}}",
+  "pendingSummaryRetryPartial": "Saved {saved} of {total} links. Try again.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}}",
+  "pendingSummaryAllSavedSingle": "Saved the link to your account.",
+  "pendingSummaryAllSaved": "Saved all {total} links to your account.",
+  "pendingSummaryNoneSaved": "No links were saved.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}}",
+  "pendingSummaryPartial": "Saved {saved} of {total} links.{remaining, plural, =0{} =1{ 1 link is still on this device.} other{ {remaining} links are still on this device.}}",
+  "saved": "Saved.",
+  "invalidUrlFull": "That doesn't look like a valid link. Enter a full http:// or https:// address.",
+  "saveValidation": "That doesn't look like a valid link. Check the URL and try again.",
+  "saveMalformed": "Something went wrong sending that link. Try again.",
+  "saveRateLimitedNoWait": "You're saving too quickly. Try again shortly.",
+  "saveRateLimitedWithWait": "You're saving too quickly. Try again in {wait}.",
+  "saveServerUnavailable": "We couldn't save this link just now. Try again shortly.",
+  "saveUnreadable": "We couldn't read the server's reply, so we can't confirm the save. Check your Inbox before trying again.",
+  "saveTransport": "We couldn't confirm this save. It may or may not have gone through — check your Inbox before trying again.",
+  "saveRefreshUncertain": "We couldn't renew your session, so that link wasn't saved. Try again.",
+  "saveCredentialStorage": "This device couldn't refresh your session, so that link wasn't saved. Try again.",
+  "saveAuthRequired": "Sign in again to save this link.",
+  "pageReRead": "Page re-read.",
+  "pageReReadNoDetails": "Page re-read. This page shows no details.",
+  "pageReadFailed": "Couldn't read this page.",
+  "enrichUnconfirmed": "We couldn't confirm the re-read. Try again.",
+  "enrichRateLimitedNoWait": "You've re-read too many pages. Try again shortly.",
+  "enrichRateLimitedWithWait": "You've re-read too many pages. Try again in {wait}.",
+  "enrichUnavailable": "Re-reading is temporarily unavailable. Try again shortly.",
+  "itemUnavailable": "This item is no longer available.",
+  "enrichAuthRequired": "Sign in again to re-read this page.",
+  "enrichRefreshUncertain": "We couldn't renew your session, so the page wasn't re-read. Try again.",
+  "enrichCredentialStorage": "This device couldn't refresh your session, so the page wasn't re-read. Try again.",
+  "enrichFailed": "We couldn't re-read this page. Try again.",
+  "enrichServerFault": "Something went wrong re-reading this page. Try again.",
+  "moveServerError": "Something went wrong moving this item. Try again.",
+  "moveUnconfirmed": "We couldn't confirm the move. Check the item's collection.",
+  "moveAuthRequired": "Sign in again to move this item.",
+  "moveRefreshUncertain": "We couldn't renew your session, so the item wasn't moved. Try again.",
+  "moveCredentialStorage": "This device couldn't refresh your session, so the item wasn't moved. Try again.",
+  "moveMalformed": "Something went wrong sending that name. Try again.",
+  "moveRateLimitedNoWait": "You're moving too quickly. Try again shortly.",
+  "moveRateLimitedWithWait": "You're moving too quickly. Try again in {wait}.",
+  "alreadyInCollection": "Already in {name}.",
+  "createdCollectionAndMoved": "Created {name} and moved the item.",
+  "movedToCollection": "Moved to {name}.",
+  "itemDeleted": "Item deleted.",
+  "itemDeletedAndCollectionDeleted": "Item deleted, and {name} was deleted.",
+  "deleteItemUnconfirmed": "We couldn't confirm whether the item was deleted. Check the Inbox before trying again.",
+  "deleteItemAuthRequired": "Sign in again to delete this item.",
+  "deleteItemRefreshUncertain": "We couldn't renew your session, so the item wasn't deleted. Try again.",
+  "deleteItemCredentialStorage": "This device couldn't refresh your session, so the item wasn't deleted. Try again.",
+  "itemNotDeleted": "The item wasn't deleted. Try again.",
+  "deleteItemRateLimited": "You're going too quickly. The item wasn't deleted. Try again shortly.",
+  "collectionUnavailableAfterItemDeleted": "Item deleted. {name} is no longer available.",
+  "collectionNotEmptyAfterItemDeleted": "Item deleted. {name} now has items, so it was not deleted.",
+  "collectionProtectedAfterItemDeleted": "Item deleted. {name} cannot be deleted.",
+  "collectionDeleteUnconfirmedAfterItemDeleted": "Item deleted, but we couldn't confirm whether {name} was deleted. Check Collections.",
+  "collectionDeleteAuthRequiredAfterItemDeleted": "Item deleted. Sign in again to delete {name}.",
+  "collectionDeleteSessionEndedAfterItemDeleted": "Item deleted. Your session ended before {name} could be deleted.",
+  "collectionDeleteRefreshUncertainAfterItemDeleted": "Item deleted. We couldn't renew your session, so {name} was not deleted. Try again.",
+  "collectionDeleteCredentialStorageAfterItemDeleted": "Item deleted. This device couldn't refresh your session, so {name} was not deleted. Try again.",
+  "collectionDeleteRateLimitedAfterItemDeleted": "Item deleted. You're going too quickly, so {name} was not deleted. Try again shortly.",
+  "collectionDeleteFailedAfterItemDeleted": "Item deleted, but {name} could not be deleted. Try again from Collections.",
+  "collectionDeleted": "{name} was deleted.",
+  "collectionDeletedItemsMoved": "{name} was deleted, and its items were moved to {target}.",
+  "collectionDeleteFailed": "The collection wasn't deleted. Try again.",
+  "collectionDeleteTargetUnavailable": "{name} is no longer available. Nothing was changed. Choose another destination.",
+  "collectionUnavailable": "{name} is no longer available.",
+  "collectionNotEmpty": "{name} now has items, so nothing was changed. Its current contents are being refreshed.",
+  "collectionProtected": "{name} cannot be deleted.",
+  "collectionDeleteUnconfirmed": "We couldn't confirm whether {name} was deleted. Check Collections before trying again.",
+  "collectionDeleteAuthRequired": "Sign in again to delete this collection.",
+  "collectionDeleteRefreshUncertain": "We couldn't renew your session, so {name} wasn't deleted. Try again.",
+  "collectionDeleteCredentialStorage": "This device couldn't refresh your session, so {name} wasn't deleted. Try again.",
+  "collectionDeleteRateLimitedNoWait": "You're going too quickly. The collection wasn't deleted. Try again shortly.",
+  "collectionDeleteRateLimitedWithWait": "You're going too quickly. The collection wasn't deleted. Try again in {wait}.",
+  "linkCannotOpen": "This link can't be opened.",
+  "linkLaunchFailed": "We couldn't open this link. Try again.",
+  "refreshFailed": "Couldn't refresh. Check your connection.",
+  "displayNameUpdated": "Display name updated.",
+  "displayNameRateLimitedNoWait": "Too many attempts. Try again shortly.",
+  "displayNameRateLimitedWithWait": "Too many attempts. Try again in {wait}.",
+  "displayNameUnavailable": "Display name changes are temporarily unavailable. Try again shortly.",
+  "displayNameUnconfirmed": "We couldn't confirm whether your display name was updated. Check your profile before trying again.",
+  "accountUnavailable": "This account is no longer available.",
+  "displayNameAuthRequired": "Sign in again to change your display name.",
+  "displayNameRefreshUncertain": "We couldn't renew your session, so your display name wasn't changed. Try again.",
+  "displayNameCredentialStorage": "This device couldn't refresh your session, so your display name wasn't changed. Try again.",
+  "displayNameChangeFailed": "We couldn't change your display name. Try again.",
+  "passwordChanged": "Password changed.",
+  "passwordCreated": "Password created.",
+  "passwordModeConflictExists": "A password was already created for this account. Open this screen again to change it.",
+  "passwordModeConflictRequired": "Your account already has a password. Open this screen again to change it.",
+  "passwordModeConflictUnexpected": "Your account has no password yet. Open this screen again to create one.",
+  "passwordRateLimitedNoWait": "We can't set a password right now. Try again shortly.",
+  "passwordRateLimitedWithWait": "We can't set a password right now. Try again in {wait}.",
+  "passwordUnavailable": "We can't set a password right now. Try again shortly.",
+  "passwordUnconfirmed": "We couldn't confirm whether your password was set. Open this screen again before trying again.",
+  "passwordAuthRequired": "Sign in again to set your password.",
+  "passwordRefreshUncertainChanged": "We couldn't renew your session, so your password wasn't changed. Try again.",
+  "passwordRefreshUncertainSet": "We couldn't renew your session, so your password wasn't set. Try again.",
+  "passwordCredentialStorageChanged": "This device couldn't refresh your session, so your password wasn't changed. Try again.",
+  "passwordCredentialStorageSet": "This device couldn't refresh your session, so your password wasn't set. Try again.",
+  "passwordSetFailed": "We couldn't set your password. Try again.",
+  "newPinSent": "A new PIN has been sent.",
+  "pinVerifiedProgressNotSaved": "PIN verified, but this device could not save your progress. Finish before closing the app.",
+  "shareSaved": "Saved to your account.",
+  "shareStoredAfterFailure": "Couldn't save it. Kept on this device.",
+  "shareStoredAfterUncertain": "Save not confirmed. Kept on this device.",
+  "shareInvalid": "That's not a link, so nothing was saved.",
+  "shareNotStored": "Couldn't save or keep this link.",
   "@settingsTitle": {
     "description": "Settings screen title."
   },
@@ -38,5 +185,762 @@
   },
   "@languageIndonesian": {
     "description": "Indonesian language option. Endonym — same in every locale (D21)."
+  },
+  "@navInbox": {
+    "description": "Inbox destination label in the shell navigation bar."
+  },
+  "@navCollections": {
+    "description": "Collections destination label in the shell navigation bar."
+  },
+  "@navSearch": {
+    "description": "Search destination label in the shell navigation bar."
+  },
+  "@navProfile": {
+    "description": "Profile destination label in the shell navigation bar."
+  },
+  "@settingsTooltip": {
+    "description": "Tooltip for the Settings action on every destination app bar."
+  },
+  "@clearTooltip": {
+    "description": "Tooltip for the clear action inside a text field."
+  },
+  "@dismissAction": {
+    "description": "Dismiss action on an inline message band."
+  },
+  "@sessionEnded": {
+    "description": "Neutral explanation shown when a session ends while the user is elsewhere."
+  },
+  "@genericReadRateLimited": {
+    "description": "Shared copy for a rate-limited read."
+  },
+  "@genericReadServerFault": {
+    "description": "Shared copy for a read that could not reach the server."
+  },
+  "@genericReadUnreadable": {
+    "description": "Shared copy for an unreadable or malformed read reply."
+  },
+  "@retryAfterSecond": {
+    "description": "A wait of one second or less, used after 'in'."
+  },
+  "@retryAfterSeconds": {
+    "description": "A wait in seconds, used after 'in'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@retryAfterMinutes": {
+    "description": "A wait in minutes, used after 'in'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@retryAfterHours": {
+    "description": "A wait in hours, used after 'in'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@themePreferenceNotSaved": {
+    "description": "Warning shown when the theme changed but could not be persisted."
+  },
+  "@languagePreferenceNotSaved": {
+    "description": "Warning shown when the language changed but could not be persisted."
+  },
+  "@savedJustNow": {
+    "description": "Saved-time label for an item saved less than a minute ago."
+  },
+  "@savedMinutesAgo": {
+    "description": "Saved-time label for an item saved less than an hour ago.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@savedHoursAgo": {
+    "description": "Saved-time label for an item saved less than a day ago.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@savedYesterday": {
+    "description": "Saved-time label for an item saved between 24 and 48 hours ago."
+  },
+  "@savedDaysAgo": {
+    "description": "Saved-time label for an item saved two or more days ago.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@profileIdentityEmailPassword": {
+    "description": "Label for an email and password identity."
+  },
+  "@profileIdentityUnknown": {
+    "description": "Label for an identity whose provider is empty."
+  },
+  "@pendingUrlsExpired": {
+    "description": "One-shot warning that local pending URLs expired after seven days."
+  },
+  "@pendingSummaryLocalList": {
+    "description": "Bulk-save summary when the local list could not be updated after some saves.",
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryUncertainSingle": {
+    "description": "Bulk-save summary for one link whose save could not be confirmed."
+  },
+  "@pendingSummaryUncertainNoneSaved": {
+    "description": "Bulk-save summary when no link was confirmed and the outcome is uncertain.",
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryUncertainPartial": {
+    "description": "Bulk-save summary when some links were confirmed and others are uncertain.",
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "uncertain": {
+        "type": "int"
+      },
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryRateLimitedSingleNoneSavedNoWait": {
+    "description": "Bulk-save summary for one link stopped by a rate limit with no Retry-After.",
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryRateLimitedSingleNoneSavedWithWait": {
+    "description": "Bulk-save summary for one link stopped by a rate limit with a wait.",
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryRateLimitedNoneSavedNoWait": {
+    "description": "Bulk-save summary when no link was saved and a rate limit stopped the run.",
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryRateLimitedNoneSavedWithWait": {
+    "description": "Bulk-save summary when no link was saved and a rate limit supplied a wait.",
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryRateLimitedPartialNoWait": {
+    "description": "Bulk-save summary when some links were saved and a rate limit stopped the run.",
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryRateLimitedPartialWithWait": {
+    "description": "Bulk-save summary when some links were saved and a rate limit supplied a wait.",
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "wait": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryAuthSingleNoneSaved": {
+    "description": "Bulk-save summary for one link stopped because the session ended.",
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryAuthNoneSaved": {
+    "description": "Bulk-save summary when no link was saved because the session ended.",
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryAuthPartial": {
+    "description": "Bulk-save summary when some links were saved before the session ended.",
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryRetrySingleNoneSaved": {
+    "description": "Bulk-save summary for one link stopped by a server or malformed failure.",
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryRetryNoneSaved": {
+    "description": "Bulk-save summary when no link was saved and the run stopped on a server failure.",
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryRetryPartial": {
+    "description": "Bulk-save summary when some links were saved before a server failure.",
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryAllSavedSingle": {
+    "description": "Bulk-save summary for one confirmed link."
+  },
+  "@pendingSummaryAllSaved": {
+    "description": "Bulk-save summary for every link confirmed.",
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryNoneSaved": {
+    "description": "Bulk-save summary when no link was saved.",
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingSummaryPartial": {
+    "description": "Bulk-save summary when some but not all links were saved.",
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "@saved": {
+    "description": "Confirmed save. Only says the item was created (D26)."
+  },
+  "@invalidUrlFull": {
+    "description": "Local refusal for a value that cannot be an absolute http(s) URL."
+  },
+  "@saveValidation": {
+    "description": "Server validation refusal for a save."
+  },
+  "@saveMalformed": {
+    "description": "Known not-saved refusal for a malformed save request."
+  },
+  "@saveRateLimitedNoWait": {
+    "description": "Save rate limit with no Retry-After."
+  },
+  "@saveRateLimitedWithWait": {
+    "description": "Save rate limit with a Retry-After wait.",
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "@saveServerUnavailable": {
+    "description": "Known not-saved server refusal for a save."
+  },
+  "@saveUnreadable": {
+    "description": "Uncertain save outcome when the reply could not be read."
+  },
+  "@saveTransport": {
+    "description": "Uncertain save outcome when no reply arrived."
+  },
+  "@saveRefreshUncertain": {
+    "description": "Known not-saved outcome after an ambiguous session refresh."
+  },
+  "@saveCredentialStorage": {
+    "description": "Known not-saved outcome when local credential storage failed."
+  },
+  "@saveAuthRequired": {
+    "description": "Known not-saved outcome when the session refuses a save."
+  },
+  "@pageReRead": {
+    "description": "A re-read completed and metadata was found."
+  },
+  "@pageReReadNoDetails": {
+    "description": "A re-read completed with no metadata."
+  },
+  "@pageReadFailed": {
+    "description": "The re-read request succeeded but extraction failed."
+  },
+  "@enrichUnconfirmed": {
+    "description": "The re-read outcome could not be confirmed."
+  },
+  "@enrichRateLimitedNoWait": {
+    "description": "Re-read rate limit with no Retry-After."
+  },
+  "@enrichRateLimitedWithWait": {
+    "description": "Re-read rate limit with a Retry-After wait.",
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "@enrichUnavailable": {
+    "description": "Re-reading is temporarily unavailable."
+  },
+  "@itemUnavailable": {
+    "description": "The saved item is no longer available."
+  },
+  "@enrichAuthRequired": {
+    "description": "The session refuses a re-read."
+  },
+  "@enrichRefreshUncertain": {
+    "description": "Known not-re-read outcome after an ambiguous session refresh."
+  },
+  "@enrichCredentialStorage": {
+    "description": "Known not-re-read outcome when local credential storage failed."
+  },
+  "@enrichFailed": {
+    "description": "Known not-re-read outcome."
+  },
+  "@enrichServerFault": {
+    "description": "A server fault during a re-read."
+  },
+  "@moveServerError": {
+    "description": "Known not-moved outcome for an unexpected failure."
+  },
+  "@moveUnconfirmed": {
+    "description": "The move outcome could not be confirmed."
+  },
+  "@moveAuthRequired": {
+    "description": "The session refuses a move."
+  },
+  "@moveRefreshUncertain": {
+    "description": "Known not-moved outcome after an ambiguous session refresh."
+  },
+  "@moveCredentialStorage": {
+    "description": "Known not-moved outcome when local credential storage failed."
+  },
+  "@moveMalformed": {
+    "description": "Known not-moved outcome for a malformed request."
+  },
+  "@moveRateLimitedNoWait": {
+    "description": "Move rate limit with no Retry-After."
+  },
+  "@moveRateLimitedWithWait": {
+    "description": "Move rate limit with a Retry-After wait.",
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "@alreadyInCollection": {
+    "description": "The item was already in the named collection.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@createdCollectionAndMoved": {
+    "description": "A collection was created and the item moved into it.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@movedToCollection": {
+    "description": "The item was moved into the named collection.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@itemDeleted": {
+    "description": "A saved item was deleted."
+  },
+  "@itemDeletedAndCollectionDeleted": {
+    "description": "A saved item and its now-empty collection were deleted.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@deleteItemUnconfirmed": {
+    "description": "The saved-item delete outcome could not be confirmed."
+  },
+  "@deleteItemAuthRequired": {
+    "description": "The session refuses a saved-item delete."
+  },
+  "@deleteItemRefreshUncertain": {
+    "description": "Known not-deleted outcome after an ambiguous session refresh."
+  },
+  "@deleteItemCredentialStorage": {
+    "description": "Known not-deleted outcome when local credential storage failed."
+  },
+  "@itemNotDeleted": {
+    "description": "Known not-deleted outcome for a saved item."
+  },
+  "@deleteItemRateLimited": {
+    "description": "A rate limit stopped a saved-item delete."
+  },
+  "@collectionUnavailableAfterItemDeleted": {
+    "description": "The item was deleted and its collection is no longer available.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionNotEmptyAfterItemDeleted": {
+    "description": "The item was deleted but its collection received new items.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionProtectedAfterItemDeleted": {
+    "description": "The item was deleted but its collection cannot be deleted.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionDeleteUnconfirmedAfterItemDeleted": {
+    "description": "The item was deleted but the collection delete could not be confirmed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionDeleteAuthRequiredAfterItemDeleted": {
+    "description": "The item was deleted but the session refuses the collection delete.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionDeleteSessionEndedAfterItemDeleted": {
+    "description": "The item was deleted but the session ended before the collection delete.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionDeleteRefreshUncertainAfterItemDeleted": {
+    "description": "The item was deleted but an ambiguous refresh stopped the collection delete.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionDeleteCredentialStorageAfterItemDeleted": {
+    "description": "The item was deleted but local credential storage stopped the collection delete.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionDeleteRateLimitedAfterItemDeleted": {
+    "description": "The item was deleted but a rate limit stopped the collection delete.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionDeleteFailedAfterItemDeleted": {
+    "description": "The item was deleted but the collection delete failed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionDeleted": {
+    "description": "A collection was deleted.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionDeletedItemsMoved": {
+    "description": "A collection was deleted after its items were moved.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionDeleteFailed": {
+    "description": "Known not-deleted outcome for a collection."
+  },
+  "@collectionDeleteTargetUnavailable": {
+    "description": "The destination collection for a move-and-delete is unavailable.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionUnavailable": {
+    "description": "The collection is no longer available.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionNotEmpty": {
+    "description": "The collection received items so nothing was changed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionProtected": {
+    "description": "The collection cannot be deleted.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionDeleteUnconfirmed": {
+    "description": "The collection delete outcome could not be confirmed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionDeleteAuthRequired": {
+    "description": "The session refuses a collection delete."
+  },
+  "@collectionDeleteRefreshUncertain": {
+    "description": "Known not-deleted collection outcome after an ambiguous session refresh.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionDeleteCredentialStorage": {
+    "description": "Known not-deleted collection outcome when local credential storage failed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collectionDeleteRateLimitedNoWait": {
+    "description": "Collection delete rate limit with no Retry-After."
+  },
+  "@collectionDeleteRateLimitedWithWait": {
+    "description": "Collection delete rate limit with a Retry-After wait.",
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "@linkCannotOpen": {
+    "description": "The stored link cannot be handed to the platform."
+  },
+  "@linkLaunchFailed": {
+    "description": "The platform refused to open the link."
+  },
+  "@refreshFailed": {
+    "description": "A manual refresh failed."
+  },
+  "@displayNameUpdated": {
+    "description": "The display name was updated."
+  },
+  "@displayNameRateLimitedNoWait": {
+    "description": "Display-name rate limit with no Retry-After."
+  },
+  "@displayNameRateLimitedWithWait": {
+    "description": "Display-name rate limit with a Retry-After wait.",
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "@displayNameUnavailable": {
+    "description": "Display-name changes are temporarily unavailable."
+  },
+  "@displayNameUnconfirmed": {
+    "description": "The display-name update outcome could not be confirmed."
+  },
+  "@accountUnavailable": {
+    "description": "The account behind the token is no longer available."
+  },
+  "@displayNameAuthRequired": {
+    "description": "The session refuses a display-name update."
+  },
+  "@displayNameRefreshUncertain": {
+    "description": "Known not-changed display name after an ambiguous session refresh."
+  },
+  "@displayNameCredentialStorage": {
+    "description": "Known not-changed display name when local credential storage failed."
+  },
+  "@displayNameChangeFailed": {
+    "description": "Known not-changed display name."
+  },
+  "@passwordChanged": {
+    "description": "The password was changed."
+  },
+  "@passwordCreated": {
+    "description": "A password was created."
+  },
+  "@passwordModeConflictExists": {
+    "description": "The account already has a password; the form was in create mode."
+  },
+  "@passwordModeConflictRequired": {
+    "description": "The account requires a current password; the form was in create mode."
+  },
+  "@passwordModeConflictUnexpected": {
+    "description": "The account has no password; the form was in change mode."
+  },
+  "@passwordRateLimitedNoWait": {
+    "description": "Password rate limit with no Retry-After."
+  },
+  "@passwordRateLimitedWithWait": {
+    "description": "Password rate limit with a Retry-After wait.",
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "@passwordUnavailable": {
+    "description": "Password changes are temporarily unavailable."
+  },
+  "@passwordUnconfirmed": {
+    "description": "The password update outcome could not be confirmed."
+  },
+  "@passwordAuthRequired": {
+    "description": "The session refuses a password update."
+  },
+  "@passwordRefreshUncertainChanged": {
+    "description": "Known not-changed password after an ambiguous session refresh."
+  },
+  "@passwordRefreshUncertainSet": {
+    "description": "Known not-set password after an ambiguous session refresh."
+  },
+  "@passwordCredentialStorageChanged": {
+    "description": "Known not-changed password when local credential storage failed."
+  },
+  "@passwordCredentialStorageSet": {
+    "description": "Known not-set password when local credential storage failed."
+  },
+  "@passwordSetFailed": {
+    "description": "Known not-set password."
+  },
+  "@newPinSent": {
+    "description": "A new verification PIN was sent."
+  },
+  "@pinVerifiedProgressNotSaved": {
+    "description": "The PIN verified but the registration continuation could not be saved locally."
+  },
+  "@shareSaved": {
+    "description": "Share intake confirmed the save."
+  },
+  "@shareStoredAfterFailure": {
+    "description": "Share intake could not save remotely and kept the URL locally."
+  },
+  "@shareStoredAfterUncertain": {
+    "description": "Share intake could not confirm the save and kept the URL locally as uncertain."
+  },
+  "@shareInvalid": {
+    "description": "Share intake found no submittable URL."
+  },
+  "@shareNotStored": {
+    "description": "Share intake could neither save remotely nor keep the URL locally."
   }
 }
