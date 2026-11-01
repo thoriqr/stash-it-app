@@ -1,25 +1,26 @@
 import '../../../../core/error/api_failure.dart';
 
-/// What a refused password-reset continuation means for the stored token.
+/// Describes the outcome of a refused password-reset continuation.
 enum PasswordResetContinuationOutcome {
-  /// The token was consumed by a successful finalization. The password was
-  /// changed; the correction is to sign in with it.
+  /// The continuation was consumed by a successful password reset.
+  /// The password has changed, so the user should sign in with the new one.
   consumed,
 
-  /// The token can never be used again (expired, absent, or the reset is no
-  /// longer pending). A new reset is the only recovery.
+  /// The continuation is no longer valid.
+  /// The user must start a new password-reset flow.
   restartRequired,
 
-  /// The refusal cannot be established — transport, an unreadable reply, a
-  /// budget refusal or a server fault. Keep the token; nothing may be claimed.
+  /// The outcome cannot be determined reliably.
+  /// Keep the continuation token because the failure does not establish
+  /// whether it is still valid or has already been consumed.
   unconfirmed,
 }
 
-/// Classifies a failure from `GET /auth/password-reset/continuation` or
-/// `POST /auth/password-reset/finalize`.
+/// Classifies failures from password-reset continuation and finalization requests.
 ///
-/// Deliberately total: anything not known to be terminal stays unconfirmed, so a
-/// transient failure can never discard a valid capability.
+/// Only explicitly recognized terminal outcomes allow the continuation token
+/// to be discarded. All other failures remain unconfirmed, preserving the token
+/// when a transient failure may have interrupted the request.
 PasswordResetContinuationOutcome passwordResetContinuationOutcomeFor(
   ApiFailure failure,
 ) {

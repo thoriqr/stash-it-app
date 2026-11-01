@@ -19,24 +19,20 @@ import 'package:stash_it_app/features/settings/application/language_preference_c
 import 'package:stash_it_app/features/settings/application/theme_mode_controller.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 
-/// The application widget.
+/// Root application widget.
 ///
-/// Stateful for two app-lifetime concerns that must outlive every route:
-///
-/// - the live engine's side of the Android share channel, so a share handled
-///   while the app is already open uses the existing session controller and its
-///   serialized refresh; and
-/// - a resume-time invalidation of the device-local URL list, so entries
-///   created or expired while the app was backgrounded are visible when the
-///   user returns.
+/// Stateful because it owns two app-lifetime responsibilities:
+/// - The live Android share channel, which reuses the current session
+///   controller when a shared URL arrives while the app is running.
+/// - Refreshing the device-local URL list when the app resumes, so changes
+///   made while backgrounded and expired entries are reflected in the UI.
 class StashItApp extends ConsumerStatefulWidget {
   const StashItApp({super.key, this.router});
 
-  /// The router to use. Defaults to the one from [appRouterProvider].
+  /// Optional router override, primarily for tests that need isolated
+  /// navigation state or want to bypass authentication redirects.
   ///
-  /// Overridable so a test can pass a router that carries no navigation history
-  /// from a previous test, and so a test can bypass the auth redirect entirely
-  /// when it is testing something else.
+  /// When omitted, the router is obtained from [appRouterProvider].
   final GoRouter? router;
 
   @override
@@ -54,9 +50,8 @@ class _StashItAppState extends ConsumerState<StashItApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // This handler exists only in the UI engine. If the app is alive, the
-    // transparent ShareActivity invokes it instead of starting a second engine,
-    // so the live SessionController remains the only owner of token renewal.
+    // Handles shares in the live UI engine. Reusing its session controller
+    // keeps token renewal under the same serialized session flow.
     bindShareIntakeChannel(
       _shareChannel,
       (raw) => ref.read(sharedUrlIntakeProvider).save(raw),
@@ -75,13 +70,12 @@ class _StashItAppState extends ConsumerState<StashItApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed &&
         !ref.read(savePendingUrlsProvider).isRunning) {
-      // Local data can change while the app is backgrounded (a share handled by
-      // the headless path), and seven-day expiry is enforced on read. Rebuild
-      // the list once on return; the Inbox listing keeps its own refresh rules.
+      // Refresh the local list after background activity, including shares
+      // handled by the headless engine. Reading the store also enforces expiry.
       //
-      // A bulk save reconciles the list in place as each entry is confirmed.
-      // Invalidating during one could replace the run's current snapshot with a
-      // pre-removal read, so the run owns the list until it finishes.
+      // Do not invalidate during a bulk save: that operation reconciles its
+      // current list as entries are confirmed. An invalidation could replace
+      // that snapshot with a read taken before those removals.
       ref.invalidate(pendingUrlsProvider);
     }
   }
@@ -91,28 +85,22 @@ class _StashItAppState extends ConsumerState<StashItApp>
     if (outcome.touchedStore) ref.invalidate(pendingUrlsProvider);
 
     if (outcome == ShareSaveOutcome.saved) {
-      // Same best-effort head refresh the Inbox's own save uses. It never
-      // throws, so a refresh failure cannot turn a confirmed save into an error.
+      // Refresh the Inbox head independently. This is best-effort and cannot
+      // turn a confirmed save into an error.
       unawaited(ref.read(savedItemsProvider.notifier).refreshHead());
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Watched at the app root so the listener that clears user-scoped caches on
-    // an account change lives for as long as the app does. It holds no value;
-    // watching it is how it is kept alive. The device-local URL list is not one
-    // of the caches it clears.
+    // Keep the session-boundary listener alive for the lifetime of the app.
+    // It clears account-scoped caches but leaves device-local URLs untouched.
     ref.watch(sessionBoundaryProvider);
 
-    // Watched at the app root so a selection repaints every route immediately.
-    // The router is watched too, but its provider value does not change here:
-    // only `themeMode` does, so navigation state is not rebuilt from scratch.
+    // Root-level subscriptions ensure theme and language changes are applied
+    // across all routes without recreating the router or losing navigation state.
     final themeMode = ref.watch(themeModeControllerProvider);
 
-    // Watched alongside the theme: a language change must repaint the whole
-    // app on the next frame, and like `themeMode` the controller is keepAlive
-    // so it survives route transitions.
     final languageLocale = ref
         .watch(languagePreferenceControllerProvider)
         .locale;
@@ -126,23 +114,17 @@ class _StashItAppState extends ConsumerState<StashItApp>
       locale: languageLocale,
       supportedLocales: supportedAppLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      // Fires only when `locale` is null (System preference). The framework
-      // passes the first device locale; we read the full ordered list from the
-      // platform dispatcher so `resolveAppLocale` can honor the complete
-      // preference order.
+      // Resolve the full ordered device locale list when no explicit locale
+      // is selected, rather than relying only on the first platform locale.
       localeResolutionCallback: (locale, supported) => resolveAppLocale(
         WidgetsBinding.instance.platformDispatcher.locales,
         supported,
       ),
-      // Inside the builder, not around the MaterialApp: below it the app has a
-      // `Theme` and a `MediaQuery` to read, and above the router so every route
-      // inherits one treatment. See `skeleton_theme.dart`.
+      // Place shared presentation above the router so every route uses the
+      // same skeleton configuration and feedback host.
       //
-      // `FeedbackHost` is the outermost of the two, so one notice serves every
-      // route — including the auth screens, which sit outside the shell — and
-      // sits above the shell's navigation bar rather than inside a destination's
-      // Scaffold.
-      // See `feedback/feedback_host.dart` for why that position is where it is.
+      // FeedbackHost wraps SkeletonizerConfig so notices remain above routed
+      // content, including authentication screens and the navigation bar.
       builder: (context, child) => FeedbackHost(
         child: SkeletonizerConfig(
           data: appSkeletonizerConfig(
@@ -152,10 +134,8 @@ class _StashItAppState extends ConsumerState<StashItApp>
           child: child ?? const SizedBox.shrink(),
         ),
       ),
-      // Watched rather than read: the router owns a listener on the auth state,
-      // and `refreshListenable` needs that listener registered for the whole life
-      // of the app. Watching keeps this widget subscribed so the notifier is
-      // created and stays alive.
+      // Watch the provider so the router and its authentication refresh
+      // listener remain alive for the lifetime of the application.
       routerConfig: widget.router ?? ref.watch(appRouterProvider),
     );
   }

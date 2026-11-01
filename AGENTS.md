@@ -26,6 +26,16 @@ Instructions for coding agents working in this repository.
   out of domain and data code.
 - Prefer clear names and straightforward code. Add short comments only when they
   explain non-obvious reasoning or an important invariant.
+- Keep code comments scoped to this repository and its responsibilities.
+  Explain client-side behaviour, constraints, and API contracts only when they
+  are relevant to understanding the current code.
+  Do not reference backend implementation details such as internal function
+  names, source file paths, line numbers, database operations, or backend
+  documentation. The client may depend on the backend's API contract, but
+  comments should describe only the observable contract and its implications
+  for this client.
+  Avoid references to unrelated repositories, external project structure, or
+  historical implementation context that is not needed to understand the code.
 
 ## Code generation
 

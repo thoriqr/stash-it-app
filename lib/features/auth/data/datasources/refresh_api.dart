@@ -7,28 +7,21 @@ import '../models/refresh_request.dart';
 
 part 'refresh_api.g.dart';
 
-/// The renewal surface, issued over `refreshDio`.
+/// Defines the token renewal API used by the client.
 ///
-/// A **separate Dio instance with no auth interceptor**, which is what makes
-/// recursive refresh structurally impossible rather than merely guarded against.
-/// A refresh response cannot reach [AuthInterceptor] because the interceptor is
-/// not on this instance, so no flag, path comparison or depth counter is needed
-/// to prevent it — and none can be forgotten.
+/// Uses a separate Dio instance without the authentication interceptor.
+/// This prevents refresh requests from triggering another refresh cycle.
 ///
-/// That separation also means this client never sends an `Authorization` header
-/// on renewal, which is correct: the route has no bearer guard and the token in
-/// the body is the whole credential.
+/// The endpoint does not require a bearer token. The refresh token is sent
+/// in the request body as the credential for renewal.
 @RestApi()
 abstract class RefreshApi {
   factory RefreshApi(Dio dio, {String? baseUrl}) = _RefreshApi;
 
   /// `POST /auth/refresh`
   ///
-  /// Bounded per client address at 60 per 10 minutes, and **failing closed**:
-  /// during a Redis outage it answers `503 IP_RATE_LIMIT_UNAVAILABLE` before the
-  /// handler runs, so no rotation happens and no token is consumed. The refresh
-  /// token remains usable once the counter recovers — which is exactly why a
-  /// `503` here must not clear credentials.
+  /// Exchanges the submitted refresh token for a new access and refresh token
+  /// pair.
   @POST('/auth/refresh')
   Future<ApiEnvelope<AuthTokensResponse>> refresh(
     @Body() RefreshRequest request,

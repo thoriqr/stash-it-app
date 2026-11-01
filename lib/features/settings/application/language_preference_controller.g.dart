@@ -59,7 +59,7 @@ final class LanguagePreferenceControllerProvider
 }
 
 String _$languagePreferenceControllerHash() =>
-    r'fa7b8a455ade90f73108786f52af5c23a724a4ba';
+    r'3c713c5980043dafa449136e4e8b516f67377c82';
 
 /// The app-wide language choice.
 ///

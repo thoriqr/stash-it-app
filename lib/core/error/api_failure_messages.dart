@@ -1,20 +1,16 @@
 import 'api_failure.dart';
 
-/// Feature-agnostic copy for a failed **read**.
+/// Returns shared copy for read failures that do not need feature-specific
+/// wording.
 ///
-/// These are the failures every read screen currently reports the same way: a
-/// spent rate limit, a server fault, and the unreadable/malformed/validation
-/// group. The wording names no feature, content, or session destination.
+/// Handles rate limits, server faults, and unreadable, malformed, or invalid
+/// responses. Returns null when the failure needs screen-specific copy, such
+/// as a session destination, content context, or feature-specific availability
+/// message. Callers should handle those cases before using this helper.
 ///
-/// Returns null for failures that need screen-specific wording: the session
-/// destination, the content that failed to load, a feature-specific
-/// availability sentence, or the final fallback. Screens select those first and
-/// use this helper only for the remainder.
-///
-/// **Do not use this for a write.** [ApiFailureUnreadableResponse] and
-/// [ApiFailureTransport] do not establish a write's outcome ([D15], [D16]), so
-/// mutation copy must say that rather than reuse a read's "could not read the
-/// reply" wording.
+/// Do not use for writes. [ApiFailureUnreadableResponse] and
+/// [ApiFailureTransport] do not establish whether a write succeeded, so
+/// mutation messages must communicate the uncertain outcome instead.
 String? genericReadFailureMessage(Object failure) => switch (failure) {
   ApiFailureRateLimited() => 'Too many attempts. Try again shortly.',
   ApiFailureServerFault() =>

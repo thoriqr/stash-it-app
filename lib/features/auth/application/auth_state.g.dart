@@ -8,50 +8,44 @@ part of 'auth_state.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// The authentication state, and the operations that change it.
+/// Owns authentication operations and exposes the current authentication state.
 ///
-/// ## Why the status is derived rather than assigned
+/// ## Derived status
 ///
-/// This provider reads [sessionControllerProvider], which is the single owner of
-/// "does a session exist". Deriving the status means a session that ends
-/// server-side — a renewal that comes back `SESSION_REVOKED` — updates the UI
-/// with no notification path of its own.
+/// The status is derived from [sessionControllerProvider], which is the single
+/// owner of the locally adopted session. This keeps authentication state
+/// synchronized when a session ends, including after a terminal refresh failure.
 ///
-/// The alternative, having [SessionController] push into this provider, is not
-/// available: the API client depends on the session controller, so any edge from
-/// the session controller back to here closes a dependency cycle Riverpod
-/// rejects at runtime.
+/// Watching the session controller also avoids a dependency cycle: the API
+/// client already depends on the session controller, so the session controller
+/// must not depend on this provider in return.
 
 @ProviderFor(AuthState)
 final authStateProvider = AuthStateProvider._();
 
-/// The authentication state, and the operations that change it.
+/// Owns authentication operations and exposes the current authentication state.
 ///
-/// ## Why the status is derived rather than assigned
+/// ## Derived status
 ///
-/// This provider reads [sessionControllerProvider], which is the single owner of
-/// "does a session exist". Deriving the status means a session that ends
-/// server-side — a renewal that comes back `SESSION_REVOKED` — updates the UI
-/// with no notification path of its own.
+/// The status is derived from [sessionControllerProvider], which is the single
+/// owner of the locally adopted session. This keeps authentication state
+/// synchronized when a session ends, including after a terminal refresh failure.
 ///
-/// The alternative, having [SessionController] push into this provider, is not
-/// available: the API client depends on the session controller, so any edge from
-/// the session controller back to here closes a dependency cycle Riverpod
-/// rejects at runtime.
+/// Watching the session controller also avoids a dependency cycle: the API
+/// client already depends on the session controller, so the session controller
+/// must not depend on this provider in return.
 final class AuthStateProvider extends $NotifierProvider<AuthState, AuthStatus> {
-  /// The authentication state, and the operations that change it.
+  /// Owns authentication operations and exposes the current authentication state.
   ///
-  /// ## Why the status is derived rather than assigned
+  /// ## Derived status
   ///
-  /// This provider reads [sessionControllerProvider], which is the single owner of
-  /// "does a session exist". Deriving the status means a session that ends
-  /// server-side — a renewal that comes back `SESSION_REVOKED` — updates the UI
-  /// with no notification path of its own.
+  /// The status is derived from [sessionControllerProvider], which is the single
+  /// owner of the locally adopted session. This keeps authentication state
+  /// synchronized when a session ends, including after a terminal refresh failure.
   ///
-  /// The alternative, having [SessionController] push into this provider, is not
-  /// available: the API client depends on the session controller, so any edge from
-  /// the session controller back to here closes a dependency cycle Riverpod
-  /// rejects at runtime.
+  /// Watching the session controller also avoids a dependency cycle: the API
+  /// client already depends on the session controller, so the session controller
+  /// must not depend on this provider in return.
   AuthStateProvider._()
     : super(
         from: null,
@@ -81,19 +75,17 @@ final class AuthStateProvider extends $NotifierProvider<AuthState, AuthStatus> {
 
 String _$authStateHash() => r'0c7a2b19fda92765641ddcecd8e33780ce1cf527';
 
-/// The authentication state, and the operations that change it.
+/// Owns authentication operations and exposes the current authentication state.
 ///
-/// ## Why the status is derived rather than assigned
+/// ## Derived status
 ///
-/// This provider reads [sessionControllerProvider], which is the single owner of
-/// "does a session exist". Deriving the status means a session that ends
-/// server-side — a renewal that comes back `SESSION_REVOKED` — updates the UI
-/// with no notification path of its own.
+/// The status is derived from [sessionControllerProvider], which is the single
+/// owner of the locally adopted session. This keeps authentication state
+/// synchronized when a session ends, including after a terminal refresh failure.
 ///
-/// The alternative, having [SessionController] push into this provider, is not
-/// available: the API client depends on the session controller, so any edge from
-/// the session controller back to here closes a dependency cycle Riverpod
-/// rejects at runtime.
+/// Watching the session controller also avoids a dependency cycle: the API
+/// client already depends on the session controller, so the session controller
+/// must not depend on this provider in return.
 
 abstract class _$AuthState extends $Notifier<AuthStatus> {
   AuthStatus build();

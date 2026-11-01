@@ -13,11 +13,10 @@ import '../data/models/refresh_request.dart';
 
 part 'session_controller.g.dart';
 
-/// Secure credential storage.
+/// Provides secure credential storage.
 ///
-/// A plain [Provider] rather than generated code: it holds a value that never
-/// changes, so there is nothing to generate, and keeping it here is what lets
-/// tests substitute a fake store without touching a platform channel.
+/// Uses a plain [Provider] so tests can substitute a fake store without
+/// accessing platform storage.
 final Provider<SecureCredentialStore> credentialStoreProvider =
     Provider<SecureCredentialStore>(
       (ref) => throw UnimplementedError(
@@ -25,141 +24,99 @@ final Provider<SecureCredentialStore> credentialStoreProvider =
       ),
     );
 
-/// Credentials recovered from storage during startup, if any.
+/// Credentials restored from secure storage during startup, if available.
 ///
-/// Overridden in `main` after `bootstrap` reads secure storage. That override is
-/// what makes "load before `runApp`" possible at all: a provider cannot read
-/// storage synchronously, and deferring it to `build` would put a loading state
-/// in front of every screen.
-///
-/// Declared beside [credentialStoreProvider] — the other value `bootstrap`
-/// injects — because [SessionController] is its only consumer. Declaring it in
-/// `auth_state.dart` instead would make this file import that one purely for a
-/// provider override, and give the two files a mutual import for no gain.
+/// Initialized by bootstrap before `runApp` so the session is available
+/// synchronously on the first frame without introducing a loading state.
 final Provider<AuthTokens?> restoredTokensProvider = Provider<AuthTokens?>(
   (ref) => null,
 );
 
-/// Owns the credential pair, and is the only provider the API client depends on.
+/// Owns the locally adopted credential pair and provides tokens to the API client.
 ///
-/// Implements [TokenProvider], which is how `core/network` reaches the session
-/// without importing anything from this feature (`AGENTS.md` §2, rule 1).
+/// Implements [TokenProvider] to expose session credentials to the network
+/// layer without coupling that layer to authentication feature internals.
 ///
-/// ## Why this provider must not depend on the auth repository
+/// ## Dependency isolation
 ///
-/// `appDio` reads this provider to obtain the bearer token, so anything this
-/// provider depends on sits underneath `appDio` in the dependency graph. If
-/// this provider also depended on `authRepositoryProvider` — which is built
-/// from `appDio` — the graph would close into a loop:
+/// This provider must not depend on the authentication repository because the
+/// repository uses the authenticated API client, which already depends on this
+/// provider. Such a dependency would create a circular dependency.
 ///
-/// ```text
-/// appDio -> sessionController -> authRepository -> authApi -> appDio
-/// ```
+/// Renewal uses [refreshApiProvider], which is backed by a separate client
+/// without the authentication interceptor. This keeps the refresh operation
+/// independent of the session renewal process.
 ///
-/// Riverpod rejects that: `_debugAssertCanDependOn` walks the reader's
-/// *dependents* and throws `CircularDependencyError` if the target is among
-/// them. The check is a static property of the graph and runs on **every**
-/// `read`/`watch`, so deferring the lookup into a closure does not avoid it — it
-/// only postpones the throw to the first request, where it surfaces as an
-/// unexplained transport failure.
+/// ## Concurrent renewal
 ///
-/// Depending only on [refreshApiProvider] makes renewal *structurally* unable to
-/// recurse as a second-order effect: the refresh client is built from
-/// `refreshDio`, which carries no auth interceptor and therefore no path back
-/// into this provider.
-///
-/// ## Why renewal is serialized here
-///
-/// The backend rotates the refresh token on **every** use and treats a second
-/// presentation of an already-rotated token as reuse: it revokes the entire
-/// session and answers `SESSION_REVOKED`
-/// (`documentation/auth-sessions.md`, "Reuse detection"). It cannot distinguish
-/// a client retry from a replay, so two concurrent renewals cost the user their
-/// session outright.
-///
-/// One [Future] shared by every caller is the whole mitigation. Concurrent
-/// callers do not each submit the token; they await the same operation and
-/// receive the same new token.
+/// Refresh requests are serialized through a shared future. Every concurrent
+/// caller waits for the same renewal operation and receives the same new access
+/// token. This prevents multiple requests from submitting the same refresh
+/// token simultaneously.
 @Riverpod(keepAlive: true)
 class SessionController extends _$SessionController implements TokenProvider {
   @override
   AuthTokens? build() {
-    // Only `refreshDio`-backed dependencies. See the class doc for why.
+    // Only dependencies that do not use the authenticated API client.
     _refreshApi = ref.watch(refreshApiProvider);
     _store = ref.watch(credentialStoreProvider);
 
-    // Synchronous, and returning the pair `bootstrap` already read. The initial
-    // value is deliberately *not* re-read here: doing so would make `build`
-    // asynchronous, turn this into an `AsyncNotifier`, and force every caller to
-    // unwrap an `AsyncValue` for what is a settled fact by the first frame.
+    // Use the credentials already restored during bootstrap.
+    // Keeping this synchronous avoids an unnecessary loading state.
     return ref.watch(restoredTokensProvider);
   }
 
   late final RefreshApi _refreshApi;
   late final SecureCredentialStore _store;
 
-  /// The in-flight renewal, or null when none is running.
+  /// The in-flight renewal, or null when no renewal is running.
   ///
-  /// App-wide because the provider is keep-alive: an auto-disposed provider
-  /// would drop this field whenever no listener remained, and the next burst of
-  /// concurrent `401`s would each start their own renewal — reintroducing
-  /// exactly the failure this prevents.
+  /// The provider is kept alive so concurrent requests share the same future
+  /// instead of starting separate renewal operations.
   Future<String>? _inFlight;
 
-  /// The session this provider currently believes it holds.
+  /// The credential pair currently adopted by the app.
   ///
-  /// Null means signed out. It is the single source of truth for "does a
-  /// session exist": [AuthState] derives its user-facing status by watching this
-  /// provider, and a renewal that ends the session clears it here rather than
-  /// pushing a notification somewhere else.
+  /// Null means no session is held locally. [AuthState] derives its
+  /// authentication status from this value.
   AuthTokens? get current => state;
 
-  /// Whether a session has ended that nothing has yet told the user about.
+  /// Whether a session ended without its one-time notice being consumed.
   ///
-  /// Set only by [_endSession], and read once by whoever explains it. A field
-  /// here rather than a separate notice provider, because it is a fact about
-  /// *this* session ending — a second provider holding it would be a second
-  /// source of truth for the same thing, and a notification channel this project
-  /// deliberately does not have.
+  /// Set by [_endSession] and cleared when [consumeSessionEnded] returns true.
   bool _endedWithoutNotice = false;
 
-  /// Whether this controller has processed an end for the current session.
+  /// Whether this controller has processed the end of the current session.
   ///
-  /// Unlike `state == null`, this stays true after [_endedWithoutNotice] is
-  /// consumed, so a late expired request cannot re-arm the one-time notice. It
-  /// also cannot be used in place of a null state at startup: in a test that
-  /// seeds only storage, or during bootstrap, there is no adopted session yet
-  /// but there may still be credentials that must be cleared.
+  /// Unlike a null [state], this marker distinguishes an ended session from
+  /// the initial state, where credentials may exist in storage but have not
+  /// yet been adopted.
   bool _sessionEnded = false;
 
-  /// Whether a session has just ended, consuming the fact.
+  /// Returns whether a session has ended, consuming the notice in the process.
   ///
-  /// Returns `true` **once** per ended session: the flag is cleared before the
-  /// answer is given, so a rebuild or a later visit to the auth entry screen
-  /// gets `false` and cannot repeat the explanation.
-  ///
-  /// Consuming rather than reading is the point. A flag that outlived its first
-  /// reader would re-announce the same expiry every time the screen rebuilt,
-  /// which is exactly what a one-time notice exists to prevent.
+  /// Returns true only once per ended session. Clearing the flag before
+  /// returning prevents rebuilds or later visits from showing the same notice
+  /// again.
   bool consumeSessionEnded() {
     if (!_endedWithoutNotice) return false;
     _endedWithoutNotice = false;
     return true;
   }
 
-  /// Records a freshly obtained pair after it has been persisted.
+  /// Adopts a newly obtained credential pair after it has been persisted.
   ///
-  /// Persistence is deliberately **not** this provider's job at sign-in time.
-  /// Doing it here would make the auth state depend on this provider for a write
-  /// the store already performs atomically, and the resulting edge is the cycle
-  /// described in the class documentation.
+  /// Persistence is handled by the caller so the controller only updates
+  /// session state after credentials have been stored successfully.
   void adopt(AuthTokens tokens) {
     if (!ref.mounted) return;
     _sessionEnded = false;
     state = tokens;
   }
 
-  /// Records that no session is held. The credentials are cleared by the caller.
+  /// Clears the locally adopted session.
+  ///
+  /// The caller is responsible for clearing stored credentials.
   void discard() {
     if (!ref.mounted) return;
     _sessionEnded = true;
@@ -174,8 +131,8 @@ class SessionController extends _$SessionController implements TokenProvider {
     final inFlight = _inFlight;
     if (inFlight != null) return inFlight;
 
-    // Assigned through a local so `whenComplete` can compare identity.
-    // Comparing with `==` risks clearing a *newer* operation's handle.
+    // Compare future identity before clearing the handle so an older
+    // operation cannot clear a newer in-flight renewal.
     late final Future<String> future;
     future = _renew().whenComplete(() {
       if (identical(_inFlight, future)) _inFlight = null;
@@ -186,15 +143,11 @@ class SessionController extends _$SessionController implements TokenProvider {
   }
 
   Future<String> _renew() async {
-    // Read at the moment renewal begins, never cached in a field. A request
-    // whose `401` arrives *after* an earlier renewal completed must rotate the
-    // token that earlier renewal produced. Sending the one it already spent is
-    // precisely the replay the backend revokes sessions for.
+    // Read the latest refresh token when renewal starts. A previous renewal
+    // may have already replaced the token held by an earlier request.
     final refreshToken = await _store.readRefreshToken();
     if (refreshToken == null) {
-      // Nothing to renew with, and nothing ever will be. Terminal by
-      // construction: an access token with no refresh token can never be
-      // renewed again.
+      // Without a refresh token, the current session cannot be renewed.
       await _endSession();
       throw const SessionExpiredException('NO_REFRESH_TOKEN');
     }
@@ -207,9 +160,8 @@ class SessionController extends _$SessionController implements TokenProvider {
       final data = response.data;
 
       if (data == null) {
-        // A `200` whose body this client cannot read. The server answered, but
-        // whether it committed the rotation is unknown — the same position as a
-        // lost response, so the credentials are kept and no retry is attempted.
+        // The response body is unreadable, so the renewal outcome is unknown.
+        // Keep the credentials and do not retry automatically.
         throw _uncertain(const ApiFailureUnreadableResponse());
       }
 
@@ -221,96 +173,75 @@ class SessionController extends _$SessionController implements TokenProvider {
       final failure = mapApiFailure(error);
 
       if (failure is ApiFailureSessionEnded) {
-        // Definitive. The backend has already committed the revocation, so
-        // there is nothing to keep and retrying cannot help.
+        // The session is definitively no longer valid.
         await _endSession();
         throw SessionExpiredException(failure.code);
       }
 
-      // `429`, `503`, `500`, or a transport failure. None of these consumed the
-      // token with certainty: the limiter mounts in front of the handler and
-      // fails closed without rotating, and a `500` means the commit did not
-      // succeed. Reported as *uncertain* rather than as itself, because the
-      // outcome is genuinely unknown. Credentials are deliberately kept; see
-      // `ApiFailureRefreshUncertain`.
+      // The failure does not establish whether renewal succeeded.
+      // Preserve the credentials and report an uncertain outcome rather than
+      // treating a temporary failure as a definitive session termination.
       throw _uncertain(failure);
     }
 
-    // Written before this future completes, so no caller can replay a protected
-    // request against a token that exists only in memory.
+    // Persist the rotated pair before allowing callers to use the new token.
     await _persist(tokens);
     adopt(tokens);
 
     return tokens.accessToken;
   }
 
-  /// Stores a rotated pair, all-or-nothing.
+  /// Stores a rotated credential pair as a single operation.
   ///
-  /// [SecureCredentialStore.write] discards whatever landed if the second write
-  /// fails, so a failed rotation leaves no session rather than a mismatched one.
+  /// If persistence fails, the session is ended rather than continuing with
+  /// credentials that may no longer form a valid pair.
   Future<void> _persist(AuthTokens tokens) async {
     try {
       await _store.write(tokens);
     } catch (error) {
-      // The pair is unusable and the session is gone. Signed out deliberately:
-      // continuing with a half-written pair would fail the user's next request
-      // and loop, whereas signed out is the one state certainly true.
+      // A partially persisted pair cannot be used safely.
       await _endSession();
       throw ApiFailureCredentialStorage(cause: error);
     }
   }
 
-  /// Clears the stored credentials and records that no session is held.
+  /// Clears stored credentials and records that the session has ended.
   ///
-  /// The [ref.mounted] check is load-bearing rather than defensive. This runs
-  /// after an `await`, and by then the caller may have been disposed — a test
-  /// tearing down its container, or the app shutting down mid-renewal. Writing
-  /// `state` on a disposed notifier throws, and Riverpod reports it as a
-  /// programming error rather than something to swallow.
+  /// The [ref.mounted] check protects against updating provider state after an
+  /// asynchronous operation completes while the provider is being disposed.
   ///
-  /// It deliberately does **not** touch `authStateProvider`. That provider reads
-  /// this one to derive the user-facing status, so a reference back would be an
-  /// edge in the wrong direction and would recreate the cycle this class exists
-  /// to avoid.
+  /// Authentication status is derived from this controller's state, so this
+  /// method does not update [AuthState] directly.
   Future<void> _endSession() async {
-    // A late expired request can re-enter renewal after an earlier terminal
-    // response already ended the session. There is nothing left to clear, and
-    // running on would re-arm the one-time notice after sign-in consumed it.
+    // Ignore repeated end requests for the same session. This also prevents
+    // a late request from showing the one-time notice again after it was read.
     //
-    // This cannot be written as `state == null`: a null state is also the
-    // starting state for a test (or bootstrap) that has credentials in storage
-    // but has not adopted them yet, and those credentials still have to be
-    // cleared. The marker records that an end has actually been processed.
+    // The marker distinguishes an ended session from the initial null state,
+    // where credentials may still need to be cleared.
     if (_sessionEnded) return;
     _sessionEnded = true;
 
     try {
       await _store.clear();
     } catch (_) {
-      // A cleanup that failed did not end the session locally. Leave the
-      // credentials and the state alone, and allow a later attempt; a failure
-      // must not claim the session ended when storage says otherwise.
+      // Storage still holds the credentials, so do not claim the session
+      // ended successfully. Allow a later cleanup attempt.
       _sessionEnded = false;
       rethrow;
     }
 
-    // Recorded **before** `discard`, because discarding is what moves the app to
-    // sign-in. The fact has to be in place before anything can react to that
-    // transition, or the screen which explains it arrives to find nothing.
-    //
-    // Only once `clear` has succeeded, so a cleanup failure never arms the
-    // notice.
+    // Record the notice before discarding the session, because the state
+    // change may immediately cause the app to navigate to the sign-in screen.
+    // Only successful credential cleanup can trigger this notice.
     _endedWithoutNotice = true;
     discard();
   }
 }
 
-/// Wraps a renewal failure whose outcome is unknown as a [DioException].
+/// Wraps an uncertain renewal failure in a [DioException].
 ///
-/// Carrying it as a [DioException] with the typed failure in `error` is what
-/// lets the interceptor's existing error path handle it unchanged, and lets
-/// [mapApiFailure] hand the typed failure straight back to the caller rather
-/// than re-deriving one from a status code.
+/// Preserves the typed failure so the existing network error handling can
+/// process it without losing the original failure classification.
 DioException _uncertain(ApiFailure cause) {
   return DioException(
     requestOptions: RequestOptions(path: '/auth/refresh'),

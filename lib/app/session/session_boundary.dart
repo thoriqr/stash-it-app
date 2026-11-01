@@ -5,37 +5,29 @@ import '../../features/collections/application/collections_controller.dart';
 import '../../features/profile/application/profile_controller.dart';
 import '../../features/saved_items/application/saved_items_controller.dart';
 
-/// Drops user-scoped caches when the authenticated account changes.
+/// Clears user-scoped caches when the authenticated session changes.
 ///
-/// The three keep-alive providers below would otherwise survive a sign-out in
-/// the same process, because their lifetime is the container's rather than a
-/// destination's. `Profile` has no auth dependency at all, so a later sign-in
-/// would show the previous account's profile until its own request completed;
-/// the Inbox and Collections would do the same with their rows and names.
+/// These keep-alive providers can outlive the route that first read them.
+/// Without clearing their state, data from a previous account could remain
+/// visible after sign-out or while the next account's data is loading.
 ///
-/// **Status transitions, not token changes.** `AuthStatus` stays `signedIn`
-/// across a token rotation, and a rotation is not an account change: invalidating
-/// there would refetch data that is still correct. A session that ends
-/// server-side still moves to `signedOut`, so the terminal path is covered
-/// without reading the credential pair.
+/// Listens to authentication status transitions rather than token changes.
+/// Token rotation does not change the account and must not trigger unnecessary
+/// data reloads.
 ///
-/// **Sign-out clears; it does not invalidate.** Invalidation would immediately
-/// rebuild any provider a screen is still listening to, issuing an
-/// unauthenticated request just to empty a cache. Clearing makes the old value
-/// unavailable without a request. On a following sign-in the providers are
-/// cleared again *before* invalidation, so the next account's request starts
-/// from a value-less loading state rather than exposing the previous account's
-/// data while it runs — `ref.invalidate` alone preserves the previous
-/// `AsyncData` in Riverpod 3.4.
+/// On sign-out, providers are cleared without invalidation to avoid rebuilding
+/// them and issuing unauthenticated requests while their screens are still
+/// listening.
 ///
-/// **Never initialized, never touched.** [Ref.exists] keeps this from creating a
-/// provider — and therefore a request — merely to clear something no screen ever
-/// read.
+/// On sign-in, providers are cleared before invalidation. This prevents
+/// Riverpod from retaining their previous [AsyncData] while the new account's
+/// requests are loading.
 ///
-/// Without this, an in-flight `Profile` build is just one example of the leak:
-/// it can complete after a session boundary. The invalidation on sign-in
-/// disposes that build, so its late result is ignored and the new account's
-/// build owns the state.
+/// [Ref.exists] ensures that only initialized providers are touched. A
+/// provider that has never been read is not created just to clear its state.
+///
+/// Invalidating on sign-in also disposes in-flight builds from the previous
+/// session, preventing their results from updating the new session's state.
 final Provider<void> sessionBoundaryProvider = Provider<void>((ref) {
   ref.listen<AuthStatus>(authStateProvider, (previous, next) {
     if (previous == AuthStatus.signedIn && next == AuthStatus.signedOut) {
@@ -50,7 +42,7 @@ final Provider<void> sessionBoundaryProvider = Provider<void>((ref) {
   });
 });
 
-/// Empties every initialized user-scoped provider without a request.
+/// Clears initialized user-scoped providers without triggering requests.
 void _clearUserScoped(Ref ref) {
   if (ref.exists(profileProvider)) {
     ref.read(profileProvider.notifier).clearForSessionChange();
@@ -63,10 +55,7 @@ void _clearUserScoped(Ref ref) {
   }
 }
 
-/// Rebuilds every initialized user-scoped provider under the new session.
-///
-/// Called only after [_clearUserScoped], so the rebuild cannot surface the
-/// previous account's value while it is loading.
+/// Invalidates initialized user-scoped providers after their state is cleared.
 void _invalidateUserScoped(Ref ref) {
   if (ref.exists(profileProvider)) ref.invalidate(profileProvider);
   if (ref.exists(savedItemsProvider)) ref.invalidate(savedItemsProvider);

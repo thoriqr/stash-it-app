@@ -3,15 +3,14 @@ import 'package:go_router/go_router.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_metrics.dart';
 
-/// The app bar shared by the four primary destinations.
+/// Shared app bar for the four primary destinations.
 ///
-/// Each destination still owns its own `Scaffold`; the shell only owns the bottom
-/// navigation. This widget gives every destination the same screen title and one
-/// Settings action, without making Settings a fifth destination.
+/// Each destination owns its own `Scaffold`, while the shell manages bottom
+/// navigation. This widget provides a consistent title and a Settings action
+/// without adding Settings as another primary destination.
 ///
-/// The title is written uppercase at the call site because Flutter has no
-/// text-transform. Styling comes from `AppBarTheme`, so no colour or typography is
-/// restated here.
+/// Titles are passed in uppercase because Flutter does not support
+/// `text-transform`. Visual styling is inherited from `AppBarTheme`.
 class DestinationAppBar extends StatelessWidget implements PreferredSizeWidget {
   const DestinationAppBar({required this.title, super.key});
 
@@ -28,8 +27,8 @@ class DestinationAppBar extends StatelessWidget implements PreferredSizeWidget {
         IconButton(
           icon: const Icon(Icons.settings_outlined, size: AppMetrics.iconSize),
           tooltip: 'Settings',
-          // `push`, not `go`: Settings sits above the shell, so returning pops
-          // back to the same destination with its branch state intact.
+          // Push Settings above the shell so popping it returns to the same
+          // destination without resetting its branch state.
           onPressed: () => context.push(AppRoutes.settings),
         ),
       ],

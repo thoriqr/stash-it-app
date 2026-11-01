@@ -8,38 +8,26 @@ part of 'feedback_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// The app's one feedback channel: what is showing, if anything.
+/// App-wide feedback state.
 ///
-/// A plain notifier, not an `AsyncNotifier` — publishing is a synchronous value
-/// assignment, so nothing here can fail and Riverpod's automatic retry has
-/// nothing to act on. `keepAlive` because feedback is app-wide and must outlive
-/// the route that raised it.
-///
-/// Deliberately free of any feature concept. A caller decides what to say and
-/// hands over an [AppFeedback]; this type only decides what is on screen.
+/// Keeps the latest notice available independently of the route that
+/// triggered it. Callers provide the feedback content; this controller
+/// manages only its visibility.
 
 @ProviderFor(Feedback)
 final feedbackProvider = FeedbackProvider._();
 
-/// The app's one feedback channel: what is showing, if anything.
+/// App-wide feedback state.
 ///
-/// A plain notifier, not an `AsyncNotifier` — publishing is a synchronous value
-/// assignment, so nothing here can fail and Riverpod's automatic retry has
-/// nothing to act on. `keepAlive` because feedback is app-wide and must outlive
-/// the route that raised it.
-///
-/// Deliberately free of any feature concept. A caller decides what to say and
-/// hands over an [AppFeedback]; this type only decides what is on screen.
+/// Keeps the latest notice available independently of the route that
+/// triggered it. Callers provide the feedback content; this controller
+/// manages only its visibility.
 final class FeedbackProvider extends $NotifierProvider<Feedback, AppFeedback?> {
-  /// The app's one feedback channel: what is showing, if anything.
+  /// App-wide feedback state.
   ///
-  /// A plain notifier, not an `AsyncNotifier` — publishing is a synchronous value
-  /// assignment, so nothing here can fail and Riverpod's automatic retry has
-  /// nothing to act on. `keepAlive` because feedback is app-wide and must outlive
-  /// the route that raised it.
-  ///
-  /// Deliberately free of any feature concept. A caller decides what to say and
-  /// hands over an [AppFeedback]; this type only decides what is on screen.
+  /// Keeps the latest notice available independently of the route that
+  /// triggered it. Callers provide the feedback content; this controller
+  /// manages only its visibility.
   FeedbackProvider._()
     : super(
         from: null,
@@ -69,15 +57,11 @@ final class FeedbackProvider extends $NotifierProvider<Feedback, AppFeedback?> {
 
 String _$feedbackHash() => r'53c5b129b9403e892fdcef821661b8cc121ee35c';
 
-/// The app's one feedback channel: what is showing, if anything.
+/// App-wide feedback state.
 ///
-/// A plain notifier, not an `AsyncNotifier` — publishing is a synchronous value
-/// assignment, so nothing here can fail and Riverpod's automatic retry has
-/// nothing to act on. `keepAlive` because feedback is app-wide and must outlive
-/// the route that raised it.
-///
-/// Deliberately free of any feature concept. A caller decides what to say and
-/// hands over an [AppFeedback]; this type only decides what is on screen.
+/// Keeps the latest notice available independently of the route that
+/// triggered it. Callers provide the feedback content; this controller
+/// manages only its visibility.
 
 abstract class _$Feedback extends $Notifier<AppFeedback?> {
   AppFeedback? build();

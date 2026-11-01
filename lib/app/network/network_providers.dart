@@ -9,17 +9,13 @@ import '../config/api_config.dart';
 
 part 'network_providers.g.dart';
 
-/// How long a request may wait before it is abandoned.
-///
-/// Set once, here, so both Dio instances share it. Without an explicit ceiling a
-/// request on a dead network can hang until the platform's own timeout, which
-/// leaves the user looking at a spinner with no way forward.
+/// Maximum time allowed for connecting, sending, or receiving a request.
 const Duration _kRequestTimeout = Duration(seconds: 30);
 
-/// The client used for ordinary API requests, including protected endpoints.
+/// Dio client for ordinary API requests, including protected endpoints.
 ///
-/// Carries the [AuthInterceptor], so a request issued here picks up the bearer
-/// token and is renewed transparently when the session needs it.
+/// Adds authentication and client metadata interceptors. The authentication
+/// interceptor handles bearer tokens and session renewal.
 @Riverpod(keepAlive: true)
 Dio appDio(Ref ref) {
   final dio = Dio(_baseOptions());
@@ -33,13 +29,11 @@ Dio appDio(Ref ref) {
     ),
     AuthInterceptor(
       dio: dio,
-      // Watched, not read lazily. The dependency
-      // `appDio -> sessionController -> refreshApi -> refreshDio` is acyclic:
-      // the session controller reaches the network only through `refreshDio`,
-      // which carries no auth interceptor and so cannot depend back on this
-      // provider. A captured-`Ref` closure would have hidden that, and would
-      // have turned a future cycle into a runtime `CircularDependencyError` at
-      // the first request rather than at build time.
+      // Watch the session controller so Riverpod can detect dependency cycles
+      // when building providers, rather than encountering them at request time.
+      //
+      // The session controller uses refreshDio for token renewal. That client
+      // has no AuthInterceptor, keeping the dependency graph acyclic.
       tokenProvider: ref.watch(sessionControllerProvider.notifier),
     ),
   ]);
@@ -47,16 +41,10 @@ Dio appDio(Ref ref) {
   return dio;
 }
 
-/// The client used **only** for `POST /auth/refresh`.
+/// Dio client used exclusively for `POST /auth/refresh`.
 ///
-/// Deliberately separate from [appDio] and deliberately without an
-/// [AuthInterceptor]. That is what makes recursive renewal structurally
-/// impossible rather than guarded against: the renewal response cannot reach
-/// the interceptor, because the interceptor is not on this instance.
-///
-/// The metadata interceptor is present because the same session metadata applies
-/// to every call; there is no `Authorization` header here, which is correct —
-/// the route has no bearer guard and the body token is the whole credential.
+/// Intentionally has no AuthInterceptor. This prevents refresh requests from
+/// triggering another refresh cycle. Client metadata is still attached.
 @Riverpod(keepAlive: true)
 Dio refreshDio(Ref ref) {
   final dio = Dio(_baseOptions());
@@ -77,13 +65,8 @@ BaseOptions _baseOptions() {
   return BaseOptions(
     baseUrl: ApiConfig.baseUrl,
     contentType: Headers.jsonContentType,
-    // Applies to every response, including error responses.
-    //
-    // Without it Dio discards non-2xx bodies, and `error.code` — the only thing
-    // this client branches on — would be unreachable. `receiveDataWhenStatusError`
-    // defaults to true (`dio/src/options.dart:733`); it is set explicitly
-    // because the entire error taxonomy depends on it and a future default
-    // change would be silent.
+    // Preserve response bodies for non-2xx responses so the authentication
+    // and error-handling layers can inspect the backend's error payload.
     receiveDataWhenStatusError: true,
     connectTimeout: _kRequestTimeout,
     receiveTimeout: _kRequestTimeout,
@@ -91,9 +74,7 @@ BaseOptions _baseOptions() {
   );
 }
 
-/// The backend stores this verbatim and shows it in a device list
-/// (`auth-sessions.md`, "Identifiers"). It describes the client and is never a
-/// saved item's `platform`, which is a different concept entirely.
+/// Returns the platform identifier sent with client metadata.
 String _currentPlatform() {
   return switch (defaultTargetPlatform) {
     TargetPlatform.android => 'android',
@@ -101,7 +82,6 @@ String _currentPlatform() {
     TargetPlatform.macOS => 'macos',
     TargetPlatform.windows => 'windows',
     TargetPlatform.linux => 'linux',
-    // Fuchsia and unknown platforms are still worth naming rather than omitting.
     TargetPlatform.fuchsia => 'fuchsia',
   };
 }

@@ -1,43 +1,43 @@
 import 'api_error_codes.dart';
 
-/// One field-level validation failure.
+/// A field-level validation failure returned by the API.
 ///
-/// `error.fields` is always present on a coded error and is `[]` when empty
-/// (`httpx/error_handler.go:75`), so a client must tolerate an empty list rather
-/// than treating its absence as meaningful.
-///
-/// Hand-written rather than generated: it never crosses a boundary on its own,
-/// only inside [ApiErrorBody], so a generated `fromJson` for it would be dead
-/// code.
+/// The `fields` collection is always present in a coded error response.
+/// It may be empty when the error does not contain field-level failures.
 class ApiErrorField {
   const ApiErrorField({required this.field, required this.message});
 
-  /// The rejected field's name.
+  /// Name of the field rejected by the API.
   final String field;
 
-  /// The backend's description of the failure. Never displayed ([D22]).
+  /// Backend-provided description of the validation failure.
+  ///
+  /// Never display this message directly. The client owns user-facing copy.
   final String message;
 
   @override
   String toString() => 'ApiErrorField($field)';
 }
 
-/// The decoded `error` object from a backend failure response.
+/// Decoded `error` object from an API failure response.
 ///
 /// ```json
-/// { "error": { "code": "...", "message": "...", "fields": [ ... ] } }
+/// {
+///   "error": {
+///     "code": "...",
+///     "message": "...",
+///     "fields": []
+///   }
+/// }
 /// ```
 ///
-/// **[D22] `message` is never displayed to a user.** It is human-facing prose in
-/// English and is not part of any contract. It is parsed so the shape is honest
-/// and so a malformed payload can be *detected*, never so it can be shown. The
-/// client owns every string it renders; see `ApiFailure`.
+/// The backend-provided [message] is parsed to preserve the response shape
+/// and detect malformed payloads, but it is never displayed to users.
+/// User-facing error messages must be defined by the client.
 ///
-/// `code` is nullable on purpose. The envelope is not guaranteed:
-/// `httpx.NewErrorHandler` delegates to `fiber.DefaultErrorHandler` for any
-/// `*fiber.Error`, checked before the `AppError` branch, and Fiber's default
-/// handler answers with `text/plain` and a bare message rather than JSON
-/// (`decisions.md` D15, group F).
+/// [code] is nullable because not every failure response uses this JSON
+/// envelope. Some framework-level errors may return a different response
+/// format, so the client must not assume that a structured error code exists.
 class ApiErrorBody {
   const ApiErrorBody({
     this.code,
@@ -49,17 +49,16 @@ class ApiErrorBody {
   final String? message;
   final List<ApiErrorField> fields;
 
-  /// Whether this body's code means the access token expired and nothing else.
+  /// Whether the error specifically indicates an expired access token.
   ///
-  /// The single place the refresh trigger is decided. Every caller about to
-  /// refresh asks this rather than testing the HTTP status: a `401` on its own
-  /// covers expired, unusable and never-sent alike, and renewing for the latter
-  /// two cannot succeed.
+  /// This is the only condition that should trigger token renewal.
+  /// HTTP status alone is insufficient because the same status can represent
+  /// expired, invalid, or missing authentication credentials.
   bool get isAccessTokenExpired => code == ApiErrorCode.accessTokenExpired;
 
-  /// Whether this body's code means the session is permanently unusable.
+  /// Whether the refresh response indicates that the session is permanently
+  /// unusable.
   ///
-  /// Only ever true for a response from `POST /auth/refresh`. See
-  /// [ApiErrorCode.terminalRefresh].
+  /// Only use this classification for responses from `POST /auth/refresh`.
   bool get isTerminalSession => ApiErrorCode.terminalRefresh.contains(code);
 }

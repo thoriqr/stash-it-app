@@ -1,50 +1,49 @@
-/// The authentication credential contract `core/network` depends on.
+/// Authentication credential contract required by `core/network`.
 ///
-/// This is the seam that keeps the dependency direction honest
-/// (`AGENTS.md` §2, rule 1): the auth interceptor lives in `core` and needs to
-/// read a token and occasionally trigger a renewal, but it must not know that
-/// those tokens live in secure storage, that renewal is an HTTP call, or that
-/// anything about Riverpod exists. The implementation is provided by
-/// `features/auth`.
+/// Keeps the network layer independent of authentication implementation
+/// details. The interceptor can read an access token and request renewal
+/// without knowing how credentials are stored, how renewal is performed,
+/// or which state management solution is used.
 ///
-/// Two methods is the whole contract. Anything richer — a token *pair*, a
-/// session, an expiry — would put a decision in `core` that belongs to the
-/// feature, and would make the interceptor testable only by standing up the
-/// thing it exists to isolate.
+/// Implemented by `features/auth`.
+///
+/// The contract intentionally exposes only two operations. Token storage,
+/// session state, and credential lifecycle remain responsibilities of the
+/// authentication feature.
 abstract interface class TokenProvider {
-  /// The access token to attach as `Authorization: Bearer <token>`.
+  /// Returns the access token to attach as a bearer token.
   ///
-  /// Returns null when there is no local session. Called per request rather
-  /// than cached: a value read once would go stale the moment a refresh
-  /// completes, and a stale token is a second round trip to the same 401.
+  /// Returns null when no local session exists. Called for each request rather
+  /// than cached, so requests issued after a renewal use the latest token.
   Future<String?> readAccessToken();
 
-  /// Obtains a usable access token, renewing the session if required.
+  /// Returns a usable access token, renewing the session when necessary.
   ///
-  /// Implementations **must** share one in-flight operation across concurrent
-  /// callers. Presenting the same refresh token twice is not a harmless retry:
-  /// the backend treats the second presentation as reuse, revokes the whole
-  /// session, and answers `SESSION_REVOKED` (`auth-sessions.md`, accepted
-  /// trade-offs). Two expired requests arriving together must produce one
-  /// renewal, not two.
+  /// Implementations must share one in-flight renewal operation across
+  /// concurrent callers. Reusing the same refresh token in multiple concurrent
+  /// requests can be treated as token reuse and revoke the session. Requests
+  /// that encounter an expired access token together must therefore result
+  /// in only one renewal operation.
   ///
-  /// Throws [SessionExpiredException] when the session is permanently unusable,
-  /// and [DioException] for every other failure. The distinction is what lets
-  /// the caller clear credentials in one case and keep them in the other.
+  /// Throws [SessionExpiredException] when the session is permanently
+  /// unusable, and [DioException] for other renewal failures. This distinction
+  /// allows the caller to handle terminal session failures separately from
+  /// temporary or recoverable failures.
   Future<String> refreshAccessToken();
 }
 
-/// The refresh endpoint refused in a way that ends the session.
+/// Indicates that a refresh attempt ended the current session.
 ///
-/// Thrown only for [ApiErrorCode.terminalRefresh]. It is a distinct type rather
-/// than a message or a flag because it is the one condition under which the
-/// client may destroy credentials it otherwise cannot replace.
+/// Thrown only when the refresh failure is classified as terminal. This
+/// distinction allows the caller to clear stored credentials when the
+/// session is no longer usable without treating every renewal failure as
+/// a reason to sign the user out.
 class SessionExpiredException implements Exception {
   const SessionExpiredException(this.code);
 
-  /// `REFRESH_TOKEN_INVALID`, `SESSION_REVOKED` or `SESSION_EXPIRED`.
+  /// Error code identifying the terminal refresh failure.
   ///
-  /// Retained for logging and tests. Never displayed.
+  /// Retained for logging and tests. Never displayed to the user.
   final String code;
 
   @override

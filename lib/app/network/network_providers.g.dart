@@ -8,25 +8,25 @@ part of 'network_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// The client used for ordinary API requests, including protected endpoints.
+/// Dio client for ordinary API requests, including protected endpoints.
 ///
-/// Carries the [AuthInterceptor], so a request issued here picks up the bearer
-/// token and is renewed transparently when the session needs it.
+/// Adds authentication and client metadata interceptors. The authentication
+/// interceptor handles bearer tokens and session renewal.
 
 @ProviderFor(appDio)
 final appDioProvider = AppDioProvider._();
 
-/// The client used for ordinary API requests, including protected endpoints.
+/// Dio client for ordinary API requests, including protected endpoints.
 ///
-/// Carries the [AuthInterceptor], so a request issued here picks up the bearer
-/// token and is renewed transparently when the session needs it.
+/// Adds authentication and client metadata interceptors. The authentication
+/// interceptor handles bearer tokens and session renewal.
 
 final class AppDioProvider extends $FunctionalProvider<Dio, Dio, Dio>
     with $Provider<Dio> {
-  /// The client used for ordinary API requests, including protected endpoints.
+  /// Dio client for ordinary API requests, including protected endpoints.
   ///
-  /// Carries the [AuthInterceptor], so a request issued here picks up the bearer
-  /// token and is renewed transparently when the session needs it.
+  /// Adds authentication and client metadata interceptors. The authentication
+  /// interceptor handles bearer tokens and session renewal.
   AppDioProvider._()
     : super(
         from: null,
@@ -62,43 +62,25 @@ final class AppDioProvider extends $FunctionalProvider<Dio, Dio, Dio>
 
 String _$appDioHash() => r'34f73601cdd78856c8141c3247b249d236391c59';
 
-/// The client used **only** for `POST /auth/refresh`.
+/// Dio client used exclusively for `POST /auth/refresh`.
 ///
-/// Deliberately separate from [appDio] and deliberately without an
-/// [AuthInterceptor]. That is what makes recursive renewal structurally
-/// impossible rather than guarded against: the renewal response cannot reach
-/// the interceptor, because the interceptor is not on this instance.
-///
-/// The metadata interceptor is present because the same session metadata applies
-/// to every call; there is no `Authorization` header here, which is correct —
-/// the route has no bearer guard and the body token is the whole credential.
+/// Intentionally has no AuthInterceptor. This prevents refresh requests from
+/// triggering another refresh cycle. Client metadata is still attached.
 
 @ProviderFor(refreshDio)
 final refreshDioProvider = RefreshDioProvider._();
 
-/// The client used **only** for `POST /auth/refresh`.
+/// Dio client used exclusively for `POST /auth/refresh`.
 ///
-/// Deliberately separate from [appDio] and deliberately without an
-/// [AuthInterceptor]. That is what makes recursive renewal structurally
-/// impossible rather than guarded against: the renewal response cannot reach
-/// the interceptor, because the interceptor is not on this instance.
-///
-/// The metadata interceptor is present because the same session metadata applies
-/// to every call; there is no `Authorization` header here, which is correct —
-/// the route has no bearer guard and the body token is the whole credential.
+/// Intentionally has no AuthInterceptor. This prevents refresh requests from
+/// triggering another refresh cycle. Client metadata is still attached.
 
 final class RefreshDioProvider extends $FunctionalProvider<Dio, Dio, Dio>
     with $Provider<Dio> {
-  /// The client used **only** for `POST /auth/refresh`.
+  /// Dio client used exclusively for `POST /auth/refresh`.
   ///
-  /// Deliberately separate from [appDio] and deliberately without an
-  /// [AuthInterceptor]. That is what makes recursive renewal structurally
-  /// impossible rather than guarded against: the renewal response cannot reach
-  /// the interceptor, because the interceptor is not on this instance.
-  ///
-  /// The metadata interceptor is present because the same session metadata applies
-  /// to every call; there is no `Authorization` header here, which is correct —
-  /// the route has no bearer guard and the body token is the whole credential.
+  /// Intentionally has no AuthInterceptor. This prevents refresh requests from
+  /// triggering another refresh cycle. Client metadata is still attached.
   RefreshDioProvider._()
     : super(
         from: null,

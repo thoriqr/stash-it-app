@@ -10,56 +10,50 @@ part 'auth_state.g.dart';
 
 /// Whether the app holds a usable session.
 ///
-/// Three states, not two, because "we have not finished looking" and "we looked
-/// and there is nothing" must not be the same answer: a router redirect built on
-/// a two-state model would bounce a signed-in user to sign-in during startup.
+/// Three states distinguish an unfinished startup restoration from a completed
+/// restoration with no session. The router must wait while the status is
+/// unresolved rather than redirecting a potentially signed-in user prematurely.
 enum AuthStatus {
-  /// Startup has not finished reading storage. Redirects must wait rather than
-  /// assume.
+  /// Startup has not finished restoring credentials. Redirects must wait.
   restoring,
 
-  /// No usable session in storage.
+  /// No usable session is available locally.
   signedOut,
 
-  /// A credential pair is held. **Not proof the server still accepts it** — the
-  /// access token is stateless, and `middleware.Auth` never consults the
-  /// database, so the only evidence is a request that uses it
-  /// (`auth-sessions.md`, "Revocation, and what it does not do").
+  /// A credential pair is available locally.
   ///
-  /// No validation happens at startup: decoding the JWT locally would make the
-  /// client its own token authority, and a probe request would spend a
-  /// rotation. The first real request is the test.
+  /// This does not guarantee that the server still accepts the credentials.
+  /// The session is considered signed in locally until a request establishes
+  /// otherwise. Startup does not validate tokens or make a separate probe
+  /// request, avoiding unnecessary network traffic and token rotation.
   signedIn,
 }
 
-/// The auth data layer.
+/// Provides the authentication repository.
 ///
-/// Plain [Provider] rather than `@Riverpod`, because `riverpod_generator` cannot
-/// convert a Retrofit `@RestApi` type to code. See `auth_api_providers.dart`.
+/// Uses a plain [Provider] because the Retrofit API type is not supported by
+/// the current Riverpod code generation setup.
 final Provider<AuthRepository> authRepositoryProvider =
     Provider<AuthRepository>(
       (ref) => AuthRepository(authApi: ref.watch(authApiProvider)),
     );
 
-/// The authentication state, and the operations that change it.
+/// Owns authentication operations and exposes the current authentication state.
 ///
-/// ## Why the status is derived rather than assigned
+/// ## Derived status
 ///
-/// This provider reads [sessionControllerProvider], which is the single owner of
-/// "does a session exist". Deriving the status means a session that ends
-/// server-side — a renewal that comes back `SESSION_REVOKED` — updates the UI
-/// with no notification path of its own.
+/// The status is derived from [sessionControllerProvider], which is the single
+/// owner of the locally adopted session. This keeps authentication state
+/// synchronized when a session ends, including after a terminal refresh failure.
 ///
-/// The alternative, having [SessionController] push into this provider, is not
-/// available: the API client depends on the session controller, so any edge from
-/// the session controller back to here closes a dependency cycle Riverpod
-/// rejects at runtime.
+/// Watching the session controller also avoids a dependency cycle: the API
+/// client already depends on the session controller, so the session controller
+/// must not depend on this provider in return.
 @Riverpod(keepAlive: true)
 class AuthState extends _$AuthState {
   @override
   AuthStatus build() {
-    // Watched, not read: a session that ends must be reflected without anyone
-    // having to say so.
+    // Watch the session so changes are reflected automatically.
     final session = ref.watch(sessionControllerProvider);
 
     return session == null ? AuthStatus.signedOut : AuthStatus.signedIn;
@@ -67,11 +61,8 @@ class AuthState extends _$AuthState {
 
   /// Signs in and stores the resulting credentials.
   ///
-  /// The pair is written **before** the session is adopted, so a `signedIn`
-  /// state never describes credentials that failed to persist. The all-or-nothing
-  /// guarantee lives in [SecureCredentialStore.write]: a failure partway through
-  /// discards what landed and rethrows, so the store is left empty and this
-  /// provider keeps reporting signed out.
+  /// Credentials are persisted before the session is adopted. If persistence
+  /// fails, the session is not adopted and the app remains signed out.
   Future<void> signIn(String email, String password) async {
     final outcome = await ref
         .read(authRepositoryProvider)
@@ -82,9 +73,9 @@ class AuthState extends _$AuthState {
 
   /// Signs in with a Google ID token.
   ///
-  /// Only an authenticated outcome is persisted. Account-link and registration
-  /// outcomes leave the app signed out and are returned for the caller to
-  /// continue the named flow.
+  /// Only an authenticated result is persisted. Account-link and registration
+  /// results are returned to the caller so their respective flows can continue
+  /// without creating an authenticated session prematurely.
   Future<GoogleSignInResult> signInWithGoogle(String idToken) async {
     final result = await ref
         .read(authRepositoryProvider)
@@ -127,34 +118,29 @@ class AuthState extends _$AuthState {
     await _persistAndAdopt(outcome.tokens);
   }
 
-  /// Persists the pair before adopting it, so `signedIn` never describes
-  /// credentials that failed to reach secure storage.
+  /// Persists credentials before adopting the session.
+  ///
+  /// This ensures that the app never reports a signed-in state when the
+  /// credentials could not be stored.
   Future<void> _persistAndAdopt(AuthTokens tokens) async {
     await ref.read(credentialStoreProvider).write(tokens);
     ref.read(sessionControllerProvider.notifier).adopt(tokens);
   }
 
-  /// Signs out, clearing local credentials whether or not the server call
-  /// worked.
+  /// Signs out and clears local credentials regardless of the server result.
   ///
-  /// The local clear runs in a `finally`: a user who asked to sign out is signed
-  /// out on this device regardless, and leaving the app apparently signed in
-  /// after a failed logout would be worse than a server-side session outliving
-  /// its revocation by up to 90 days.
+  /// The local cleanup runs in `finally`, ensuring the user is signed out on
+  /// this device even if the logout request fails. A failed request may leave
+  /// the server-side session active, but local credentials are still discarded.
   ///
-  /// A server-side failure is deliberately not rethrown. The user's intent is
-  /// satisfied either way, and surfacing an error would imply it was not.
-  ///
-  /// **No manual renew-then-retry here.** `logout` is issued through `appDio`,
-  /// so an expired access token is handled by the auth interceptor: it sees
-  /// `ACCESS_TOKEN_EXPIRED`, renews, and replays the request once. Doing it a
-  /// second time here would be duplicate machinery on a second code path.
+  /// The request uses `appDio`, whose auth interceptor handles an expired access
+  /// token by refreshing and replaying the request once. No separate retry
+  /// mechanism is needed here.
   Future<void> signOut() async {
     try {
       await ref.read(authRepositoryProvider).logout();
     } catch (_) {
-      // The server session may survive. That is accepted, not ignored: it is
-      // recorded rather than hidden, and local credentials are cleared below.
+      // Local sign-out still proceeds if the server request fails.
     } finally {
       await ref.read(credentialStoreProvider).clear();
       ref.read(sessionControllerProvider.notifier).discard();
@@ -162,14 +148,13 @@ class AuthState extends _$AuthState {
   }
 }
 
-/// Convenience predicates for the status enum.
+/// Convenience predicates for [AuthStatus].
 ///
-/// Named rather than inlined so a router or a screen never re-derives "is this
-/// signed in" with its own comparison.
+/// Centralizes status checks so callers do not need to repeat enum comparisons.
 extension AuthStatusX on AuthStatus {
   bool get isSignedIn => this == AuthStatus.signedIn;
   bool get isSignedOut => this == AuthStatus.signedOut;
 
-  /// True once startup has settled, whichever way it went.
+  /// Whether startup restoration has finished.
   bool get isResolved => this != AuthStatus.restoring;
 }

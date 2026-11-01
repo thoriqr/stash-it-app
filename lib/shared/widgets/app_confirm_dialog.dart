@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
-/// Shows the shared confirmation dialog and returns `true` only when the
-/// confirm action was chosen.
+/// Shows a confirmation dialog and returns the selected action.
 ///
-/// A barrier tap, Back, or any other dismissal returns `null`. Callers that treat
-/// dismissal as the safe choice must check for `true` rather than `false ==
-/// result`, so a new dismissal path cannot accidentally confirm a destructive
-/// action.
+/// Returns `true` only when the confirm action is selected. Choosing cancel
+/// returns `false`, while dismissing the dialog through Back or a barrier tap
+/// returns `null`.
+///
+/// Callers should proceed only when the result is explicitly `true`, so any
+/// dismissal path remains a safe outcome.
 Future<bool?> showAppConfirmDialog({
   required BuildContext context,
   required String title,
@@ -29,17 +30,10 @@ Future<bool?> showAppConfirmDialog({
   );
 }
 
-/// The theme-aware confirmation treatment for a destructive or irreversible
-/// action.
+/// A theme-aware confirmation dialog for consequential actions.
 ///
-/// **Not an `AlertDialog`.** The app has no global `dialogTheme`, and adding one
-/// to style two dialogs would make every future Material dialog inherit a
-/// decision made here. This widget reads the existing tokens directly, so it is
-/// correct in both brightnesses without a second palette or a theme override.
-///
-/// The surface is [AppTokens.surfaceRaised] — the token documented for sheets and
-/// dialogs — with the same hairline border as the rest of the app. Corners stay
-/// on the 4 px radius scale; nothing here introduces a new radius or elevation.
+/// Reads colors directly from [AppTokens] so its appearance follows the
+/// current theme without changing the global Material dialog theme.
 class AppConfirmDialog extends StatelessWidget {
   const AppConfirmDialog({
     required this.title,
@@ -53,15 +47,13 @@ class AppConfirmDialog extends StatelessWidget {
   final String title;
   final String message;
 
-  /// The safe action. Dismissing the route is equivalent to choosing this.
+  /// The safe action. Dismissing the dialog has the same effect.
   final String cancelLabel;
 
-  /// The action that commits the change.
+  /// The action that confirms the operation.
   final String confirmLabel;
 
-  /// Uses the danger-soft button treatment. Both dialogs in the saved-item flow
-  /// are destructive; the flag keeps the widget reusable for a non-destructive
-  /// confirmation without inventing a second dialog.
+  /// Uses the danger button variant instead of the primary variant.
   final bool destructive;
 
   @override
@@ -72,9 +64,6 @@ class AppConfirmDialog extends StatelessWidget {
       backgroundColor: tokens.surfaceRaised,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      // 16 px horizontal rather than Material's 40: the dialog still clears the
-      // screen edge on a 320 px device, and the action row stacks below 260 px of
-      // content width rather than truncating "Delete collection".
       insetPadding: const EdgeInsets.symmetric(
         horizontal: AppMetrics.space4,
         vertical: AppMetrics.space6,
@@ -120,9 +109,8 @@ class AppConfirmDialog extends StatelessWidget {
                     onPressed: () => Navigator.of(context).pop(true),
                   );
 
-                  // Two block buttons need roughly 130 px each for their labels.
-                  // Below that they stack rather than ellipsizing the destructive
-                  // action into something the user cannot read.
+                  // Stack the actions when there is not enough width for both
+                  // buttons and their labels to remain readable.
                   if (constraints.maxWidth < 260) {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,

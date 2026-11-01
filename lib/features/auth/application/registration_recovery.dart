@@ -2,38 +2,41 @@ import '../../../../core/error/api_failure.dart';
 import '../data/models/register_manual_response.dart';
 import '../data/registration_continuation_store.dart';
 
-/// What a sign-up submission must do next.
+/// Determines the next step after a sign-up submission.
 ///
-/// A pure rule, separate from the screen, so the decision can be tested without
-/// pumping a widget or scripting a transport.
+/// Kept separate from the screen so the decision can be tested independently
+/// of widget rendering and network interactions.
 enum RegistrationStart {
-  /// Request a PIN and enter the verification flow. This covers a brand-new
-  /// registration, a reused pending verification, an expired-registration
-  /// replacement, and any response whose status the client does not recognise.
+  /// Request a PIN and continue to verification.
+  ///
+  /// Used for new registrations, reused pending verifications, expired
+  /// registration replacements, and unrecognized response statuses.
   requestPin,
 
-  /// PIN verification has already completed and this device holds the raw
-  /// continuation for the entered address. Go straight to finalization; do not
-  /// request or submit another PIN.
+  /// Verification is already complete and this device has a continuation
+  /// token for the entered email address.
+  ///
+  /// Proceed directly to finalization without requesting or submitting
+  /// another PIN.
   openFinalize,
 
-  /// PIN verification has already completed but this device has no usable
-  /// continuation for the entered address. The raw token is never reissued, so
-  /// the screen must not enter the PIN flow for this id. The supported recovery
-  /// is an explicit `POST /auth/register/recovery/manual` followed by the normal
-  /// PIN verification and a new continuation token.
+  /// Verification is complete, but this device has no usable continuation
+  /// token for the entered email address.
+  ///
+  /// The existing verification cannot be continued without its token.
+  /// The user must explicitly request registration recovery, complete PIN
+  /// verification, and obtain a new continuation token.
   verifiedWithoutToken,
 }
 
-/// Decides what to do with one `POST /auth/register/manual` response.
+/// Determines the next step from a manual registration response.
 ///
-/// `verified` is the only status that suppresses the PIN step. A null status
-/// (older backend) and an unknown future status both take the PIN path, which is
-/// the behaviour this client shipped before `verification_status` existed.
+/// Only the `verified` status skips PIN verification. Missing or unrecognized
+/// statuses follow the PIN flow to preserve compatibility with responses that
+/// do not provide a recognized verification status.
 ///
-/// A token is applied only when it belongs to the address the user entered. The
-/// comparison uses the same normalization the backend applies, so case and
-/// surrounding whitespace cannot make a token look like another registration's.
+/// A stored continuation is used only when its email matches the entered
+/// address after applying the same normalization used for registration.
 RegistrationStart registrationStartFor({
   required RegisterManualResponse response,
   required StoredRegistrationContinuation? stored,
@@ -48,27 +51,28 @@ RegistrationStart registrationStartFor({
   return RegistrationStart.verifiedWithoutToken;
 }
 
-/// What a refused continuation read or finalization means for the stored token.
+/// Describes the outcome of a refused continuation read or finalization.
 enum ContinuationOutcome {
-  /// The token has already been consumed. Finalization is the only consumer, so
-  /// the registration completed; the correction is to sign in, not to restart.
+  /// The continuation has already been consumed and registration is complete.
+  /// The user should sign in rather than restart registration.
   consumed,
 
-  /// The token can never be used again (expired, absent, or the registration is
-  /// no longer pending). A replacement can be requested.
+  /// The continuation is no longer valid or the registration cannot continue.
+  /// The user must request a replacement and complete verification again.
   restartRequired,
 
-  /// The refusal cannot be established — a transport failure, an unreadable
-  /// reply (including the backend's generic `CONFLICT` for an unknown token),
-  /// a budget refusal or a server fault. Keep the token; nothing may be claimed.
+  /// The outcome cannot be determined reliably.
+  ///
+  /// Keep the stored token because the failure does not establish whether it
+  /// is still valid or has already been consumed.
   unconfirmed,
 }
 
-/// Classifies a failure from `GET /auth/register/continuation` or
-/// `POST /auth/register/finalize/manual`.
+/// Classifies failures from registration continuation and finalization requests.
 ///
-/// Deliberately total: anything not known to be terminal stays unconfirmed, so
-/// a transient failure can never cause a valid capability to be discarded.
+/// Only explicitly recognized terminal outcomes allow the stored token to be
+/// discarded. All other failures remain unconfirmed, preventing a transient
+/// failure from causing a potentially valid continuation to be lost.
 ContinuationOutcome continuationOutcomeFor(ApiFailure failure) {
   return switch (failure) {
     ApiFailureRegistrationContinuationConsumed() =>

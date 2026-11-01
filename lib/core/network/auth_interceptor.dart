@@ -6,77 +6,64 @@ import '../error/api_failure.dart';
 import '../error/api_failure_mapper.dart';
 import 'token_provider.dart';
 
-/// Attaches the bearer token, and renews the session at most once when a
+/// Attaches the bearer token and renews the session at most once when a
 /// protected request reports an expired access token.
 ///
-/// ## Why the refresh decision is made here and nowhere else
+/// The refresh decision is based on the API error code, never the HTTP status.
+/// Several authentication failures can use the same status, but only an
+/// expired access token can be resolved by refreshing:
 ///
-/// The trigger is the error **code** `ACCESS_TOKEN_EXPIRED`, never the HTTP
-/// status. All three bearer-guard refusals are `401`
-/// (`internal/middleware/auth.go`), so status alone cannot tell them apart, and
-/// the two non-expiry ones cannot be fixed by renewing:
+/// | Code                            | Meaning                         | Refresh? |
+/// | ------------------------------- | ------------------------------- | -------- |
+/// | `ACCESS_TOKEN_EXPIRED`          | The access token has expired    | Yes      |
+/// | `INVALID_ACCESS_TOKEN`          | The access token is invalid     | No       |
+/// | `INVALID_AUTHORIZATION_HEADER`  | No usable authorization sent    | No       |
 ///
-/// | Code                        | Meaning                    | Refresh? |
-/// | --------------------------- | -------------------------- | -------- |
-/// | `ACCESS_TOKEN_EXPIRED`      | signed, 15 min elapsed     | **yes**  |
-/// | `INVALID_ACCESS_TOKEN`      | signed wrong, wrong alg    | no       |
-/// | `INVALID_AUTHORIZATION_HEADER` | no usable token sent    | no       |
+/// Refreshing for the latter two cannot succeed, and an unnecessary refresh
+/// attempt is not free: a lost or duplicated refresh can invalidate the
+/// session.
 ///
-/// Renewing for the latter two cannot succeed, and the attempt itself is not
-/// free — a lost or duplicated refresh can cost the session outright. This is
-/// the client half of `decisions.md` D15 group A.
+/// A request is marked in `RequestOptions.extra` after its first replay.
+/// Without this marker, a request that receives `ACCESS_TOKEN_EXPIRED` again
+/// could trigger another refresh. The marker makes subsequent attempts pass
+/// through without refreshing, preventing retry loops.
 ///
-/// ## Why at most one retry
-///
-/// A retried request is marked in `RequestOptions.extra`, not re-derived from
-/// its status. Without the marker, a request that legitimately receives
-/// `ACCESS_TOKEN_EXPIRED` twice would renew twice and retry twice. The marker
-/// makes the second pass a pass-through, so no input can produce a loop.
-///
-/// ## Why renewal cannot recurse
-///
-/// Renewal is issued by [TokenProvider], which reaches the backend through
-/// `refreshDio` — an instance without this interceptor. A refresh response can
-/// never re-enter this code. No path comparison or flag is needed to guarantee
-/// it, and adding one would only create a second thing to keep in step.
+/// Renewal is issued through [TokenProvider], which uses a separate Dio client
+/// without this interceptor. A refresh response therefore cannot re-enter
+/// this interceptor, making recursive renewal structurally impossible.
 class AuthInterceptor extends Interceptor {
   const AuthInterceptor({required this.dio, required this.tokenProvider});
 
-  /// The instance a retry is issued through.
+  /// Dio instance used to replay requests.
   ///
-  /// Reusing the same [Dio] rather than reconstructing one is what makes the
-  /// replay identical to the original: same interceptors, same adapter, same
-  /// timeouts. `Dio.fetch` is used instead of `Dio.request` so the existing
-  /// [RequestOptions] is replayed as-is — method, headers, query, body,
-  /// [CancelToken] and content type all survive, which a path-and-payload
-  /// reconstruction would quietly drop.
+  /// Reusing the same instance preserves its interceptors, adapter, and
+  /// timeouts. [Dio.fetch] replays the existing [RequestOptions], preserving
+  /// the original method, headers, query parameters, body, [CancelToken],
+  /// and content type without reconstructing the request.
   final Dio dio;
 
-  /// Supplies the bearer token and performs renewal.
+  /// Supplies the bearer token and performs session renewal.
   ///
-  /// Held as an instance rather than a lookup callback so that a dependency
-  /// cycle in the caller's provider graph surfaces when the interceptor is
-  /// constructed, not as an unexplained transport failure on the first request.
-  ///
-  /// Typed as the interface, so this file never imports the auth feature and the
-  /// interceptor is testable with a stub.
+  /// Using the interface keeps this interceptor independent of the auth
+  /// feature and allows it to be tested with a stub. Holding the instance
+  /// directly also makes provider dependency cycles detectable when the
+  /// interceptor is constructed, rather than when the first request runs.
   final TokenProvider tokenProvider;
 
-  /// Marks a request that has already been replayed with a renewed token.
+  /// Marks a request that has already been replayed after token renewal.
   static const String retriedKey = 'auth_retried';
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    // Resolved per request rather than cached. A token read once would still be
-    // the pre-refresh value on every request issued while a renewal is in
-    // flight, so a screen opened immediately after sign-in would 401 and pay
-    // for a needless round trip.
+    // Read the token for every request instead of caching it. A cached token
+    // could remain outdated for requests issued while a renewal is in flight.
     //
-    // A failed read (an unreachable secure store, say) does not fail the
-    // request: it goes out unauthenticated and the bearer guard answers with its
-    // own refusal, which is the honest outcome. `handler.next` cannot be passed
-    // straight to `then` as the error callback, because `Future.then` invokes it
-    // with `(Object, StackTrace)` and `next` takes a single `RequestOptions`.
+    // A failed storage read does not prevent the request from proceeding.
+    // It is sent without authentication so the server can return the
+    // appropriate authentication error.
+    //
+    // The error callback is explicit because Future.then passes both the error
+    // and stack trace, while handler.next accepts only RequestOptions.
     unawaited(
       tokenProvider.readAccessToken().then<void>((token) {
         if (token != null && token.isNotEmpty) {
@@ -89,17 +76,15 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    // The envelope is not guaranteed: Fiber answers `text/plain` for a
-    // `*fiber.Error`, and anything in front of the API may answer with HTML.
-    // An unreadable body is never a refresh signal — there is no code to match.
+    // Not every error response contains a readable API error envelope.
+    // An unreadable body cannot be used as a signal to refresh.
     final body = parseApiErrorBody(err.response?.data);
     if (body == null || !body.isAccessTokenExpired) {
       handler.next(err);
       return;
     }
 
-    // Already replayed once for this request. Passing through here is what
-    // bounds the retry at one regardless of how the server answers.
+    // Do not refresh or replay a request more than once.
     if (err.requestOptions.extra[retriedKey] == true) {
       handler.next(err);
       return;
@@ -108,30 +93,17 @@ class AuthInterceptor extends Interceptor {
     unawaited(_renewAndReplay(err, handler));
   }
 
-  /// Renews, then replays the original request exactly once.
+  /// Renews the session and replays the original request exactly once.
   ///
-  /// ## Why every arm completes `handler`
+  /// Every execution path must complete [handler] exactly once. If it is
+  /// never completed, Dio's pending request remains unresolved. Completing it
+  /// more than once also causes an error.
   ///
-  /// An [ErrorInterceptorHandler] that is never completed leaves Dio's internal
-  /// completer pending, so the caller's `await` never returns: the request
-  /// hangs rather than fails, and there is no error to report. Completion is
-  /// not idempotent either — Dio throws `StateError` on a second call — so
-  /// both "never" and "twice" are defects.
-  ///
-  /// Hence the arms below are exhaustive **and** mutually exclusive: each
-  /// completes `handler` and returns, so whichever way this method exits, the
-  /// original request is completed once. "Exhaustive" is the part that is easy
-  /// to get wrong, because [SessionExpiredException] and [DioException] are
-  /// not the only things a renewal can throw:
-  ///
-  /// - [ApiFailureCredentialStorage], when the rotated pair cannot be written.
-  /// - a platform-channel error reading the refresh token, before any request.
-  /// - a storage error clearing credentials on a terminal outcome.
-  ///
-  /// Each of those previously escaped this `unawaited` future and hung the
-  /// request. A bare `catch` is what stops that recurring; it is not a
-  /// catch-all that swallows, because every failure it converts still reaches
-  /// the caller with its cause attached.
+  /// Renewal can fail in several ways, not only through [DioException] or
+  /// [SessionExpiredException]. Credential storage and platform-channel
+  /// operations can also throw. Because this method is called through an
+  /// unawaited future, every failure must be caught and forwarded to the
+  /// original request instead of escaping and leaving it pending.
   Future<void> _renewAndReplay(
     DioException original,
     ErrorInterceptorHandler handler,
@@ -140,17 +112,15 @@ class AuthInterceptor extends Interceptor {
     try {
       accessToken = await tokenProvider.refreshAccessToken();
     } on SessionExpiredException {
-      // Terminal. The backend has already committed the revocation; the
-      // provider has cleared the credentials and moved auth state to signed out.
-      // The original error is surfaced unchanged so the caller sees a `401`.
+      // The session has ended. The provider has already cleared the
+      // credentials and updated the authentication state.
+      // Preserve the original error so the caller receives the original 401.
       handler.next(original);
       return;
     } on DioException catch (error) {
-      // Everything else — transport failure, 429, 503, 500 — leaves the stored
-      // credentials in place and is not retried automatically. Surfacing the
-      // refresh failure rather than the original 401 is deliberate: the request
-      // did not fail because the session ended, and telling the user otherwise
-      // would sign them out over a network blip.
+      // A transport or server failure does not necessarily mean the session
+      // has ended. Keep the stored credentials and report the renewal failure
+      // instead of signing the user out over a temporary network problem.
       handler.reject(
         _renewalFailure(
           original,
@@ -160,17 +130,13 @@ class AuthInterceptor extends Interceptor {
       );
       return;
     } on ApiFailure catch (failure) {
-      // Already classified by the layer that raised it, and carried past this
-      // point unchanged: re-deriving a decision from a status would discard the
-      // reason the renewal actually failed.
+      // Preserve failures already classified by the API error layer.
       handler.reject(_renewalFailure(original, failure));
       return;
     } catch (error) {
-      // A failure of the local credential layer that arrives unclassified — a
-      // platform channel that cannot be reached, most likely. It is reported
-      // rather than dropped, and it is emphatically not terminal: nothing here
-      // says the session ended, so the stored credentials are left alone and
-      // this request is simply not replayed.
+      // Handle unexpected local failures, such as credential storage or
+      // platform-channel errors. They do not establish that the session ended,
+      // so leave the stored credentials untouched and do not replay the request.
       handler.reject(
         _renewalFailure(original, ApiFailureCredentialStorage(cause: error)),
       );
@@ -180,26 +146,26 @@ class AuthInterceptor extends Interceptor {
     try {
       handler.resolve(await _replay(original.requestOptions, accessToken));
     } on DioException catch (error) {
-      // The replay failed. It passes through without further renewal: this
-      // request has already had its one attempt.
+      // The request has already been replayed once. Do not attempt another
+      // refresh if the replay also fails.
       handler.next(error);
     } catch (error) {
-      // Same reasoning as the renewal above. A renewal that succeeded is not
-      // replayable when the replay itself throws something Dio does not model,
-      // and leaving `handler` uncompleted would hang the request.
+      // Handle unexpected replay failures as well. The original request must
+      // still be completed even when the failure is not represented by Dio.
       handler.reject(
         _renewalFailure(original, ApiFailureCredentialStorage(cause: error)),
       );
     }
   }
 
-  /// A failed renewal, reported as the original request's failure.
+  /// Creates the error reported when session renewal fails.
   ///
-  /// [failure] is decided by the renewal and passed in rather than derived
-  /// here: the outcome is already known, and on the paths that matter there may
-  /// be no response left to derive it from. [response] is the renewal's own
-  /// response when it had one, carried through so a caller inspecting the body
-  /// still sees it.
+  /// The failure is passed in from the renewal path rather than derived again
+  /// from the original request. The renewal outcome is already known, and
+  /// there may be no response available from which to determine it.
+  ///
+  /// When available, [response] preserves the renewal response so callers
+  /// inspecting the error can still access its body.
   DioException _renewalFailure(
     DioException original,
     ApiFailure failure, {
@@ -217,9 +183,9 @@ class AuthInterceptor extends Interceptor {
     RequestOptions request,
     String accessToken,
   ) {
-    // A copy, so the original options are left intact for the caller's error
-    // reporting. The marker rides in `extra`, which `fetch` carries over
-    // verbatim, so a replay of a replay still short-circuits.
+    // Copy the request options so the original remains unchanged for error
+    // reporting. The retry marker is carried in `extra` and prevents another
+    // refresh if this replay also receives an expired-token response.
     final replayOptions = RequestOptions(
       path: request.path,
       baseUrl: request.baseUrl,

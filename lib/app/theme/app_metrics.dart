@@ -1,16 +1,12 @@
 import 'package:flutter/widgets.dart';
 
-/// The approved design system's **shape and rhythm** — `design-system.md` §4 and §5.
+/// Shared layout and component dimensions.
 ///
-/// Split from [AppTokens] because none of it changes with brightness: there is one
-/// spacing scale, one radius scale and one border width, and giving dark mode a
-/// second set would imply a difference that does not exist.
-///
-/// **Nothing here is above 4 px on a control.** A control's corner radius is a
-/// decision, not a preference: a rounded button reads as a consumer app, and the
-/// approved direction is deliberately square.
+/// These values are independent of the active theme, so spacing, radii, and
+/// border widths use the same scale in light and dark mode.
 abstract final class AppMetrics {
-  // ---- spacing scale: 4 · 8 · 12 · 16 · 20 · 24 · 32 ----
+  // ---- spacing ----
+
   static const double space1 = 4;
   static const double space2 = 8;
   static const double space3 = 12;
@@ -19,96 +15,98 @@ abstract final class AppMetrics {
   static const double space6 = 24;
   static const double space7 = 32;
 
-  /// Horizontal screen padding. Profile and search groups use [space5].
+  /// Default horizontal screen padding.
+  ///
+  /// Profile and Search groups use [space5] instead.
   static const double screenPadding = space4;
 
-  // ---- radii: 0 · 2 · 3 · 4 ----
+  // ---- radii ----
+
   static const double radius0 = 0;
   static const double radius1 = 2;
   static const double radius2 = 3;
   static const double radius3 = 4;
 
-  /// Inputs and chips: 2 px.
+  /// Corner radius for inputs and chips.
   static const Radius controlRadius = Radius.circular(radius1);
 
-  /// Inventory slots: 3 px.
+  /// Corner radius for inventory slots.
   static const Radius slotRadius = Radius.circular(radius2);
 
   // ---- borders ----
+
   static const double borderWidth = 1;
 
-  /// Focus and error borders: 2 px.
+  /// Used for emphasized borders, such as focused and invalid fields.
   static const double borderWidthEmphasis = 2;
 
-  /// The halo drawn around a focused field, outside its border.
+  /// Width of the halo outside a focused field's border.
   static const double focusHaloWidth = 3;
 
   // ---- icons ----
+
   static const double iconSize = 18;
 
-  /// The brand mark beside the wordmark on an auth screen.
+  /// Size of the brand mark beside the wordmark on authentication screens.
   static const double brandMarkSize = 26;
 
   // ---- control heights ----
+
   static const double buttonHeight = 34;
   static const double buttonHeightSmall = 24;
 
   /// Input height.
   ///
-  /// **48 px, not 40.** The specification states 40 in §6.2, and 40 was what
-  /// shipped first — but the rendered field put its 20 px text run flush against
-  /// the top border with 20 px of dead space beneath it, so it read as a thin
-  /// text bar rather than a control, and it was under Material's 48 px minimum
-  /// touch target. 48 keeps the specified geometry's proportions while making
-  /// the field comfortably tappable, which is what the field is for.
+  /// Kept at 48 px rather than the originally specified 40 px. At 40 px, the
+  /// rendered text appeared too close to the top border, leaving excessive
+  /// empty space below it. The larger height provides balanced vertical
+  /// spacing and meets Material's 48 px minimum touch-target size.
   static const double fieldHeight = 48;
 
-  /// Vertical inset inside a field.
+  /// Content inset inside input fields.
   ///
-  /// This is the rule that makes the height read as a filled control. Supplying
-  /// a horizontal inset only — combined with `isDense`, which collapses
-  /// Material's own vertical padding — left the text touching the top border.
+  /// Vertical padding is required because dense Material fields can collapse
+  /// their default vertical spacing. Without it, text sits too close to the
+  /// top border.
   static const EdgeInsets fieldContentPadding = EdgeInsets.symmetric(
     horizontal: space3,
     vertical: space3,
   );
 
-  // ---- inventory slot ----
+  // ---- inventory slots ----
+
   static const double slotThumbSize = 56;
 
-  /// Internal slot padding.
+  /// Internal padding around slot content.
   static const EdgeInsets slotPadding = EdgeInsets.symmetric(
     horizontal: 12,
     vertical: 11,
   );
 
-  /// Gap between a slot's thumbnail and its text column.
+  /// Gap between the thumbnail and the text column.
   static const double slotGap = 12;
 
-  // ---- feedback note (`.ds-note`, `components.css`) ----
-  //
-  // These four are the component's own literals, not scale steps: `.ds-note`
-  // writes `9px 11px` for its padding and `6px`/`5px` for its mark, exactly as
-  // `.inv-slot` writes its own. The border widths are the scale's — 1 px, plus
-  // the note's 3 px leading edge.
+  // ---- feedback notes ----
 
-  /// Internal padding. The border is added outside it, so a bordered note's
-  /// content is inset by this plus [borderWidth] — and by
-  /// [noticeEdgeWidth] on the leading side.
+  /// Internal content padding.
+  ///
+  /// The border is outside this inset. The leading side also includes
+  /// [noticeEdgeWidth].
   static const EdgeInsets noticePadding = EdgeInsets.symmetric(
     horizontal: 11,
     vertical: 9,
   );
 
-  /// The note's leading edge: 3 px of the tone's semantic colour, against the
-  /// 1 px `--*-border` hairline on the other three sides.
+  /// Width of the colored leading edge of a feedback note.
+  ///
+  /// The remaining sides use the standard [borderWidth].
   static const double noticeEdgeWidth = 3;
 
-  /// The mark's square: `--ds-note__mark` is 6 × 6.
+  /// Size of the square mark displayed inside a feedback note.
   static const double noticeMarkSize = 6;
 
-  /// Where the mark starts, measured from the first line's top — the CSS's
-  /// `margin-top: 5px`, which squares it to a line of note copy rather than to
-  /// the band's padding.
+  /// Vertical offset of the mark from the top of the first text line.
+  ///
+  /// Aligns the mark with the note text rather than with the container padding.
   static const double noticeMarkTop = 5;
 }

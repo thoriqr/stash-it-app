@@ -1,31 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 
-/// The approved button set — `design-system.md` §6.1.
+/// Defines the button variants shared across the app.
 ///
-/// Exists because **two** screens need it: sign-in submits, and the Inbox intake
-/// needs both a secondary and a primary. A chip, a feedback note and an inventory
-/// slot each have one consumer and therefore stay with their owning feature.
-///
-/// The fills and borders come from the `ThemeData` button themes; this widget
-/// only chooses which one and carries the two states a `ButtonStyle` cannot
-/// express: [busy] and the shape of [small].
+/// Button colors and borders come from the corresponding [ThemeData] button
+/// themes. This widget selects the variant and handles the additional
+/// [busy] state and [small] size.
 enum AppButtonVariant {
-  /// The accent fill. **The only filled button on a screen** — on the Inbox that
-  /// is Save URL, so pasting can never be mistaken for saving (D25).
+  /// Accent-filled button for the primary action.
   primary,
 
-  /// A surface fill with a strong border.
+  /// Surface-filled button with a visible border.
   secondary,
 
-  /// No fill, no border, accent text.
+  /// Transparent button with accent-colored text.
   quiet,
 
-  /// A danger-soft fill, for a destructive action.
+  /// Danger-colored button for destructive actions.
   danger,
 }
 
-/// A button in the approved set.
+/// A shared button with consistent variants, sizing, and loading behavior.
 class AppButton extends StatelessWidget {
   const AppButton({
     required this.label,
@@ -37,25 +32,28 @@ class AppButton extends StatelessWidget {
     super.key,
   });
 
-  /// The label. Replaced by a spinner while [busy].
+  /// Button label, replaced by a progress indicator while [busy].
   final String label;
 
-  /// `null` disables the button. A [busy] button is disabled whatever this says.
+  /// Called when the button is pressed.
+  ///
+  /// A null callback disables the button. The button is also disabled while
+  /// [busy] is true.
   final VoidCallback? onPressed;
 
   final AppButtonVariant variant;
 
-  /// Replaces the label with a spinner and disables the button.
+  /// Shows a progress indicator and disables interaction while an action runs.
   ///
-  /// Separate from [onPressed] being `null` because the two mean different
-  /// things: a disabled control cannot be used, while a busy one is mid-action
-  /// and the user needs to see that something is happening.
+  /// Kept separate from [onPressed] because a busy button communicates that
+  /// an operation is in progress, while a disabled button is simply
+  /// unavailable.
   final bool busy;
 
-  /// Fills the available width. The specification's block variant.
+  /// Expands the button to fill the available width.
   final bool block;
 
-  /// The 24 px variant, for an action inside a dense row.
+  /// Uses the compact 24 px button height for dense layouts.
   final bool small;
 
   @override
@@ -64,9 +62,8 @@ class AppButton extends StatelessWidget {
     final disabled = onPressed == null || busy;
 
     final style = ButtonStyle(
-      // `Size(0, h)`, never `Size.fromHeight(h)`: the latter carries an
-      // infinite width, which a button in a `Row` or an unbounded `Column`
-      // cannot satisfy.
+      // Keep the minimum width at zero. Size.fromHeight would set an
+      // infinite width, which can overflow in constrained layouts.
       minimumSize: WidgetStatePropertyAll(
         Size(0, small ? AppMetrics.buttonHeightSmall : AppMetrics.buttonHeight),
       ),
@@ -125,7 +122,7 @@ class AppButton extends StatelessWidget {
     return SizedBox(width: double.infinity, child: button);
   }
 
-  /// The colour a busy spinner takes from whatever fills its button.
+  /// Returns the foreground color used by the loading indicator.
   Color _foreground(AppTokens tokens) => switch (variant) {
     AppButtonVariant.primary => tokens.accentContrast,
     AppButtonVariant.danger => tokens.danger,

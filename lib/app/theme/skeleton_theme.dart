@@ -2,50 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:stash_it_app/app/theme/app_tokens.dart';
 
-/// The loading treatment for data-driven lists, resolved for [brightness].
+/// Creates the shared skeleton loading configuration for the active theme.
 ///
-/// **Why this is one call and not a widget.** Every screen that loads a listing
-/// needs the same two decisions — which grey the bones are, and whether they
-/// move — and none of them is a per-screen choice. A wrapper widget would add a
-/// layer to every call site and a second thing to keep in step with the tokens,
-/// so the configuration is a plain function and `StashItApp` installs it once.
+/// A function is used instead of a wrapper widget because every screen shares
+/// the same color and animation decisions. The configuration is installed
+/// centrally by the application rather than repeated at individual call sites.
 ///
-/// **Colours come from the tokens, not from the package's defaults.** The
-/// package ships its own greys; this app has an approved palette, and a shimmer
-/// in the wrong grey reads as a different product. `surfaceSunken` is already
-/// the well / mock-data grey and `surfaceInset` the recessed band above it, so
-/// base and highlight are one step apart in both themes — the same small delta
-/// the package defaults use — and both are neutral greys. No accent, per
-/// `ux-discovery` §5: *"Initial loading … Neutral skeleton rows."*
-///
-/// **Reduced motion is honoured.** `MediaQuery.disableAnimations` is the
-/// platform's own "I do not want animation" signal; when it is set the bones are
-/// painted in one flat colour instead. `SolidColorEffect` has a zero duration,
-/// and `Skeletonizer` never starts a ticker for one, so the static treatment
-/// really is static rather than a shimmer frozen at frame zero.
+/// Colors come from [AppTokens] instead of the package defaults so skeletons
+/// remain consistent with the application's light and dark palettes. The
+/// effect uses neutral surface colors rather than the accent color.
 SkeletonizerConfigData appSkeletonizerConfig(
   Brightness brightness, {
   bool reducedMotion = false,
 }) {
   return SkeletonizerConfigData(
-    // Set explicitly rather than left to the package's
-    // `MediaQuery.platformBrightnessOf` fallback: the app knows which theme is
-    // in force, and it is the same answer for both.
+    // Use the active application theme instead of relying on the package's
+    // platform-brightness fallback.
     brightness: brightness,
 
-    // Top-level tear-offs, not closures. `SkeletonizerConfigData` compares its
-    // resolver by identity, so a closure rebuilt each build would make the
-    // config unequal every frame — and an unequal config restarts the shimmer.
+    // Use top-level functions to keep the resolver identity stable.
+    // Recreating a closure on each build could make the configuration unequal
+    // and cause the shimmer animation to restart.
     effectResolver: reducedMotion ? _staticEffect : _shimmerEffect,
   );
 }
 
-/// One pass of the sweep.
+/// Duration of one shimmer pass across the loading content.
 ///
-/// Under the package's two seconds: it crosses a row-sized rectangle, and a
-/// faster pass reads as motion rather than as a progress indicator — which
-/// matters, because the backend never signals that anything has begun
-/// (`decisions.md` §2.2).
+/// Kept shorter than the package's default so the effect reads as subtle
+/// movement rather than a progress indicator. Loading does not represent
+/// measurable progress.
 const Duration _shimmerDuration = Duration(milliseconds: 1600);
 
 PaintingEffect _shimmerEffect(Brightness brightness) {
@@ -60,7 +46,9 @@ PaintingEffect _shimmerEffect(Brightness brightness) {
   );
 }
 
-/// The reduced-motion treatment: the resting colour, held still.
+/// Returns a static skeleton effect when reduced motion is requested.
+///
+/// Uses the resting surface color without starting a shimmer animation.
 PaintingEffect _staticEffect(Brightness brightness) {
   final tokens = brightness == Brightness.dark
       ? AppTokens.dark

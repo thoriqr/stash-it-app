@@ -28,27 +28,25 @@ import '../models/verification_status_response.dart';
 
 part 'auth_api.g.dart';
 
-/// The authenticated API surface, issued over `appDio`.
+/// Defines the authentication API operations used by the client.
 ///
-/// Returns API envelopes rather than bare models, so `data`, `message` and
-/// `meta` are decoded once at the boundary and the mapper above them never has
-/// to reach into a raw map.
+/// Methods return API envelopes so response data and metadata are decoded
+/// consistently at the network boundary.
 @RestApi()
 abstract class AuthApi {
   factory AuthApi(Dio dio, {String? baseUrl}) = _AuthApi;
 
   /// `POST /auth/login`
   ///
-  /// Unauthenticated, and bounded per client address and per email address
-  /// (30/10min and 10/15min). A `429` here is a real budget, not a defect.
+  /// Authenticates with email and password and returns the resulting session.
   @POST('/auth/login')
   Future<ApiEnvelope<LoginResponse>> login(@Body() LoginRequest request);
 
   /// `POST /auth/login/google`
   ///
-  /// Unauthenticated. The response carries one of three outcomes:
-  /// `authenticated`, `account_link_required`, or `registration_required`.
-  /// Only the authenticated outcome includes access and refresh tokens.
+  /// Returns one of three outcomes: `authenticated`, `account_link_required`,
+  /// or `registration_required`. Only the authenticated outcome includes
+  /// access and refresh tokens.
   @POST('/auth/login/google')
   Future<ApiEnvelope<LoginGoogleResponse>> loginGoogle(
     @Body() LoginGoogleRequest request,
@@ -56,8 +54,9 @@ abstract class AuthApi {
 
   /// `GET /auth/login/google/account-link/{confirmationId}`
   ///
-  /// Reads a pending account-link confirmation. The confirmation id only names
-  /// the flow; the confirm route also requires the Google ID token.
+  /// Retrieves the details of a pending account-link confirmation.
+  /// The confirmation ID identifies the flow; confirming it also requires
+  /// the Google ID token.
   @GET('/auth/login/google/account-link/{confirmationId}')
   Future<ApiEnvelope<AccountLinkConfirmationResponse>>
   getGoogleAccountLinkConfirmation(
@@ -66,9 +65,9 @@ abstract class AuthApi {
 
   /// `POST /auth/login/google/account-link/{confirmationId}/confirm`
   ///
-  /// Confirms the link and returns the same authenticated shape as Google
-  /// login. The ID token must belong to the identity the confirmation was
-  /// created for.
+  /// Confirms the account link and returns the authenticated session.
+  /// The Google ID token must belong to the identity associated with
+  /// the pending confirmation.
   @POST('/auth/login/google/account-link/{confirmationId}/confirm')
   Future<ApiEnvelope<LoginGoogleResponse>> confirmGoogleAccountLink(
     @Path('confirmationId') String confirmationId,
@@ -77,8 +76,8 @@ abstract class AuthApi {
 
   /// `POST /auth/register/finalize/social`
   ///
-  /// Completes a social registration and creates an authenticated session. The
-  /// continuation token header is the capability; no password is sent.
+  /// Completes social registration and returns an authenticated session.
+  /// The continuation token is sent through the request header.
   @POST('/auth/register/finalize/social')
   Future<ApiEnvelope<LoginResponse>> finalizeSocialRegistration(
     @Header('X-Registration-Continuation') String continuationToken,
@@ -87,9 +86,8 @@ abstract class AuthApi {
 
   /// `POST /auth/register/manual`
   ///
-  /// Starts (or resumes) the email registration lifecycle and returns the
-  /// verification id needed to request its first PIN. This route is
-  /// unauthenticated and has no registration rate middleware of its own.
+  /// Starts or resumes email registration and returns the verification ID
+  /// used by the PIN verification flow.
   @POST('/auth/register/manual')
   Future<ApiEnvelope<RegisterManualResponse>> registerManual(
     @Body() RegisterManualRequest request,
@@ -97,14 +95,12 @@ abstract class AuthApi {
 
   /// `POST /auth/register/recovery/manual`
   ///
-  /// Starts (or resumes) a recovery verification for a manual registration
-  /// whose raw continuation token this device no longer has. The response has
-  /// the same shape as [registerManual] and reports `pending`: the returned id
-  /// must be used with the existing PIN, status, resend and verify routes.
+  /// Starts or resumes recovery verification when the client no longer has
+  /// the original registration continuation token.
   ///
-  /// This route sends **no email** itself and does not expire or replace the
-  /// registration. It is bounded by the same per-client-address budget as PIN
-  /// issuance.
+  /// Returns the same response shape as [registerManual]. The returned
+  /// verification ID is used with the existing PIN, status, resend, and
+  /// verification operations. This request does not send a PIN itself.
   @POST('/auth/register/recovery/manual')
   Future<ApiEnvelope<RegisterManualResponse>> initiateManualRecovery(
     @Body() RegisterManualRequest request,
@@ -112,22 +108,21 @@ abstract class AuthApi {
 
   /// `POST /auth/register/verification/{verificationId}/pin`
   ///
-  /// The verification id is the complete input: this endpoint has **no request
-  /// body**. The `201` carries an envelope repeating that id, which the caller
-  /// already has, so this returns `void` rather than a second parsed value.
+  /// Requests the first PIN. The verification ID is the only input;
+  /// this endpoint has no request body.
   ///
-  /// **Dio still decodes the `201` body**, and a body it cannot decode fails the
-  /// call. That failure does not prove the PIN was not issued: the server
-  /// persisted the code before answering, so only the representation is
-  /// unreadable. Callers must not present a decode failure as proof that no
-  /// code was sent or emailed.
+  /// Returns `void` because the response contains no additional information
+  /// the client needs beyond the verification ID it already has.
+  ///
+  /// The response body is still decoded by Dio. If decoding fails, the PIN
+  /// may already have been issued. The client must not interpret a decode
+  /// failure as proof that no PIN was sent.
   @POST('/auth/register/verification/{verificationId}/pin')
   Future<void> createPin(@Path('verificationId') String verificationId);
 
   /// `GET /auth/register/verification/{verificationId}`
   ///
-  /// Read-only status of a registration verification. No request body. Returns
-  /// the verification status, whether a PIN has been issued, and the remaining
+  /// Retrieves the verification status, PIN issuance state, and remaining
   /// resend cooldown in seconds.
   @GET('/auth/register/verification/{verificationId}')
   Future<ApiEnvelope<VerificationStatusResponse>> getVerification(
@@ -136,7 +131,7 @@ abstract class AuthApi {
 
   /// `POST /auth/register/verification/{verificationId}/resend`
   ///
-  /// Issues a replacement PIN. No request body. The verification id is unchanged.
+  /// Requests a replacement PIN without changing the verification ID.
   @POST('/auth/register/verification/{verificationId}/resend')
   Future<ApiEnvelope<ResendVerificationResponse>> resendVerification(
     @Path('verificationId') String verificationId,
@@ -144,7 +139,7 @@ abstract class AuthApi {
 
   /// `POST /auth/register/verification/{verificationId}/verify`
   ///
-  /// Verifies the PIN and returns a registration continuation token.
+  /// Verifies the submitted PIN and returns a registration continuation token.
   @POST('/auth/register/verification/{verificationId}/verify')
   Future<ApiEnvelope<VerifyRegistrationResponse>> verifyRegistration(
     @Path('verificationId') String verificationId,
@@ -153,8 +148,8 @@ abstract class AuthApi {
 
   /// `GET /auth/register/continuation`
   ///
-  /// Validates the continuation token supplied in the `X-Registration-Continuation`
-  /// header and returns registration details.
+  /// Validates the continuation token supplied through the
+  /// `X-Registration-Continuation` header and returns registration details.
   @GET('/auth/register/continuation')
   Future<ApiEnvelope<RegistrationContinuationResponse>>
   getRegistrationContinuation(
@@ -163,7 +158,8 @@ abstract class AuthApi {
 
   /// `POST /auth/register/finalize/manual`
   ///
-  /// Finalizes manual registration using the continuation token header and body.
+  /// Completes manual registration using the continuation token header
+  /// and the submitted registration details.
   @POST('/auth/register/finalize/manual')
   Future<ApiEnvelope<FinalizeManualRegistrationResponse>>
   finalizeManualRegistration(
@@ -173,12 +169,11 @@ abstract class AuthApi {
 
   /// `POST /auth/password-reset`
   ///
-  /// Starts (or resumes) a password reset and returns the verification id needed
-  /// to request its PIN. The response is identical for an address with no
-  /// account — the id is then a random, unpersisted placeholder — so this call
-  /// cannot be used to discover which addresses are registered.
+  /// Starts or resumes password reset and returns the verification ID
+  /// used by the PIN flow.
   ///
-  /// Bounded per client address (10/10min). A `429` is a real budget.
+  /// The response does not reveal whether the submitted email address
+  /// belongs to an existing account.
   @POST('/auth/password-reset')
   Future<ApiEnvelope<RequestPasswordResetResponse>> requestPasswordReset(
     @Body() RequestPasswordResetRequest request,
@@ -186,9 +181,9 @@ abstract class AuthApi {
 
   /// `GET /auth/password-reset/verification/{verificationId}`
   ///
-  /// Read-only status. Returns a body only while the verification is `pending`;
-  /// a verified request answers `409 VERIFICATION_NOT_PENDING`. This is the
-  /// client's first validation step and is bounded per address (60/10min).
+  /// Retrieves the password-reset verification status.
+  /// A response is available while verification is pending. An already
+  /// verified request returns `409 VERIFICATION_NOT_PENDING`.
   @GET('/auth/password-reset/verification/{verificationId}')
   Future<ApiEnvelope<VerificationStatusResponse>> getPasswordResetVerification(
     @Path('verificationId') String verificationId,
@@ -196,8 +191,8 @@ abstract class AuthApi {
 
   /// `POST /auth/password-reset/verification/{verificationId}/pin`
   ///
-  /// Issues the first PIN. No request body. Bounded per address and by the shared
-  /// PIN email budgets, like the registration issuance route.
+  /// Requests the first password-reset PIN. The verification ID is the only
+  /// input; this endpoint has no request body.
   @POST('/auth/password-reset/verification/{verificationId}/pin')
   Future<void> createPasswordResetPin(
     @Path('verificationId') String verificationId,
@@ -205,7 +200,7 @@ abstract class AuthApi {
 
   /// `POST /auth/password-reset/verification/{verificationId}/resend`
   ///
-  /// Issues a replacement PIN. The verification id is unchanged.
+  /// Requests a replacement PIN without changing the verification ID.
   @POST('/auth/password-reset/verification/{verificationId}/resend')
   Future<ApiEnvelope<ResendVerificationResponse>> resendPasswordResetPin(
     @Path('verificationId') String verificationId,
@@ -213,9 +208,8 @@ abstract class AuthApi {
 
   /// `POST /auth/password-reset/verification/{verificationId}/verify`
   ///
-  /// Verifies the PIN and returns the raw password-reset continuation token,
-  /// which the client must persist immediately. The backend stores only its
-  /// hash.
+  /// Verifies the submitted PIN and returns the raw password-reset
+  /// continuation token. The client must persist this token securely.
   @POST('/auth/password-reset/verification/{verificationId}/verify')
   Future<ApiEnvelope<VerifyPasswordResetResponse>> verifyPasswordReset(
     @Path('verificationId') String verificationId,
@@ -224,8 +218,8 @@ abstract class AuthApi {
 
   /// `GET /auth/password-reset/continuation`
   ///
-  /// Validates the continuation token supplied in the
-  /// `X-Password-Reset-Continuation` header. Deliberately unlimited server-side.
+  /// Validates the continuation token supplied through the
+  /// `X-Password-Reset-Continuation` header.
   @GET('/auth/password-reset/continuation')
   Future<ApiEnvelope<PasswordResetContinuationResponse>>
   getPasswordResetContinuation(
@@ -234,10 +228,12 @@ abstract class AuthApi {
 
   /// `POST /auth/password-reset/finalize`
   ///
-  /// Completes the reset with the continuation header and the new password. A
-  /// `200` is the receipt; the body carries no payload. The backend revokes every
-  /// session for the account in the same transaction, so this flow never signs
-  /// the user in.
+  /// Completes password reset using the continuation token header
+  /// and the new password.
+  ///
+  /// Returns `void` because a successful response carries no additional
+  /// payload. Completing this flow does not sign the user in; the client
+  /// must use the normal sign-in flow afterward.
   @POST('/auth/password-reset/finalize')
   Future<void> finalizePasswordReset(
     @Header('X-Password-Reset-Continuation') String continuationToken,
@@ -246,18 +242,13 @@ abstract class AuthApi {
 
   /// `POST /auth/logout`
   ///
-  /// **No request body.** The backend binds none: it revokes the session named
-  /// by the verified token's `sid` claim, which the guard has already
-  /// established, so a body would be ignored at best and misleading at worst.
+  /// Logs out the current session. This endpoint requires no request body.
   ///
-  /// Returns `ApiEnvelope<LogoutData>` because the success body is
-  /// `{"data": null, "message": "logout successful"}` — `httpx.OKMessage` writes
-  /// a nil `Data` pointer. `ApiEnvelope.data` is nullable so that decodes; a
-  /// dedicated payload type rather than `Object?` keeps the generated decoder
-  /// meaningful instead of an identity cast.
+  /// Returns an API envelope with nullable `data`, matching the response
+  /// shape even though a successful logout has no payload.
   ///
-  /// The call is idempotent server-side: a missing, already-revoked or
-  /// foreign session all answer `200`, so a retry after a lost response is safe.
+  /// Logout is safe to retry: a successful response is returned even when
+  /// the session is already revoked or no longer available.
   @POST('/auth/logout')
   Future<ApiEnvelope<LogoutData>> logout();
 }

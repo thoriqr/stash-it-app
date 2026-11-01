@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
 
-/// The approved design system's **semantic colour** — `design-system.md` §2.
+/// Semantic color tokens shared by the application.
 ///
-/// This is the Flutter mirror of `docs/design-explorations/assets/tokens.css`. It
-/// carries the tokens Material 3's [ColorScheme] has no slot for: the inset and
-/// sunken surfaces, the hairline borders, the accent's tinted surfaces, the
-/// selected-navigation triple, and the slot hatch.
+/// Includes colors that are not represented directly by Material 3's
+/// [ColorScheme], such as inset surfaces, subtle borders, selection states,
+/// and inventory slot details.
 ///
-/// Two instances exist, [light] and [dark]. The accent is **Dusty Sage** in both:
-/// one hue at two lightnesses, because only lightness survives both surfaces.
+/// The light and dark variants use the same accent hue with different
+/// lightness values to maintain contrast against their respective surfaces.
 ///
-/// **Contrast.** Every text step used for copy meets WCAG AA (4.5:1) on both
-/// [surface] and [surfaceInset]. [textDisabled] and [disabledText] are the only
-/// steps below it and are reserved for disabled controls, which WCAG exempts.
-/// The accent reaches 5.87:1 on white in light and 6.10:1 on `#1B1F23` in dark,
-/// so it is safe as small chip, label and button text.
+/// Text colors are designed to meet WCAG AA contrast requirements on the
+/// primary and inset surfaces. Disabled text is reserved for disabled
+/// controls, where reduced contrast is acceptable.
 ///
-/// Exposed as a [ThemeExtension] so widgets read colour from the theme instead of
-/// hard-coding hex values. Read it with `AppTheme.tokensOf(context)`.
+/// Exposed as a [ThemeExtension] so widgets can read colors from the active
+/// theme instead of defining their own color values. Use
+/// `AppTheme.tokensOf(context)` to access the tokens.
 @immutable
 class AppTokens extends ThemeExtension<AppTokens> {
   const AppTokens({
@@ -63,7 +61,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     required this.mockBorder,
   });
 
-  /// The approved light theme (B · Inventory). Cool white-grey, never cream.
+  /// Light theme colors.
   static const AppTokens light = AppTokens(
     canvas: Color(0xFFF5F7F9),
     surface: Color(0xFFFFFFFF),
@@ -107,7 +105,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     mockBorder: Color(0xFFC3CCD6),
   );
 
-  /// The approved dark theme (B-Dark). Layered charcoal, never pure black.
+  /// Dark theme colors.
   static const AppTokens dark = AppTokens(
     canvas: Color(0xFF14171A),
     surface: Color(0xFF1B1F23),
@@ -153,91 +151,93 @@ class AppTokens extends ThemeExtension<AppTokens> {
 
   // ---- surfaces ----
 
-  /// The app background. Also the list canvas the slots sit on.
+  /// Main application background and list canvas.
   final Color canvas;
 
-  /// Raised surfaces: slots, app bar, navigation bar, buttons.
+  /// Default surface for components such as slots, app bars, and buttons.
   final Color surface;
 
-  /// Sheets and dialogs.
+  /// Elevated surface used by sheets and dialogs.
   final Color surfaceRaised;
 
-  /// Recessed bands: the intake area, mock-data bars.
+  /// Recessed surface used for grouped content and secondary areas.
   final Color surfaceInset;
 
-  /// Wells: the thumbnail placeholder.
+  /// Deeply recessed surface, such as a thumbnail placeholder.
   final Color surfaceSunken;
 
   // ---- text ----
 
-  /// Titles and body copy. 13.3:1 light · 12.5:1 dark.
+  /// Primary text for titles and body content.
   final Color textPrimary;
 
-  /// Descriptions. 7.7:1 light · 7.2:1 dark.
+  /// Secondary text for descriptions.
   final Color textSecondary;
 
-  /// Domains, times, labels, hints. 5.6:1 light · 5.0:1 dark.
+  /// Tertiary text for labels, hints, domains, and timestamps.
   final Color textTertiary;
 
-  /// Disabled controls **only**. Below AA by design; WCAG exempts disabled
-  /// controls from contrast minimums, and nothing else may use it.
+  /// Text for disabled controls only.
+  ///
+  /// Do not use for ordinary content because it does not meet the standard
+  /// contrast target.
   final Color textDisabled;
 
-  /// Text on a filled accent.
+  /// Text displayed on filled accent surfaces.
   final Color textInverse;
 
-  // ---- lines ----
+  // ---- borders ----
 
-  /// The default 1 px border.
+  /// Default border color.
   final Color border;
 
-  /// A deliberate or emphasised border: button outlines, empty wells.
+  /// Stronger border for emphasized outlines and component boundaries.
   final Color borderStrong;
 
-  /// Hairline separators.
+  /// Subtle border for low-emphasis separators.
   final Color borderSubtle;
 
   // ---- accent ----
 
-  /// Dusty Sage. Identity and progress only, never decoration.
+  /// Primary accent color for identity and progress indicators.
   final Color accent;
 
-  /// The accent one step deeper, for a pressed accent surface.
+  /// Stronger accent shade, used for pressed or emphasized states.
   final Color accentStrong;
 
-  /// The accent's only filled surface — chips, the focused field halo's base.
+  /// Soft accent background for chips and highlighted surfaces.
   final Color accentSoft;
 
-  /// A chip's or the system collection's accent border.
+  /// Border color for accent-based components.
   final Color accentBorder;
 
-  /// Text on a filled [accent].
+  /// Foreground color for content displayed on a filled [accent] surface.
   final Color accentContrast;
 
   // ---- selection ----
 
-  /// The selected navigation destination: its icon and label.
+  /// Foreground color for the selected navigation destination.
   final Color selected;
 
-  /// The selected destination's surface.
+  /// Background color for the selected navigation destination.
   final Color selectedSoft;
 
-  /// The short accent marker on the navigation bar's top edge.
+  /// Accent marker used to indicate the selected navigation destination.
   final Color selectedMark;
 
   // ---- semantic states ----
 
-  /// A save that was confirmed.
+  /// Color for confirmed successful operations.
   final Color success;
   final Color successSoft;
   final Color successBorder;
 
-  /// Budget spent, expiry, uncertain outcome.
+  /// Color for warnings and outcomes that cannot be confirmed.
   final Color warning;
   final Color warningSoft;
   final Color warningBorder;
 
-  /// A failure that is known.
+  /// Color for confirmed failures.
   final Color danger;
   final Color dangerSoft;
   final Color dangerBorder;
@@ -247,35 +247,39 @@ class AppTokens extends ThemeExtension<AppTokens> {
   final Color disabledBg;
   final Color disabledBorder;
 
-  /// Same value as [textDisabled], named for its role.
+  /// Disabled-control foreground color.
+  ///
+  /// Uses the same value as [textDisabled], with a name specific to its role.
   final Color disabledText;
 
   // ---- focus ----
 
-  /// The halo drawn outside a focused field's border. Carries its own alpha.
+  /// Focus halo color, including its own transparency.
   final Color focusRing;
 
   // ---- inventory slot ----
 
-  /// The 45° hatch that stands in for a preview image.
+  /// First color used by the diagonal placeholder hatch.
   final Color slotHatch1;
 
-  /// The second step of that hatch.
+  /// Second color used by the diagonal placeholder hatch.
   final Color slotHatch2;
 
-  /// The slot's shadow colour, carrying its own alpha.
+  /// Slot shadow color, including its own transparency.
   final Color slotShadowColor;
 
-  /// Light drops a shadow below the slot; dark lifts it with an inset hairline
-  /// instead, because a drop shadow is invisible on a dark canvas.
+  /// Whether the slot uses an inset shadow instead of a drop shadow.
+  ///
+  /// Dark surfaces use an inset treatment because a drop shadow is less
+  /// visible against a dark background.
   final bool slotShadowInset;
 
   // ---- mock-data marker ----
 
-  /// The "this is not API data" line.
+  /// Text color for indicators that distinguish mock data from API data.
   final Color mockText;
 
-  /// Its dashed border.
+  /// Dashed border color for mock-data indicators.
   final Color mockBorder;
 
   @override

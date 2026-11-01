@@ -26,7 +26,7 @@ flutter pub get
 Run the application:
 
 ```bash
-flutter run
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080 --dart-define=GOOGLE_SERVER_CLIENT_ID=your-google-web-client-id
 ```
 
 ## Development Commands
@@ -42,7 +42,7 @@ flutter analyze
 flutter test
 
 # Generate code
-dart run build_runner build
+dart run build_runner build --delete-conflicting-outputs
 ```
 
 Run code generation after modifying annotations or source files that require generated output.

@@ -6,40 +6,28 @@ import 'api_failure.dart';
 
 /// Converts a [DioException] into an [ApiFailure].
 ///
-/// The one place in the client that reads a failed HTTP response
-/// (`AGENTS.md` §2, presentation boundaries). Everything above it selects on the
-/// returned [ApiFailure]; nothing else inspects a status code or an
-/// `error.code`.
+/// This is the only place that interprets failed HTTP responses. All other
+/// layers select behavior from the resulting [ApiFailure], not from status
+/// codes or raw API error codes.
 ///
-/// Branching is on `error.code` only. `error.message` is human-facing prose and
-/// is never displayed ([D22]); it is parsed so a malformed payload can be
-/// *detected*, not shown.
+/// Classification uses `error.code`, never the backend's human-readable
+/// message. The message is parsed only as part of decoding the response.
 ApiFailure mapApiFailure(DioException error) {
-  // Already classified upstream. `SessionController` wraps an ambiguous renewal
-  // this way because the outcome cannot be re-derived from a response — there
-  // is no response — and re-deciding it here from the status would discard the
-  // distinction between "the server refused" and "we do not know".
+  // Preserve failures already classified upstream. An ambiguous refresh
+  // outcome, for example, cannot be reclassified from a response that does
+  // not exist. Reinterpreting it here could turn an unknown outcome into a
+  // definite authentication refusal.
   final classified = error.error;
   if (classified is ApiFailure) return classified;
 
   final response = error.response;
 
-  // No response object reached us.
+  // A missing response can mean either that a response arrived but could not
+  // be decoded, or that no response arrived at all.
   //
-  // Two different things produce this shape, and they mean opposite things, so
-  // they are separated by the cause rather than lumped together:
-  //
-  // - **A response arrived but could not be decoded.** Dio's transformer throws
-  //   while parsing a body it declared as JSON, and the resulting exception
-  //   carries no `response`. This is group F: known not saved, because a reply
-  //   did arrive.
-  // - **Nothing arrived.** A dropped connection or a timeout is groups G and H:
-  //   uncertain, and the only category allowed to say so.
-  //
-  // Both look identical by shape, so the decoder failure is recognised by its
-  // cause. Defaulting to "uncertain" would be the wrong answer in the first case,
-  // because it tells the user their write may not have landed when the server
-  // has already answered.
+  // A decoding failure is a known outcome: the server replied, so the request
+  // is not uncertain. A transport failure or timeout is uncertain because
+  // the client cannot determine whether the server processed the request.
   if (response == null) {
     if (_isDecodeFailure(error)) {
       return const ApiFailureUnreadableResponse();
@@ -49,17 +37,17 @@ ApiFailure mapApiFailure(DioException error) {
 
   final body = parseApiErrorBody(response.data);
 
-  // A non-2xx with no readable code. Fiber's default handler answers
-  // `text/plain` for any `*fiber.Error`, and a proxy or load balancer can answer
-  // with HTML. **[D15] group F — known not saved, because a response arrived.**
+  // A response arrived, but it does not contain a readable error code.
+  // This includes plain-text framework errors and HTML responses from
+  // proxies or load balancers. The outcome is known, but its meaning is not.
   if (body == null || body.code == null || body.code!.isEmpty) {
     return ApiFailureUnreadableResponse(code: body?.code);
   }
 
   final code = body.code!;
 
-  // Budgets first: a 429 and a 503 are decided by the code, never by the
-  // status, because different codes share both.
+  // Rate limits and temporary capacity restrictions are identified by code,
+  // not HTTP status. Different failures can share the same status.
   switch (code) {
     case ApiErrorCode.userRateLimitExceeded:
     case ApiErrorCode.ipRateLimitExceeded:
@@ -71,18 +59,16 @@ ApiFailure mapApiFailure(DioException error) {
         retryAfter: parseRetryAfter(response),
       );
 
-    // `PASSWORD_WORK_UNAVAILABLE` is the one 503 that carries a `Retry-After`:
-    // the wait is the bounded time the caller was already held for, so the
-    // countdown is real rather than invented (`login/service.go:266`).
+    // Password verification capacity is temporarily exhausted. Its
+    // Retry-After value represents the actual remaining wait.
     case ApiErrorCode.passwordWorkUnavailable:
       return ApiFailureRateLimited(
         code: code,
         retryAfter: parseRetryAfter(response),
       );
 
-    // The code was persisted before delivery was attempted. Its Retry-After is
-    // the actual resend cooldown, so it must not be collapsed into a generic
-    // unavailable service which has no known recovery time.
+    // The verification code was persisted, but email delivery failed.
+    // Retry-After carries the actual resend cooldown.
     case ApiErrorCode.pinEmailDeliveryFailed:
       return ApiFailurePinEmailDeliveryFailed(
         retryAfter: parseRetryAfter(response),
@@ -97,15 +83,15 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.serviceUnavailable:
       return ApiFailureServerUnavailable(code: code);
 
-    // A terminal refresh refusal. Only `POST /auth/refresh` can produce these,
-    // and the backend has already committed the revocation before answering.
+    // These refresh failures mean the session has ended. They are returned
+    // only after the server has committed the corresponding session state.
     case ApiErrorCode.refreshTokenInvalid:
     case ApiErrorCode.sessionRevoked:
     case ApiErrorCode.sessionExpired:
       return ApiFailureSessionEnded(code: code);
 
-    // The three bearer-guard codes. Grouped because the interceptor has already
-    // acted on the only actionable one by the time this runs.
+    // Bearer-token failures. The interceptor has already attempted the
+    // refresh flow when the error code allows it.
     case ApiErrorCode.invalidAuthorizationHeader:
     case ApiErrorCode.invalidAccessToken:
     case ApiErrorCode.accessTokenExpired:
@@ -116,40 +102,31 @@ ApiFailure mapApiFailure(DioException error) {
         code: ApiErrorCode.invalidCredentials,
       );
 
-    // Registration lifecycle refusals. They share a `409`, but each has a
-    // different correction, so they are mapped to typed variants rather than one
-    // conflict type. Branching on the code here is the only place it happens;
-    // presentation selects on the variant. They are deliberately not inferred
-    // from `409` alone: an unknown conflict stays unreadable so a future backend
-    // code cannot silently select this flow.
+    // Registration lifecycle failures have different recovery actions.
+    // Keep them as distinct variants rather than inferring behavior from
+    // their shared HTTP status.
     case ApiErrorCode.registrationAlreadyCompleted:
       return ApiFailureRegistrationAlreadyCompleted(code: code);
 
-    // Recovery was asked to start while the normal verification is still
-    // pending. It is not a restart — the registration is alive and the normal
-    // PIN flow is its continuation. It is also not the concurrent-insert
-    // variant: the correction is to re-enter `/register/manual` with the same
-    // email, not to repeat the recovery call.
+    // Registration is still pending. Continue the normal verification
+    // flow instead of attempting to start a separate recovery flow.
     case ApiErrorCode.registrationAlreadyPending:
       return ApiFailureRegistrationAlreadyPending(code: code);
 
-    // A concurrent request won the insert, and the other request's row is what
-    // remains. The request is well formed and the address need not change:
-    // retrying is the correction.
+    // Another concurrent request created the registration or verification
+    // record first. Retrying the same request is a valid correction.
     case ApiErrorCode.registrationAlreadyExists:
     case ApiErrorCode.activeVerificationCodeExists:
       return ApiFailureRegistrationRetryable(code: code);
 
-    // The lifecycle is over. Repeating the same request cannot succeed; the flow
-    // has to start a new registration.
+    // The registration lifecycle has ended. A new registration is required.
     case ApiErrorCode.verificationNotPending:
     case ApiErrorCode.registrationNotPending:
     case ApiErrorCode.registrationExpired:
       return ApiFailureRegistrationRestartRequired(code: code);
 
-    // A code was sent too recently. The server states no wait for this `409`, so
-    // none is carried and `parseRetryAfter` is deliberately not called: a
-    // duration taken from anywhere else would be invented.
+    // The server does not provide a wait duration for this refusal.
+    // Do not infer a countdown from another source.
     case ApiErrorCode.verificationResendCooldown:
       return ApiFailureVerificationResendCooldown(code: code);
 
@@ -174,11 +151,9 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.registrationIdentityMismatch:
       return ApiFailureRegistrationIdentityMismatch(code: code);
 
-    // Google authentication lifecycle refusals. They are deliberately separate
-    // from bearer and registration failures: an invalid Google token can be
-    // retried with a fresh token, a confirmation mismatch cannot, and a
-    // committed link with no session is recovered by logging in with Google
-    // again rather than by retrying confirm.
+    // Google authentication failures have distinct recovery paths.
+    // An invalid token can be retried with a fresh token, while a committed
+    // account link with a failed session requires a fresh Google login.
     case ApiErrorCode.invalidGoogleToken:
       return ApiFailureInvalidGoogleToken(code: code);
 
@@ -191,12 +166,9 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.accountLinkSessionFailed:
       return ApiFailureAccountLinkSessionFailed(code: code);
 
-    // Password-reset lifecycle refusals. They are a separate group because the
-    // correction and the screens are separate: a reset can be retried, restarted
-    // or is already complete, and none of those should ever select registration
-    // copy. `PASSWORD_RESET_CONTINUATION_REQUIRED` is a 401 but is mapped here
-    // before any auth-required handling: it names a missing capability header,
-    // not a bearer-session problem.
+    // Password-reset failures are separate from registration and bearer
+    // authentication failures because they belong to a different flow.
+    // In particular, a missing continuation header is not a session error.
     case ApiErrorCode.passwordResetAlreadyPending:
       return ApiFailurePasswordResetAlreadyPending(code: code);
 
@@ -222,92 +194,66 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.validationError:
       return ApiFailureValidation(body.fields);
 
-    // A `400` raised after the body passed validation: the URL is well formed
-    // JSON and still not a usable address. It means exactly what
-    // `VALIDATION_ERROR` means to a caller — the input has to change — and the
-    // user's action is the same, so it is the same variant rather than a second
-    // one with identical copy.
+    // These errors describe correctable input that passed basic request
+    // parsing but failed a more specific validation rule.
     case ApiErrorCode.invalidUrl:
-    // Search's own query rule. Same reasoning: a correctable input, not an
-    // unreadable reply.
     case ApiErrorCode.invalidSearchQuery:
-    // The move endpoint's collection-name rule. Same reasoning again: the name
-    // is well formed JSON and still outside its documented bounds.
     case ApiErrorCode.invalidCollectionName:
       return ApiFailureValidation(body.fields);
 
-    // The body could not be parsed at all, or parsed without stating which
-    // operation the move endpoint should run. Both are client defects with no
-    // user-correctable field, so they share the standard malformed-request
-    // handling. `INVALID_COLLECTION_INTENT` in particular must not fall through
-    // to a duplicate-name conflict. The two collection-delete shape codes are
-    // the same kind of defect: a well-formed client always sends `delete` with a
-    // null target, so reaching either means this client sent an incoherent body.
+    // These codes indicate a malformed request rather than a user-correctable
+    // field error. The client should not infer a collection action or target.
     case ApiErrorCode.badRequest:
     case ApiErrorCode.invalidCollectionIntent:
     case ApiErrorCode.invalidCollectionDeleteAction:
     case ApiErrorCode.invalidCollectionDeleteTarget:
       return const ApiFailureMalformedRequest();
 
-    // The resource named by the request is gone, or is not this caller's. Only
-    // these verified codes produce the variant: a bare 404 without a readable
-    // code stays an unreadable response.
-    //
-    // `COLLECTION_NOT_FOUND` is the collection read's own code. Without this arm
-    // it would fall through to the unreadable bucket, and a collection that is
-    // gone would be reported as a reply this client could not read — which is
-    // both false and offers a retry that cannot succeed.
+    // Only explicit resource codes produce a not-found failure. A bare 404
+    // without a readable code remains an unreadable response.
     case ApiErrorCode.resourceNotFound:
     case ApiErrorCode.savedItemNotFound:
     case ApiErrorCode.collectionNotFound:
       return ApiFailureNotFound(code: code);
 
-    // The **account** behind a valid access token is gone. Kept apart from
-    // `ApiFailureNotFound` because the account is not the resource a screen is
-    // showing, and because it must not be read as a session expiry.
+    // The account behind a valid access token no longer exists. This is
+    // distinct from a missing resource and must not be treated as session
+    // expiry.
     case ApiErrorCode.userNotFound:
       return ApiFailureUserNotFound(code: code);
 
-    // A wrong *current password* is a 401, but it is not a bearer-guard refusal
-    // and never authorises a refresh: the access token was accepted. Mapping it
-    // to `ApiFailureAuthRequired` would tell the user to sign in again for a
-    // problem signing in cannot fix.
+    // A wrong current password does not indicate a bearer-token failure.
+    // The access token was accepted, so this must not trigger a refresh.
     case ApiErrorCode.currentPasswordInvalid:
       return ApiFailureCurrentPasswordInvalid(code: code);
 
-    // The two directions of a credential-state mismatch. Both are known
-    // not-written refusals, and both mean the form was rendered for the wrong
-    // mode rather than that the input needs correcting field by field.
+    // These indicate that the form was submitted for the wrong credential
+    // state: a current password is required, or one should not be supplied.
     case ApiErrorCode.currentPasswordRequired:
       return ApiFailureCurrentPasswordRequired(code: code);
 
     case ApiErrorCode.unexpectedCurrentPassword:
       return ApiFailureUnexpectedCurrentPassword(code: code);
 
-    // Two concurrent-writer outcomes. Both wrote nothing: the create lost to an
-    // existing primary key, and the change's conditional update matched no row.
+    // Concurrent credential changes. The current request did not perform
+    // the requested write.
     case ApiErrorCode.passwordCredentialAlreadyExists:
       return ApiFailurePasswordCredentialAlreadyExists(code: code);
 
     case ApiErrorCode.passwordAlreadyChanged:
       return ApiFailurePasswordAlreadyChanged(code: code);
 
-    // The `move` action's destination is gone or is not this caller's. It is
-    // not the collection being deleted, so it must not become
-    // `ApiFailureNotFound`: the source is still there and the user can choose
+    // The requested destination collection is missing or inaccessible.
+    // The source collection remains unchanged, so the user can choose
     // another destination.
     case ApiErrorCode.collectionDeleteTargetNotFound:
       return ApiFailureCollectionDeleteTargetNotFound(code: code);
 
-    // A `create` request whose name is already held by one of the user's
-    // collections. Well formed, but not available as a new name: the user has to
-    // choose another one. The backend wrote nothing.
+    // The requested collection name is already in use.
     case ApiErrorCode.collectionNameAlreadyExists:
       return ApiFailureCollectionNameAlreadyExists(code: code);
 
-    // A collection delete that found a concurrent insert, or named the protected
-    // Unsorted collection. Both transactions wrote nothing, so both are known
-    // not-deleted outcomes with different user-facing explanations.
+    // These collection deletion failures leave the collection unchanged.
     case ApiErrorCode.collectionNotEmpty:
       return ApiFailureCollectionNotEmpty(code: code);
 
@@ -318,51 +264,38 @@ ApiFailure mapApiFailure(DioException error) {
       return const ApiFailureServerFault();
   }
 
-  // A code this client does not recognise. It is not a guess at one it does:
-  // unmapped is handled defensively and gets client-owned copy, exactly as
-  // **[Confirmed]** `decisions.md` D15 requires of anything outside the verified
-  // table.
+  // Unknown codes must not be assigned a meaning based on their status or
+  // resemblance to a known code. Presentation handles this with client-owned
+  // fallback copy.
   return ApiFailureUnreadableResponse(code: code);
 }
 
-/// Whether a response arrived but could not be decoded.
+/// Converts a response-body decoding failure into an [ApiFailure].
 ///
-/// Dio's `FusedTransformer` runs `jsonDecode` on a body it was told was JSON,
-/// and a `FormatException` from that escapes as a `DioException` with no
-/// `response` attached — structurally identical to a dropped connection. The
-/// cause is the only thing that distinguishes them.
-/// Converts a body that arrived but could not be decoded into an [ApiFailure].
+/// Retrofit can fail while converting a successfully received response into
+/// a typed model. Such failures occur after Dio returns and therefore do not
+/// pass through [mapApiFailure]. The response arrived, but the client could
+/// not understand its shape, so the outcome is known rather than uncertain.
 ///
-/// **[D15] group F. Known not saved** — a reply did arrive, so the outcome is
-/// determinate. There is no `DioException` to pass to [mapApiFailure] in this
-/// case: Retrofit decodes the body *after* Dio's transformer returns it, so a
-/// shape mismatch surfaces as a `TypeError` from the generated `fromJson` and
-/// never passes through Dio at all.
-///
-/// Without this, a body the client does not understand would escape as a raw
-/// `TypeError` and reach presentation unclassified, bypassing the taxonomy that
-/// exists precisely so nothing above the mapper inspects a failure's shape.
-///
-/// The backend's body is never surfaced, only its arrival.
+/// The response body itself is never exposed to presentation.
 ApiFailure mapDecodeFailure(Object error) {
   if (error is ApiFailure) return error;
   return const ApiFailureUnreadableResponse();
 }
 
-/// Whether a response arrived but could not be decoded.
+/// Detects whether Dio failed while decoding a response body.
 ///
-/// Dio's `FusedTransformer` runs `jsonDecode` on a body it was told was JSON,
-/// and a `FormatException` from that escapes as a `DioException` with no
-/// `response` attached — structurally identical to a dropped connection. The
-/// cause is the only thing that distinguishes them.
+/// A [FormatException] from JSON decoding, or a [TypeError] caused by an
+/// incompatible response shape, indicates that a response arrived but could
+/// not be decoded. This distinguishes it from a transport failure, which has
+/// no response because nothing was received.
 bool _isDecodeFailure(DioException error) {
   final cause = error.error;
 
   if (cause is FormatException) return true;
 
-  // A cast of `null` to a non-nullable type is what a shape mismatch looks like
-  // from inside the transformer, and it means a response arrived and could not
-  // be understood — group F, not a transport failure.
+  // A null value cast to a non-nullable type is one way a response-shape
+  // mismatch can surface from the transformer.
   if (cause is TypeError) {
     final message = cause.toString();
     return message.contains('is not a subtype of') ||
@@ -372,12 +305,12 @@ bool _isDecodeFailure(DioException error) {
   return false;
 }
 
-/// Decodes an error body, or returns null when it is not one.
+/// Decodes an API error body, or returns null when the response is not
+/// a readable API error envelope.
 ///
-/// Tolerant by necessity. `response.data` is `dynamic` and may be a `String`
-/// (Fiber's `text/plain` default handler), an HTML page from something in front
-/// of the API, or `null`. None of those is an error this client can read, and
-/// none of them may be rendered.
+/// The response may contain plain text, HTML, null, or another unexpected
+/// shape. These responses cannot be interpreted as API errors and must not
+/// be exposed directly to presentation.
 ApiErrorBody? parseApiErrorBody(Object? data) {
   if (data is! Map) return null;
 
@@ -387,8 +320,8 @@ ApiErrorBody? parseApiErrorBody(Object? data) {
   final code = error['code'];
   final message = error['message'];
 
-  // `fields` is `[]` rather than absent on every coded error, but a proxy's
-  // payload need not honour that, so it is read defensively too.
+  // Coded API errors normally include a fields array. Read it defensively
+  // because responses from intermediaries may not follow that contract.
   final fields = <ApiErrorField>[];
   final rawFields = error['fields'];
   if (rawFields is List) {
@@ -412,15 +345,11 @@ ApiErrorBody? parseApiErrorBody(Object? data) {
   );
 }
 
-/// Reads the `Retry-After` header, if the server sent one.
+/// Reads the `Retry-After` header when it contains a valid duration in seconds.
 ///
-/// The value is integer seconds, written by `httpx.NewErrorHandler` from the
-/// limiter's remaining TTL and rounded up, so it is a real "not before" moment
-/// rather than a configured window.
-///
-/// Returns null when the header is absent, unparseable, or not a whole number of
-/// seconds. A malformed header yields no countdown: fabricating one would be a
-/// guess presented as a fact.
+/// The server sends the remaining wait as an integer number of seconds.
+/// Returns null when the header is absent, malformed, or negative rather
+/// than inventing a countdown.
 Duration? parseRetryAfter(Response<dynamic> response) {
   final raw = response.headers.value('retry-after');
   if (raw == null) return null;

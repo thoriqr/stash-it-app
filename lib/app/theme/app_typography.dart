@@ -1,34 +1,31 @@
 import 'package:flutter/material.dart';
 
-/// The approved design system's **type roles** — `design-system.md` §3.
+/// Typography roles used throughout the application.
 ///
-/// Every role in the specification has a name here, so a widget asks for a role
-/// rather than restating a size. Sizes, line heights, weights and families come
-/// from the specification; colours do **not** live here — they are applied once
-/// from the active [ThemeData], and a widget overrides a single colour with
-/// `copyWith` when it needs a quieter step.
+/// Each role defines its own size, line height, weight, and font family.
+/// Colors are applied separately by the active [ThemeData], keeping
+/// typography consistent across light and dark themes.
 ///
-/// **The pixel face is restrained on purpose.** [display] carries the wordmark,
-/// screen titles and small section labels — nothing else. Saved-item titles,
-/// descriptions, domains and metadata never use it. **The mono face is for
-/// machine text**: domains, URLs, timestamps and mock-data markers, never prose.
+/// The display face is reserved for the wordmark, screen titles, and section
+/// labels. Saved-item content and general UI copy use the UI face. The
+/// monospaced face is reserved for machine-oriented text such as domains,
+/// URLs, timestamps, and mock-data markers.
 ///
-/// Both [ui] and [mono] ship as **variable** fonts. A `TextStyle` therefore sets
-/// `fontVariations` alongside `fontWeight`, or Flutter would render every weight
-/// from the font's default instance. The weights are also declared in
-/// `pubspec.yaml` so font matching finds an exact match and never synthesises a
-/// faux bold on top of a real weight.
+/// Both [uiFamily] and [monoFamily] are variable fonts. Their styles specify
+/// [FontVariation.weight] alongside [fontWeight] so Flutter selects the
+/// intended variable-font weight. Font weights are also declared in
+/// `pubspec.yaml` for accurate font matching.
 abstract final class AppTypography {
-  /// Silkscreen. Display only — see the class doc.
+  /// Font for the wordmark, screen titles, and section labels.
   static const String displayFamily = 'Silkscreen';
 
-  /// Inter. All UI copy and saved-item content.
+  /// Font for general UI copy and saved-item content.
   static const String uiFamily = 'Inter';
 
-  /// JetBrains Mono. Machine text only — see the class doc.
+  /// Font for URLs, domains, timestamps, and other machine-oriented text.
   static const String monoFamily = 'JetBrains Mono';
 
-  /// Builds a style on a **variable** face at a real weight.
+  /// Creates a style using a variable font with an explicit weight axis.
   static TextStyle variable(
     String family,
     double size,
@@ -46,7 +43,7 @@ abstract final class AppTypography {
     color: color,
   );
 
-  /// Builds a style on a **static** face, which needs no weight axis.
+  /// Creates a style using a static font without a variable weight axis.
   static TextStyle staticFace(
     String family,
     double size,
@@ -63,11 +60,12 @@ abstract final class AppTypography {
     color: color,
   );
 
-  // ---- display roles (Silkscreen) ----
+  // ---- display roles ----
 
-  /// Wordmark — 10 / 1 / 700, tracking .20em.
+  /// Wordmark style.
   ///
-  /// Written uppercase at the call site: Flutter has no text-transform.
+  /// Apply uppercase text at the call site because Flutter does not provide
+  /// a text-transform property.
   static final TextStyle wordmark = staticFace(
     displayFamily,
     10,
@@ -76,7 +74,7 @@ abstract final class AppTypography {
     tracking: 2.0,
   );
 
-  /// Screen title — 15 / 1 / 700, tracking .02em. The app bar.
+  /// App bar screen title style.
   static final TextStyle screenTitle = staticFace(
     displayFamily,
     15,
@@ -85,7 +83,7 @@ abstract final class AppTypography {
     tracking: 0.3,
   );
 
-  /// Section label (eyebrow) — 9.5 / 1 / 700, tracking .14em.
+  /// Small section label style.
   static final TextStyle sectionLabel = staticFace(
     displayFamily,
     9.5,
@@ -94,9 +92,9 @@ abstract final class AppTypography {
     tracking: 1.33,
   );
 
-  // ---- UI roles (Inter) ----
+  // ---- UI roles ----
 
-  /// Screen heading — 19 / 1.1 / 600, tracking -.02em. Auth and profile headings.
+  /// Heading style for authentication and profile screens.
   static final TextStyle screenHeading = variable(
     uiFamily,
     19,
@@ -105,7 +103,7 @@ abstract final class AppTypography {
     tracking: -0.38,
   );
 
-  /// Item title — 15 / 1.3 / 600, tracking -.012em. Two-line clamp.
+  /// Saved-item title style.
   static final TextStyle itemTitle = variable(
     uiFamily,
     15,
@@ -114,16 +112,16 @@ abstract final class AppTypography {
     tracking: -0.18,
   );
 
-  /// Body — 13 / 1.5 / 400. Descriptions, two-line clamp.
+  /// Body text for descriptions and other content.
   static final TextStyle body = variable(uiFamily, 13, 1.5, FontWeight.w400);
 
-  /// Label — 10.5 / 1 / 600. Field labels, chips.
+  /// Labels for fields and chips.
   static final TextStyle label = variable(uiFamily, 10.5, 1, FontWeight.w600);
 
-  /// Meta — 11.5 / 1.35 / 500. State lines, hints.
+  /// Supporting text for status lines and hints.
   static final TextStyle meta = variable(uiFamily, 11.5, 1.35, FontWeight.w500);
 
-  /// Button label — 12.5 / 1 / 600, tracking .01em.
+  /// Label style for buttons.
   static final TextStyle button = variable(
     uiFamily,
     12.5,
@@ -132,7 +130,7 @@ abstract final class AppTypography {
     tracking: 0.125,
   );
 
-  /// Navigation label — 9.5 / 1 / 600, tracking .03em.
+  /// Label style for navigation destinations.
   static final TextStyle navigationLabel = variable(
     uiFamily,
     9.5,
@@ -141,12 +139,12 @@ abstract final class AppTypography {
     tracking: 0.285,
   );
 
-  // ---- machine-text roles (JetBrains Mono) ----
+  // ---- machine-text roles ----
 
-  /// Mono — 11 / 1.3 / 500. Domains, URLs.
+  /// Monospaced style for domains and URLs.
   static final TextStyle mono = variable(monoFamily, 11, 1.3, FontWeight.w500);
 
-  /// Mono small — 10 / 1.25 / 500. Saved-time labels.
+  /// Smaller monospaced style for saved-item timestamps.
   static final TextStyle monoSmall = variable(
     monoFamily,
     10,
@@ -154,16 +152,15 @@ abstract final class AppTypography {
     FontWeight.w500,
   );
 
-  /// Micro — 9 / 1.2 / 500. Mock markers, timers, notices.
+  /// Small monospaced style for mock-data markers, timers, and notices.
   static final TextStyle micro = variable(monoFamily, 9, 1.2, FontWeight.w500);
 
-  /// The specification's roles mapped onto the [TextTheme] slots Material and the
-  /// existing widgets actually read.
+  /// Maps typography roles to the [TextTheme] slots used by Material widgets.
   ///
-  /// Colours are deliberately absent: [ThemeData] applies them from the active
-  /// token set so there is one source for both brightnesses.
+  /// Colors are intentionally omitted. [ThemeData] applies them from the
+  /// active theme so both brightness variants share the same typography.
   static const TextTheme textTheme = TextTheme(
-    // The screen heading, and the biggest UI type in the system.
+    // Screen heading and largest UI text.
     headlineSmall: TextStyle(
       fontFamily: uiFamily,
       fontSize: 19,
@@ -172,7 +169,7 @@ abstract final class AppTypography {
       fontVariations: [FontVariation.weight(600)],
       letterSpacing: -0.38,
     ),
-    // A saved item's title.
+    // Saved-item title.
     titleSmall: TextStyle(
       fontFamily: uiFamily,
       fontSize: 15,
@@ -181,7 +178,7 @@ abstract final class AppTypography {
       fontVariations: [FontVariation.weight(600)],
       letterSpacing: -0.18,
     ),
-    // Body copy: descriptions and ledes.
+    // Descriptions and other body content.
     bodyMedium: TextStyle(
       fontFamily: uiFamily,
       fontSize: 13,
@@ -189,7 +186,7 @@ abstract final class AppTypography {
       fontWeight: FontWeight.w400,
       fontVariations: [FontVariation.weight(400)],
     ),
-    // State lines and hints.
+    // Status lines and hints.
     bodySmall: TextStyle(
       fontFamily: uiFamily,
       fontSize: 11.5,
@@ -214,7 +211,7 @@ abstract final class AppTypography {
       fontVariations: [FontVariation.weight(600)],
       letterSpacing: 0.285,
     ),
-    // A screen title, where a slot cannot take the app bar style directly.
+    // App bar title where the dedicated screen-title style is not available.
     titleMedium: TextStyle(
       fontFamily: displayFamily,
       fontSize: 15,

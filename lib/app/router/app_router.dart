@@ -28,25 +28,18 @@ part 'app_router.g.dart';
 
 /// The application router.
 ///
-/// Owned by Riverpod rather than a top-level `final` for two reasons: the
-/// redirect needs a `Ref` to read auth state, and the router must be rebuilt
-/// when the session changes so `refreshListenable` fires. A top-level singleton
-/// could do neither — it has no `Ref`, and one built once would keep a
-/// `refreshListenable` that outlives any particular session.
+/// Managed by Riverpod so the router can react to authentication state changes
+/// through [AuthRefreshNotifier]. Keeping the router alive preserves its
+/// navigation state throughout the application lifecycle.
 ///
-/// D1 fixes four destinations: Inbox, Collections, Search, Profile. They are
-/// peers, so they sit in a `StatefulShellRoute.indexedStack` and each destination
-/// keeps its own navigation state as the user moves between them.
-///
-/// The pending-URL queue is deliberately absent here: D18 and D25 place it as a
-/// section inside the Inbox, not as a fifth destination.
+/// The four main destinations use [StatefulShellRoute.indexedStack]. Each
+/// destination retains its own navigation state when switching between tabs.
 @Riverpod(keepAlive: true)
 GoRouter appRouter(Ref ref) {
   final notifier = AuthRefreshNotifier(ref);
 
-  // `GoRouter.dispose` removes its listener from `refreshListenable` but does
-  // not dispose the notifier, so the subscription is closed here. Without this
-  // the listener outlives the router and fires into a disposed delegate.
+  // GoRouter removes its listener when disposed but does not dispose the
+  // notifier itself. Close the notifier's Riverpod subscription with the router.
   ref.onDispose(notifier.dispose);
 
   return GoRouter(
@@ -58,26 +51,19 @@ GoRouter appRouter(Ref ref) {
   );
 }
 
-/// Sends the user to the auth entry screen, or back into the app.
+/// Determines whether navigation should be redirected based on authentication.
 ///
-/// A pure function of the session and the current location, so the rule can be
-/// tested exhaustively without pumping a router — and so there is exactly one
-/// statement of it rather than one per call site.
+/// This pure function centralizes route access rules so they can be tested
+/// independently of the router.
 ///
-/// **Redirects, not per-screen checks** (`AGENTS.md` §2, rule 5). A screen that
-/// guards itself can be reached by a route that does not, and the gap shows up
-/// only as a flash of protected content.
+/// Signed-out users can access authentication routes and the device-local
+/// saved URL list. Other destinations require an authenticated session.
+/// Signed-in users are redirected away from authentication routes.
 ///
-/// **All three signed-out auth routes are allowed while signed out.** The entry
-/// screen's Sign in and Create an account actions navigate to `/sign-in` and
-/// `/sign-up`; allow-listing only the entry screen would send those navigations
-/// straight back and loop.
-///
-/// Returns null to leave navigation alone.
+/// Returns null when the current location is allowed.
 String? redirectFor(AuthStatus auth, String location) {
-  // Startup has not settled. Returning null parks the navigation rather than
-  // guessing. In practice `bootstrap` has already answered by the first frame,
-  // so this is a guard rather than a state the user sees.
+  // Wait until authentication state has been restored before making a
+  // navigation decision.
   if (!auth.isResolved) return null;
 
   final atAuthEntry = location == AppRoutes.auth;
@@ -96,8 +82,8 @@ String? redirectFor(AuthStatus auth, String location) {
   final atForgotPasswordFinalize = location == AppRoutes.forgotPasswordFinalize;
 
   if (auth.isSignedOut) {
-    // The auth screens and the device-local URL list are reachable without a
-    // session. The local list reads no account data and never calls the API.
+    // Authentication routes and device-local saved URLs are available without
+    // an account or an authenticated session.
     if (atAuthEntry ||
         atSignIn ||
         atSignUp ||
@@ -114,8 +100,7 @@ String? redirectFor(AuthStatus auth, String location) {
     return AppRoutes.auth;
   }
 
-  // Signed in and looking at an auth screen: there is nothing to sign in to or
-  // register.
+  // Authenticated users should not return to authentication screens.
   if (atAuthEntry ||
       atSignIn ||
       atSignUp ||
@@ -151,9 +136,9 @@ final List<RouteBase> _routes = [
   GoRoute(
     path: AppRoutes.signUpVerify,
     builder: (context, state) {
-      // The manual route carries the email as a String. The social route uses
-      // the typed in-memory object so the same generic PIN screen can branch to
-      // social finalization without changing the manual route's extra.
+      // Manual registration passes the email as a String. Social registration
+      // passes a typed object containing the email and suggested display name.
+      // Both flows share the same PIN screen.
       final extra = state.extra;
       final social = extra is SocialRegistrationVerification;
       return PinEntryScreen(
@@ -224,8 +209,8 @@ final List<RouteBase> _routes = [
   GoRoute(
     path: AppRoutes.forgotPasswordVerify,
     builder: (context, state) {
-      // The email is local scoping only; the continuation token is persisted in
-      // secure storage by the PIN screen and never travels in the location.
+      // The email is used only for local display. The continuation token is
+      // persisted by the PIN screen and is not included in the route location.
       final extra = state.extra;
       return PasswordResetPinScreen(
         verificationId: state.pathParameters['verificationId']!,
@@ -237,58 +222,47 @@ final List<RouteBase> _routes = [
     path: AppRoutes.forgotPasswordFinalize,
     builder: (context, state) => const PasswordResetFinalizeScreen(),
   ),
-  // A top-level route, not a shell branch: Settings is pushed above the shell
-  // and popped back to the destination that opened it. The redirect above still
-  // protects it like every route except the two auth screens.
+  // Settings is pushed above the shell so returning restores the previously
+  // selected destination and its navigation state.
   GoRoute(
     path: AppRoutes.settings,
     builder: (context, state) => const SettingsScreen(),
   ),
-  // The saved-item detail, also outside the shell. It is not a fifth
-  // destination: it is pushed from a row and popped back to the destination that
-  // opened it. `createAppRouter` builds the same `_routes`, so tests exercise the
-  // same tree; only the production router adds the auth redirect.
+  // Saved-item details are pushed above the shell and return to the destination
+  // that opened them.
   //
-  // The id is a path parameter, not query state, so a detail location names one
-  // item and nothing else.
+  // The optional origin identifies the collection when the detail was opened
+  // from a collection's contents. Other entry points leave it null.
   GoRoute(
     path: AppRoutes.savedItemDetailPattern,
     builder: (context, state) {
       final extra = state.extra;
       return SavedItemDetailScreen(
         itemId: state.pathParameters['id']!,
-        // Only a collection contents screen supplies this. Inbox, Search and a
-        // direct entry leave it null, so they keep the ordinary single pop.
         originCollectionId: extra is SavedItemDetailOrigin
             ? extra.collectionId
             : null,
       );
     },
   ),
-  // One collection's saved items, outside the shell for the same reason as the
-  // saved-item detail above: it is pushed from a collection tile and popped back
-  // to the Collections destination, which keeps its sort choice and scroll
-  // position while the detail is on top of it.
-  //
-  // `/collections/:id` cannot compete with the Collections branch's
-  // `/collections`: they differ in segment count, so the branch is matched only
-  // by the exact location.
+  // Collection contents are pushed above the shell so the Collections
+  // destination retains its scroll position and other navigation state.
   GoRoute(
     path: AppRoutes.collectionDetailPattern,
     builder: (context, state) =>
         CollectionSavedItemsScreen(collectionId: state.pathParameters['id']!),
   ),
-  // Password create/change, outside the shell for the same reason: it is pushed
-  // from Profile and popped back to the retained Profile branch. The route reads
-  // the loaded profile for its mode; a direct entry has no shell page beneath it,
-  // so the screen falls back to Profile on Back.
+  // Password creation and changes are pushed above the shell so returning
+  // restores the Profile destination.
+  //
+  // When opened directly without a previous route, the screen handles its
+  // own fallback navigation.
   GoRoute(
     path: AppRoutes.password,
     builder: (context, state) => const PasswordScreen(),
   ),
-  // The device-local fallback list. It is not an authenticated destination: the
-  // screen reads only local storage, and the redirect allows it while signed
-  // out so the auth entry screen can open it before any account exists.
+  // This screen uses device-local storage only and remains accessible without
+  // an authenticated session.
   GoRoute(
     path: AppRoutes.savedOnDevice,
     builder: (context, state) => const PendingUrlsScreen(),
@@ -333,11 +307,10 @@ final List<RouteBase> _routes = [
   ),
 ];
 
-/// Bridges Riverpod's auth state into the [Listenable] `GoRouter` expects.
+/// Adapts authentication state changes to the [Listenable] expected by GoRouter.
 ///
-/// `GoRouter` takes a `Listenable` and nothing else, so this is the adapter
-/// between the two. It notifies rather than re-creating the router, so
-/// navigation state survives a sign-in or sign-out.
+/// Notifies the router when authentication state changes so its redirect logic
+/// can run again without recreating the router or losing navigation state.
 class AuthRefreshNotifier extends ChangeNotifier {
   AuthRefreshNotifier(Ref ref) {
     _subscription = ref.listen<AuthStatus>(authStateProvider, (previous, next) {
@@ -354,8 +327,9 @@ class AuthRefreshNotifier extends ChangeNotifier {
   }
 }
 
-/// The frame shared by every destination: the destination's own `Scaffold` above
-/// a navigation bar that switches between the four branches.
+/// Shared layout for the main application destinations.
+///
+/// Displays the active destination above the bottom navigation bar.
 class _AppShell extends StatelessWidget {
   const _AppShell({required this.navigationShell});
 
@@ -395,9 +369,9 @@ class _AppShell extends StatelessWidget {
   }
 }
 
-/// Builds a router for a test, isolated from any other test's history.
+/// Creates an isolated router for tests.
 ///
-/// Tests that pump [StashItApp] with an explicit router get one with no
-/// navigation history carried in from a previous case.
+/// Each test receives a fresh router without navigation history from previous
+/// test cases.
 GoRouter createAppRouter() =>
     GoRouter(initialLocation: AppRoutes.initial, routes: _routes);

@@ -83,10 +83,9 @@ The latest completed milestone is **Localization Phase 0**: users can choose Eng
 
 ## Updating This Document
 
-Keep this file focused on the project's current state and next work.
+Keep this file focused on the project's current state, completed work, known limitations, and next steps.
 
 - Describe completed capabilities and user-visible outcomes, not implementation steps.
-- Keep this file focused on the project's current state, completed work, known limitations, and next steps. Keep implementation details close to the relevant code and use concise comments when they clarify non-obvious behaviour or important decisions.
 - Update verification status when new checks are completed; do not imply that older results cover later changes.
 - Mark work complete only after implementation and relevant verification are finished.
 - Do not resolve open product decisions by assumption.

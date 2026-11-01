@@ -8,30 +8,26 @@ export 'app_tokens.dart';
 export 'app_typography.dart';
 export 'skeleton_theme.dart';
 
-/// The approved design system's Material themes — B · Inventory (light) and
-/// B-Dark (dark).
+/// Material themes built from shared color tokens and typography.
 ///
-/// Both themes are built from one [AppTokens] instance and one [AppTypography],
-/// so a value can only ever be changed in one place. The Material 3 [ColorScheme]
-/// is derived from the tokens rather than being a second, parallel palette.
+/// Both brightness variants use the same [AppTypography]. Their colors come
+/// from [AppTokens], which also provides the values used to derive the
+/// Material 3 [ColorScheme].
 ///
-/// **Theme selection.** `StashItApp` passes [light] and [dark] to `MaterialApp`
-/// and supplies the mode chosen in Settings. On a fresh installation that mode is
-/// System, so the **system brightness** chooses exactly as it did before the
-/// setting existed; Light and Dark override it explicitly.
+/// Theme selection is handled by `MaterialApp` using the mode chosen in
+/// Settings. System mode follows the device brightness; Light and Dark
+/// explicitly select their respective themes.
 abstract final class AppTheme {
-  /// The approved light theme.
+  /// Light theme.
   static ThemeData light() => _theme(AppTokens.light, Brightness.light);
 
-  /// The approved dark theme.
+  /// Dark theme.
   static ThemeData dark() => _theme(AppTokens.dark, Brightness.dark);
 
-  /// The tokens for the brightness currently in force.
+  /// Returns the color tokens registered by the active theme.
   ///
-  /// Widgets must read colour through this. The extension is always present
-  /// because both themes register [AppTokens], so the `?? AppTheme.light`
-  /// fallback the previous prototype carried is not needed — and would have been
-  /// a bug in dark mode, silently substituting light colours.
+  /// Both themes register [AppTokens], so widgets can use this extension
+  /// without needing a separate brightness check or fallback palette.
   static AppTokens tokensOf(BuildContext context) =>
       Theme.of(context).extension<AppTokens>() ?? AppTokens.light;
 
@@ -57,8 +53,8 @@ abstract final class AppTheme {
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleSpacing: AppMetrics.screenPadding,
-        // The screen title is the restrained pixel face, uppercase — written at
-        // the call site, because Flutter has no text-transform.
+        // Screen titles are styled at the call site because Flutter does not
+        // provide a text-transform property for uppercase styling.
         titleTextStyle: AppTypography.screenTitle.copyWith(
           color: tokens.textPrimary,
         ),
@@ -94,8 +90,8 @@ abstract final class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: tokens.surface,
-        // The shared vertical inset, so a Material field not built on AppField
-        // still reads as a filled control rather than a text bar.
+        // Apply vertical padding to all Material fields, including those that
+        // do not use the shared AppField component.
         contentPadding: AppMetrics.fieldContentPadding,
         border: _fieldBorder(tokens.border),
         enabledBorder: _fieldBorder(tokens.border),
@@ -201,8 +197,10 @@ abstract final class AppTheme {
     );
   }
 
-  /// The M3 scheme, derived so that a Material widget which reaches for
-  /// `colorScheme` lands on the approved palette instead of its own defaults.
+  /// Builds the Material 3 color scheme from the active theme's tokens.
+  ///
+  /// This keeps Material widgets that read [ColorScheme] aligned with the
+  /// application's palette instead of relying on Material's default colors.
   static ColorScheme _scheme(AppTokens tokens, Brightness brightness) {
     return ColorScheme(
       brightness: brightness,
