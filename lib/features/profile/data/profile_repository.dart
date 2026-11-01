@@ -25,25 +25,21 @@ class ProfileRepository {
     }
   }
 
-  /// Renames the authenticated user and returns the complete profile the server
-  /// wrote.
+  /// Updates the authenticated user's display name and returns the resulting
+  /// profile.
   ///
-  /// **The response replaces the loaded profile; it is never merged field by
-  /// field.** The backend returns the row its own `UPDATE` produced, in the same
-  /// shape as `GET /users/me`, so there is no second representation to reconcile.
+  /// The returned profile replaces the currently loaded profile; fields are
+  /// not merged individually.
   ///
-  /// **[displayName] is sent exactly as given.** The endpoint does not trim or
-  /// case-fold, and doing either here would make this path disagree with
-  /// registration, which stores the same column verbatim.
+  /// [displayName] is sent exactly as provided. The client does not trim or
+  /// change its casing, keeping this behavior consistent with registration.
   ///
-  /// A `404 USER_NOT_FOUND` means the account behind the token is gone. A `500`
-  /// does **not** prove the rename did not happen: the handler commits the name
-  /// before reading identities, and a later identity-read failure is reported as a
-  /// server fault. A transport failure or an unreadable success body does not
-  /// establish the outcome either. The caller must treat those as ambiguous and
-  /// reconcile by refetching.
+  /// A `404 USER_NOT_FOUND` means the account no longer exists. A server error,
+  /// transport failure, or unreadable success response does not necessarily
+  /// mean the update failed. The name may already have been saved, so the caller
+  /// should refetch the profile to establish the current state.
   ///
-  /// Throws [ApiFailure] for every non-2xx refusal.
+  /// Throws [ApiFailure] for non-2xx responses.
   Future<UserProfile> updateDisplayName(String displayName) async {
     try {
       final response = await api.updateDisplayName(
@@ -53,31 +49,26 @@ class ProfileRepository {
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError catch (error) {
-      // A `2xx` whose body does not match the documented shape. Retrofit decodes
-      // after Dio's transformer returns, so this never passes through Dio.
+      // Retrofit may fail to decode a successful response after Dio completes.
       throw mapDecodeFailure(error);
     } on FormatException catch (error) {
       throw mapDecodeFailure(error);
     }
   }
 
-  /// Creates the account's first password, or changes the existing one.
+  /// Sets the account's first password or changes its existing password.
   ///
-  /// **[currentPassword] is omitted entirely when null.** The backend treats an
-  /// absent field and `""` the same, and the create operation is stated by sending
-  /// only `new_password`. The client never decides which operation runs; the
-  /// stored credential does.
+  /// [currentPassword] is omitted when null. The client does not choose which
+  /// operation runs; that depends on whether the account already has a password.
   ///
-  /// **A `200` is the only confirmation this method gives.** It means the create
-  /// inserted, or the change's update-and-revoke transaction committed. Nothing is
-  /// changed locally here; the caller applies the confirmed outcome.
+  /// A `200` confirms that the password operation succeeded. This method does
+  /// not update local state; the caller handles the confirmed result.
   ///
-  /// A `500`, a transport failure or an unreadable body is ambiguous for the
-  /// password write: a commit error can be raised after the transaction may have
-  /// committed, and an unreadable `2xx` body is still a successful status. The
-  /// caller must reconcile rather than claim the password is unchanged.
+  /// A server error, transport failure, or unreadable response may leave the
+  /// outcome uncertain. The password may already have been changed, so the
+  /// caller should reconcile the state rather than assume it is unchanged.
   ///
-  /// Throws [ApiFailure] for every non-2xx refusal.
+  /// Throws [ApiFailure] for non-2xx responses.
   Future<void> setPassword({
     required String newPassword,
     String? currentPassword,

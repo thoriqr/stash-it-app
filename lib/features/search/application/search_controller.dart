@@ -6,53 +6,53 @@ import 'search_state.dart';
 
 part 'search_controller.g.dart';
 
-/// Riverpod's automatic retry, refused for Search.
+/// Disables Riverpod's automatic retry for Search.
 ///
-/// Passed to `@Riverpod` as a named function because the annotation is a `const`
-/// constructor and an inline `(_, __) => null` is not a constant expression.
-/// Returning `null` is how Riverpod is told not to retry: `triggerRetry` treats
-/// it as "no delay", arms no timer, and publishes the failure instead.
+/// Riverpod receives this as a named function because the `@Riverpod`
+/// annotation uses a const constructor and an inline closure is not a constant
+/// expression. Returning `null` prevents Riverpod from scheduling another
+/// attempt and allows the failure to be published immediately.
 ///
-/// **This matters most for the rate limit.** A failed search is an ordinary
-/// outcome, and silently reissuing it would spend more of the same per-user
-/// budget without the user asking. Recovery is the explicit Retry action, which
-/// is the manual retry **[D23]** asks for.
+/// Automatic retries are especially undesirable for rate-limited searches:
+/// repeating a failed request would consume more of the user's request budget
+/// without an explicit action. Recovery is available through the screen's
+/// manual Retry action.
 Duration? _neverRetry(int retryCount, Object error) => null;
 
-/// The Search screen's request lifecycle.
+/// Manages the Search screen's request lifecycle.
 ///
-/// Owns submission, stale-response protection and clearing. It performs **no
-/// request in [build]**: the initial state is complete on its own, which is what
-/// keeps a screen visit from spending a rate-limited search.
+/// Owns submission, stale-response protection and clearing. No request is made
+/// from [build]; the initial state is complete without a request, so simply
+/// opening the screen does not consume the search rate limit.
 ///
-/// **Auto-dispose, not keep-alive.** Results are transient and may name the
-/// user's collections, so they must not outlive the screen. The destination's
-/// `IndexedStack` branch keeps the screen mounted while the user visits another
-/// tab, which keeps the provider alive for exactly as long as it should be; on
-/// sign-out the screen unmounts and the state is discarded.
+/// The provider uses auto-dispose because search results are transient and
+/// may contain the user's collection data. The destination's `IndexedStack`
+/// keeps the screen mounted while switching tabs, preserving its state during
+/// that time. When the screen unmounts, the provider can be disposed and its
+/// state discarded.
 @Riverpod(retry: _neverRetry)
 class Search extends _$Search {
-  /// Identifies the request whose answer the screen is still waiting for.
+  /// Identifies the request whose response is still allowed to update the state.
   ///
-  /// Every submission and every clear increments this. A response is applied
-  /// only when its version is still current, so a superseded query cannot
-  /// replace newer results and a cleared screen cannot have old results
-  /// reappear.
+  /// Each submission and clear operation increments this version. A response
+  /// is applied only if its version is still current. This prevents an older
+  /// query from replacing newer results and prevents cleared results from
+  /// reappearing.
   int _requestVersion = 0;
 
   @override
   SearchState build() => const SearchState.initial();
 
-  /// Submits [rawQuery], trimming it and validating it first.
+  /// Submits [rawQuery] after validation and normalization.
   ///
-  /// An invalid query is **never sent**: this is the second guard behind the
-  /// screen's local validation, and the point is to protect the endpoint's
-  /// rate-limit budget from a request that could only be refused. The returned
-  /// future completes when the request does, or immediately for an invalid
-  /// query.
+  /// Invalid queries are never sent. This provides a second validation guard
+  /// beyond the screen and avoids spending the endpoint's rate-limit budget on
+  /// requests that would be rejected.
   ///
-  /// A previous request may still be in flight; it is superseded rather than
-  /// cancelled, and its answer is ignored when it arrives.
+  /// The returned future completes when the request finishes, or immediately
+  /// when the query is invalid. A previous request is not cancelled when a
+  /// new one starts; its response is ignored if its version is no longer
+  /// current.
   Future<void> submit(String rawQuery) async {
     if (validateSearchQuery(rawQuery) != null) return;
 
@@ -74,17 +74,16 @@ class Search extends _$Search {
     } catch (error) {
       if (!ref.mounted || version != _requestVersion) return;
 
-      // `error` is an `ApiFailure` from the repository. It is stored typed and
-      // never displayed: the screen selects client-owned copy from the variant.
+      // Store the repository failure as a typed value. The screen displays
+      // client-owned copy based on its failure variant, not the raw error.
       state = SearchState.failure(query: query, failure: error);
     }
   }
 
-  /// Resubmits the query a failed request used.
+  /// Manually resubmits the query associated with the current failure.
   ///
-  /// Deliberately **manual only**. Nothing here runs on startup, on returning to
-  /// the foreground, or on a connectivity change, and no loop is possible: one
-  /// call issues at most one request.
+  /// No automatic retry occurs on startup, foreground return or connectivity
+  /// changes. Each call issues at most one request.
   Future<void> retry() async {
     final failedQuery = switch (state) {
       SearchFailure(:final query) => query,
@@ -95,12 +94,11 @@ class Search extends _$Search {
     await submit(failedQuery);
   }
 
-  /// Returns the screen to its initial state and invalidates any request in
-  /// flight.
+  /// Restores the initial state and invalidates any request still in flight.
   ///
-  /// The version bump is the invalidation: a response that arrives afterwards
-  /// fails its guard and is dropped, so stale results cannot reappear on a
-  /// cleared screen.
+  /// Incrementing the request version makes any subsequent response from an
+  /// earlier request fail its version check, preventing stale results from
+  /// being applied to the cleared screen.
   void clear() {
     _requestVersion++;
     state = const SearchState.initial();

@@ -7,24 +7,21 @@ import 'saved_item_collection_chip.dart';
 import 'saved_item_enrichment_state.dart';
 import 'saved_item_preview.dart';
 
-/// One saved item — the **inventory slot** of `design-system.md` §6.3.
+/// Displays one saved item as a compact inventory card.
 ///
-/// A bordered card on the canvas: a 56 px thumbnail well, the title with the
-/// saved time in its top-right corner, the domain in mono, a two-line
-/// description, then a metadata line carrying the item's current collection, its
-/// enrichment state and — when the state allows it — a quiet **Retry**.
+/// The card combines a preview, title, saved time, source domain,
+/// optional description, and a metadata line containing the item's
+/// collection and enrichment state.
 ///
-/// **Colour carries one rule.** The accent marks identity and progress: the
-/// collection chip and the pending marker. Everything factual — domain, saved
-/// time, state wording — is neutral. Only a known failure uses `danger`.
+/// Accent color is reserved for identity and progress indicators, such as
+/// the collection chip and pending marker. Factual information remains
+/// neutral, while danger color is reserved for known failures.
 ///
-/// **A missing preview is a normal state.** The space is always reserved so rows
-/// never shift, and the empty well is drawn dashed and neutral: no error colour,
-/// no retry (`decisions` §2.12).
+/// A missing or unavailable preview is a normal state. Its space remains
+/// reserved and uses a neutral dashed placeholder rather than error styling.
 ///
-/// Copy is a draft. The exact wording of the state line and the retry label is a
-/// [Rec] in the discovery documents and needs native-speaker review before it is
-/// treated as approved.
+/// The displayed state wording and retry label are user-facing copy and may
+/// need further language review.
 class SavedItemRow extends StatelessWidget {
   const SavedItemRow({
     super.key,
@@ -38,17 +35,17 @@ class SavedItemRow extends StatelessWidget {
 
   final VoidCallback? onTap;
 
-  /// Shown for `pending` and `failed`. D8 [Confirmed]: retry is available on both,
-  /// because a stuck item has no other recourse.
+  /// Callback for retrying enrichment.
+  ///
+  /// The retry action is available for both pending and failed items.
   final VoidCallback? onRetry;
 
-  /// Whether the metadata line names the item's collection.
+  /// Whether the metadata line displays the item's collection.
   ///
-  /// True wherever a listing spans collections, which is what the chip is for
-  /// (**D26**). A listing of **one** collection passes false: every row would
-  /// carry the same name, and the screen says it once, in its header. Hidden
-  /// rather than blanked, so the metadata line starts at the enrichment state
-  /// instead of holding an empty slot.
+  /// Enable this when a listing can contain items from multiple collections.
+  /// Disable it for a single-collection listing, where the collection name
+  /// is already shown in the screen header. When hidden, the metadata line
+  /// starts with the enrichment state rather than reserving empty space.
   final bool showCollectionChip;
 
   @override
@@ -63,8 +60,8 @@ class SavedItemRow extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: tokens.slotShadowColor,
-            // A drop shadow is invisible on a dark canvas, so dark lifts the
-            // slot with an inset hairline instead.
+            // Use an inset hairline in dark mode, where a drop shadow
+            // would not provide enough contrast against the canvas.
             offset: tokens.slotShadowInset ? Offset.zero : const Offset(0, 1),
             blurRadius: tokens.slotShadowInset ? 0 : 2,
           ),
@@ -98,8 +95,8 @@ class SavedItemRow extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: AppTypography.itemTitle.copyWith(
-                                // A fallback title is neutral copy, never a
-                                // warning colour.
+                                // Fallback titles remain neutral rather than
+                                // implying an error or warning.
                                 color: item.usesFallbackTitle
                                     ? tokens.textTertiary
                                     : tokens.textPrimary,
@@ -165,7 +162,8 @@ class SavedItemRow extends StatelessWidget {
   }
 }
 
-/// Collection plus enrichment state.
+/// Displays the item's collection and enrichment state, with an optional
+/// retry action.
 class _MetadataLine extends StatelessWidget {
   const _MetadataLine({
     required this.item,
@@ -201,6 +199,8 @@ class _MetadataLine extends StatelessWidget {
     );
   }
 
+  /// Retry is shown only when a callback is available and enrichment
+  /// is either pending or failed.
   bool get _showsRetry =>
       onRetry != null &&
       (item.enrichmentStatus == EnrichmentStatus.pending ||

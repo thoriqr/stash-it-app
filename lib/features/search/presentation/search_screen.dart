@@ -17,20 +17,19 @@ import '../domain/search_collection.dart';
 import '../domain/search_query.dart';
 import 'widgets/search_collection_row.dart';
 
-/// The Search destination (S11).
+/// The Search destination.
 ///
-/// **Explicit submission, never live search.** Typing does not issue a request;
-/// the keyboard's Search action (or another explicit submission) does. The
-/// initial screen requests nothing, which is both the quiet state the design
-/// calls for and what keeps a visit from spending the endpoint's per-user rate
-/// limit.
+/// Search uses explicit submission rather than live search. Typing does not
+/// issue a request; submitting through the keyboard's Search action or another
+/// explicit action does. The initial state makes no request, so opening the
+/// screen does not consume the endpoint's per-user rate limit.
 ///
-/// The response has two independent groups. They render **Collections first,
-/// then Saved Items**, each in the order the server sent it. Nothing is merged,
-/// re-sorted, paginated or filtered.
+/// Results contain two independent groups: Collections first, followed by
+/// Saved Items. Each group preserves the order returned by the server. The
+/// screen does not merge, re-sort, paginate or filter the results.
 ///
-/// **Zero results is a successful response**, not an error. It is drawn as a
-/// message and never claims that anything was never saved.
+/// An empty result is a successful response, not an error. The screen displays
+/// a neutral message without implying that anything was never saved.
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
 
@@ -41,10 +40,11 @@ class SearchScreen extends ConsumerStatefulWidget {
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _queryController = TextEditingController();
 
-  /// The local validation problem currently shown, if any.
+  /// The local validation problem currently displayed, if any.
   ///
-  /// Local so an invalid query can be corrected without ever reaching the
-  /// backend. It is cleared on the next edit or valid submission.
+  /// Validation happens before submission, so invalid input never reaches the
+  /// backend. The problem is cleared when the user edits the query or submits
+  /// a valid one.
   SearchQueryProblem? _queryProblem;
 
   @override
@@ -54,13 +54,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   void _onChanged(String value) {
-    // The Clear action's visibility and the validation message both depend on
-    // the text, so this rebuild is necessary even though no request is made.
+    // Rebuild because both the Clear action and validation message depend on
+    // the current text. Editing does not trigger a search request.
     setState(() => _queryProblem = null);
 
-    // An empty field cannot describe the results on screen any more. Resetting
-    // here also invalidates an in-flight request, so deleting the query cannot
-    // let old results reappear later.
+    // Once the field is empty, the displayed results no longer represent its
+    // contents. Clearing the provider also invalidates any request in flight.
     if (value.isEmpty) ref.read(searchProvider.notifier).clear();
   }
 
@@ -68,8 +67,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final problem = validateSearchQuery(_queryController.text);
 
     if (problem != null) {
-      // Retain the input so it can be corrected. This is not a server response
-      // and must not be presented as one.
+      // Keep the input available for correction. This is a local validation
+      // result, not a response from the server.
       setState(() => _queryProblem = problem);
       return;
     }
@@ -79,11 +78,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     ref.read(searchProvider.notifier).submit(_queryController.text);
   }
 
-  /// Empties the field and returns to the quiet initial state.
+  /// Clears the input and restores the initial Search state.
   ///
-  /// `clear` also invalidates an in-flight request, so a late answer cannot
-  /// restore results for a query the field no longer holds. It never submits:
-  /// an empty query is not a search.
+  /// Clearing also invalidates any request in flight, preventing a late
+  /// response from restoring results for a query that is no longer present.
+  /// This does not submit an empty query.
   void _clear() {
     _queryController.clear();
     setState(() => _queryProblem = null);
@@ -111,8 +110,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               color: tokens.surface,
               border: Border(bottom: BorderSide(color: tokens.border)),
             ),
-            // The field is the whole row now: the clear action lives inside it,
-            // on the same trailing edge Material gives a suffix action.
+            // The Clear action is placed inside the field, alongside its
+            // trailing input action.
             child: AppField(
               controller: _queryController,
               placeholder: 'Search saved items and collections',
@@ -120,11 +119,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               textInputAction: TextInputAction.search,
               onSubmitted: (_) => _submit(),
               onChanged: _onChanged,
-              // Non-empty, not non-blank: whitespace is still text the user can
-              // clear, and submitting it is already refused by the local gate.
+              // Any non-empty input can be cleared, including whitespace.
+              // Whitespace-only queries are rejected by local validation.
               onClear: _queryController.text.isNotEmpty ? _clear : null,
-              // The field takes the approved invalid border and message
-              // treatment rather than a second copy rendered beside it.
+              // Display validation feedback through the field's own error
+              // treatment rather than rendering a separate message.
               errorText: switch (_queryProblem) {
                 final problem? => _problemCopy(problem),
                 null => null,
@@ -174,16 +173,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       'Search is limited to 128 characters. Shorten it and try again.',
   };
 
-  /// Client-owned copy for a failed search read.
+  /// Selects client-owned copy for a failed search request.
   ///
-  /// **[D22] Selected from the typed failure, never from a backend message.**
-  /// Nothing here names a backend code or status. A read is not a write, so
-  /// every message says the search did not run rather than suggesting an item's
-  /// fate.
+  /// Messages are based on the typed failure rather than backend response
+  /// text. Since search is a read operation, the copy describes the failed
+  /// search without making claims about the state of any saved item.
   static String _failureCopy(Object failure) => switch (failure) {
-    // Local validation should prevent this, but the backend owns the rule and
-    // can still answer with it. Handle it explicitly so it never falls through
-    // to the unreadable-response copy, which would describe the wrong problem.
+    // Handle server-side validation explicitly. Although local validation
+    // normally prevents this, the backend remains authoritative.
     ApiFailureValidation() =>
       'Search needs between 2 and 128 characters. Check your search and try '
           'again.',
@@ -204,11 +201,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   };
 }
 
-/// The compact spinner Search uses while a query is in flight.
+/// Shows a compact progress indicator while a search request is in flight.
 ///
-/// **Not Skeletonizer.** Search results are transient and query-dependent, so a
-/// skeleton that mirrors a previous result set would imply rows are already
-/// known. A small spinner says only that work is happening.
+/// A spinner is used instead of Skeletonizer because results depend on the
+/// current query and are not known in advance. It indicates only that a
+/// request is running, without implying that previous result rows are loading.
 class _SearchLoading extends StatelessWidget {
   const _SearchLoading();
 
@@ -232,7 +229,9 @@ class _SearchLoading extends StatelessWidget {
   }
 }
 
-/// The two populated groups, Collections first, each in the server's order.
+/// Displays the two populated result groups, Collections first.
+///
+/// Each group preserves the order returned by the server.
 class _SearchResults extends StatelessWidget {
   const _SearchResults({required this.collections, required this.savedItems});
 
@@ -254,9 +253,10 @@ class _SearchResults extends StatelessWidget {
           for (final collection in collections)
             SearchCollectionRow(
               collection: collection,
-              // Pushed above the shell, so returning pops back to Search with
-              // the query and results intact. The detail reads the collection
-              // again by id; it never trusts this row's name as current.
+              // The collection detail is pushed above the shell. Returning
+              // reveals Search with its query and results still mounted.
+              // The destination loads the collection again by ID rather than
+              // treating this result's name as current data.
               onTap: () =>
                   context.push(AppRoutes.collectionDetail(collection.id)),
             ),
@@ -267,13 +267,12 @@ class _SearchResults extends StatelessWidget {
           for (var index = 0; index < savedItems.length; index++) ...[
             SavedItemRow(
               item: savedItems[index],
-              // The same route the Inbox pushes, above the shell. Search's
-              // query state stays mounted while the detail is on top, and the
-              // detail re-reads the item by this id.
+              // Reuse the detail route used by the Inbox. Search remains
+              // mounted underneath it, and the detail loads the item by ID.
               onTap: () =>
                   context.push(AppRoutes.savedItemDetail(savedItems[index].id)),
-              // Search has no enrichment retry action. The row's own state
-              // wording still reports pending and failed accurately.
+              // Search does not expose an enrichment retry action. The row
+              // still displays the item's pending or failed status.
               onRetry: null,
             ),
             if (index < savedItems.length - 1) const SizedBox(height: 9),
@@ -284,7 +283,7 @@ class _SearchResults extends StatelessWidget {
   }
 }
 
-/// A section eyebrow in the Search results.
+/// A section heading within the Search results.
 class _GroupHeading extends StatelessWidget {
   const _GroupHeading(this.label);
 
@@ -307,8 +306,8 @@ class _GroupHeading extends StatelessWidget {
   }
 }
 
-/// A centred message: the quiet initial state, a successful empty result, or a
-/// failed read with its Retry action.
+/// Displays the initial prompt, an empty-result message or a failed-search
+/// message with its optional Retry action.
 class _SearchMessage extends StatelessWidget {
   const _SearchMessage({required this.title, required this.body, this.action});
 

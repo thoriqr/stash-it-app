@@ -15,8 +15,9 @@ import 'widgets/collection_tile.dart';
 
 /// The Collections destination.
 ///
-/// Lists all collections in server-provided order. Unsorted is identified
-/// by system_key (D2). Displays saved item counts with overflow as 99+.
+/// Displays collections in server-provided order. Unsorted is identified by
+/// its system key rather than its display name. Saved-item counts show `99+`
+/// when the count exceeds the display limit.
 class CollectionsScreen extends ConsumerStatefulWidget {
   const CollectionsScreen({super.key});
 

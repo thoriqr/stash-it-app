@@ -5,46 +5,44 @@ import 'package:stash_it_app/features/saved_items/data/saved_items_repository.da
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_url.dart';
 
-/// What a shared URL attempt produced.
+/// Describes the result of attempting to save a shared URL.
 ///
-/// The distinctions are user-facing, not implementation detail: a confirmed save
-/// is the only success, and an uncertain outcome must never be described as a
-/// definite failure (D15/D16).
+/// A confirmed save is the only success. An uncertain outcome must not be
+/// reported as a definite failure.
 enum ShareSaveOutcome {
-  /// The server confirmed the create. No local entry was added.
+  /// The server confirmed the save. No local entry was added.
   saved,
 
-  /// The server refused the save for a known reason. The URL is kept locally.
+  /// The save failed for a known reason. The URL is kept locally.
   storedAfterFailure,
 
-  /// The request's outcome could not be established. The URL is kept locally
-  /// with the uncertain marker; the server may also have committed the write.
+  /// The request outcome could not be confirmed. The URL is kept locally
+  /// with an uncertainty marker because the server may have saved it.
   storedAfterUncertain,
 
-  /// The shared text did not contain a URL this client would submit.
+  /// The shared text did not contain a URL this client can submit.
   invalid,
 
-  /// The remote attempt failed and the local write also failed. The URL is not
-  /// safely preserved anywhere.
+  /// The remote save failed and the local write also failed.
+  /// The URL could not be safely preserved.
   notStored,
 
-  /// The share contained no text at all; there is nothing to report.
+  /// The share contained no text, so there is nothing to process.
   ignored;
 
-  /// Whether this outcome changed the local list (added, refreshed, or removed
-  /// after a confirmed save).
+  /// Whether this outcome added, updated, or removed a local entry.
   bool get touchedStore =>
       this == saved ||
       this == storedAfterFailure ||
       this == storedAfterUncertain;
 
-  /// Whether the native share handler should show feedback for this outcome.
+  /// Whether the native share handler should show feedback.
   bool get hasFeedback => this != ignored;
 
-  /// The sentence shown by the Android Toast.
+  /// The message displayed in the Android Toast.
   ///
-  /// Client-owned copy, like every other user-facing string. The uncertain case
-  /// deliberately says what is not known rather than claiming the save failed.
+  /// These messages are client-owned. The uncertain outcome describes what
+  /// is unknown without claiming that the save failed.
   String get message => switch (this) {
     ShareSaveOutcome.saved => 'Saved to your account.',
     ShareSaveOutcome.storedAfterFailure =>
@@ -56,7 +54,7 @@ enum ShareSaveOutcome {
     ShareSaveOutcome.ignored => '',
   };
 
-  /// The values sent over the platform channel.
+  /// Serializes the outcome for the platform channel.
   Map<String, Object?> toChannelMap() => {
     'outcome': name,
     'message': message,
@@ -64,13 +62,14 @@ enum ShareSaveOutcome {
   };
 }
 
-/// Returns the first submittable URL in a shared text, or null.
+/// Returns the first submittable URL in the shared text, or null.
 ///
-/// The whole trimmed value is preferred because a normal share sends just the
-/// URL. Otherwise the first whitespace-delimited token that passes the existing
-/// gate is used, which handles a share such as `Look at this https://…`. This
-/// deliberately reuses [isSubmittableUrl] rather than defining a second URL
-/// rule.
+/// Prefers the entire trimmed value, which is the usual format for a URL
+/// share. If that value is not accepted, checks whitespace-delimited tokens
+/// in order, allowing text such as `Look at this https://…`.
+///
+/// Reuses [isSubmittableUrl] so shared URLs follow the same validation rule
+/// as URLs submitted elsewhere in the app.
 String? extractSharedUrl(String raw) {
   final trimmed = raw.trim();
   if (trimmed.isEmpty) return null;
@@ -84,17 +83,14 @@ String? extractSharedUrl(String raw) {
   return null;
 }
 
-/// The one remote-save path used by a shared URL.
+/// Handles saving a URL received through the native share flow.
 ///
-/// It reuses [SavedItemsRepository.create] and therefore the existing
-/// `appDio` + `AuthInterceptor`; no API call or authentication logic is
-/// duplicated. It deliberately does **not** call `SaveUrl.submit`: that
-/// controller publishes foreground feedback, refreshes the Inbox provider, and
-/// collapses every outcome to `bool`, while the share handler needs the typed
-/// certainty and must run without a widget tree.
+/// Uses [SavedItemsRepository.create] for the remote save and [PendingUrlStore]
+/// to preserve URLs locally when the remote outcome is unsuccessful or
+/// uncertain. This service does not depend on a widget tree or foreground UI.
 ///
-/// One attempt per shared URL. There is no retry, timer, queue drain, or
-/// background synchronization.
+/// Each shared URL gets one attempt. There is no automatic retry, timer,
+/// queue drain, or background synchronization.
 class SharedUrlIntake {
   const SharedUrlIntake({required this.repository, required this.store});
 
@@ -110,13 +106,13 @@ class SharedUrlIntake {
     try {
       await repository.create(url: url);
 
-      // A confirmed save means no local copy should remain. Cleanup is
-      // best-effort: the server already has the item, so a failed delete must
-      // not turn a confirmed create into a reported failure.
+      // The server confirmed the save, so the local copy is no longer needed.
+      // Cleanup is best-effort: a failed local delete must not change the
+      // confirmed remote result into a reported failure.
       try {
         await store.removeExact(url);
       } catch (_) {
-        // Leave the stale entry for a later cleanup.
+        // Keep the local entry for later cleanup.
       }
 
       return ShareSaveOutcome.saved;
@@ -126,8 +122,8 @@ class SharedUrlIntake {
           failure is ApiFailureUnreadableResponse;
       return _store(url, uncertain: uncertain);
     } catch (_) {
-      // A non-ApiFailure is unexpected, but the remote outcome is still not
-      // established. Keeping the URL is the safe interpretation.
+      // Unexpected errors do not establish whether the remote save succeeded.
+      // Preserve the URL locally and mark the outcome as uncertain.
       return _store(url, uncertain: true);
     }
   }
@@ -145,7 +141,8 @@ class SharedUrlIntake {
   }
 }
 
-/// The shared URL service, over the existing repository and local store.
+/// Provides the shared URL intake service using the existing repository
+/// and local store.
 final Provider<SharedUrlIntake> sharedUrlIntakeProvider =
     Provider<SharedUrlIntake>(
       (ref) => SharedUrlIntake(

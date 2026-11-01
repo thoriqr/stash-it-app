@@ -14,19 +14,16 @@ import 'package:stash_it_app/shared/widgets/app_field.dart';
 import 'collection_destination_row.dart';
 import 'move_collection_picker_sheet.dart';
 
-/// Five rows are enough to cover the likely destinations without turning the
-/// sheet into the collection browser; everything beyond that belongs in the
-/// paginated picker.
+/// Maximum number of destinations shown in the sheet preview.
+/// Additional destinations are available through the paginated picker.
 const int _visibleDestinationLimit = 5;
 
-/// Opens the destination picker for one saved item.
+/// Opens the destination picker for a saved item.
 ///
-/// `isScrollControlled` lets the sheet grow with the bounded preview and make
-/// room for the keyboard; `useSafeArea` keeps it clear of system intrusions.
-/// `showDragHandle` supplies the centred handle and the framework's drag-to-
-/// dismiss gesture, so the sheet needs no close icon. The sheet owns no outcome
-/// copy of its own beyond the two inline name errors: the notifier publishes the
-/// app-wide confirmation or neutral notice.
+/// The sheet can expand to accommodate its content and the keyboard.
+/// Its drag handle also provides the dismissal gesture, so no separate
+/// close button is needed. Operation feedback is published by the
+/// controller; this sheet only displays inline collection-name errors.
 Future<void> showMoveToCollectionSheet(
   BuildContext context, {
   required SavedItemSummary item,
@@ -49,26 +46,26 @@ Future<void> showMoveToCollectionSheet(
   );
 }
 
-/// The Move to a collection sheet.
+/// Sheet for moving a saved item to another collection.
 ///
-/// **The current collection is context, not a destination.** It is never in the
-/// tappable list, and typing its name is recognised and refused locally. The
-/// preview contains at most five other collections, including system
-/// collections: nothing is filtered by `type`, name, or `system_key` here
-/// (**D2**).
+/// The current collection is not a valid destination. It is excluded from
+/// the destination list and a matching typed name is rejected locally.
+/// Other collections, including system collections, remain eligible.
 ///
-/// The preview is deliberately bounded. When more collections exist, `Browse all
-/// collections` opens the cursor-paginated picker rather than making this sheet
-/// fetch every page. A typed name is matched only against collections the client
-/// has already loaded: a match moves with the `existing` intent, while a
-/// non-match offers `create` and keeps the browse path visible so the user need
-/// not treat the loaded page as global proof that the name is new. The backend
-/// remains authoritative for uniqueness; a duplicate name under `create` stays
-/// in the sheet as an inline error.
+/// The preview shows at most five destinations. When more are available,
+/// `Browse all collections` opens the cursor-paginated picker rather than
+/// loading every page into this sheet.
 ///
-/// A row submits immediately with the server's stored name and the `existing`
-/// intent. The picker returns a selected collection to this sheet, so both row
-/// paths share the same move action.
+/// Typed names are matched only against collections already loaded by the
+/// client. A match uses the `existing` intent; otherwise, the submission
+/// uses `create`. An unmatched name does not prove that the collection does
+/// not exist elsewhere, so browsing remains available. The server remains
+/// authoritative for name uniqueness, and a duplicate-name response is
+/// shown as an inline error rather than silently reusing that collection.
+///
+/// Selecting a preview row submits the move immediately using the
+/// collection's stored name. A selection from the paginated picker follows
+/// the same move path.
 class MoveToCollectionSheet extends ConsumerStatefulWidget {
   const MoveToCollectionSheet({required this.item, super.key});
 
@@ -314,11 +311,12 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
     );
   }
 
-  /// The loaded collection whose name matches [typed], or null.
+  /// Returns the loaded collection whose name matches [typed], or null.
   ///
-  /// The current collection is excluded by id in the list already; the dedicated
-  /// [isCurrent] check handles the case where it is not loaded or is a system
-  /// collection. Comparison is the server's trim-and-ignore-case rule.
+  /// The current collection is already excluded from [collections] by ID.
+  /// The separate current-name check also handles cases where that
+  /// collection is not loaded or is a system collection. Name comparison
+  /// follows the same trim-and-case-insensitive rule used by the server.
   CollectionSummary? _loadedMatch(
     List<CollectionSummary> collections,
     String typed,
@@ -349,18 +347,18 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
     return 'Choose an existing collection, or enter a name to create a new one.';
   }
 
-  /// What a typed submission means.
+  /// Determines whether a typed name targets an existing collection
+  /// or requests creation of a new one.
   ///
-  /// A loaded collection the name matches is a destination, so it uses
-  /// [MoveToCollectionIntent.existing]. Anything else asks the backend to create
-  /// the collection, which is also what makes a duplicate name a `409` the user
-  /// can correct instead of an accidental reuse.
+  /// Only a match among the loaded collections uses the `existing` intent.
+  /// Every unmatched name uses `create`, allowing the server to enforce
+  /// uniqueness and report duplicate names without silently reusing them.
   MoveToCollectionIntent _typedIntent(CollectionSummary? match) => match == null
       ? MoveToCollectionIntent.create
       : MoveToCollectionIntent.existing;
 
-  /// Opens the paginated browser and routes its selection through the same
-  /// `existing` move path as a preview row.
+  /// Opens the paginated picker and submits its selection through the same
+  /// `existing` move path used by preview rows.
   Future<void> _browseAll() async {
     if (ref.read(moveToCollectionProvider)) return;
 
@@ -402,8 +400,8 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
       case MoveToCollectionFailed():
         _close();
       case MoveToCollectionIgnored():
-        // Another tap is already in flight. The controls are disabled, so this
-        // is a guard rather than a visible state.
+        // Another submission is already in progress. The controls are
+        // disabled while busy, so this guard does not need a visible state.
         break;
       case MoveToCollectionNameInvalid(:final problem):
         setState(() => _nameError = _invalidNameCopy(problem));

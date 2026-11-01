@@ -19,41 +19,28 @@ import 'widgets/saved_item_collection_chip.dart';
 import 'widgets/saved_item_enrichment_state.dart';
 import 'widgets/saved_item_preview.dart';
 
-/// One saved item, read fresh from `GET /saved-items/{id}`.
+/// Displays one saved item using fresh data from `GET /saved-items/{id}`.
 ///
-/// **A top-level route, not a fifth destination.** It sits outside the shell,
-/// has its own `ITEM` app bar and no Settings action, and is reached by pushing
-/// from a row. Popping returns to the Inbox with its branch state and scroll
-/// position intact; a direct entry with nothing beneath it falls back to
-/// [AppRoutes.inbox].
+/// This is a top-level route outside the shell, not a separate navigation
+/// destination. It has its own `ITEM` app bar and no Settings action. Pushing
+/// it from a row preserves the underlying Inbox state and scroll position.
+/// When opened directly, the back action falls back to [AppRoutes.inbox].
 ///
-/// **Opening this screen only reads.** The only request a visit makes by itself is
-/// the GET behind [savedItemDetailProvider]. Viewing never enriches, extracts,
-/// polls, refreshes in the background, moves, or deletes. **Re-read page** issues
-/// one synchronous `POST` only when the user presses it, and its `200` is applied
-/// directly — there is no follow-up GET, no polling and no automatic retry. **Move
-/// to a collection** issues one `PUT` only after the user chooses a destination.
-/// Those three writes are independent: none of them runs on its own.
+/// Opening the screen only reads the item through [savedItemDetailProvider].
+/// It does not trigger enrichment, polling, background refreshes, moves or
+/// deletions. **Re-read page** sends one synchronous `POST` when explicitly
+/// requested. Its `200` response is applied directly, without a follow-up GET,
+/// polling or automatic retry. **Move to a collection** sends one `PUT` after
+/// the user selects a destination.
 ///
-/// **Open the original page is not a request at all.** It hands the stored URL to
-/// the platform's browser or app, which is free to fail, redirect or demand a
-/// sign-in; nothing is written, refreshed or invalidated, and no notice claims the
-/// page loaded.
+/// Opening the original page is a platform handoff, not an API request. The
+/// browser or target app may fail, redirect or require sign-in. This action
+/// does not modify the saved item or claim that the page loaded.
 ///
-/// **Delete is explicit and confirmed.** The danger action below Move opens the
-/// first confirmation dialog. Only a confirmed choice issues
-/// `DELETE /saved-items/{id}`. If that succeeds and the server reports the
-/// item's collection is empty and deletable, a second dialog may offer to delete
-/// that collection; confirming it issues exactly one
-/// `DELETE /collections/{id}`. Keeping, dismissing, or going Back sends no
-/// collection request, and nothing is ever deleted automatically.
-///
-/// The three content states are the wireframe's C1, C2 and C3:
-/// - C1: metadata available; title, source, collection, status and description.
-/// - C2: `pending` or `failed`; the item stays visible with whatever metadata it
-///   has. `pending` is the server's state, not a request this screen started.
-/// - C3: the verified `RESOURCE_NOT_FOUND` → a neutral not-found state with no
-///   Retry, because re-reading cannot bring the item back.
+/// Deletion requires explicit confirmation. After the item is successfully
+/// deleted, a second confirmation may offer to delete its collection if the
+/// server reports that the collection is empty and deletable. Keeping or
+/// dismissing that second dialog does not send a collection deletion request.
 class SavedItemDetailScreen extends ConsumerWidget {
   const SavedItemDetailScreen({
     required this.itemId,
@@ -63,12 +50,11 @@ class SavedItemDetailScreen extends ConsumerWidget {
 
   final String itemId;
 
-  /// The collection whose contents screen pushed this route, when there is one.
+  /// The collection whose contents screen opened this route, if applicable.
   ///
-  /// Null for the Inbox, Search and a direct entry. Used only after a successful
-  /// collection delete: if that collection is the one this detail was opened
-  /// from, the collection route beneath this one is now gone and must be popped
-  /// as well.
+  /// Null when opened from the Inbox, Search or a direct entry. Used after a
+  /// successful collection deletion to determine whether the collection route
+  /// beneath this detail screen must also be popped.
   final String? originCollectionId;
 
   @override
@@ -81,9 +67,8 @@ class SavedItemDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('ITEM'),
-        // The detail always has a back affordance. When it was pushed, that is
-        // an ordinary pop; when it was entered directly there is no page beneath
-        // it, so the control says where it goes and falls back to the Inbox.
+        // Use a normal pop when a previous page exists. Direct entries fall
+        // back to the Inbox instead.
         leading: canPop
             ? const BackButton()
             : IconButton(
@@ -112,20 +97,19 @@ class SavedItemDetailScreen extends ConsumerWidget {
                   onRetry: () =>
                       ref.invalidate(savedItemDetailProvider(itemId)),
                 ),
-        // A manual retry in flight, or the first read. Both show the real layout
-        // under a skeleton rather than a bare spinner.
+        // The initial read and a manual retry both show the detail layout
+        // under a skeleton instead of a bare spinner.
         _ => const _DetailSkeleton(),
       },
     );
   }
 
-  /// Runs the two-dialog destructive flow.
+  /// Runs the two-step deletion flow.
   ///
-  /// The controller owns both requests, the in-flight guard, cache
-  /// reconciliation and every feedback message. This method owns only the order
-  /// of user decisions and navigation. **The item delete is never repeated when
-  /// the collection step fails**: the second request is a separate outcome, and
-  /// the screen leaves once the item is known deleted.
+  /// The controller handles the requests, in-flight guard, cache updates and
+  /// feedback. This method handles only the order of user decisions and
+  /// navigation. The item deletion is never repeated if collection deletion
+  /// fails; the item is already known to be deleted at that point.
   Future<void> _confirmDelete(
     BuildContext context,
     WidgetRef ref,
@@ -151,9 +135,8 @@ class SavedItemDetailScreen extends ConsumerWidget {
 
     switch (outcome) {
       case DeleteSavedItemCollectionOffered(:final result):
-        // Eligibility was checked defensively by the controller, including the
-        // exact collection id match and a non-empty trimmed name. The dialog
-        // uses the trimmed name in both sentences.
+        // The controller has already checked the collection identity and
+        // deletion eligibility. Use the trimmed name in the confirmation.
         final name = item.collectionName.trim();
         final deleteCollection = await showAppConfirmDialog(
           context: context,
@@ -168,9 +151,8 @@ class SavedItemDetailScreen extends ConsumerWidget {
 
         if (!context.mounted) return;
 
-        // The collection contents route beneath this detail is the one being
-        // deleted. Its contents provider does not need a refresh that can only
-        // answer 404; the route is about to be removed.
+        // If this detail was opened from the collection being deleted, its
+        // underlying contents route will also need to be removed.
         final leavesCollection = originCollectionId == result.collectionId;
 
         if (deleteCollection == true) {
@@ -187,17 +169,16 @@ class SavedItemDetailScreen extends ConsumerWidget {
           if (leavesCollection &&
               (outcome is DeleteCollectionSucceeded ||
                   outcome is DeleteCollectionNotFound)) {
-            // Pop this detail and the collection screen it was opened from. The
-            // second pop reveals whatever destination held that collection —
-            // Collections or Search — through the existing stack, rather than
-            // inventing a destination or leaving a deleted collection on screen.
+            // Remove both the detail and deleted collection routes. The
+            // existing navigation stack determines the destination beneath
+            // the collection, such as Collections or Search.
             context.pop();
             context.pop();
             return;
           }
         } else {
-          // Barrier tap, Back and the explicit Keep it all mean keep. The
-          // success notice is published only now so it cannot cover the dialog.
+          // Keeping, dismissing or going Back all preserve the collection.
+          // Publish the success notice only after the dialog is closed.
           ref.read(deleteSavedItemProvider.notifier).keepCollection();
         }
 
@@ -208,8 +189,8 @@ class SavedItemDetailScreen extends ConsumerWidget {
       case DeleteSavedItemNotFound():
         _leave(context);
 
-      // The outcome is genuinely unknown. Staying keeps the distinction visible
-      // and lets the user retry; leaving would imply the deletion completed.
+      // The deletion outcome is not confirmed. Keep the screen open rather
+      // than implying that the item was successfully deleted.
       case DeleteSavedItemUnconfirmed():
       case DeleteSavedItemFailed():
       case DeleteSavedItemIgnored():
@@ -217,10 +198,9 @@ class SavedItemDetailScreen extends ConsumerWidget {
     }
   }
 
-  /// Pops when there is a page to return to, otherwise opens the Inbox.
+  /// Pops to the previous page, or opens the Inbox when there is no page below.
   ///
-  /// Used by both the app bar's fallback and C3's action, so a directly-entered
-  /// not-found item has the same safe exit as a directly-entered live one.
+  /// Shared by the app bar fallback and the not-found state.
   void _leave(BuildContext context) {
     if (Navigator.of(context).canPop()) {
       context.pop();
@@ -230,7 +210,7 @@ class SavedItemDetailScreen extends ConsumerWidget {
   }
 }
 
-/// C1 and C2: the item's real content, in the wireframe's order.
+/// Displays the loaded item's content and available actions.
 class _DetailBody extends StatelessWidget {
   const _DetailBody({
     required this.item,
@@ -244,33 +224,31 @@ class _DetailBody extends StatelessWidget {
 
   final SavedItemSummary item;
 
-  /// Null in the skeleton and in every non-data state, which is what keeps the
-  /// action out of the loading, generic-error and C3 screens.
+  /// Null outside the loaded-data state, so the action is unavailable while
+  /// loading or when the detail request has failed.
   final VoidCallback? onMoveToCollection;
 
-  /// Null in the skeleton and every non-data state, for the same reason as
-  /// [onMoveToCollection]: a handoff needs a loaded item to take its URL from.
+  /// Null outside the loaded-data state because opening the original page
+  /// requires the saved item's URL.
   ///
-  /// Supplied even while a write is in flight. Opening a page reads nothing from
-  /// the backend and changes nothing, so a re-read or a delete has no reason to
-  /// block it — and the OS is about to take the screen anyway.
+  /// Remains available while writes are in flight. Opening the URL does not
+  /// modify the saved item, so it does not need to be blocked by those writes.
   final VoidCallback? onOpenUrl;
 
-  /// Null in the skeleton and every non-data state, for the same reason as
-  /// [onMoveToCollection].
+  /// Null outside the loaded-data state.
   final VoidCallback? onDelete;
 
-  /// Null in the skeleton and every non-data state, so neither can start a
-  /// re-read. Only loaded detail data supplies it.
+  /// Null outside the loaded-data state, so a re-read cannot start without
+  /// loaded item data.
   final VoidCallback? onReRead;
 
-  /// A destructive request is in flight. Both actions are disabled, and the
-  /// delete control shows its own progress rather than leaving a dead button.
+  /// Whether an item deletion is in flight. The delete action shows progress,
+  /// and both item-level mutation actions are disabled.
   final bool deleting;
 
-  /// A re-read is in flight. The item stays visible, the re-read control shows
-  /// its own progress, and both item-level mutations are disabled until it
-  /// finishes. The enrichment status is **not** changed optimistically.
+  /// Whether a re-read is in flight. The item remains visible, the re-read
+  /// action shows progress, and both item-level mutation actions are disabled.
+  /// The enrichment status is not changed optimistically.
   final bool enriching;
 
   @override
@@ -288,9 +266,8 @@ class _DetailBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // The preview well is the row's, widened. The same widget decides the
-          // pending, unavailable and loaded states here, so the detail cannot
-          // drift from the row.
+          // Reuses the row preview's rendering rules for pending, unavailable
+          // and loaded images.
           SavedItemPreview(
             imageUrl: item.imageUrl,
             enrichmentStatus: item.enrichmentStatus,
@@ -301,8 +278,7 @@ class _DetailBody extends StatelessWidget {
           Text(
             item.displayTitle,
             style: AppTypography.itemTitle.copyWith(
-              // A fallback title is neutral copy, never a warning colour. D17
-              // confirms a title-less item is normal.
+              // A fallback title is normal display copy, not an error state.
               color: item.usesFallbackTitle
                   ? tokens.textTertiary
                   : tokens.textPrimary,
@@ -326,17 +302,17 @@ class _DetailBody extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppMetrics.space2),
-              // `completed` with metadata renders nothing here; `pending`,
-              // `failed` and `completed` without metadata render their neutral
-              // or danger wording. No spinner: nothing is in flight on this
-              // screen's behalf.
+              // Completed items with metadata need no status message.
+              // Pending, failed and completed items without metadata show
+              // their corresponding status. No spinner is shown here because
+              // this status does not represent an active request.
               Expanded(child: SavedItemEnrichmentState(item: item)),
             ],
           ),
           if (description != null) ...[
             const SizedBox(height: AppMetrics.space3),
-            // Full text. The row clamps to two lines; the detail exists to show
-            // the description, so truncating it here would defeat the screen.
+            // Show the full description here; the list row is the component
+            // that limits it to two lines.
             Text(
               description,
               style: AppTypography.body.copyWith(color: tokens.textSecondary),
@@ -368,8 +344,8 @@ class _DetailBody extends StatelessWidget {
               if (onOpenUrl != null || onDelete != null)
                 const SizedBox(height: AppMetrics.space2),
             ],
-            // The platform handoff, in the wireframe's position between the two
-            // writes and never styled as one.
+            // Opening the original page is a platform handoff, not an item
+            // mutation. It remains separate from the write actions.
             if (onOpenUrl != null) ...[
               AppButton(
                 label: 'Open the original page',
@@ -397,12 +373,11 @@ class _DetailBody extends StatelessWidget {
     );
   }
 
-  /// Null for a missing, empty or whitespace-only description.
+  /// Returns null when the description is missing, empty or whitespace-only.
   ///
-  /// The wireframe's C2 shows "No description yet" as a neutral note, but the
-  /// status line already explains why a pending or failed item has none, and a
-  /// completed item with no description is an ordinary page. An extra sentence
-  /// would add copy without adding information.
+  /// The status message already explains missing metadata for pending or
+  /// failed items. A completed item without a description is also valid, so
+  /// an additional placeholder sentence would not add useful information.
   static String? _descriptionOf(SavedItemSummary item) {
     final description = item.description?.trim();
     if (description == null || description.isEmpty) return null;
@@ -410,18 +385,16 @@ class _DetailBody extends StatelessWidget {
   }
 }
 
-/// The one write that changes what the item itself shows.
+/// Provides the user-triggered action to re-read the saved page.
 ///
-/// **Available for all three enrichment states.** A `pending` item was never
-/// read, a `failed` one could not be read, and a `completed` one may have changed
-/// since — the user decides when to try again, and none of the three states makes
-/// the action meaningless.
+/// Available for all enrichment states: pending items have not been read,
+/// failed items could not be read, and completed items may have changed since
+/// the last read. The user decides when to try again.
 ///
-/// **The callback is only suppliable from loaded detail data.** In the skeleton
-/// and in both non-data states there is no item to re-read, so the control is
-/// present but inert. While a request is in flight the button is [busy] and the
-/// caption says what is happening; the wireframe's "Reading the page…" is now a
-/// truthful description rather than an invented one.
+/// The callback is supplied only when detail data is loaded. In the skeleton
+/// and non-data states the control remains visible but cannot start a request.
+/// While a request is in flight, the button shows progress and the caption
+/// describes the ongoing operation.
 class _EnrichmentAction extends StatelessWidget {
   const _EnrichmentAction({
     required this.tokens,
@@ -431,8 +404,7 @@ class _EnrichmentAction extends StatelessWidget {
 
   final AppTokens tokens;
 
-  /// Null when there is no loaded item, which is what keeps the skeleton, the
-  /// read error and C3 from issuing a request.
+  /// Null when no loaded item is available.
   final VoidCallback? onReRead;
 
   final bool enriching;
@@ -467,11 +439,10 @@ class _EnrichmentAction extends StatelessWidget {
   }
 }
 
-/// Loading: the real detail layout under `Skeletonizer`.
+/// Shows the detail layout under `Skeletonizer` while the item is loading.
 ///
-/// The placeholder strings never reach a screen reader: [ExcludeSemantics]
-/// removes the subtree. They exist so the bones have realistic lengths, not to
-/// present invented metadata as fact.
+/// Placeholder values provide realistic text lengths for the skeleton.
+/// [ExcludeSemantics] keeps those placeholders out of the screen reader.
 class _DetailSkeleton extends StatelessWidget {
   const _DetailSkeleton();
 
@@ -492,9 +463,8 @@ class _DetailSkeleton extends StatelessWidget {
                 'A description long enough to show the shape of the detail '
                 'layout while the item is being read. It wraps across several '
                 'lines, as a real description can.',
-            // No `imageUrl`: a skeleton is not an item and must never issue a
-            // network image request. `completed` with no image is a real state,
-            // and the well reserves the same space either way.
+            // No image URL is supplied, so the skeleton cannot trigger a
+            // network image request. The preview still reserves its space.
           ),
         ),
       ),
@@ -502,12 +472,11 @@ class _DetailSkeleton extends StatelessWidget {
   }
 }
 
-/// C3: the item is gone, or is not this account's.
+/// Shows a neutral state when the item is unavailable.
 ///
-/// Only [ApiFailureNotFound] reaches this state, and the copy never says which
-/// of the two happened — the backend uses one response on purpose so IDs cannot
-/// be enumerated. **There is no Retry**: the server has already said the
-/// resource is unavailable, and re-reading cannot change that.
+/// Only [ApiFailureNotFound] reaches this state. The message does not reveal
+/// whether the item was deleted or belongs to another account. There is no
+/// Retry action because another read cannot restore an unavailable item.
 class _NotFound extends StatelessWidget {
   const _NotFound({required this.onBack});
 
@@ -550,11 +519,12 @@ class _NotFound extends StatelessWidget {
   }
 }
 
-/// Every other failed read: transport, server, auth, unreadable, rate limit.
+/// Displays retryable read failures, including transport, server, auth,
+/// unreadable-response and rate-limit failures.
 ///
-/// It is deliberately distinct from C3. A malformed `404` is an unreadable
-/// response, not a missing item, and must offer a retry; only the verified
-/// `RESOURCE_NOT_FOUND` code may claim the item is gone.
+/// This is distinct from the not-found state. A malformed `404` response is
+/// unreadable, not proof that the item is missing, so it still offers Retry.
+/// Only a verified `RESOURCE_NOT_FOUND` failure reaches [_NotFound].
 class _ReadError extends StatelessWidget {
   const _ReadError({required this.failure, required this.onRetry});
 
@@ -597,8 +567,8 @@ class _ReadError extends StatelessWidget {
     );
   }
 
-  /// Client-owned copy per failure. The backend's `message` is never rendered
-  /// (D22); `genericReadFailureMessage` supplies the feature-agnostic remainder.
+  /// Uses client-owned copy for each failure type. The API response message
+  /// is not displayed; [genericReadFailureMessage] handles other failures.
   static String _messageFor(Object failure) => switch (failure) {
     ApiFailureSessionEnded() =>
       'Your session has ended. Sign in again to see this item.',
@@ -607,9 +577,8 @@ class _ReadError extends StatelessWidget {
       'This item is temporarily unavailable. Try again shortly.',
     ApiFailureTransport() =>
       "No connection to the server. We couldn't load this item.",
-    // `ApiFailureNotFound` is handled before this widget. The fallback covers
-    // `RefreshUncertain` and `CredentialStorage` without claiming the session
-    // ended, which neither of them establishes.
+    // Not-found failures are handled before this widget. The fallback also
+    // covers failures that do not establish that the session has ended.
     _ =>
       genericReadFailureMessage(failure) ??
           "We couldn't load this item. Try again.",

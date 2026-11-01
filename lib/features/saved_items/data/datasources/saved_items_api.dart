@@ -13,172 +13,136 @@ import '../models/move_to_collection_response.dart';
 
 part 'saved_items_api.g.dart';
 
-/// The saved-items API surface, issued over `appDio`.
+/// The saved-items API surface, accessed through `appDio`.
 ///
-/// Returns the envelope, not a bare model, so `data`, `message` and `meta` are
-/// decoded once at the boundary.
+/// Returns response envelopes rather than bare models, so `data`, `message`,
+/// and `meta` are decoded at the API boundary.
 @RestApi()
 abstract class SavedItemsApi {
   factory SavedItemsApi(Dio dio, {String? baseUrl}) = _SavedItemsApi;
 
   /// `POST /saved-items` — saves one URL to the caller's Unsorted collection.
   ///
-  /// **Mounted as `Auth` → per-user rate limit → handler**, in that order
-  /// (`saved_item/routes.go`). Two consequences matter above this layer:
+  /// Requests rejected before the save operation runs are known not to have
+  /// created an item. This includes authentication and rate-limit refusals,
+  /// making the authentication interceptor's replay safe in those cases.
   ///
-  /// - A refused request never reaches the handler, so a `401` from the guard and
-  ///   a `429`/`503` from the limiter are both *known not saved*. That is what
-  ///   makes the interceptor's single replay of this request safe: the first
-  ///   attempt was rejected before any work ran.
-  /// - The handler answers `201` only after the insert committed. A single
-  ///   autocommit statement is the whole write, and the enrichment enqueue that
-  ///   follows it has its failure logged and swallowed — so a `201` cannot be
-  ///   contradicted by anything that happens after it.
+  /// A successful `201` confirms that the item was created. Subsequent
+  /// enrichment scheduling does not change that result.
   ///
-  /// The response is the minimal create representation; see
-  /// `CreatedSavedItemResponse` for why it is not a `SavedItemSummary`.
+  /// Returns the minimal create representation rather than a full
+  /// [SavedItemSummary].
   @POST('/saved-items')
   Future<CreateSavedItemResponse> create(
     @Body() CreateSavedItemRequest request,
   );
 
-  /// `GET /saved-items` — the current user's recent saved items, newest first.
+  /// `GET /saved-items` — lists the current user's saved items across all
+  /// collections, newest first.
   ///
-  /// **[D26] This is the Inbox listing.** Every saved item the user owns, across
-  /// every collection they own, with each item naming the collection it sits in.
-  /// Unsorted is one collection among those and is not this listing's subject.
+  /// This is the Inbox listing. Each item identifies the collection it belongs
+  /// to, including Unsorted.
   ///
-  /// Read-only. It never starts enrichment, never organizes anything and never
-  /// writes, so reading the history is not a reason to fetch anything.
+  /// This endpoint is read-only: listing items does not trigger enrichment,
+  /// organization, or other writes.
   ///
-  /// **`limit` is deliberately not sent.** The documented default is 20 and the
-  /// cap is 50; the server enforces both, and restating a cap the client does not
-  /// own would be a second place for it to be wrong.
+  /// `limit` is omitted so the server applies its documented default and cap.
   ///
-  /// **[cursor] is opaque and is passed back exactly as received.** It is never
-  /// parsed, logged or rebuilt: the contract states a cursor records a position
-  /// rather than an item, and its contents are not part of the API surface. Null
-  /// means "start at the newest item", which is why the query parameter is
-  /// omitted rather than sent empty.
+  /// [cursor] is opaque and must be passed back exactly as received. A null
+  /// cursor starts from the newest item, so the query parameter is omitted.
   @GET('/saved-items')
   Future<ListSavedItemsResponse> list({@Query('cursor') String? cursor});
 
-  /// `GET /collections/{id}/saved-items` — one collection's saved items, newest
-  /// first.
+  /// `GET /collections/{id}/saved-items` — lists the saved items in one
+  /// collection, newest first.
   ///
-  /// **Mounted as `Auth` only** (`collection/routes.go`): the route has no rate
-  /// limiter, so there is no budget variant to anticipate and no `Retry-After` to
-  /// read.
+  /// The collection is returned once in `data.collection`, while each item
+  /// contains its own summary. This differs from [list], which spans multiple
+  /// collections and therefore identifies the collection on every item.
   ///
-  /// **The collection is reported once, in `data.collection`**, because this
-  /// listing is scoped to one collection. That is the opposite of
-  /// [list]'s shape, where every row names its own collection because the page
-  /// spans them.
+  /// `limit` is omitted so the server applies its documented default and cap.
+  /// [cursor] is opaque and must be passed back exactly as received. A null
+  /// cursor starts from the newest item, so the query parameter is omitted.
   ///
-  /// **`limit` is deliberately not sent**, for the same reason as [list]: the
-  /// documented default is 20 and the cap is 50, and the server enforces both.
-  /// Restating a cap the client does not own would be a second place for it to be
-  /// wrong.
-  ///
-  /// **[cursor] is opaque and is passed back exactly as received.** Null means
-  /// "start at the newest item", which is why the query parameter is omitted
-  /// rather than sent empty.
-  ///
-  /// Read-only: viewing a collection never enriches anything, never organizes and
-  /// never writes.
+  /// This endpoint is read-only and does not trigger enrichment or organization.
   @GET('/collections/{id}/saved-items')
   Future<ListCollectionSavedItemsResponse> listInCollection(
     @Path('id') String id, {
     @Query('cursor') String? cursor,
   });
 
-  /// `PUT /saved-items/{id}/collection` — file an item into a collection by
-  /// name, with the caller stating whether the name selects an existing
-  /// destination or asks for a new collection.
+  /// `PUT /saved-items/{id}/collection` — moves an item into a collection
+  /// selected by name.
   ///
-  /// **Mounted as `Auth` only** (`collection/routes.go`): the route has no rate
-  /// limiter. A `401` therefore comes from the guard before any write. Other
-  /// failures are classified by [ApiFailure]; the mutation treats a `5xx`, a
-  /// transport failure and an unreadable success body as unestablished, because
-  /// none of them proves the write did not land.
+  /// The destination is identified by name, not ID. Name matching ignores
+  /// casing and surrounding whitespace.
   ///
-  /// **The destination is a name, never an id.** The backend resolves the name
-  /// case-insensitively with surrounding whitespace ignored. `collection_intent`
-  /// is required and has no default: `existing` reuses a collection of either
-  /// type that holds the name (and keeps the create-or-get fallback), while
-  /// `create` asks for a new collection and refuses a name already held by one
-  /// of the user's collections with `COLLECTION_NAME_ALREADY_EXISTS`. An absent
-  /// or unknown intent answers `400 INVALID_COLLECTION_INTENT`.
+  /// `collection_intent` is required:
+  /// - `existing` selects an existing collection with that name.
+  /// - `create` requests a new collection and is rejected if the user already
+  ///   has a collection with that name.
   ///
-  /// A repeated request for the collection the item is already in answers `200`
-  /// with `already_in_collection: true`, writes nothing and leaves `updated_at`
-  /// unchanged.
+  /// An absent or unsupported intent is rejected as an invalid request.
   ///
-  /// The body has no `meta`; see [MoveToCollectionResponse] for the exact shape.
+  /// A request targeting the item's current collection returns
+  /// `already_in_collection: true` without changing the item.
+  ///
+  /// The response has no `meta`; see [MoveToCollectionResponse] for its shape.
+  /// Server errors, transport failures, and unreadable success responses may
+  /// leave the outcome uncertain, so they must not automatically be treated
+  /// as proof that the move failed.
   @PUT('/saved-items/{id}/collection')
   Future<MoveToCollectionResponse> moveToCollection(
     @Path('id') String id,
     @Body() MoveToCollectionRequest request,
   );
 
-  /// `GET /saved-items/{id}` — one saved item with the collection it is filed in.
+  /// `GET /saved-items/{id}` — retrieves one saved item and its collection.
   ///
-  /// **Mounted as `Auth` only** (`saved_item/routes.go`): the route is not rate
-  /// limited, because it performs one indexed read and fetches nothing. Unlike
-  /// the enrich endpoint, opening an item never starts enrichment, writes
-  /// enrichment state, or moves the item between collections.
+  /// The item and collection are returned as sibling fields. The response has
+  /// no `meta`.
   ///
-  /// The body carries the complete item and its collection as **siblings**, not
-  /// as the listing's nested object, and no `meta`. A missing item and one owned
-  /// by another user both answer the same `404 RESOURCE_NOT_FOUND`, so the
-  /// client cannot tell the two apart and must not say which happened.
+  /// Opening an item does not trigger enrichment or change its collection.
+  /// A missing item and an item owned by another user return the same
+  /// `404 RESOURCE_NOT_FOUND`; the client cannot distinguish those cases.
   @GET('/saved-items/{id}')
   Future<GetSavedItemResponse> getById(@Path('id') String id);
 
-  /// `POST /saved-items/{id}/enrich` — re-reads the saved item's source page and
-  /// records what the attempt found.
+  /// `POST /saved-items/{id}/enrich` — re-reads the saved item's source page
+  /// and records the extraction result.
   ///
-  /// **No request body and no query parameters.** The URL to fetch is the one
-  /// already stored on the server; the id is the whole input. Nothing about the
-  /// page, the extractor or the outcome is selected by the client.
+  /// The saved URL is read from the server. The item ID is the only input;
+  /// no request body or query parameters are needed.
   ///
-  /// **Mounted as `Auth` → per-user rate limit → handler** (`enrichment/routes.go`),
-  /// so a `401`, a `429` and a `503` are all refused before the handler runs:
-  /// no page is fetched and no enrichment state is written. Only the handler's
-  /// own database writes can produce a `500`.
+  /// Authentication and rate-limit refusals occur before the re-read starts.
+  /// A `401`, `429`, or `503` therefore means no enrichment attempt was made.
   ///
-  /// **Synchronous, with no job to poll.** The handler fetches and extracts the
-  /// page before answering, then reports the item as it now stands. A page that
-  /// could not be read is a recorded `failed` outcome in a `200` body, not an
-  /// HTTP failure — the only not-found answer is `404 SAVED_ITEM_NOT_FOUND`,
-  /// which also covers the item being deleted while the attempt was running. No
-  /// response sets the status to `pending`.
+  /// The operation is synchronous and returns the resulting item directly.
+  /// A page that cannot be extracted is reported as a `failed` enrichment
+  /// status in a successful `200` response, not as an HTTP failure.
+  /// A `pending` status is not returned by this endpoint.
   ///
-  /// The body carries the same twelve-field `saved_item` object as [getById], but
-  /// **without** the sibling `collection`: enrichment never changes membership, so
-  /// the route does not resolve the collection name. See
-  /// [EnrichSavedItemResponse].
+  /// `404 SAVED_ITEM_NOT_FOUND` also covers an item deleted while the attempt
+  /// was running.
+  ///
+  /// The response contains the same `saved_item` shape as [getById], but
+  /// without the sibling `collection`, because enrichment does not change
+  /// collection membership. See [EnrichSavedItemResponse].
   @POST('/saved-items/{id}/enrich')
   Future<EnrichSavedItemResponse> enrich(@Path('id') String id);
 
-  /// `DELETE /saved-items/{id}` — permanently removes one saved item.
+  /// `DELETE /saved-items/{id}` — permanently deletes one saved item.
   ///
-  /// **Mounted as `Auth` only** (`saved_item/routes.go`): the route has no rate
-  /// limiter. A `401` therefore comes from the guard before any write.
+  /// A server error may occur after the item has already been deleted.
+  /// Therefore, a server fault does not necessarily establish that the delete
+  /// failed.
   ///
-  /// The item delete is three autocommit statements, not a transaction: the row
-  /// delete commits first, then the collection count and system-key read follow.
-  /// A `500` can therefore be answered **after** the item is gone, so the
-  /// mutation must treat a server fault as ambiguous rather than as a failed
-  /// delete.
+  /// The successful response identifies the item's former collection and
+  /// indicates whether that collection is now empty and eligible for deletion.
+  /// These values are advisory; this request never deletes the collection.
   ///
-  /// The `200` reports the collection the item was in and whether it is now empty
-  /// and deletable. Those flags are advisory input to a separate collection
-  /// delete; this request never removes a collection.
-  ///
-  /// A missing item and one owned by another user both answer
-  /// `404 RESOURCE_NOT_FOUND`, so no copy derived from this call may say which
-  /// happened.
+  /// A missing item and an item owned by another user return the same
+  /// `404 RESOURCE_NOT_FOUND`; the client cannot distinguish those cases.
   @DELETE('/saved-items/{id}')
   Future<DeleteSavedItemResponse> delete(@Path('id') String id);
 }

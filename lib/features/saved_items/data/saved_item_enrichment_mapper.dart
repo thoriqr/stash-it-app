@@ -2,19 +2,20 @@ import '../domain/saved_item_enrichment_result.dart';
 import 'models/enrich_saved_item_response.dart';
 import 'saved_item_display_mapper.dart';
 
-/// Maps the enrich response onto the four fields the write can change.
+/// Maps an enrichment response to the fields updated by enrichment.
 ///
-/// A plain function rather than a mapper class, following `savedItemDetailFrom`
-/// and `AGENTS.md` §2.
+/// Uses a function because the mapping has one input and one output.
 ///
-/// **The values are copied, never derived.** A null title stays null so it can
-/// clear an older title, and a blank image URL stays blank. The only
-/// interpretation is the enrichment status, which goes through
-/// [enrichmentStatusFrom] so this route words `pending`, `completed` and `failed`
-/// exactly as the Inbox, Search and Detail mappers do.
+/// Values are copied directly from the response without additional
+/// normalization. A null title remains null so it can clear an existing title,
+/// and a blank image URL remains unchanged.
 ///
-/// **Nothing about the collection is mapped.** The response does not carry its
-/// name, and enrichment cannot move an item; the existing row keeps both.
+/// Enrichment status is mapped through [enrichmentStatusFrom] to keep its
+/// interpretation consistent with Inbox, Search and Detail.
+///
+/// Collection information is not mapped because the response does not include
+/// the collection name and enrichment does not change collection membership.
+/// The existing collection information remains unchanged.
 SavedItemEnrichmentResult savedItemEnrichmentFrom(
   EnrichSavedItemResponse response,
 ) {

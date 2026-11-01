@@ -3,21 +3,19 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'listed_saved_item.freezed.dart';
 part 'listed_saved_item.g.dart';
 
-/// The collection an item is filed in, as the listing reports it.
+/// The collection associated with a saved item in the listing.
 ///
 /// ```json
 /// { "id": "...", "name": "Wishlist" }
 /// ```
 ///
-/// **Only `id` and `name`.** `type` and `system_key` belong to
-/// `GET /collections`, and **D2** forbids this client resolving "Unsorted" by
-/// display name — so nothing here may be used to decide which collection is the
-/// system one.
+/// Contains only `id` and `name`. Collection type and system identifiers are
+/// provided separately by `GET /collections`.
 ///
-/// The object is inside the item rather than beside the page because the listing
-/// spans every collection the caller owns: there is no single collection for the
-/// response to name, so each row has to name its own, and a client never has to
-/// make a request per row to learn where an item lives.
+/// The collection is nested inside each item because `GET /saved-items` spans
+/// multiple collections. Each row therefore identifies its own collection,
+/// allowing the client to display collection information without making a
+/// separate request for every item.
 @freezed
 abstract class SavedItemCollectionResponse with _$SavedItemCollectionResponse {
   const factory SavedItemCollectionResponse({
@@ -29,7 +27,7 @@ abstract class SavedItemCollectionResponse with _$SavedItemCollectionResponse {
       _$SavedItemCollectionResponseFromJson(json);
 }
 
-/// One row of `GET /saved-items` — the backend's `ListedSavedItemResponse`.
+/// One row returned by `GET /saved-items`.
 ///
 /// ```json
 /// {
@@ -41,20 +39,17 @@ abstract class SavedItemCollectionResponse with _$SavedItemCollectionResponse {
 /// }
 /// ```
 ///
-/// **Every documented field is declared**, including the ones presentation does
-/// not read yet (`domain`, `platform`, `last_enriched_at`, `created_at`,
-/// `updated_at`). A DTO that silently dropped documented keys would make a
-/// contract change invisible until something needed the field.
+/// Declares every documented response field, including fields not currently
+/// used by the presentation layer, so changes to the API response remain
+/// detectable.
 ///
-/// **[D21] The nullable four stay nullable.** `title`, `description`,
-/// `image_url` and `last_enriched_at` are reported as an explicit `null` on a key
-/// that is always present, and a `null` is an ordinary state — an item whose page
-/// exposed no title is `completed` with a `null` title, which is **[D17]**
-/// confirmed and must not be rendered as a fault.
+/// `title`, `description`, `image_url` and `last_enriched_at` are nullable.
+/// These fields may legitimately be null even when `enrichment_status` is
+/// `completed`. For example, a page may not expose a title without making
+/// enrichment unsuccessful.
 ///
-/// **Every field names its wire key.** The backend's JSON is snake_case; without
-/// `@JsonKey` the generated decoder looks for camelCase and fails at runtime as a
-/// `TypeError`, which surfaces as an unreadable response rather than a decode bug.
+/// Fields with snake_case wire keys use [JsonKey] to ensure the generated
+/// decoder reads the correct JSON keys.
 @freezed
 abstract class ListedSavedItemResponse with _$ListedSavedItemResponse {
   const factory ListedSavedItemResponse({

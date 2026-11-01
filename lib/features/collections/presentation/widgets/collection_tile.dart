@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../domain/collection_summary.dart';
 
-/// Collection tile matching the design reference (collections.html).
 class CollectionTile extends StatelessWidget {
   const CollectionTile({super.key, required this.item, this.onTap});
 

@@ -6,45 +6,30 @@ import 'package:stash_it_app/features/saved_items/application/save_url_controlle
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
-/// The Inbox's URL intake — `design-system.md` §6.1 and D25.
+/// URL intake for the Inbox.
 ///
-/// **Both actions are wired, and they stay separate.** **Paste** reads plain text
-/// from the platform clipboard and replaces the field's contents; it never
-/// submits, validates, or announces anything. **Save URL** submits what is in the
-/// field, exactly once per tap, through `SaveUrl`; the field is cleared only when
-/// the server confirms the create, so a refusal leaves the value there to correct
-/// and send again.
+/// Paste reads plain text from the platform clipboard and fills the field
+/// without submitting. Save URL submits the field's current value through
+/// [SaveUrl] and clears it only after a confirmed save.
 ///
-/// The clipboard is Flutter's own [Clipboard] service
-/// (`package:flutter/services.dart`), not a package: the engine implements it on
-/// Android and iOS. **Empty, non-text, and failed reads leave the field untouched
-/// and say nothing.** D25 leaves clipboard behaviour beyond "places it into the
-/// input" open (Q13), and the discovery documents forbid inventing a
-/// clipboard-failure or invalid-URL state, so there is no copy for those cases.
-/// Invalid or unrelated text is placed as-is; `SaveUrl` owns the local shape
-/// check, so paste does not pre-empt Q13 by validating.
+/// Empty, non-text, or failed clipboard reads leave the field unchanged and
+/// produce no feedback. Pasted content is inserted as-is; URL validation is
+/// handled by the save flow rather than during paste.
 ///
-/// The two buttons stay visually distinct on purpose: **Paste** is secondary and
-/// **Save URL** is the screen's only filled button, so pasting can never be read
-/// as saving (**D25** — pasting alone does not save, and this widget never submits
-/// without a tap on Save URL).
+/// Paste and Save URL remain visually distinct: Paste is a secondary action,
+/// while Save URL is the primary action. Pasting never saves without an
+/// explicit tap on Save URL.
 ///
-/// **Clear is not an action.** The inline `X` in the field only empties it; it
-/// never submits or announces anything, and it is unavailable while a save is in
-/// flight.
+/// Clearing the field is also separate from saving. The inline clear control
+/// only empties the field and is unavailable while a save is in progress.
 ///
-/// **Two gates, in two places.** This widget refuses to submit an empty or
-/// whitespace-only field. The *shape* of the URL is judged once, by `SaveUrl`,
-/// before it touches the transport (`isSubmittableUrl`, `saved_item_url.dart`): a
-/// value that cannot be a URL is reported through the app-wide notice and left in
-/// the field, and the server keeps the final say on everything a local check cannot
-/// see — whether the host resolves, domain rules, and its own length cap (§2.9,
-/// Q13).
+/// The widget prevents empty or whitespace-only submissions. URL shape
+/// validation is handled by [SaveUrl] before the request is sent, while the
+/// server remains authoritative for checks that cannot be performed locally.
 ///
-/// **While a save is in flight both actions are disabled**, matching the design
-/// exploration's Saving state. A confirmed save clears the field only if it still
-/// holds the value that was submitted; a value entered or pasted in the meantime
-/// is kept.
+/// Both actions are disabled while a save is in progress. After a confirmed
+/// save, the field is cleared only if it still contains the submitted value,
+/// preserving any newer input.
 class InboxIntake extends ConsumerStatefulWidget {
   const InboxIntake({super.key});
 
@@ -61,14 +46,12 @@ class _InboxIntakeState extends ConsumerState<InboxIntake> {
     super.dispose();
   }
 
-  /// Sends the field's value, and clears it only on a confirmed create.
+  /// Submits the field's value and clears it only after a confirmed save.
   ///
-  /// The value is captured before the await so a successful response cannot wipe
-  /// a different value the user entered or pasted while the request was in
-  /// flight. The clear is guarded by `mounted` because `submit` returns after an
-  /// await that a route change can outlive: the feedback notice is published
-  /// whether or not this screen is still on screen (the notifier is app-level),
-  /// but a disposed `TextEditingController` must not be touched.
+  /// Captures the submitted value before awaiting the request. This prevents a
+  /// successful response from clearing different content entered while the
+  /// request was in progress. The mounted check also prevents access to a
+  /// disposed controller after navigation.
   Future<void> _save() async {
     final submitted = _controller.text;
     final saved = await ref.read(saveUrlProvider.notifier).submit(submitted);
@@ -76,40 +59,27 @@ class _InboxIntakeState extends ConsumerState<InboxIntake> {
     if (!mounted) return;
     if (!saved) return;
 
-    // The confirmation belongs to `submitted`, not to whatever the field holds
-    // now. Leaving the newer value alone keeps a second, unsent URL from being
-    // silently discarded.
+    // Clear only if the field still contains the submitted value.
     if (_controller.text != submitted) return;
 
     _controller.clear();
     setState(() {});
   }
 
-  /// Fills the field from the platform clipboard, and does nothing else.
+  /// Fills the field from the platform clipboard without submitting it.
   ///
-  /// The read uses Flutter's built-in [Clipboard] service, so no package or
-  /// platform code is involved and Android and iOS take the same path. The value
-  /// is placed exactly as the clipboard supplied it; only content that is empty
-  /// after trimming is refused, because there is nothing to place.
-  ///
-  /// **No validation, no submission, no feedback.** D25 says pasting fills the
-  /// input and does not save it; Q13 leaves paste-time validation and
-  /// clipboard-failure states open, and the discovery documents forbid inventing
-  /// either. Invalid or unrelated text therefore goes into the field unchanged,
-  /// where the user can inspect or edit it and `SaveUrl` can judge it on submit.
+  /// The clipboard content is inserted as-is. Empty or whitespace-only content
+  /// is ignored. No URL validation or feedback is performed during paste.
   Future<void> _paste() async {
     final ClipboardData? data;
     try {
       data = await Clipboard.getData(Clipboard.kTextPlain);
     } catch (_) {
-      // A refused or failed clipboard read leaves the field exactly as it was.
-      // `PlatformException` is the platform's usual failure; a missing plugin
-      // arrives as null through `OptionalMethodChannel`. Announcing this would
-      // invent the clipboard-failure state Q13 leaves undecided.
+      // Leave the field unchanged when the clipboard cannot be read.
       return;
     }
 
-    // A route change can outlive the platform round-trip.
+    // Do not update the field if the screen was disposed during the read.
     if (!mounted) return;
 
     final text = data?.text;
@@ -122,12 +92,10 @@ class _InboxIntakeState extends ConsumerState<InboxIntake> {
     setState(() {});
   }
 
-  /// Empties the field without submitting anything.
+  /// Clears the field without submitting or publishing feedback.
   ///
-  /// Clear is not Save: it never calls the save controller or publishes
-  /// feedback. The inline `X` is only rendered when there is text and no save is
-  /// in flight, so this cannot race a submitted value; `build` derives the hint
-  /// and Save URL's enabled state from the controller.
+  /// The clear control is available only when the field has content and no
+  /// save is in progress.
   void _clear() {
     _controller.clear();
     setState(() {});
@@ -156,8 +124,7 @@ class _InboxIntakeState extends ConsumerState<InboxIntake> {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              // Section label — the restrained pixel face, uppercase at the
-              // call site because Flutter has no text-transform.
+              // Uppercase section label using the shared typography style.
               Text(
                 'SAVE A URL',
                 style: AppTypography.sectionLabel.copyWith(
@@ -188,18 +155,15 @@ class _InboxIntakeState extends ConsumerState<InboxIntake> {
             placeholder: 'https://',
             textInputAction: TextInputAction.done,
             onChanged: (_) => setState(() {}),
-            // Whitespace is not a value, and clearing is unavailable while the
-            // submitted value is unresolved.
+            // Whitespace-only input is treated as empty. Clearing is disabled
+            // while the submitted value is unresolved.
             onClear: hasValue && !isSaving ? _clear : null,
           ),
           const SizedBox(height: AppMetrics.space2),
           Row(
             children: [
-              // Paste keeps its natural width; Save URL takes the rest. Paste
-              // only fills the field — it never submits — so the two actions
-              // stay visibly distinct (D25). Both actions are disabled while a
-              // save is in flight, as the design exploration's Saving state
-              // specifies.
+              // Paste only fills the field. Both actions are disabled while
+              // saving to prevent overlapping interactions.
               AppButton(
                 label: 'Paste',
                 variant: AppButtonVariant.secondary,

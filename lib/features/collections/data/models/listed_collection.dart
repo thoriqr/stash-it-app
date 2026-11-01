@@ -3,10 +3,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'listed_collection.freezed.dart';
 part 'listed_collection.g.dart';
 
-/// The collection as it appears in the user's collection list.
+/// A collection returned in the user's collection list.
 ///
-/// Matches backend `ListedCollectionResponse` exactly: includes `system_key`
-/// so Unsorted can be identified (D2). Also includes count fields.
+/// Includes `system_key` to identify system collections such as Unsorted,
+/// along with saved-item counts and collection timestamps.
 @freezed
 abstract class ListedCollectionResponse with _$ListedCollectionResponse {
   const factory ListedCollectionResponse({
@@ -25,7 +25,7 @@ abstract class ListedCollectionResponse with _$ListedCollectionResponse {
       _$ListedCollectionResponseFromJson(json);
 }
 
-/// `data.collections` wrapper.
+/// The `data` object containing the collection list.
 @freezed
 abstract class ListCollectionsDataResponse with _$ListCollectionsDataResponse {
   const factory ListCollectionsDataResponse({
@@ -36,7 +36,10 @@ abstract class ListCollectionsDataResponse with _$ListCollectionsDataResponse {
       _$ListCollectionsDataResponseFromJson(json);
 }
 
-/// `meta.cursor` for GET /collections.
+/// Cursor pagination metadata.
+///
+/// `has_more` indicates whether another page is available, and `next_cursor`
+/// provides the cursor for requesting it.
 @freezed
 abstract class CursorPageMetaResponse with _$CursorPageMetaResponse {
   const factory CursorPageMetaResponse({
@@ -48,7 +51,7 @@ abstract class CursorPageMetaResponse with _$CursorPageMetaResponse {
       _$CursorPageMetaResponseFromJson(json);
 }
 
-/// `meta` for GET /collections.
+/// Pagination metadata for the collection list response.
 @freezed
 abstract class ListCollectionsMetaResponse with _$ListCollectionsMetaResponse {
   const factory ListCollectionsMetaResponse({
@@ -59,7 +62,7 @@ abstract class ListCollectionsMetaResponse with _$ListCollectionsMetaResponse {
       _$ListCollectionsMetaResponseFromJson(json);
 }
 
-/// Full envelope for GET /collections.
+/// Response envelope for `GET /collections`.
 @freezed
 abstract class ListCollectionsResponse with _$ListCollectionsResponse {
   const factory ListCollectionsResponse({

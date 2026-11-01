@@ -15,29 +15,25 @@ import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_ite
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/destination_app_bar.dart';
 
-/// The Inbox destination (S7).
+/// The Inbox destination.
 ///
-/// **[D26] A recent saved items history across every collection the user owns**,
-/// read from `GET /saved-items`. Each row names the collection the item currently
-/// sits in. Unsorted is one collection among those and is not this screen's
-/// subject.
+/// Shows recent saved items across all of the user's collections, using
+/// `GET /saved-items`. Each row identifies the collection that currently
+/// contains the item. Unsorted is included as one of those collections.
 ///
-/// Nothing is filtered: `pending`, `completed` and `failed` all appear, because
-/// the listing does not filter and a client that hid states would be inventing a
-/// product rule. **[D8]** `completed` means the enrichment process ran, not that
-/// any metadata was found, so a `completed` item with no title renders its URL
-/// fallback in neutral copy rather than as a fault.
+/// All item states (`pending`, `completed`, and `failed`) are displayed.
+/// A `completed` item does not necessarily have metadata, so an item without
+/// a title uses its URL as a neutral fallback rather than showing an error.
 ///
-/// Rows are rendered **in the order the API returned them**. The contract fixes
-/// it at `created_at DESC, id DESC` with no sort parameter, so sorting here would
-/// be a second ordering rule that could disagree with the server's (**D4**).
+/// Rows retain the order returned by the API. The server orders them by
+/// `created_at DESC, id DESC`; the client does not apply another sort.
 ///
-/// The intake above the list is the only write: paste fills its field, and
-/// **Save URL** sends one `POST /saved-items` per confirmed tap, followed by a
-/// head refresh so the new item appears without discarding the pages already
-/// loaded. Pulling the list down reads page one again and replaces the loaded
-/// history with the server's current head. Not implemented here, deliberately:
-/// the pending-URL queue and any collection mutation.
+/// The intake above the list handles new saves. Each confirmed Save URL tap
+/// submits one `POST /saved-items` request, then refreshes the list head while
+/// preserving pages already loaded. Pulling down refreshes page one and
+/// replaces the loaded history with the latest server results.
+///
+/// The pending-URL queue and collection mutations are handled elsewhere.
 class InboxScreen extends ConsumerStatefulWidget {
   const InboxScreen({super.key});
 
@@ -64,9 +60,8 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
 
   /// Requests the next page as the user approaches the end.
   ///
-  /// Throttled by what is loaded rather than by a pixel offset: the controller
-  /// already refuses to start a page it cannot use or one already in flight, so
-  /// a scroll notification that arrives several times costs nothing.
+  /// The controller prevents duplicate or unusable page requests, so repeated
+  /// scroll notifications do not start redundant requests.
   void _onScrolled() {
     if (!_scrollController.hasClients) return;
 
@@ -78,18 +73,15 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
 
   /// Fetches a fresh first page and replaces the loaded history.
   ///
-  /// The provider does the request and state replacement; the indicator only
-  /// waits on it, which is why it stays visible for exactly as long as the
-  /// refresh takes. Current rows stay in the tree while this runs, so the
-  /// skeleton is reserved for a genuine first load.
+  /// Existing rows remain visible while refreshing. The skeleton is reserved
+  /// for the initial load rather than being shown during a manual refresh.
   Future<void> _refresh() => ref.read(savedItemsProvider.notifier).refresh();
 
-  /// Wraps a centred, non-scrolling state so it can still be pulled.
+  /// Makes a centred empty or error state pull-to-refresh capable.
   ///
-  /// `RefreshIndicator` needs a scrollable descendant. The empty and error
-  /// states are messages rather than lists, so this gives them a full-height
-  /// scroll view with `AlwaysScrollableScrollPhysics`; the message still sits in
-  /// the middle, and a downward drag anywhere over it starts a refresh.
+  /// [RefreshIndicator] requires a scrollable descendant. This wrapper gives
+  /// non-list states a full-height scroll view with
+  /// [AlwaysScrollableScrollPhysics], while keeping the message centred.
   Widget _refreshable(Widget child) {
     return RefreshIndicator(
       onRefresh: _refresh,
@@ -154,18 +146,13 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
 
   Widget _body(BuildContext context, AsyncValue<SavedItemsState> listing) {
     return switch (listing) {
-      // [_rows] decides between the empty state and the list, because an empty
-      // page is a *successful* answer and must not look like a loading one.
+      // An empty page is a successful response and is handled separately from
+      // loading and error states.
       AsyncData(:final value) => _rows(context, value),
 
-      // A failed first page. Retry refetches — it is not a re-read of a cached
-      // future — and the copy is selected from the typed failure, never from a
-      // backend message. Pulling the message is also a retry, so the state stays
-      // usable even before the button is reached. While that explicit Retry is
-      // rebuilding, Riverpod keeps the previous failure (`isLoading: true` on an
-      // `AsyncError`) rather than emitting a bare `AsyncLoading`; show the
-      // skeleton then, as a first load does, and keep the error itself for a
-      // settled failure or a failed manual refresh.
+      // A settled first-page failure. Retry fetches the page again, and the
+      // displayed message comes from the typed failure rather than server text.
+      // A failed manual refresh also retains the error state.
       AsyncError(:final error, isLoading: false) => _refreshable(
         _InboxError(
           failure: error,
@@ -174,26 +161,23 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       ),
       AsyncError() => const SavedItemSkeletonList(),
 
-      // A genuine first load. A manual pull does not reach here: it keeps the
-      // current rows (or the current empty/error state) in the tree and shows
-      // only the RefreshIndicator.
+      // A genuine first load. Manual refreshes retain the current content and
+      // show the RefreshIndicator instead.
       _ => const SavedItemSkeletonList(),
     };
   }
 
   Widget _rows(BuildContext context, SavedItemsState state) {
-    // An empty page is a successful answer, not an error and not a loading
-    // state: this user has saved nothing yet. It is still refreshable, because
-    // the empty answer may have changed on the server since it was read.
+    // An empty result is a successful response, not an error. It remains
+    // pull-to-refresh capable so newly saved items can appear.
     if (state.items.isEmpty) return _refreshable(const _InboxEmpty());
 
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView.separated(
         controller: _scrollController,
-        // A short first page may not fill the viewport. Always-scrollable
-        // physics is what lets the pull gesture reach RefreshIndicator in that
-        // case, and is harmless once the list is long enough to scroll.
+        // Allows pull-to-refresh even when the first page does not fill the
+        // viewport.
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(
           AppMetrics.space3,
@@ -202,17 +186,16 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
           AppMetrics.space4,
         ),
         itemCount: state.items.length + (state.isLoadingMore ? 1 : 0),
-        // Inventory slots are separate cards on the canvas, not rows divided by a
-        // hairline.
+        // Each saved item is displayed as a separate card.
         separatorBuilder: (context, index) => const SizedBox(height: 9),
         itemBuilder: (context, index) {
           if (index >= state.items.length) return const _LoadingMoreRow();
           final item = state.items[index];
           return SavedItemRow(
             item: item,
-            // Pushed above the shell, so returning pops back to this branch with
-            // its scroll position and loaded pages intact. The detail reads the
-            // item again; it never trusts this row's copy as current.
+            // Returning from the detail screen preserves this list's scroll
+            // position and loaded pages. The detail screen fetches the item
+            // again rather than relying on potentially stale row data.
             onTap: () => context.push(AppRoutes.savedItemDetail(item.id)),
           );
         },
@@ -221,10 +204,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   }
 }
 
-/// A quiet marker at the end of the list while the next page is in flight.
-///
-/// Distinct from the skeleton because it appears *under* real rows: it says more
-/// is coming without pretending the whole list is loading again.
+/// A loading indicator shown after the existing rows while another page loads.
 class _LoadingMoreRow extends StatelessWidget {
   const _LoadingMoreRow();
 
@@ -256,11 +236,7 @@ class _LoadingMoreRow extends StatelessWidget {
   }
 }
 
-/// This user has saved nothing yet.
-///
-/// A successful answer with no rows. It never claims the items were deleted or
-/// never existed — **[D15]** distinguishes "known not saved" from "uncertain",
-/// and an empty page is simply an empty page.
+/// The empty state shown when the user has no saved items.
 class _InboxEmpty extends StatelessWidget {
   const _InboxEmpty();
 
@@ -295,7 +271,7 @@ class _InboxEmpty extends StatelessWidget {
   }
 }
 
-/// An inline failure state with a Retry that genuinely refetches.
+/// An inline listing error with a Retry action.
 class _InboxError extends StatelessWidget {
   const _InboxError({required this.failure, required this.onRetry});
 
@@ -330,18 +306,14 @@ class _InboxError extends StatelessWidget {
     );
   }
 
-  /// Client-owned copy for a failed listing read.
+  /// Selects client-owned copy for a failed listing request.
   ///
-  /// **[D22] Selected from the typed [ApiFailure], never from `error.message`.**
-  /// Nothing here names a backend code or status.
-  ///
-  /// A read is not a write, so **every** one of these is "known not shown"
-  /// rather than uncertain — there is no request whose outcome is in doubt, only
-  /// a page that did not arrive. **[D15]** therefore does not license "we could
-  /// not confirm" wording here, and none uses it.
+  /// Messages are selected from the typed [ApiFailure], not from
+  /// `error.message`. A failed read does not change any saved item, so these
+  /// messages describe the listing result rather than an item's save status.
   static String _messageFor(Object failure) => switch (failure) {
-    // The session ended or could not be renewed. The router redirect handles
-    // moving the user to sign-in; this says why the list is empty meanwhile.
+    // The session ended or could not be renewed. The router handles the
+    // redirect to sign-in; this message explains why the list is unavailable.
     ApiFailureSessionEnded() =>
       'Your session has ended. Sign in again to see your saved items.',
     ApiFailureAuthRequired() => 'Sign in again to see your saved items.',
@@ -349,15 +321,13 @@ class _InboxError extends StatelessWidget {
     ApiFailureServerUnavailable() =>
       'Your saved items are temporarily unavailable. Try again shortly.',
 
-    // The one uncertain case, and it is uncertain about a *read*: the request may
-    // have been served and the answer lost. Saying so is accurate and says
-    // nothing about any item's fate.
+    // The read could not be completed because the server response was not
+    // received. This does not indicate that any saved item was changed.
     ApiFailureTransport() =>
       'No connection to the server. We could not load your saved items.',
 
-    // Rate limits, server faults, and unreadable/malformed outcomes have copy
-    // shared by every read screen. The backend prose is never shown, because it
-    // is not part of any contract.
+    // Uses shared client-side copy for other listing failures. Server-provided
+    // messages are not displayed.
     _ =>
       genericReadFailureMessage(failure) ??
           'We could not load your saved items. Try again.',

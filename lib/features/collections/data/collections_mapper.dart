@@ -1,12 +1,12 @@
 import '../domain/collection_summary.dart';
 import 'models/listed_collection.dart';
 
-/// Maps wire DTO to domain model.
+/// Converts a collection response DTO into a domain model.
 CollectionSummary collectionFrom(ListedCollectionResponse dto) {
-  // Identify Unsorted by system_key (D2) - never by display name
+  // Identify Unsorted by its system key, never by its display name.
   final isUnsorted = dto.systemKey == 'unsorted';
 
-  // Parse dates
+  // Parse timestamps, falling back to the current time if parsing fails.
   final createdAt = DateTime.tryParse(dto.createdAt) ?? DateTime.now();
   final updatedAt = DateTime.tryParse(dto.updatedAt) ?? DateTime.now();
 

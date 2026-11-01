@@ -5,8 +5,8 @@ import 'listed_saved_item.dart';
 part 'get_saved_item_response.freezed.dart';
 part 'get_saved_item_response.g.dart';
 
-/// `data.saved_item` of a successful `GET /saved-items/{id}`, and of a successful
-/// `POST /saved-items/{id}/enrich`.
+/// The `data.saved_item` payload returned by
+/// `GET /saved-items/{id}` and `POST /saved-items/{id}/enrich`.
 ///
 /// ```json
 /// {
@@ -17,31 +17,19 @@ part 'get_saved_item_response.g.dart';
 /// }
 /// ```
 ///
-/// **The complete saved item, and the same twelve fields the listing declares.**
-/// It is a separate DTO rather than a reuse of `ListedSavedItemResponse` because
-/// the collection is not inside it here: the detail endpoint reports the item and
-/// its collection as siblings, while the listing puts the collection inside each
-/// row because that listing spans every collection. Sharing one type would force
-/// one of the two shapes to carry a field it cannot always fill.
+/// Declares all twelve saved item fields. This DTO is separate from
+/// `ListedSavedItemResponse` because the detail response reports the collection
+/// as a sibling of the item, while listing rows use a different response shape.
 ///
-/// **Both routes carry this identical object.** The Go `SavedItemResponse` of the
-/// enrich endpoint is field-for-field the same struct the detail endpoint returns,
-/// so the enrich envelope reuses this type (see `enrich_saved_item_response.dart`)
-/// rather than declaring a second copy that could drift. Neither route nests a
-/// collection: only the detail response adds one, as a sibling of this object.
+/// Both endpoints return the same saved item structure, so the enrichment
+/// response reuses this DTO rather than declaring a duplicate.
 ///
-/// **Every documented field is declared**, including the ones presentation does
-/// not read (`domain`, `platform`, `last_enriched_at`, `updated_at`). A DTO that
-/// silently dropped documented keys would make a contract change invisible.
+/// `domain`, `platform`, `title`, `description`, `image_url` and
+/// `last_enriched_at` are nullable. A completed item may still have a null
+/// `title`; this does not necessarily indicate an enrichment failure.
 ///
-/// **[D21] The nullable six stay nullable.** `domain`, `platform`, `title`,
-/// `description`, `image_url` and `last_enriched_at` are reported as an explicit
-/// `null` on a key that is always present. `completed` does not imply metadata
-/// was found (D17), so a null title is an ordinary state.
-///
-/// **Every field names its wire key.** The backend's JSON is snake_case; without
-/// `@JsonKey` the generated decoder looks for camelCase and fails at runtime as a
-/// `TypeError`, which surfaces as an unreadable response rather than a decode bug.
+/// Fields with snake_case wire keys use [JsonKey] to ensure the generated
+/// decoder reads the correct JSON keys.
 @freezed
 abstract class SavedItemDetailResponse with _$SavedItemDetailResponse {
   const factory SavedItemDetailResponse({
@@ -63,19 +51,18 @@ abstract class SavedItemDetailResponse with _$SavedItemDetailResponse {
       _$SavedItemDetailResponseFromJson(json);
 }
 
-/// `data` of a successful `GET /saved-items/{id}`.
+/// The `data` payload of a successful `GET /saved-items/{id}` response.
 ///
-/// The item and the collection it is filed in arrive as **siblings**, not as a
-/// nested object. `saved_item.collection_id` always equals `collection.id`.
+/// The saved item and its collection are returned as sibling objects, not as a
+/// nested collection inside the item. `saved_item.collection_id` matches
+/// `collection.id`.
 ///
-/// The collection reuses [SavedItemCollectionResponse] because its schema is
-/// exactly the same `{id, name}` object the listing reports. `type` and
-/// `system_key` belong to `GET /collections`; **D2** forbids resolving Unsorted
-/// by display name, and nothing here tries to.
+/// Reuses [SavedItemCollectionResponse] for the collection's `{id, name}`
+/// shape. Collection type and system identifiers are provided separately by
+/// `GET /collections`.
 ///
-/// **Not nullable.** A successful response always carries both objects, and a
-/// missing `data` is a shape this client cannot use — the repository turns it
-/// into `ApiFailureUnreadableResponse` by failing to decode, not by branching.
+/// Both objects are required. A missing or null value does not represent a
+/// successful response this client can use.
 @freezed
 abstract class GetSavedItemDataResponse with _$GetSavedItemDataResponse {
   const factory GetSavedItemDataResponse({
@@ -87,7 +74,7 @@ abstract class GetSavedItemDataResponse with _$GetSavedItemDataResponse {
       _$GetSavedItemDataResponseFromJson(json);
 }
 
-/// The whole `200` body of `GET /saved-items/{id}`.
+/// The complete `200` response body of `GET /saved-items/{id}`.
 ///
 /// ```json
 /// {
@@ -96,9 +83,9 @@ abstract class GetSavedItemDataResponse with _$GetSavedItemDataResponse {
 /// }
 /// ```
 ///
-/// **No `meta`.** The route reads one item and has no page, so unlike the
-/// listing there is nothing to paginate and no second structured field. `message`
-/// is declared because it is sent, and is never rendered (**D22**).
+/// This response has no pagination metadata because it contains a single item.
+/// `message` is included in the response contract but is not used for
+/// presentation.
 @freezed
 abstract class GetSavedItemResponse with _$GetSavedItemResponse {
   const factory GetSavedItemResponse({

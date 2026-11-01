@@ -2,18 +2,16 @@ import 'package:flutter/foundation.dart';
 
 import 'saved_item_summary.dart';
 
-/// One page of one collection's saved items, after the wire shape has been
-/// mapped away.
+/// One page of saved items from a collection, mapped to domain models.
 ///
-/// **The collection travels with the page.** The name is only ever known from
-/// `data.collection`, so it cannot be carried in the route and cannot be assumed
-/// from the tile that opened the screen — a collection renamed since
-/// `GET /collections` was read would then be displayed under its old name. Keeping
-/// it here means the header is exactly what the server just said, on every page.
+/// The collection ID and name are carried alongside the page. The name comes
+/// from `data.collection` in the response, rather than the route or the tile
+/// that opened the screen. This ensures the header reflects the latest name,
+/// including changes made after the collection list was loaded.
 ///
-/// The rows are the same [SavedItemSummary] the Inbox and Search render, so the
-/// row widget, the title fallback chain and the enrichment wording are shared
-/// rather than re-implemented.
+/// Each row uses [SavedItemSummary], which is also used by Inbox and Search.
+/// This keeps the row presentation, title fallback and enrichment status
+/// consistent across features.
 @immutable
 class CollectionSavedItemsPage {
   const CollectionSavedItemsPage({
@@ -24,34 +22,32 @@ class CollectionSavedItemsPage {
     required this.hasMore,
   });
 
-  /// The collection these rows belong to, as the response reported it.
+  /// The ID of the collection containing these items.
   final String collectionId;
 
-  /// The collection's name, exactly as the server reported it.
+  /// The collection name as reported by the latest response.
   ///
-  /// Names are free text (**D2**): nothing here trims, re-cases or compares it
-  /// against `Unsorted` or any other display name.
+  /// Names are free text. This value is preserved without trimming,
+  /// changing its casing or interpreting it based on its display name.
   final String collectionName;
 
-  /// The rows, in the order the API returned them.
+  /// The items in the order returned by the API.
   ///
-  /// **Not re-sorted.** The contract fixes the order at `created_at DESC, id
-  /// DESC` and offers no sort parameter, so sorting here would be a second
-  /// ordering rule that could disagree with the server's (**D4**).
+  /// The server defines the ordering as `created_at DESC, id DESC` and does
+  /// not expose a sort parameter, so the client preserves the returned order.
   final List<SavedItemSummary> items;
 
-  /// The token for the following page, or null on the final page.
+  /// The opaque token for the next page, or null when there is no next page.
   ///
-  /// **Opaque.** It is stored and handed back to the server unchanged, and is
-  /// never parsed: its encoding is not part of the contract.
+  /// The token is passed back to the server unchanged and is never parsed
+  /// by the client.
   final String? nextCursor;
 
-  /// Whether another page exists.
+  /// Whether another page is available.
   ///
-  /// Read together with [nextCursor]; the listing stops when either says no. The
-  /// contract ties `has_more: false` to a null `next_cursor`, so a page that has
-  /// one without the other cannot be paginated and is reported as unreadable
-  /// rather than silently treated as complete.
+  /// Used together with [nextCursor]. The API returns a null `next_cursor`
+  /// when `has_more` is false. Inconsistent pagination metadata is treated
+  /// as an unreadable response rather than as a completed listing.
   final bool hasMore;
 
   @override

@@ -1,39 +1,36 @@
-/// The backend's query bounds, measured in **runes after trimming**.
+/// Query length limits, measured in Unicode runes after trimming.
 ///
-/// These mirror `internal/api/search/constants.go` (`QueryMinLength` and
-/// `QueryMaxLength`). They are duplicated here deliberately: the client must
-/// refuse an invalid query without spending one of the endpoint's rate-limited
-/// requests, and the backend remains the authority if the two ever disagree.
+/// These limits are enforced locally to avoid sending queries that would be
+/// rejected by the endpoint. The backend remains authoritative if its rules
+/// ever differ from the client.
 const int searchQueryMinRunes = 2;
 const int searchQueryMaxRunes = 128;
 
-/// Why a query cannot be submitted, or null when it can.
+/// Describes why a query cannot be submitted, or null when it is valid.
 enum SearchQueryProblem {
-  /// Nothing but whitespace remained after trimming.
+  /// The query contains only whitespace after trimming.
   empty,
 
-  /// Fewer than [searchQueryMinRunes] runes remained.
+  /// The trimmed query contains fewer than [searchQueryMinRunes] runes.
   tooShort,
 
-  /// More than [searchQueryMaxRunes] runes remained.
+  /// The trimmed query contains more than [searchQueryMaxRunes] runes.
   tooLong,
 }
 
-/// The submitted query, with surrounding whitespace removed.
+/// Removes surrounding whitespace from [query].
 ///
-/// Uses `String.trim`, which removes Unicode whitespace at both ends — the same
-/// convention the backend applies with `strings.TrimSpace`.
+/// Uses `String.trim`, which removes Unicode whitespace from both ends.
 String normalizeSearchQuery(String query) => query.trim();
 
-/// Validates [query] under the backend's own rules.
+/// Validates [query] against the supported query length limits.
 ///
-/// **The length is counted in Unicode runes, never UTF-16 code units or UTF-8
-/// bytes.** `String.runes` yields code points, matching Go's
-/// `utf8.RuneCountInString`. A two-emoji query is two runes even though it
-/// occupies four UTF-16 units, and a 128-emoji query is 128 runes (256 UTF-16
-/// units) and remains within the limit; one more rune is over it.
+/// Length is measured in Unicode runes, not UTF-16 code units or UTF-8 bytes.
+/// `String.runes` counts Unicode code points, so a two-emoji query has a
+/// length of two runes even though it occupies four UTF-16 code units.
+/// Similarly, 128 emoji characters remain within the limit.
 ///
-/// Returns null when the trimmed query may be sent.
+/// Returns null when the trimmed query is valid for submission.
 SearchQueryProblem? validateSearchQuery(String query) {
   final trimmed = normalizeSearchQuery(query);
   final length = trimmed.runes.length;

@@ -15,15 +15,12 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CollectionSavedItemsState {
 
- String get collectionId; String get collectionName; List<SavedItemSummary> get items; String? get nextCursor; bool get hasMore;/// A page is in flight, so the footer says so and no second page is started.
- bool get isLoadingMore;/// The last page request failed and **has not been retried by the user**.
+ String get collectionId; String get collectionName; List<SavedItemSummary> get items; String? get nextCursor; bool get hasMore;/// A page request is in progress. The footer shows its loading state.
+ bool get isLoadingMore;/// The last page request failed and the user has not manually retried it.
 ///
-/// It is a separate flag from `isLoadingMore` because it has to *block* the
-/// scroll listener. Clearing the loading flag alone — which is what the other
-/// listings in this app do — lets the next scroll notification ask for the
-/// same cursor again, and a screen that keeps failing becomes a scroll-driven
-/// retry loop. **[D23]** asks for manual retry, so the footer's Retry is the
-/// only thing that may resume paging.
+/// Kept separate from [isLoadingMore] so the scroll listener can stop
+/// requesting the same cursor after a failure. Further pagination resumes
+/// only when the user explicitly selects Retry.
  bool get loadMoreFailed;
 /// Create a copy of CollectionSavedItemsState
 /// with the given fields replaced by the non-null parameter values.
@@ -241,16 +238,13 @@ class _CollectionSavedItemsState implements CollectionSavedItemsState {
 
 @override final  String? nextCursor;
 @override@JsonKey() final  bool hasMore;
-/// A page is in flight, so the footer says so and no second page is started.
+/// A page request is in progress. The footer shows its loading state.
 @override@JsonKey() final  bool isLoadingMore;
-/// The last page request failed and **has not been retried by the user**.
+/// The last page request failed and the user has not manually retried it.
 ///
-/// It is a separate flag from `isLoadingMore` because it has to *block* the
-/// scroll listener. Clearing the loading flag alone — which is what the other
-/// listings in this app do — lets the next scroll notification ask for the
-/// same cursor again, and a screen that keeps failing becomes a scroll-driven
-/// retry loop. **[D23]** asks for manual retry, so the footer's Retry is the
-/// only thing that may resume paging.
+/// Kept separate from [isLoadingMore] so the scroll listener can stop
+/// requesting the same cursor after a failure. Further pagination resumes
+/// only when the user explicitly selects Retry.
 @override@JsonKey() final  bool loadMoreFailed;
 
 /// Create a copy of CollectionSavedItemsState

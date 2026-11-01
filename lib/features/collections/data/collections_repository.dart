@@ -7,13 +7,13 @@ import 'collections_mapper.dart';
 import 'datasources/collections_api.dart';
 import 'models/delete_collection_request.dart';
 
-/// Repository for collections listing.
+/// Repository for collection listing and deletion operations.
 class CollectionsRepository {
   const CollectionsRepository({required this.api});
 
   final CollectionsApi api;
 
-  /// One page of collections.
+  /// Fetches one page of collections.
   Future<CollectionPage> list({
     String? sort,
     int? limit,
@@ -40,26 +40,18 @@ class CollectionsRepository {
     }
   }
 
-  /// Permanently removes [collectionId], deleting the saved items in it.
+  /// Deletes [collectionId] and its saved items.
   ///
-  /// **The action is explicit and has no target.** The backend requires both
-  /// fields and rejects a target alongside `delete`, so the body always carries
-  /// `saved_items_action: "delete"` and `target_collection_id: null`.
+  /// Sends an explicit `delete` action with a null target. Both fields are
+  /// required by the request contract, and a target must not accompany `delete`.
   ///
-  /// **No emptiness precondition is assumed.** The saved-item delete reported the
-  /// collection empty, but another request may have filed an item before this
-  /// runs. The backend's transaction detects that and answers
-  /// `COLLECTION_NOT_EMPTY` after rolling back, which maps to
-  /// [ApiFailureCollectionNotEmpty] — a known not-deleted outcome.
+  /// The collection may become non-empty between the user's check and this
+  /// request. In that case, the operation is rejected without deleting anything
+  /// and [ApiFailureCollectionNotEmpty] is thrown.
   ///
-  /// A `200` has no payload this client needs; success is the status. A `2xx`
-  /// whose body does not decode is therefore still unestablished only in the
-  /// sense that no receipt was read, but the route's success body is empty by
-  /// design, so the response DTO does not require `data`.
-  ///
-  /// Throws [ApiFailure] for every refusal, including
-  /// [ApiFailureUnsortedCollectionProtected] and
-  /// [ApiFailureCollectionNotEmpty].
+  /// A successful response does not require a response payload. Refusals,
+  /// including [ApiFailureUnsortedCollectionProtected] and
+  /// [ApiFailureCollectionNotEmpty], are surfaced as [ApiFailure].
   Future<void> delete({required String collectionId}) async {
     await _submit(
       collectionId,
@@ -70,23 +62,17 @@ class CollectionsRepository {
     );
   }
 
-  /// Permanently removes [collectionId], moving its saved items into
-  /// [targetCollectionId] first.
+  /// Moves saved items from [collectionId] to [targetCollectionId], then deletes
+  /// the source collection.
   ///
-  /// **One request, one destination.** The action and target travel together in
-  /// the body, so the backend performs the move and the delete in one
-  /// transaction. There is no per-item move and no second request to recover a
-  /// partial result.
+  /// The move and deletion are performed as one operation. The target must
+  /// differ from the source; Unsorted is a valid destination.
   ///
-  /// **The target is authoritative and already chosen.** It must differ from
-  /// [collectionId]; the backend rejects the source as a target. Unsorted is a
-  /// valid destination.
-  ///
-  /// Throws [ApiFailure] for every refusal. The two rollback outcomes are
-  /// distinct: [ApiFailureCollectionDeleteTargetNotFound] leaves the source and
-  /// its items untouched and the user can choose another destination, while
-  /// [ApiFailureCollectionNotEmpty] means a concurrent insert made the backend
-  /// abandon the whole transaction.
+  /// Refusals are surfaced as [ApiFailure]. If the target no longer exists,
+  /// [ApiFailureCollectionDeleteTargetNotFound] is thrown and the source remains
+  /// unchanged. If a concurrent insert makes the source non-empty in a way that
+  /// prevents deletion, [ApiFailureCollectionNotEmpty] is thrown and the
+  /// operation is not partially applied.
   Future<void> moveItemsAndDelete({
     required String collectionId,
     required String targetCollectionId,
@@ -100,7 +86,7 @@ class CollectionsRepository {
     );
   }
 
-  /// Sends one collection-delete request and translates every failure once.
+  /// Sends a collection deletion request and translates API and decoding errors.
   Future<void> _submit(
     String collectionId,
     DeleteCollectionRequest request,

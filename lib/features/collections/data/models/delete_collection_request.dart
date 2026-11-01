@@ -3,18 +3,14 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'delete_collection_request.freezed.dart';
 part 'delete_collection_request.g.dart';
 
-/// The body of `DELETE /collections/{id}`.
+/// Request body for deleting a collection.
 ///
-/// The request states what happens to the collection's saved items; the route
-/// deliberately does not default either field. This client sends both actions:
-/// `delete` when the collection is known to be empty (and when the user chooses
-/// to discard its items), and `move` with the destination the user picked. Both
-/// fields are always present, matching the one contract the backend declares.
+/// Both fields are required. `saved_items_action` specifies how saved items
+/// are handled, while `target_collection_id` identifies the destination when
+/// the action is `move`.
 ///
-/// `target_collection_id` is explicitly `null` for `delete`. The backend treats a
-/// target alongside `delete` as a contradiction
-/// (`INVALID_COLLECTION_DELETE_TARGET`), so the key is included rather than
-/// omitted: the request says, positively, that there is no target.
+/// For `delete`, `target_collection_id` must be explicitly `null`, not omitted.
+/// This keeps the request unambiguous and prevents a contradictory target.
 @freezed
 abstract class DeleteCollectionRequest with _$DeleteCollectionRequest {
   const factory DeleteCollectionRequest({

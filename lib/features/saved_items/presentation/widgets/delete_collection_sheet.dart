@@ -7,39 +7,29 @@ import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import 'move_collection_picker_sheet.dart';
 
-/// What one visit to the delete-collection decision surface produced.
-///
-/// The screen uses this only to decide whether the route it is showing still
-/// exists. Every explanation is published by the controller, so the sheet never
-/// carries backend prose or re-derives an outcome.
+/// Result of one visit to the collection deletion decision sheet.
 enum DeleteCollectionSheetResult {
-  /// Closed without deleting anything: Keep collection, or a known refusal that
-  /// left the collection in place.
+  /// The collection was kept, or a known refusal left it in place.
   dismissed,
 
-  /// The delete transaction committed, or the collection was already gone. Both
-  /// mean this route has nothing left to show.
+  /// The collection was deleted or was already absent.
   deleted,
 }
 
-/// The one decision a non-empty collection's deletion needs.
+/// Decision sheet for deleting a non-empty collection.
 ///
-/// **One surface, three actions, no second confirmation.** The sheet states what
-/// happens to the items and lets the user pick the disposition the backend's
-/// `saved_items_action` names: move them, or delete them with the collection.
-/// Choosing Move opens the same cursor-paginated picker the single-item move
-/// uses, and the destination it returns is sent with the delete in **one**
-/// request. A destination is a selection, not another confirmation.
+/// The user can move all items to another collection or delete the items
+/// together with the collection. Moving opens the same paginated destination
+/// picker used for single-item moves. The selected destination is submitted
+/// together with the collection deletion in one request.
 ///
-/// **Not dismissible by barrier or drag.** A stray tap outside must not discard
-/// the decision the sheet exists to collect. `Keep collection` and the system
-/// Back gesture are the ways out, and Back is blocked while a request is in
-/// flight so the sheet cannot disappear underneath one.
+/// Barrier and drag dismissal are disabled so an outside tap cannot
+/// accidentally discard the decision. The user can choose to keep the
+/// collection or use system Back. Back is blocked while a request is in flight.
 ///
-/// **The count is only stated when it is a total.** [itemCount] is null whenever
-/// the loaded listing does not cover the whole collection; the sheet then says
-/// that the collection has saved items without inventing a number from a partial
-/// page.
+/// [itemCount] is null when the loaded listing does not cover the entire
+/// collection. In that case, the sheet indicates that items exist without
+/// presenting a partial-page count as the total.
 class DeleteCollectionSheet extends ConsumerStatefulWidget {
   const DeleteCollectionSheet({
     required this.collectionId,
@@ -48,15 +38,15 @@ class DeleteCollectionSheet extends ConsumerStatefulWidget {
     super.key,
   });
 
-  /// The collection being deleted, and the id excluded from the destination
-  /// picker.
+  /// ID of the collection being deleted. This collection is excluded from
+  /// the destination picker.
   final String collectionId;
 
-  /// The server's name for it, as the loaded listing reported it.
+  /// Collection name reported by the loaded listing.
   final String collectionName;
 
-  /// The collection's exact number of saved items, or null when the listing has
-  /// more pages and therefore does not know the total.
+  /// Exact number of saved items, or null when the listing does not contain
+  /// enough information to determine the total.
   final int? itemCount;
 
   @override
@@ -64,15 +54,19 @@ class DeleteCollectionSheet extends ConsumerStatefulWidget {
       _DeleteCollectionSheetState();
 }
 
-/// Which action owns the in-flight state, so only its button shows the spinner.
+/// Identifies the action currently in progress so only its button shows
+/// a loading indicator.
 enum _PendingAction { move, delete }
 
 class _DeleteCollectionSheetState extends ConsumerState<DeleteCollectionSheet> {
   _PendingAction? _pending;
 
-  /// Set after an outcome that may have committed but cannot be confirmed. The
-  /// dismissal label stops saying "Keep collection" at that point: the sheet no
-  /// longer knows that the collection was kept.
+  /// Whether the last outcome was ambiguous and the collection's state
+  /// could not be confirmed.
+  ///
+  /// In this state, the dismissal action is labelled "Close" rather than
+  /// "Keep collection", since the sheet cannot confirm that the collection
+  /// was kept.
   bool _uncertain = false;
 
   String get _name {
@@ -162,12 +156,12 @@ class _DeleteCollectionSheetState extends ConsumerState<DeleteCollectionSheet> {
     );
   }
 
-  /// Opens the full picker and sends the destination it returns as the bulk
-  /// move's target.
+  /// Opens the destination picker and submits the selected collection
+  /// as the target of the bulk move.
   ///
-  /// Dismissing the picker sends nothing: the sheet stays open with the same
-  /// three actions. The picker excludes this collection by id and includes
-  /// Unsorted, which the backend accepts as a destination.
+  /// Dismissing the picker leaves this sheet open without sending a request.
+  /// The current collection is excluded from the picker, while Unsorted
+  /// remains available as a destination.
   Future<void> _pickDestination() async {
     if (ref.read(collectionDeletionProvider)) return;
 
@@ -200,9 +194,10 @@ class _DeleteCollectionSheetState extends ConsumerState<DeleteCollectionSheet> {
     _handle(outcome);
   }
 
-  /// Sends the `delete` disposition: the collection and every item in it are
-  /// removed. For a non-empty collection this is the destructive choice the
-  /// sheet names explicitly; there is no second confirmation.
+  /// Deletes the collection together with all its saved items.
+  ///
+  /// This is the destructive disposition presented by the sheet. It does
+  /// not require a second confirmation.
   Future<void> _deleteItems() async {
     setState(() {
       _pending = _PendingAction.delete;
@@ -221,22 +216,23 @@ class _DeleteCollectionSheetState extends ConsumerState<DeleteCollectionSheet> {
     _handle(outcome);
   }
 
-  /// Closes the sheet for outcomes that leave nothing more to decide here.
+  /// Handles the outcome and closes the sheet only when no further decision
+  /// is needed here.
   ///
-  /// A known refusal keeps it open so the user can choose again — after a
-  /// missing destination, in particular, the source is untouched and another
-  /// destination is the only correction. An ambiguous outcome also stays: the
-  /// controller kept every cache entry, and leaving would imply the deletion
-  /// completed (**D15**).
+  /// Successful deletion and an already-missing collection both close the
+  /// route. Known refusals that leave the collection in place keep the sheet
+  /// open so the user can choose again. If the outcome is ambiguous, the
+  /// sheet also stays open and changes its dismissal label to "Close".
+  ///
+  /// A concurrent insert can make the collection non-empty again before
+  /// deletion completes. In that case, the deletion is rolled back and the
+  /// sheet closes because its original item count is no longer reliable.
   void _handle(CollectionDeletionOutcome outcome) {
     switch (outcome) {
       case CollectionDeletionSucceeded():
       case CollectionDeletionSourceNotFound():
         _close(DeleteCollectionSheetResult.deleted);
 
-      // A concurrent insert rolled the whole transaction back and the contents
-      // are refreshing. The count this sheet opened with is no longer true, so
-      // it closes rather than asking again from a stale premise.
       case CollectionDeletionNotEmpty():
       case CollectionDeletionProtected():
         _close(DeleteCollectionSheetResult.dismissed);
@@ -257,12 +253,12 @@ class _DeleteCollectionSheetState extends ConsumerState<DeleteCollectionSheet> {
   }
 }
 
-/// Opens the non-empty collection's decision sheet.
+/// Opens the decision sheet for deleting a non-empty collection.
 ///
-/// Barrier and drag dismissal are disabled deliberately: the sheet is the
-/// confirmation, and tapping outside it must not be mistaken for a disposition.
-/// `useSafeArea` keeps it clear of system intrusions and `isScrollControlled`
-/// lets it grow with long copy on a short screen.
+/// Barrier and drag dismissal are disabled because the sheet itself collects
+/// the deletion decision. `useSafeArea` avoids system intrusions, while
+/// `isScrollControlled` allows the sheet to accommodate longer content on
+/// shorter screens.
 Future<DeleteCollectionSheetResult> showDeleteCollectionSheet(
   BuildContext context, {
   required String collectionId,
@@ -291,7 +287,7 @@ Future<DeleteCollectionSheetResult> showDeleteCollectionSheet(
     ),
   );
 
-  // A system Back that arrives while no request is in flight pops the route
-  // without a value. That is a dismissal, not a delete.
+  // System Back can dismiss the route without a result when no request is
+  // in flight. Treat that as a dismissal, not as a completed deletion.
   return result ?? DeleteCollectionSheetResult.dismissed;
 }

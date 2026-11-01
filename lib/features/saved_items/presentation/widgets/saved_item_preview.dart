@@ -5,43 +5,33 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 
-/// The reserved preview well shared by the saved-item row and the detail screen.
+/// Shared preview widget for saved-item rows and the detail screen.
 ///
-/// Four states, decided here so no screen can render them differently:
+/// The preview has four visual states:
 ///
-/// * **pending** — the 45° hatch plus a hollow accent pip. The space is
-///   reserved and work is acknowledged, but nothing is promised: a `pending`
-///   item can be permanently stuck (**D8** has no reconciliation pass), so this
-///   is a static mark, never a spinner or a shimmer.
-/// * **no usable URL** — a dashed, empty well. Neutral by decision
-///   (`decisions` §2.12): a missing preview is routine, never an error, and the
-///   status line already explains a pending or failed item.
-/// * **URL that loads** — the network image.
-/// * **URL that fails to load or decode** — the same dashed well as above.
-///   Identical on purpose: the client cannot establish whether the source
-///   deleted the image, blocked a hotlink, or never had one, so it does not
-///   pretend to know.
+/// - **Pending:** A static 45-degree hatch with a hollow accent marker.
+///   Pending enrichment does not guarantee that work is still progressing,
+///   so this state does not use a spinner or shimmer.
+/// - **No usable URL:** An empty well with a dashed marker.
+/// - **Loaded image:** The image returned by the supplied URL.
+/// - **Failed image load:** The same empty well used when no usable URL is
+///   available. The client cannot determine why the image is unavailable,
+///   so both cases use the same presentation.
 ///
-/// **A missing or unreachable preview is a normal state.** The space is always
-/// reserved and never coloured as an error, so rows never shift and the row
-/// stays tappable.
+/// A missing or unreachable preview is a normal state, not an error. The
+/// well always reserves its space, preventing layout shifts and keeping the
+/// surrounding row stable and tappable.
 ///
-/// A failed load is purely presentational. It never mutates the domain model:
-/// `SavedItemSummary.hasPreviewImage` keeps saying the response reported an
-/// image, so an unreachable image cannot make [SavedItemSummary.hasNoMetadata]
-/// claim enrichment found nothing.
+/// Image loading failures are presentational only. They do not modify the
+/// domain model or change what the enrichment status reports.
 ///
-/// **The well is exempt from skeletonization.** `Skeletonizer` treats any
-/// childless render object — which is what a `CustomPaint` is — as a bone, so it
-/// would repaint the hatch's base fill with the shimmer gradient and then draw
-/// the solid bands over the top of it. `Skeleton.keep` paints the subtree
-/// through an ordinary context instead, so a skeletonized row or detail shows
-/// the well exactly as the real one does. It costs nothing when not
-/// skeletonized: the annotation is inert outside a `Skeletonizer`.
+/// The well is excluded from skeletonization. Without `Skeleton.keep`,
+/// `CustomPaint` can be treated as a skeleton bone and have its background
+/// replaced by the shimmer gradient. Keeping the subtree outside that
+/// painting preserves the same appearance during loading and in normal use.
 ///
-/// Two consumers exist: the 56 px row thumbnail and the wider detail band. Both
-/// use the same painters and the same states, so the detail cannot drift from
-/// the row. Only the dimensions and [fit] are the caller's.
+/// Both the saved-item row and detail screen use the same states and painters.
+/// Callers control only the dimensions and [fit].
 class SavedItemPreview extends StatelessWidget {
   const SavedItemPreview({
     required this.imageUrl,
@@ -52,38 +42,38 @@ class SavedItemPreview extends StatelessWidget {
     super.key,
   });
 
-  /// Identifies the pending-enrichment placeholder subtree.
+  /// Identifies the pending-enrichment placeholder.
   ///
-  /// A stable key rather than a painter type: tests should be able to say "the
-  /// pending placeholder is showing" without depending on how it is painted.
+  /// Provides a stable identifier for tests without coupling them to the
+  /// placeholder's painting implementation.
   static const Key pendingPlaceholderKey = ValueKey(
     'saved-item-preview-pending',
   );
 
-  /// Identifies the unavailable-image placeholder subtree.
+  /// Identifies the unavailable-image placeholder.
   static const Key unavailablePlaceholderKey = ValueKey(
     'saved-item-preview-unavailable',
   );
 
-  /// The preview URL exactly as the response reported it.
+  /// Preview URL exactly as reported by the response.
   ///
-  /// `null` and blank are ordinary. The value is only loaded when it is an
-  /// absolute `http`/`https` URL **and** the item is not pending.
+  /// Null and blank values are valid. The URL is loaded only when it is an
+  /// absolute `http` or `https` URL and enrichment is not pending.
   final String? imageUrl;
 
-  /// The server's enrichment state.
+  /// Enrichment state reported by the server.
   ///
-  /// **Pending takes precedence over [imageUrl].** A pending item is expected to
-  /// report no URL, so one that does is anomalous; showing the pending
-  /// placeholder and skipping the request keeps the UI honest and costs one
-  /// avoided fetch. `failed` and `completed` are treated alike here — in both,
-  /// a URL is worth trying and its absence is simply no image.
+  /// Pending takes precedence over [imageUrl]. Even if a pending item
+  /// unexpectedly includes a URL, the pending placeholder is shown and no
+  /// image request is made. Completed and failed states are treated alike:
+  /// a usable URL is attempted, while its absence shows the unavailable
+  /// placeholder.
   final EnrichmentStatus enrichmentStatus;
 
   final double width;
   final double height;
 
-  /// How the image fills the well. The frame itself is this widget's.
+  /// How the image fills the reserved preview area.
   final BoxFit fit;
 
   @override
@@ -105,10 +95,9 @@ class SavedItemPreview extends StatelessWidget {
     final url = _loadableUrl(imageUrl);
     if (url == null) return _unavailable(tokens);
 
-    // Resize at decode time, not at paint time. A single axis is enough: it
-    // preserves the aspect ratio, and a third-party image may be far larger than
-    // the well it lands in. Only finite dimensions can be expressed this way; the
-    // detail band's width is `double.infinity`, so it resizes by height alone.
+    // Resize during decoding rather than painting. One axis is sufficient
+    // to preserve the aspect ratio while avoiding unnecessarily large
+    // decoded images. Infinite or invalid dimensions cannot be used.
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
     final cacheWidth = _decodeExtent(width, pixelRatio);
     final cacheHeight = cacheWidth == null
@@ -122,12 +111,12 @@ class SavedItemPreview extends StatelessWidget {
         fit: fit,
         cacheWidth: cacheWidth,
         cacheHeight: cacheHeight,
-        // Decorative. The row's title, domain and status line carry the meaning;
-        // an unlabelled image must not add a second, competing announcement.
+        // The image is decorative. The surrounding title, domain, and status
+        // already communicate the item's meaning.
         excludeFromSemantics: true,
-        // Keep the hatch until the first frame is available, so a slow or large
-        // image never flashes an empty box or shifts the layout. A synchronously
-        // cached image skips it entirely.
+        // Keep the hatch visible until the first image frame is available.
+        // This prevents an empty flash while the image loads. Synchronously
+        // cached images skip the placeholder.
         frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
           if (wasSynchronouslyLoaded || frame != null) return child;
           return _Hatch(first: tokens.slotHatch1, second: tokens.slotHatch2);
@@ -148,9 +137,8 @@ class SavedItemPreview extends StatelessWidget {
     ),
   );
 
-  /// The frame every state shares: reserved size, hairline border, 2 px radius
-  /// and clipping. The fill is the well colour, so the hatch and the image sit on
-  /// the same base.
+  /// Builds the shared preview frame with a reserved size, border, radius,
+  /// clipping, and background fill.
   Widget _well({required AppTokens tokens, required Widget child}) {
     return Container(
       width: width,
@@ -165,14 +153,12 @@ class SavedItemPreview extends StatelessWidget {
     );
   }
 
-  /// The URL this client is willing to load, or `null`.
+  /// Returns a URL suitable for loading, or null when it cannot be used.
   ///
-  /// **Absolute `http`/`https` only.** A relative value is not resolved against
-  /// `Uri.base`: the contract never said it was relative to anything, and
-  /// inventing a base would turn an unusable value into a request to somewhere
-  /// the app never intended. A blank, malformed or unsupported-scheme value is
-  /// simply unavailable — the same outcome as no URL at all, which the well
-  /// already renders.
+  /// Only absolute `http` and `https` URLs with a host are accepted.
+  /// Relative URLs are not resolved against `Uri.base`, because the client
+  /// has no defined base against which to interpret them. Blank, malformed,
+  /// and unsupported-scheme values use the same unavailable presentation.
   static String? _loadableUrl(String? raw) {
     final value = raw?.trim();
     if (value == null || value.isEmpty) return null;
@@ -185,11 +171,11 @@ class SavedItemPreview extends StatelessWidget {
     return value;
   }
 
-  /// A decode extent in physical pixels, or `null` when it cannot be expressed.
+  /// Converts a logical dimension to physical pixels for image decoding.
   ///
-  /// `width` is `double.infinity` on the detail band, and a non-positive value
-  /// means nothing usable, so both yield `null` and leave the image to decode at
-  /// its own size.
+  /// Returns null when the dimension or pixel ratio is non-finite or
+  /// non-positive. In that case, the image is decoded without an explicit
+  /// extent.
   static int? _decodeExtent(double logical, double pixelRatio) {
     if (!logical.isFinite || logical <= 0) return null;
     if (!pixelRatio.isFinite || pixelRatio <= 0) return null;
@@ -199,12 +185,11 @@ class SavedItemPreview extends StatelessWidget {
   }
 }
 
-/// The pending state: the hatch, plus the same hollow accent pip the enrichment
-/// line uses for `pending`.
+/// Static placeholder for pending enrichment.
 ///
-/// The mark is static. A pending item is queued, not necessarily progressing —
-/// it can stay pending indefinitely — so an animation would promise an update
-/// this client cannot observe (**D8**, `decisions` §2.1).
+/// Uses the same hatch as the loading placeholder, with a hollow accent
+/// marker matching the pending indicator in the enrichment status line.
+/// Pending work may remain unresolved, so the placeholder does not animate.
 class _PendingPlaceholder extends StatelessWidget {
   const _PendingPlaceholder({
     required this.first,
@@ -228,8 +213,8 @@ class _PendingPlaceholder extends StatelessWidget {
             child: SizedBox(
               width: 6,
               height: 6,
-              // Hollow, like the status line's pending pip: shape carries the
-              // distinction, so colour is never the only signal.
+              // The hollow shape distinguishes pending without relying
+              // on color alone.
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   border: Border.all(color: marker, width: 1.4),
@@ -243,8 +228,7 @@ class _PendingPlaceholder extends StatelessWidget {
   }
 }
 
-/// The 45° hatch, kept out of skeletonization. Used for `pending` and as the
-/// image-loading placeholder, so both read as "an image belongs here".
+/// Shared 45-degree hatch used for pending and image-loading states.
 class _Hatch extends StatelessWidget {
   const _Hatch({required this.first, required this.second});
 
@@ -261,11 +245,11 @@ class _Hatch extends StatelessWidget {
   }
 }
 
-/// The unavailable-image state: an empty well with a small dashed square.
+/// Placeholder for an unavailable preview image.
 ///
-/// Deliberately identical for "enrichment found no image", "this client will not
-/// load that URL" and "the image failed to load". The client cannot tell the
-/// user which happened, so it does not imply one.
+/// Used when no usable URL is available or when loading fails. The client
+/// cannot reliably distinguish between these cases, so they share the same
+/// neutral presentation.
 class _UnavailablePlaceholder extends StatelessWidget {
   const _UnavailablePlaceholder({required this.square, super.key});
 
@@ -285,8 +269,7 @@ class _UnavailablePlaceholder extends StatelessWidget {
   }
 }
 
-/// The 45° hatch that stands in for a preview image: 4 px of one step, 5 px of
-/// the next, repeating.
+/// Painter for the repeating diagonal preview hatch.
 class _HatchPainter extends CustomPainter {
   const _HatchPainter({required this.first, required this.second});
 
@@ -301,7 +284,7 @@ class _HatchPainter extends CustomPainter {
 
     canvas.drawRect(Offset.zero & size, paint..color = first);
 
-    // Clip to the well so the bands cannot bleed past its rounded corners.
+    // Clip the bands to the well's bounds.
     canvas.save();
     canvas.clipRect(Offset.zero & size);
 
@@ -309,7 +292,7 @@ class _HatchPainter extends CustomPainter {
     paint.strokeWidth = 9;
     paint.style = PaintingStyle.stroke;
 
-    // Bands run corner to corner, so the step is measured along the diagonal.
+    // Measure the repeating bands along the well's diagonal.
     final span = math.sqrt(size.width * size.width + size.height * size.height);
     for (var offset = -span; offset < span; offset += 9) {
       canvas.drawLine(
@@ -327,7 +310,7 @@ class _HatchPainter extends CustomPainter {
       oldDelegate.first != first || oldDelegate.second != second;
 }
 
-/// The dashed square inside an empty well.
+/// Painter for the dashed square in an unavailable preview well.
 class _DashedSquarePainter extends CustomPainter {
   const _DashedSquarePainter({required this.color});
 
@@ -342,7 +325,7 @@ class _DashedSquarePainter extends CustomPainter {
 
     final path = Path()..addRect(Offset.zero & size);
 
-    // 3 on, 2 off.
+    // Draw 3-pixel segments separated by 2-pixel gaps.
     for (final metric in path.computeMetrics()) {
       var distance = 0.0;
       while (distance < metric.length) {

@@ -8,44 +8,44 @@ part of 'search_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// The Search screen's request lifecycle.
+/// Manages the Search screen's request lifecycle.
 ///
-/// Owns submission, stale-response protection and clearing. It performs **no
-/// request in [build]**: the initial state is complete on its own, which is what
-/// keeps a screen visit from spending a rate-limited search.
+/// Owns submission, stale-response protection and clearing. No request is made
+/// from [build]; the initial state is complete without a request, so simply
+/// opening the screen does not consume the search rate limit.
 ///
-/// **Auto-dispose, not keep-alive.** Results are transient and may name the
-/// user's collections, so they must not outlive the screen. The destination's
-/// `IndexedStack` branch keeps the screen mounted while the user visits another
-/// tab, which keeps the provider alive for exactly as long as it should be; on
-/// sign-out the screen unmounts and the state is discarded.
+/// The provider uses auto-dispose because search results are transient and
+/// may contain the user's collection data. The destination's `IndexedStack`
+/// keeps the screen mounted while switching tabs, preserving its state during
+/// that time. When the screen unmounts, the provider can be disposed and its
+/// state discarded.
 
 @ProviderFor(Search)
 final searchProvider = SearchProvider._();
 
-/// The Search screen's request lifecycle.
+/// Manages the Search screen's request lifecycle.
 ///
-/// Owns submission, stale-response protection and clearing. It performs **no
-/// request in [build]**: the initial state is complete on its own, which is what
-/// keeps a screen visit from spending a rate-limited search.
+/// Owns submission, stale-response protection and clearing. No request is made
+/// from [build]; the initial state is complete without a request, so simply
+/// opening the screen does not consume the search rate limit.
 ///
-/// **Auto-dispose, not keep-alive.** Results are transient and may name the
-/// user's collections, so they must not outlive the screen. The destination's
-/// `IndexedStack` branch keeps the screen mounted while the user visits another
-/// tab, which keeps the provider alive for exactly as long as it should be; on
-/// sign-out the screen unmounts and the state is discarded.
+/// The provider uses auto-dispose because search results are transient and
+/// may contain the user's collection data. The destination's `IndexedStack`
+/// keeps the screen mounted while switching tabs, preserving its state during
+/// that time. When the screen unmounts, the provider can be disposed and its
+/// state discarded.
 final class SearchProvider extends $NotifierProvider<Search, SearchState> {
-  /// The Search screen's request lifecycle.
+  /// Manages the Search screen's request lifecycle.
   ///
-  /// Owns submission, stale-response protection and clearing. It performs **no
-  /// request in [build]**: the initial state is complete on its own, which is what
-  /// keeps a screen visit from spending a rate-limited search.
+  /// Owns submission, stale-response protection and clearing. No request is made
+  /// from [build]; the initial state is complete without a request, so simply
+  /// opening the screen does not consume the search rate limit.
   ///
-  /// **Auto-dispose, not keep-alive.** Results are transient and may name the
-  /// user's collections, so they must not outlive the screen. The destination's
-  /// `IndexedStack` branch keeps the screen mounted while the user visits another
-  /// tab, which keeps the provider alive for exactly as long as it should be; on
-  /// sign-out the screen unmounts and the state is discarded.
+  /// The provider uses auto-dispose because search results are transient and
+  /// may contain the user's collection data. The destination's `IndexedStack`
+  /// keeps the screen mounted while switching tabs, preserving its state during
+  /// that time. When the screen unmounts, the provider can be disposed and its
+  /// state discarded.
   SearchProvider._()
     : super(
         from: null,
@@ -75,17 +75,17 @@ final class SearchProvider extends $NotifierProvider<Search, SearchState> {
 
 String _$searchHash() => r'8ce268cf0518c5a47c5456c4bbea7396e2c9f4c5';
 
-/// The Search screen's request lifecycle.
+/// Manages the Search screen's request lifecycle.
 ///
-/// Owns submission, stale-response protection and clearing. It performs **no
-/// request in [build]**: the initial state is complete on its own, which is what
-/// keeps a screen visit from spending a rate-limited search.
+/// Owns submission, stale-response protection and clearing. No request is made
+/// from [build]; the initial state is complete without a request, so simply
+/// opening the screen does not consume the search rate limit.
 ///
-/// **Auto-dispose, not keep-alive.** Results are transient and may name the
-/// user's collections, so they must not outlive the screen. The destination's
-/// `IndexedStack` branch keeps the screen mounted while the user visits another
-/// tab, which keeps the provider alive for exactly as long as it should be; on
-/// sign-out the screen unmounts and the state is discarded.
+/// The provider uses auto-dispose because search results are transient and
+/// may contain the user's collection data. The destination's `IndexedStack`
+/// keeps the screen mounted while switching tabs, preserving its state during
+/// that time. When the screen unmounts, the provider can be disposed and its
+/// state discarded.
 
 abstract class _$Search extends $Notifier<SearchState> {
   SearchState build();

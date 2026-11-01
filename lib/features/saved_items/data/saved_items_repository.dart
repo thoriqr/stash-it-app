@@ -19,54 +19,43 @@ import 'saved_item_detail_mapper.dart';
 import 'saved_item_enrichment_mapper.dart';
 import 'saved_item_mapper.dart';
 
-/// Reads of the Inbox listing and detail, and the writes this milestone exposes,
-/// with failures already translated.
-///
-/// The only layer that converts a [DioException] into an [ApiFailure], so
-/// presentation never learns that Dio exists (`AGENTS.md` §2, rule 4). Concrete
-/// with no interface, for one implementation.
+/// Handles saved item reads and writes, translating request failures into
+/// [ApiFailure] variants for the presentation layer.
 class SavedItemsRepository {
   const SavedItemsRepository({required this.api, this.now = DateTime.now});
 
   final SavedItemsApi api;
 
-  /// The clock the saved-time label is computed against.
+  /// The clock used to calculate saved-time labels.
   ///
-  /// A parameter rather than a direct `DateTime.now` so the label is
-  /// deterministic under test. Production passes the default and never reads it
-  /// back.
+  /// Injected so labels are deterministic in tests. Production uses the
+  /// default [DateTime.now] function.
   final DateTime Function() now;
 
-  /// Saves [url], and confirms only that the server created the item.
+  /// Saves [url] and confirms that the server created the item.
   ///
-  /// **Returns nothing on purpose.** The documented `201` carries exactly `id`,
-  /// `url`, `collection_id` and `enrichment_status` — not enough to build a
-  /// `SavedItemSummary`, and nothing in this milestone reads any of the four.
-  /// Returning the id would be a value with no consumer. The response type still
-  /// declares all four fields, so a change to the contract shows up as a decode
-  /// failure here rather than as a silent difference.
+  /// Returns no value because the create response does not contain enough
+  /// information to build a [SavedItemSummary]. The caller should re-read the
+  /// listing to obtain the complete item representation.
   ///
-  /// **A `201` whose body does not decode is not a success.** The create handler
-  /// answers `201` only after the row committed, so the write landed — but this
-  /// method has no created item to report, and the caller must not claim a save
-  /// it cannot show. It throws [ApiFailureUnreadableResponse], which for a write
-  /// means *unestablished* rather than *failed* (see that variant).
+  /// All four fields in the create response are required. If a successful
+  /// response cannot be decoded, this method throws
+  /// [ApiFailureUnreadableResponse]. The server may have saved the item, but
+  /// the client cannot establish the result from the response.
   ///
-  /// Throws [ApiFailure] for every refusal. The certainty of each variant is
-  /// **not** uniform, and the caller has to honour it (**D15**/**D16**):
-  /// [ApiFailureTransport] is uncertain, [ApiFailureUnreadableResponse] is
-  /// unestablished, and the rest are known not saved — a refused request never
-  /// reached the insert, and a `500` is a commit that did not happen.
+  /// The certainty of failures differs by variant:
+  /// - [ApiFailureTransport]: the outcome is uncertain.
+  /// - [ApiFailureUnreadableResponse]: the outcome is unestablished.
+  /// - Other [ApiFailure] variants: the request is known not to have saved
+  ///   the item.
   Future<void> create({required String url}) async {
     try {
       await api.create(CreateSavedItemRequest(url: url));
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError catch (error) {
-      // A `2xx` whose body does not match the documented shape. Dio only decodes
-      // a status that passed `validateStatus`, so this is a committed write with
-      // an unreadable representation, reported as unestablished rather than as a
-      // refusal.
+      // A successful HTTP response with an unreadable body does not establish
+      // the result of the write.
       throw mapDecodeFailure(error);
     } on FormatException catch (error) {
       throw mapDecodeFailure(error);
@@ -75,24 +64,23 @@ class SavedItemsRepository {
 
   /// Moves one saved item into the named collection.
   ///
-  /// **Sends a name and an intent, never an id.** [intent] states whether the
-  /// name is a destination the user selected ([MoveToCollectionIntent.existing])
-  /// or a new collection they named ([MoveToCollectionIntent.create]). The
-  /// backend resolves the name case-insensitively and atomically either way;
-  /// this client must not resolve a collection first. The caller trims the
-  /// submitted value but must preserve its casing; the server's stored casing is
-  /// what [MoveToCollectionResult.collectionName] reports.
+  /// Sends a collection name and an [intent], not a collection ID. The intent
+  /// distinguishes an existing destination
+  /// ([MoveToCollectionIntent.existing]) from a new collection name
+  /// ([MoveToCollectionIntent.create]). The caller trims the submitted name
+  /// but preserves its casing. The result reports the stored collection name.
   ///
-  /// **A `200` whose body does not decode is unestablished, not failed.** The
-  /// write may have committed and only its representation be unreadable, so this
-  /// throws [ApiFailureUnreadableResponse] and the caller must reconcile rather
-  /// than claim the item did not move. The same applies to [ApiFailureTransport].
+  /// A successful response that cannot be decoded is unestablished: the move
+  /// may have committed, so the caller must reconcile rather than report
+  /// that the item did not move. [ApiFailureTransport] has the same uncertainty.
   ///
-  /// [ApiFailureNotFound] is the route's own `SAVED_ITEM_NOT_FOUND`: the item is
-  /// missing or belongs to another user, and the client cannot tell which.
-  /// [ApiFailureCollectionNameAlreadyExists] is the `create` intent's `409`: the
-  /// name is already held by one of the user's collections, so nothing was
-  /// created or moved. The `existing` intent reuses that collection instead.
+  /// [ApiFailureNotFound] means the saved item is unavailable to this caller;
+  /// the client cannot distinguish a missing item from one owned by another
+  /// user.
+  ///
+  /// [ApiFailureCollectionNameAlreadyExists] means a create intent was
+  /// rejected because the name is already in use. Nothing was created or
+  /// moved. With an existing intent, the matching collection is reused.
   ///
   /// Throws [ApiFailure] for every refusal.
   Future<MoveToCollectionResult> moveToCollection({
@@ -112,34 +100,29 @@ class SavedItemsRepository {
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError catch (error) {
-      // A `200` whose body does not match the documented shape. Retrofit decodes
-      // after Dio's transformer returns, so this never passes through Dio and
-      // `mapApiFailure` cannot see it.
+      // A successful HTTP response with an unreadable body does not establish
+      // whether the move committed.
       throw mapDecodeFailure(error);
     } on FormatException catch (error) {
       throw mapDecodeFailure(error);
     }
   }
 
-  /// Deletes one saved item and reports what the delete left behind.
+  /// Deletes one saved item and reports the availability of collection flags.
   ///
-  /// **A `200` is the only thing that proves the item is gone.** The route has no
-  /// transaction around its three statements: the row delete commits first, then
-  /// the collection count and system-key read follow. A `500` can therefore be
-  /// answered after the item was removed, so this method never turns a server
-  /// fault into "the item still exists".
+  /// Only a `200` response confirms that the item was deleted. A non-2xx
+  /// response does not establish whether the deletion occurred, so a server
+  /// error must not be interpreted as proof that the item still exists.
   ///
-  /// **A `200` whose body does not decode is still a completed delete.** The
-  /// delete committed, but the collection flags cannot be read, so this returns
-  /// [SavedItemDeletionFlagsUnavailable] instead of throwing. That is deliberately
-  /// distinct from a non-2xx failure, where nothing establishes whether the write
-  /// ran.
+  /// If a successful response cannot be decoded, the deletion is still
+  /// considered complete, but the collection flags are unavailable. This
+  /// returns [SavedItemDeletionFlagsUnavailable] instead of throwing.
   ///
-  /// A missing item and one owned by another user both answer
-  /// `404 RESOURCE_NOT_FOUND`, which maps to [ApiFailureNotFound]. The variant
-  /// says only that the item is unavailable to this caller.
+  /// A missing item and one owned by another user both map to
+  /// [ApiFailureNotFound]. This variant indicates only that the item is
+  /// unavailable to the current caller.
   ///
-  /// Throws [ApiFailure] for every non-2xx refusal.
+  /// Throws [ApiFailure] for every non-2xx response.
   Future<SavedItemDeleteResult> delete(String id) async {
     try {
       final response = await api.delete(id);
@@ -147,35 +130,28 @@ class SavedItemsRepository {
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError {
-      // Retrofit decodes a `2xx` body after Dio's transformer returns, so a shape
-      // mismatch never passes through Dio. The status already passed validation,
-      // which for this route means the delete committed.
+      // The successful response confirms deletion, but its collection flags
+      // cannot be read.
       return const SavedItemDeletionFlagsUnavailable();
     } on FormatException {
       return const SavedItemDeletionFlagsUnavailable();
     }
   }
 
-  /// One page of recent saved items.
+  /// Retrieves one page of recent saved items.
   ///
-  /// [cursor] is passed to the server **unchanged** and is never parsed: the
-  /// contract states a cursor records a position rather than an item, and its
-  /// encoding is not part of the API surface. Null starts at the newest item.
+  /// [cursor] is passed to the server unchanged and is never parsed by the
+  /// client. A null cursor starts from the newest item.
   ///
-  /// Throws [ApiFailure] on any refusal. The route is not rate limited, so there
-  /// is no budget variant to anticipate here; `BAD_REQUEST`,
-  /// `VALIDATION_ERROR` and `INVALID_CURSOR` all mean *this request* was
-  /// malformed rather than that the user did anything wrong.
+  /// Throws [ApiFailure] on any refusal. `BAD_REQUEST`, `VALIDATION_ERROR`
+  /// and `INVALID_CURSOR` indicate that the request could not be accepted.
   Future<SavedItemPage> list({String? cursor}) async {
     try {
       final response = await api.list(cursor: cursor);
       final at = now();
 
-      // `meta` is absent on no documented response to this route, and
-      // `meta.cursor` is the only place a cursor or `has_more` appears. A
-      // response without it cannot be paginated safely, so it is reported
-      // unreadable rather than silently treated as a single complete page — that
-      // would hide pages the user can reach.
+      // Pagination requires cursor metadata. Without it, the client cannot
+      // determine whether more pages are available.
       final meta = response.meta;
       if (meta == null) {
         throw const ApiFailureUnreadableResponse();
@@ -191,35 +167,30 @@ class SavedItemsRepository {
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError catch (error) {
-      // A `200` whose body does not match the documented shape. Retrofit decodes
-      // after Dio's transformer returns, so this never passes through Dio and
-      // `mapApiFailure` cannot see it.
+      // A successful HTTP response with an unreadable body cannot be used
+      // as a listing page.
       throw mapDecodeFailure(error);
     } on FormatException catch (error) {
       throw mapDecodeFailure(error);
     }
   }
 
-  /// One page of one collection's saved items.
+  /// Retrieves one page of saved items from a collection.
   ///
-  /// **The collection name comes from the response**, never from the tile that
-  /// opened the screen, so a rename between reading the collection list and
-  /// opening the collection cannot show a stale name.
+  /// The collection name comes from the response rather than the tile that
+  /// opened the screen. This ensures the displayed name reflects any rename
+  /// that occurred before the request.
   ///
-  /// [cursor] is passed to the server **unchanged** and is never parsed: the
-  /// contract states a cursor records a position rather than an item, and its
-  /// encoding is not part of the API surface. Null starts at the newest item.
+  /// [cursor] is passed to the server unchanged and is never parsed by the
+  /// client. A null cursor starts from the newest item.
   ///
-  /// A collection that does not exist and one owned by another user both answer
-  /// `404 COLLECTION_NOT_FOUND`, which maps to [ApiFailureNotFound]. That variant
-  /// says only that the named resource is unavailable to this caller — the screen
-  /// must not claim which of the two happened — and it is what keeps an empty
-  /// collection (`200` with `saved_items: []`) from being mistaken for a missing
-  /// one.
+  /// A collection that does not exist and one owned by another user both map
+  /// to [ApiFailureNotFound]. The client must not claim which situation
+  /// occurred. An existing empty collection is a successful response with an
+  /// empty `saved_items` list, not a not-found result.
   ///
-  /// Throws [ApiFailure] on any refusal. A `200` whose body does not decode is
-  /// [ApiFailureUnreadableResponse], not not-found: a malformed reply is not
-  /// evidence that the collection is gone.
+  /// Throws [ApiFailure] on any refusal. A successful response that cannot
+  /// be decoded throws [ApiFailureUnreadableResponse], not not-found.
   Future<CollectionSavedItemsPage> listInCollection(
     String collectionId, {
     String? cursor,
@@ -227,11 +198,8 @@ class SavedItemsRepository {
     try {
       final response = await api.listInCollection(collectionId, cursor: cursor);
 
-      // `meta` is absent on no documented response to this route, and
-      // `meta.cursor` is the only place `has_more` and the next cursor appear. A
-      // response without it cannot be paginated safely, so it is reported
-      // unreadable rather than silently treated as a single complete page — that
-      // would hide pages the user can reach.
+      // Pagination requires cursor metadata. Without it, the client cannot
+      // determine whether more pages are available.
       final meta = response.meta;
       if (meta == null) {
         throw const ApiFailureUnreadableResponse();
@@ -249,29 +217,25 @@ class SavedItemsRepository {
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError catch (error) {
-      // A `2xx` whose body does not match the documented shape. Retrofit decodes
-      // after Dio's transformer returns, so this never passes through Dio and
-      // `mapApiFailure` cannot see it.
+      // A successful HTTP response with an unreadable body cannot be used
+      // as a collection listing page.
       throw mapDecodeFailure(error);
     } on FormatException catch (error) {
       throw mapDecodeFailure(error);
     }
   }
 
-  /// One saved item, fresh from the server.
+  /// Retrieves one saved item with its latest data from the server.
   ///
-  /// **This is the only read the detail screen performs**, and it changes
-  /// nothing: the route starts no enrichment, fetches no page and moves no item.
+  /// This read does not trigger enrichment or change the item's collection.
   /// The collection name comes from the response's sibling `collection` object.
   ///
-  /// A missing item and one owned by another user both answer `404` with
-  /// `RESOURCE_NOT_FOUND`, which maps to [ApiFailureNotFound]. That variant says
-  /// only that the named resource is unavailable to this caller — the screen
-  /// must not claim which of the two happened.
+  /// A missing item and one owned by another user both map to
+  /// [ApiFailureNotFound]. This variant indicates only that the item is
+  /// unavailable to the current caller.
   ///
-  /// Throws [ApiFailure] for every refusal. A `200` whose body does not decode
-  /// is [ApiFailureUnreadableResponse], not not-found: a malformed reply is not
-  /// evidence that the item is gone.
+  /// Throws [ApiFailure] for every refusal. A successful response that cannot
+  /// be decoded throws [ApiFailureUnreadableResponse], not not-found.
   Future<SavedItemSummary> getById(String id) async {
     try {
       final response = await api.getById(id);
@@ -279,41 +243,33 @@ class SavedItemsRepository {
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError catch (error) {
-      // A `200` whose body does not match the documented shape. Retrofit decodes
-      // after Dio's transformer returns, so this never passes through Dio and
-      // `mapApiFailure` cannot see it.
+      // A successful HTTP response with an unreadable body cannot be used
+      // as a detail result.
       throw mapDecodeFailure(error);
     } on FormatException catch (error) {
       throw mapDecodeFailure(error);
     }
   }
 
-  /// Re-reads one saved item's source page and reports what the attempt changed.
+  /// Re-reads one saved item's source page and reports the enrichment outcome.
   ///
-  /// **Exactly one synchronous request.** The endpoint fetches and extracts the
-  /// page before answering, so there is no job id, no queue and nothing to poll;
-  /// this method issues one POST and returns. [ApiFailure] covers every request
-  /// that produced no usable answer — nothing here retries.
+  /// Sends exactly one synchronous request. The endpoint completes the
+  /// extraction attempt before responding; this method does not retry or poll.
   ///
-  /// **A `200` is not the same as a successful extraction.** The response's
-  /// `enrichment_status` is the outcome: `completed` may still carry a null
-  /// title, and `failed` preserves whatever metadata the item already had.
-  /// [SavedItemEnrichmentResult] reports that status rather than a flag of this
-  /// method's invention.
+  /// A `200` response does not necessarily mean extraction succeeded.
+  /// `enrichment_status` reports the outcome: `completed` may still have a
+  /// null title, while `failed` preserves metadata already stored on the item.
   ///
-  /// [ApiFailureNotFound] is the route's `SAVED_ITEM_NOT_FOUND`: the item is
-  /// missing or belongs to another user, and the client cannot tell which. It can
-  /// also be answered when the item is deleted while the attempt is running,
-  /// because the final write then matches no row.
+  /// [ApiFailureNotFound] means the item is unavailable to this caller. This
+  /// can also happen if the item is deleted while enrichment is in progress.
   ///
-  /// A `429` or `503` from the per-user limiter is a refusal that ran before the
-  /// handler: no page was fetched and no state was written. A `500` comes from the
-  /// handler's database write and leaves the item as it was, but it carries no
-  /// representation of the item, so callers must not treat it as a re-read.
+  /// A `429` or `503` refusal indicates that the request was not processed.
+  /// A `500` does not provide an updated item representation, so callers must
+  /// not treat it as a successful re-read.
   ///
-  /// Throws [ApiFailure] for every refusal. A `200` whose body does not decode is
-  /// [ApiFailureUnreadableResponse]: the attempt may well have been recorded, but
-  /// this client has no result to apply, and must not claim one.
+  /// Throws [ApiFailure] for every refusal. If a successful response cannot
+  /// be decoded, [ApiFailureUnreadableResponse] is thrown: the attempt may
+  /// have been recorded, but the client has no result to apply.
   Future<SavedItemEnrichmentResult> enrich(String id) async {
     try {
       final response = await api.enrich(id);
@@ -321,9 +277,8 @@ class SavedItemsRepository {
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError catch (error) {
-      // A `200` whose body does not match the documented shape. Retrofit decodes
-      // after Dio's transformer returns, so this never passes through Dio and
-      // `mapApiFailure` cannot see it.
+      // A successful HTTP response with an unreadable body cannot establish
+      // the enrichment result.
       throw mapDecodeFailure(error);
     } on FormatException catch (error) {
       throw mapDecodeFailure(error);

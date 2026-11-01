@@ -2,26 +2,21 @@ import '../domain/saved_item_summary.dart';
 import 'models/get_saved_item_response.dart';
 import 'saved_item_display_mapper.dart';
 
-/// Maps the detail response onto the presentation model the screen renders.
+/// Maps a saved item detail response to the presentation model.
 ///
-/// A plain function rather than a mapper class, following `savedItemFrom` and
-/// `AGENTS.md` §2.
+/// Uses [SavedItemSummary] rather than introducing a detail-specific model.
+/// The existing model already represents the collection name, title fallback,
+/// enrichment state, description and preview-image availability. Fields such
+/// as `platform`, `last_enriched_at` and `updated_at` remain in the response DTO
+/// but are not currently needed by the presentation layer.
 ///
-/// **Reuses [SavedItemSummary] rather than adding a detail-only model.** The
-/// approved detail layout needs the collection name, the title fallback chain,
-/// the enrichment state, the description and the preview-image flag — all of
-/// which the existing model already represents. `platform`, `last_enriched_at`
-/// and `updated_at` are declared on the DTO but have no approved presentation,
-/// so they are not promoted onto the domain model and no UI is invented for them.
+/// The collection ID and name come from the sibling `data.collection` object,
+/// not from a nested field in the saved item. Using both values from the same
+/// object keeps them consistent.
 ///
-/// The collection fields come from the **sibling** `data.collection` object, not
-/// from a nested item field. `collection_id` and `collection.id` are guaranteed
-/// equal by the backend; reading both from the collection object keeps the pair
-/// internally consistent.
-///
-/// The enrichment state and saved-time label come from
-/// `saved_item_display_mapper.dart`, so the Inbox, Search and Detail screens
-/// cannot word the same wire values differently.
+/// Enrichment status and saved-time labels use the shared mapping functions
+/// from `saved_item_display_mapper.dart`, keeping their presentation consistent
+/// across Inbox, Search and Detail.
 SavedItemSummary savedItemDetailFrom(
   GetSavedItemResponse response, {
   required DateTime now,
@@ -35,14 +30,12 @@ SavedItemSummary savedItemDetailFrom(
     url: item.url,
     collectionName: collection.name,
     enrichmentStatus: enrichmentStatusFrom(item.enrichmentStatus),
-    // Null stays null. A page that exposed no title is `completed` with no
-    // title, which **[D17]** confirms is normal — the screen falls back to the
-    // URL and renders it as neutral copy, never as a fault.
+    // Preserve null titles. A completed item may have no extracted title;
+    // the screen falls back to the URL and displays it with neutral styling.
     title: item.title,
     description: item.description,
-    // The contract sends a URL or `null`. An empty string is not a usable image,
-    // but the value is carried through untouched: `SavedItemSummary` derives
-    // `hasPreviewImage` from it and the preview decides whether to load it.
+    // Preserve the image URL or null as received. SavedItemSummary derives
+    // hasPreviewImage from this value, and the preview handles image loading.
     imageUrl: item.imageUrl,
     savedTimeLabel: savedTimeLabelFrom(item.createdAt, now),
   );

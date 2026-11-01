@@ -7,16 +7,16 @@ import '../models/listed_collection.dart';
 
 part 'collections_api.g.dart';
 
-/// The collections API surface, issued over `appDio`.
+/// Collections API, using the authenticated application client.
 @RestApi()
 abstract class CollectionsApi {
   factory CollectionsApi(Dio dio, {String? baseUrl}) = _CollectionsApi;
 
-  /// `GET /collections` — list collections for authenticated user.
+  /// Lists collections for the authenticated user.
   ///
-  /// Returns cursor-paginated results. Unsorted is pinned first under every sort.
-  /// `sort` defaults to "newest" on server; we pass it explicitly to match contract.
-  /// `limit` defaults to 20, capped at 50 on server.
+  /// Results are cursor-paginated. The unsorted collection is pinned first
+  /// regardless of the selected sort order. Defaults to `newest` sorting and
+  /// a limit of 20 items; the maximum limit is 50.
   @GET('/collections')
   Future<ListCollectionsResponse> list({
     @Query('sort') String? sort,
@@ -24,20 +24,16 @@ abstract class CollectionsApi {
     @Query('cursor') String? cursor,
   });
 
-  /// `DELETE /collections/{id}` — removes one collection and states what happens
-  /// to its saved items.
+  /// Deletes a collection and specifies how its saved items are handled.
   ///
-  /// **Mounted as `Auth` only** (`collection/routes.go`): no rate limiter. The
-  /// body is required; the action is never defaulted.
+  /// The request must include an explicit action and, when moving items, a
+  /// destination collection. This client sends `delete` with a null target for
+  /// an empty collection, or `move` with the user's selected destination for a
+  /// non-empty collection. It never sends `move` without a target or `delete`
+  /// with one.
   ///
-  /// The request states both the action and, for a move, the destination. This
-  /// client sends `delete` with an explicit null target for an empty collection,
-  /// where the disposition question has one accurate answer, and `move` with the
-  /// destination the user picked for a non-empty one. It never sends `move`
-  /// without a target, nor `delete` with one.
-  ///
-  /// The `200` carries `data: {}` and a message. Neither is read to establish
-  /// success: the response means the delete transaction committed.
+  /// A successful response indicates that the operation completed. The
+  /// response message and empty data object are not used to determine success.
   @DELETE('/collections/{id}')
   Future<DeleteCollectionResponse> delete(
     @Path('id') String id,

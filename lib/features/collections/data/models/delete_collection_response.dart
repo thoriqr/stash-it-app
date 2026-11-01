@@ -3,12 +3,11 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'delete_collection_response.freezed.dart';
 part 'delete_collection_response.g.dart';
 
-/// The whole `200` body of `DELETE /collections/{id}`.
+/// Response body for a successful collection deletion.
 ///
-/// The backend sends `data: {}` and a `message`. Neither is needed to establish
-/// success: a `200` means the transaction committed. `data` is deliberately not
-/// modelled as a required object, so a success cannot be turned into a decode
-/// failure by a change to an empty payload this client never reads.
+/// A `200` response indicates that the operation completed. The `data` object
+/// is not needed by this client, and `message` is optional, so neither should
+/// cause decoding to fail if the unused response payload changes.
 @freezed
 abstract class DeleteCollectionResponse with _$DeleteCollectionResponse {
   const factory DeleteCollectionResponse({String? message}) =

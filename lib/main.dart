@@ -8,23 +8,24 @@ import 'package:stash_it_app/features/pending_urls/application/shared_url_intake
 import 'package:stash_it_app/features/pending_urls/presentation/share_intake_channel.dart';
 
 Future<void> main() async {
-  // Startup is no longer synchronous. `bootstrap` initializes the binding —
-  // required before any plugin channel is used, and `flutter_secure_storage` is
-  // one — and reads stored credentials before the first frame, so the router can
-  // choose between the app and the auth entry screen on its very first
-  // navigation instead of showing the wrong one and correcting itself.
+  // Complete startup initialization before the first frame. Bootstrap
+  // initializes Flutter bindings and loads stored credentials so the router
+  // can select the correct initial screen without showing an incorrect
+  // destination first.
   final overrides = await bootstrap();
 
   runApp(ProviderScope(overrides: overrides, child: const StashItApp()));
 }
 
-/// The headless entrypoint used by Android's transparent share activity.
+/// Headless entrypoint for Android's transparent share activity.
 ///
-/// **No `runApp`, no widget tree, no visible UI.** The engine exists only long
-/// enough to run one or more shared URLs through the same repository and
-/// interceptor the app uses. The container is built lazily so a bootstrap
-/// failure still produces a typed `notStored` outcome instead of hanging the
-/// native side until its watchdog fires.
+/// This entrypoint does not call `runApp` or create a widget tree. The engine
+/// exists only to process shared URLs through the same repository and
+/// interceptors used by the main app.
+///
+/// The provider container is initialized lazily. If bootstrap or URL handling
+/// fails, the native side receives a `notStored` outcome instead of waiting
+/// indefinitely for its watchdog.
 @pragma('vm:entry-point')
 Future<void> shareIntakeMain() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +46,8 @@ Future<void> shareIntakeMain() async {
     channel,
     handle,
     onOutcome: (outcome) {
+      // Refresh the pending URL state only when the outcome indicates that
+      // the store was touched and the container is still available.
       if (container == null || !outcome.touchedStore) return;
       container!.invalidate(pendingUrlsProvider);
     },
@@ -54,7 +57,7 @@ Future<void> shareIntakeMain() async {
     },
   );
 
-  // Tells the native side the handler is installed. It waits for this before
-  // sending the shared text.
+  // Signal readiness only after the channel handler has been registered.
+  // The native side waits for this signal before sending the shared text.
   await channel.invokeMethod('ready');
 }

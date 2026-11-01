@@ -5,7 +5,7 @@ import 'get_saved_item_response.dart';
 part 'enrich_saved_item_response.freezed.dart';
 part 'enrich_saved_item_response.g.dart';
 
-/// `data` of a successful `POST /saved-items/{id}/enrich`.
+/// The `data` payload of a successful `POST /saved-items/{id}/enrich` response.
 ///
 /// ```json
 /// {
@@ -18,15 +18,11 @@ part 'enrich_saved_item_response.g.dart';
 /// }
 /// ```
 ///
-/// **`saved_item` is the same twelve-field object the detail route reports**, and
-/// this DTO reuses [SavedItemDetailResponse] for it rather than declaring a second
-/// copy of the same keys. The Go struct is field-for-field identical, so a second
-/// DTO could only drift from the first.
+/// Reuses [SavedItemDetailResponse] because the enriched item has the same
+/// response fields as the saved item detail endpoint.
 ///
-/// **The item has no nested `collection` and the data has no sibling one.** The
-/// enrich route never changes collection membership, so it does not resolve the
-/// collection name; the detail screen keeps the name it already read. A DTO that
-/// expected a collection here would reject the verified body.
+/// No collection object is included. Enrichment does not change collection
+/// membership, so the client retains the collection information it already has.
 @freezed
 abstract class EnrichSavedItemDataResponse with _$EnrichSavedItemDataResponse {
   const factory EnrichSavedItemDataResponse({
@@ -37,7 +33,7 @@ abstract class EnrichSavedItemDataResponse with _$EnrichSavedItemDataResponse {
       _$EnrichSavedItemDataResponseFromJson(json);
 }
 
-/// The whole `200` body of `POST /saved-items/{id}/enrich`.
+/// The complete `200` response body of `POST /saved-items/{id}/enrich`.
 ///
 /// ```json
 /// {
@@ -46,15 +42,15 @@ abstract class EnrichSavedItemDataResponse with _$EnrichSavedItemDataResponse {
 /// }
 /// ```
 ///
-/// **A `200` is the response whether extraction succeeded or failed.** The
-/// endpoint is synchronous: it fetches and extracts the page inline, records the
-/// outcome, and reports the item as it now stands. A page that could not be read
-/// arrives as `enrichment_status: failed` in this body, not as an HTTP error —
-/// only the item being missing (`404 SAVED_ITEM_NOT_FOUND`) and a refused
-/// request are non-2xx.
+/// A `200` response indicates that the enrichment request was processed, not
+/// necessarily that extraction succeeded. If the page could not be read or
+/// extracted, the item is still returned with `enrichment_status: failed`.
 ///
-/// **No `meta`.** There is one item and nothing to paginate. `message` is
-/// declared because it is sent, and is never rendered (**D22**).
+/// A missing item returns `404 SAVED_ITEM_NOT_FOUND`. Other rejected requests
+/// also return non-2xx responses.
+///
+/// This response has no pagination metadata. `message` is included in the
+/// response contract but is not used for presentation.
 @freezed
 abstract class EnrichSavedItemResponse with _$EnrichSavedItemResponse {
   const factory EnrichSavedItemResponse({

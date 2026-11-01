@@ -12,22 +12,20 @@ import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart
 
 part 'enrich_saved_item_controller.g.dart';
 
-/// The re-read mutation: **one synchronous `POST` per explicit user action**.
+/// Handles one re-read request per explicit user action.
 ///
-/// The state is a plain `bool` — "a re-read is in flight" — not the outcome. A
-/// failed provider build would be retried by Riverpod, and a retried POST is a
-/// second page fetch and a second write. Publishing the outcome through the
-/// app-wide feedback channel keeps the mutation out of the provider's error path.
-/// `keepAlive` makes the notifier outlive the route, so a request already sent is
-/// not abandoned when the screen is popped, and the duplicate guard survives a
-/// rebuild.
+/// The state is a boolean indicating whether a request is in flight, not its
+/// outcome. Keeping failures out of the provider's build path prevents Riverpod
+/// from automatically retrying a write. Feedback is published separately.
 ///
-/// **The in-flight flag is set synchronously before the first `await`.** Two taps
-/// in the same frame therefore produce one request, not two.
+/// The notifier stays alive while a request is running, even if the screen is
+/// closed. The in-flight flag also prevents duplicate requests after rebuilds.
 ///
-/// **There is nothing to poll.** The endpoint is synchronous: its `200` is the
-/// complete post-attempt item, whether extraction succeeded or failed. This
-/// controller applies that answer directly and issues no follow-up read.
+/// The flag is set synchronously before the first `await`, so multiple taps in
+/// the same frame still produce only one request.
+///
+/// The endpoint returns the complete result of the attempt in its response.
+/// No polling or follow-up read is needed.
 @Riverpod(keepAlive: true)
 class EnrichSavedItem extends _$EnrichSavedItem {
   @override
@@ -35,19 +33,18 @@ class EnrichSavedItem extends _$EnrichSavedItem {
 
   /// Re-reads [item]'s source page once.
   ///
-  /// [item] supplies the id to POST and the collection whose already-loaded
-  /// contents should be patched. A second call while the first is in flight is
-  /// ignored and sends nothing.
+  /// [item] provides the saved item ID and collection ID used to update any
+  /// already-loaded cache entries. Calls made while another request is in
+  /// flight are ignored.
   ///
-  /// **No cache is touched on failure.** Metadata is only ever replaced by a
-  /// `200` from this request, because a refused request wrote nothing and an
-  /// ambiguous one established nothing. In particular there is no reconciliation
-  /// GET after a transport failure: re-reading would be a second attempt, which
-  /// [D23]/[D24] reserve for the user.
+  /// Cache entries are updated only after a confirmed response. A refused or
+  /// ambiguous request does not provide a result that can safely be applied.
+  /// No automatic reconciliation request is made; another attempt requires
+  /// an explicit user action.
   ///
-  /// **A `failed` enrichment status is a successful request.** The server recorded
-  /// an attempt that could not extract the page; the item keeps the metadata it
-  /// already had, and this method applies exactly that.
+  /// An enrichment status of `failed` is still a successful request: the
+  /// attempt was recorded, but the page could not be extracted. Existing
+  /// metadata is preserved, and the returned result is applied as received.
   Future<void> enrich(SavedItemSummary item) async {
     if (state) return;
     state = true;
@@ -69,13 +66,12 @@ class EnrichSavedItem extends _$EnrichSavedItem {
     }
   }
 
-  /// Applies a confirmed result to every cache entry that already holds this item.
+  /// Applies a confirmed result to cache entries that already contain this item.
   ///
-  /// Each provider is checked with `exists` first: reading a listing would start
-  /// a fetch as a side effect of a detail-screen action. Nothing is invalidated —
-  /// enrichment changes no membership, count, or sort, so `collectionsProvider`
-  /// and the Inbox's cursor stay as they are, and Search results are left stale
-  /// until the user searches again.
+  /// Providers are checked with `exists` before reading them, avoiding fetches
+  /// triggered as a side effect of a detail-screen action. No providers are
+  /// invalidated because enrichment does not change collection membership,
+  /// counts, or sort order. Search results remain unchanged until searched again.
   void _apply(SavedItemSummary item, SavedItemEnrichmentResult result) {
     final detail = savedItemDetailProvider(item.id);
     if (ref.exists(detail)) {
@@ -95,12 +91,11 @@ class EnrichSavedItem extends _$EnrichSavedItem {
     }
   }
 
-  /// Copy for a returned outcome, selected from the item the server reported.
+  /// Selects feedback based on the returned enrichment result.
   ///
-  /// A `completed` item with no metadata is a normal extraction, not an error
-  /// (D17), so it gets success tone and a sentence that says what the page had. A
-  /// `failed` item is an extraction failure — not evidence that the saved item is
-  /// broken — and keeps whatever metadata the backend preserved.
+  /// A `completed` item without metadata is still a successful extraction,
+  /// so it receives success feedback with an appropriate message. A `failed`
+  /// status means extraction failed, not that the saved item is broken.
   AppFeedback _outcomeFeedback(SavedItemEnrichmentResult result) {
     switch (result.enrichmentStatus) {
       case EnrichmentStatus.completed:
@@ -117,8 +112,8 @@ class EnrichSavedItem extends _$EnrichSavedItem {
           copy: "Couldn't read this page.",
         );
 
-      // Defensive and unreachable: the verified contract never answers a call
-      // with `pending`. Claiming either extraction outcome would be a guess.
+      // Defensive fallback: the endpoint should not return a pending result.
+      // Neither success nor failure can be claimed if it does.
       case EnrichmentStatus.pending:
         return const AppFeedback(
           tone: FeedbackTone.uncertain,
@@ -129,9 +124,8 @@ class EnrichSavedItem extends _$EnrichSavedItem {
 
   void _handleFailure(String savedItemId, ApiFailure failure) {
     switch (failure) {
-      // The limiter refused before the handler ran: no page was fetched and no
-      // state was written. The countdown is the server's own `Retry-After`, never
-      // a number computed from the window.
+      // The request was refused before the re-read started. Use the server's
+      // Retry-After value when available rather than calculating a wait time.
       case ApiFailureRateLimited(:final retryAfter):
         _publish(
           AppFeedback(
@@ -143,8 +137,7 @@ class EnrichSavedItem extends _$EnrichSavedItem {
           ),
         );
 
-      // The limiter failed closed. Nothing ran, and there is no retry interval to
-      // report: a fabricated one would be a guess presented as a fact.
+      // Re-reading is temporarily unavailable. No retry interval is provided.
       case ApiFailureServerUnavailable():
         _publish(
           const AppFeedback(
@@ -153,10 +146,9 @@ class EnrichSavedItem extends _$EnrichSavedItem {
           ),
         );
 
-      // The item is gone or is another account's; also answered when the item is
-      // deleted while the attempt runs. The detail provider is invalidated so its
-      // existing unavailable state can take over. No copy says which of the
-      // possibilities happened.
+      // The item is unavailable, including when it is deleted during the
+      // attempt. Invalidate its detail so the unavailable state can take over.
+      // The message does not disclose which situation occurred.
       case ApiFailureNotFound():
         _publish(
           const AppFeedback(
@@ -166,9 +158,8 @@ class EnrichSavedItem extends _$EnrichSavedItem {
         );
         ref.invalidate(savedItemDetailProvider(savedItemId));
 
-      // The guard refused before the handler ran. If the session layer has already
-      // taken over, the router and sign-in screen explain the expiry once; a
-      // second notice would be noise.
+      // The user must sign in again. Avoid duplicate feedback if the session
+      // state has already changed and the router is handling the redirect.
       case ApiFailureAuthRequired():
         if (!ref.read(authStateProvider).isSignedOut) {
           _publish(
@@ -179,14 +170,12 @@ class EnrichSavedItem extends _$EnrichSavedItem {
           );
         }
 
-      // Only the refresh endpoint emits terminal codes, and the interceptor
-      // converts a terminal renewal into the original 401.
+      // The session has ended; session handling is responsible for the redirect.
       case ApiFailureSessionEnded():
         break;
 
-      // A renewal that failed ambiguously never replayed the POST: the 401 came
-      // from the guard, before the handler. The page is known not re-read; the
-      // session is the uncertain part, and the copy must not say it ended.
+      // The session could not be renewed, but the re-read request was not
+      // replayed. The page is known not to have been re-read.
       case ApiFailureRefreshUncertain():
         _publish(
           const AppFeedback(
@@ -197,8 +186,8 @@ class EnrichSavedItem extends _$EnrichSavedItem {
           ),
         );
 
-      // The local credential layer could not produce a session, so the request
-      // was never replayed. Known not re-read; the session did not end.
+      // The device could not access the stored credentials, so the request
+      // was not replayed and the page was not re-read.
       case ApiFailureCredentialStorage():
         _publish(
           const AppFeedback(
@@ -209,8 +198,8 @@ class EnrichSavedItem extends _$EnrichSavedItem {
           ),
         );
 
-      // A well-formed client never sends an unparseable id or body. Known not
-      // re-read, and nothing the user can correct from this screen.
+      // The request was rejected as invalid. The user cannot correct these
+      // request details from this screen.
       case ApiFailureValidation() || ApiFailureMalformedRequest():
         _publish(
           const AppFeedback(
@@ -219,10 +208,9 @@ class EnrichSavedItem extends _$EnrichSavedItem {
           ),
         );
 
-      // No response, or a response whose body could not be read. The attempt may
-      // have been recorded and only its representation be missing, so the copy
-      // must not claim the page was not re-read. No reconciliation read is issued:
-      // that would be a second attempt the user did not ask for.
+      // The response was not received or could not be read. The attempt may
+      // have been recorded, so its outcome is uncertain. No follow-up request
+      // is made automatically.
       case ApiFailureTransport() || ApiFailureUnreadableResponse():
         _publish(
           const AppFeedback(
@@ -231,10 +219,8 @@ class EnrichSavedItem extends _$EnrichSavedItem {
           ),
         );
 
-      // A `500` from this route is the handler's own database write: the request
-      // produced no representation, so nothing can be applied. It is a known
-      // failure rather than an ambiguous one — the write is a single statement,
-      // and a failure to commit leaves the item as it was.
+      // The server reported a failure while processing the re-read. No result
+      // is available to apply to the cached item.
       case ApiFailureServerFault():
         _publish(
           const AppFeedback(
@@ -243,9 +229,8 @@ class EnrichSavedItem extends _$EnrichSavedItem {
           ),
         );
 
-      // Unreachable on this route: these belong to collection writes and
-      // deletes, and to the profile routes. Handled explicitly so a future code
-      // cannot be silently ignored.
+      // These failures belong to other features and are not expected here.
+      // Handle them explicitly so newly added failure types are not overlooked.
       case ApiFailureUserNotFound() ||
           ApiFailureCurrentPasswordInvalid() ||
           ApiFailureCurrentPasswordRequired() ||
@@ -273,13 +258,8 @@ class EnrichSavedItem extends _$EnrichSavedItem {
       ref.read(feedbackProvider.notifier).show(feedback);
 }
 
-/// How long the server said to wait, in the coarsest unit that does not
-/// understate it.
-///
-/// This mirrors the helpers in `save_url_controller.dart` and
-/// `move_to_collection_controller.dart` rather than sharing one: it is two
-/// branches of English pluralisation, not a policy module, and
-/// `flutter_localizations` is not a dependency yet (**D20**).
+/// Formats the server-provided wait duration using the coarsest unit that
+/// does not understate the remaining time.
 String _waitPhrase(Duration wait) {
   final seconds = wait.inSeconds;
   if (seconds <= 1) return 'a second';

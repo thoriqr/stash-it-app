@@ -1,21 +1,19 @@
 import 'saved_item_summary.dart';
 
-/// What a successful `DELETE /saved-items/{id}` established.
+/// Describes what a successful `DELETE /saved-items/{id}` response establishes.
 ///
-/// The route answers `200` only after the item row was deleted, so every value
-/// here means **the item is gone**. The two cases differ in whether the reply
-/// carried the collection flags that make the optional collection follow-up
-/// possible.
+/// A successful response confirms that the item was deleted. The result
+/// distinguishes whether the response also provided the collection flags
+/// needed to determine whether a follow-up collection deletion can be offered.
 sealed class SavedItemDeleteResult {
   const SavedItemDeleteResult();
 }
 
-/// The item was deleted and the reply reported the collection it left behind.
+/// The item was deleted, and the response includes its collection flags.
 ///
-/// The flags are **advisory**, not authorization: another request may add an
-/// item immediately after the count, and `collection_deletable` can be true for
-/// a collection that has since been removed. The follow-up delete re-checks the
-/// collection on the server.
+/// These flags are advisory, not authorization. The collection may change
+/// after the response is generated, so the server must re-check its current
+/// state when a collection deletion is requested.
 final class SavedItemDeleted extends SavedItemDeleteResult {
   const SavedItemDeleted({
     required this.collectionId,
@@ -23,32 +21,32 @@ final class SavedItemDeleted extends SavedItemDeleteResult {
     required this.collectionDeletable,
   });
 
-  /// The collection the deleted item was in, as the server reported it.
+  /// The ID of the collection that contained the deleted item.
   final String collectionId;
 
-  /// Whether that collection held no other saved item once this one was gone.
+  /// Whether the collection contained no other saved items after deletion.
   final bool collectionEmpty;
 
-  /// Whether the server considers that collection deletable right now.
+  /// Whether the server considers the collection deletable at response time.
   ///
-  /// The backend computes this as `collection_empty` **and** the collection not
-  /// being Unsorted. It is a convenience, not a substitute for [collectionEmpty].
+  /// This is a convenience flag derived from the collection's empty state
+  /// and whether it is the Unsorted collection. It does not replace
+  /// [collectionEmpty].
   final bool collectionDeletable;
 
-  /// Whether the optional "collection is now empty" dialog may be offered.
+  /// Whether the optional collection deletion dialog may be offered.
   ///
-  /// Every condition is required:
+  /// All of the following conditions must be met:
   ///
-  /// - both server flags are true;
-  /// - the response names a non-empty collection id;
-  /// - that id is exactly the id the detail screen last read for this item; and
-  /// - the item's collection name is non-empty after trimming, because it is part
-  ///   of both dialog strings.
+  /// - Both server-provided flags are true.
+  /// - The response contains a non-empty collection ID.
+  /// - The collection ID matches the item's last-known collection ID.
+  /// - The item's collection name is non-empty after trimming, because it is
+  ///   used in the dialog text.
   ///
-  /// **IDs are opaque strings in this client.** There is no UUID validator in the
-  /// project, and adding one here would invent a rule the rest of the client does
-  /// not apply. A non-empty id that equals the item's last-known id is the
-  /// project's usable id.
+  /// Collection IDs are treated as opaque strings. The client checks that
+  /// the ID is non-empty and matches the item's collection ID without
+  /// imposing an additional format requirement.
   bool mayOfferCollectionDeletionFor(SavedItemSummary item) {
     return collectionDeletable &&
         collectionEmpty &&
@@ -58,11 +56,11 @@ final class SavedItemDeleted extends SavedItemDeleteResult {
   }
 }
 
-/// The item was deleted, but the reply's collection flags could not be read.
+/// The item was deleted, but the response's collection flags were unavailable.
 ///
-/// A `200` whose body does not match the documented shape still means the delete
-/// committed. There is no collection id to name, so no follow-up is offered and
-/// the screen reports only the item deletion.
+/// A successful response with an unreadable body still confirms the item
+/// deletion. Without the collection ID and flags, the client cannot offer
+/// a follow-up collection deletion.
 final class SavedItemDeletionFlagsUnavailable extends SavedItemDeleteResult {
   const SavedItemDeletionFlagsUnavailable();
 }

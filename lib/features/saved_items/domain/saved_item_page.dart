@@ -2,10 +2,10 @@ import 'package:flutter/foundation.dart';
 
 import 'saved_item_summary.dart';
 
-/// One page of the Inbox listing, after the wire shape has been mapped away.
+/// One page of the Inbox listing, mapped to domain models.
 ///
-/// Holds the three things a caller needs and nothing else: the rows, whether
-/// more exist, and the cursor that fetches them.
+/// Contains the items, whether another page is available, and the cursor
+/// used to request the next page.
 @immutable
 class SavedItemPage {
   const SavedItemPage({
@@ -14,22 +14,22 @@ class SavedItemPage {
     required this.hasMore,
   });
 
-  /// The rows, in the order the API returned them.
+  /// The items in the order returned by the API.
   ///
-  /// **Not re-sorted.** The contract fixes the order at `created_at DESC, id
-  /// DESC` and offers no sort parameter, so sorting here would be a second
-  /// ordering rule that could disagree with the server's (**D4**).
+  /// The server defines the ordering as `created_at DESC, id DESC` and does
+  /// not expose a sort parameter, so the client preserves the returned order.
   final List<SavedItemSummary> items;
 
-  /// The token for the following page, or null on the final page.
+  /// The opaque token for the next page, or null when there is no next page.
   ///
-  /// **Opaque.** It is stored and handed back to the server unchanged, and is
-  /// never parsed: its encoding is not part of the contract.
+  /// The token is passed back to the server unchanged and is never parsed
+  /// by the client.
   final String? nextCursor;
 
-  /// Whether another page exists.
+  /// Whether another page is available.
   ///
-  /// Read together with [nextCursor]; the listing stops when either says no.
+  /// Used together with [nextCursor] to determine whether pagination can
+  /// continue.
   final bool hasMore;
 
   @override

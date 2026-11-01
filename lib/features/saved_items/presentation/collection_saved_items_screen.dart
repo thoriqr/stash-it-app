@@ -17,42 +17,36 @@ import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_ite
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_confirm_dialog.dart';
 
-/// One collection and the items in it, read from
-/// `GET /collections/{id}/saved-items`.
+/// Displays a collection and its saved items from the collection listing.
 ///
-/// **A top-level route, not a fifth destination.** It sits outside the shell,
-/// carries a plain `COLLECTION` app bar with no Settings action, and is reached by
-/// pushing from a collection tile. Popping returns to the Collections destination
-/// with its branch state — the chosen sort and the scroll position — intact. A
-/// direct entry with nothing beneath it falls back to
-/// [AppRoutes.collections].
+/// This is a top-level route outside the main navigation shell. It is opened
+/// from a collection tile and uses a dedicated `COLLECTION` app bar.
+/// Returning from the screen preserves the Collections branch state, including
+/// its sort order and scroll position. Direct entry without a previous route
+/// provides a fallback to [AppRoutes.collections].
 ///
-/// **The header is the server's name, not the tile's.** The tile that opened the
-/// screen had a name from `GET /collections`, which may have been read long
-/// before; `data.collection.name` is the name as of this read, and is the only
-/// thing displayed here.
+/// The header uses the collection name from the current listing response rather
+/// than the potentially stale name from the tile that opened this screen.
 ///
-/// **Rows are rendered in the order the API returned them.** The contract fixes it
-/// at `created_at DESC, id DESC` and offers no sort parameter, so sorting here
-/// would be a second ordering rule that could disagree with the server's (**D4**).
+/// Rows retain the order returned by the API. The server determines the order
+/// using `created_at DESC, id DESC`, and this screen does not apply another
+/// sorting rule.
 ///
-/// The collection chip is hidden on every row: this listing is one collection, so
-/// repeating its name down the page adds nothing to the header that already says
-/// it. The enrichment Retry is also absent — **[D8]** allows it, but enrichment is
-/// handled on the saved-item detail screen, and this screen is a listing. Neither
-/// decision touches the API Retry controls, which are the only way to recover from
-/// a failed read.
+/// Collection chips are hidden because every row belongs to the same
+/// collection, whose name is already shown in the header. Enrichment retry is
+/// also omitted from this listing; that action is available on the saved-item
+/// detail screen. Read failures have their own retry controls.
 ///
-/// **Deleting the collection is an action on what is already loaded, not a fifth
-/// state.** The header's overflow offers it only when this document has a settled
-/// listing — an empty one included, since that is the single-confirmation case —
-/// and the collection's identity is already known from the loaded Collections list
-/// and is not Unsorted (**D2**). Identity is never inferred from the display name,
-/// and no `GET /collections` is issued to decide whether the action exists.
+/// Collection deletion is available only when the listing has settled and
+/// the collection's identity is known to be a regular collection rather than
+/// Unsorted. An empty listing is also considered settled and can use the
+/// simpler deletion confirmation. Identity is determined from the loaded
+/// Collections list, never from the display name. This screen does not fetch
+/// the Collections list solely to determine whether deletion is available.
 class CollectionSavedItemsScreen extends ConsumerStatefulWidget {
   const CollectionSavedItemsScreen({required this.collectionId, super.key});
 
-  /// The collection's backend-issued id, from the route's `:id` segment.
+  /// Collection ID supplied by the route.
   final String collectionId;
 
   @override
@@ -78,12 +72,11 @@ class _CollectionSavedItemsScreenState
     super.dispose();
   }
 
-  /// Requests the next page as the user approaches the end.
+  /// Requests the next page when the user approaches the end of the list.
   ///
-  /// Same threshold and same reasoning as the Inbox: the controller refuses a page
-  /// it cannot use, one already in flight, and one that is waiting for an explicit
-  /// Retry, so a listener that fires repeatedly costs nothing. In particular it
-  /// **cannot** restart a failed cursor: that is the footer's Retry alone.
+  /// The controller handles duplicate requests, unavailable cursors, and
+  /// requests awaiting explicit retry. A failed cursor is not retried
+  /// automatically; the footer's Retry action is the only recovery path.
   void _onScrolled() {
     if (!_scrollController.hasClients) return;
 
@@ -95,19 +88,19 @@ class _CollectionSavedItemsScreenState
     }
   }
 
-  /// Fetches a fresh first page and replaces the loaded pages.
+  /// Fetches a fresh first page and replaces the currently loaded pages.
   ///
-  /// The provider does the request and the replacement; the indicator only waits
-  /// on it. Current rows stay in the tree while it runs, so the skeleton remains
-  /// reserved for a genuine first load.
+  /// Existing rows remain visible while refreshing. The loading skeleton is
+  /// reserved for the initial load or a retry that replaces the previous
+  /// failed result.
   Future<void> _refresh() => ref
       .read(collectionSavedItemsProvider(widget.collectionId).notifier)
       .refresh();
 
-  /// Wraps a centred, non-scrolling state so it can still be pulled.
+  /// Makes a centered empty or error state compatible with pull-to-refresh.
   ///
-  /// `RefreshIndicator` needs a scrollable descendant, and the empty and error
-  /// states are messages rather than lists.
+  /// A scrollable descendant is required by [RefreshIndicator], even when
+  /// the displayed content is not a list.
   Widget _refreshable(Widget child) {
     return RefreshIndicator(
       onRefresh: _refresh,
@@ -123,10 +116,11 @@ class _CollectionSavedItemsScreenState
     );
   }
 
-  /// Pops when there is a page to return to, otherwise opens Collections.
+  /// Returns to the previous route, or opens Collections when there is no
+  /// previous route.
   ///
-  /// Used by the not-found state's action so a directly-entered missing collection
-  /// has the same safe exit as one reached from a tile.
+  /// Used by the not-found state to provide a safe exit for both direct entry
+  /// and navigation from a collection tile.
   void _leave() {
     if (Navigator.of(context).canPop()) {
       context.pop();
@@ -142,15 +136,14 @@ class _CollectionSavedItemsScreenState
     );
     final canPop = Navigator.of(context).canPop();
 
-    // The name only exists once a page has been read, so the header is drawn in
-    // the loading state as a skeleton and omitted from a settled failure — where
-    // there is no name to show and inventing one would contradict the error.
+    // The collection name is available only after a successful page read.
+    // During the initial load, show a placeholder; after a settled failure,
+    // omit the header rather than displaying an invented name.
     final showHeader = listing.hasValue || listing.isLoading;
 
-    // A settled listing is what the delete decision must be taken from: an empty
-    // page is a valid answer, while a page still loading and a failed first read
-    // are not. A refresh keeps the previous rows in place, so it does not remove
-    // the action.
+    // Deletion requires a settled listing. An empty result is valid, while
+    // an initial load or failed first read cannot establish the item count.
+    // Refreshing retains the previous result and keeps deletion available.
     final loaded = switch (listing) {
       AsyncData(:final value) => value,
       _ => null,
@@ -161,8 +154,8 @@ class _CollectionSavedItemsScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text('COLLECTION'),
-        // Always a way back. When pushed, that is an ordinary pop; when entered
-        // directly there is no page beneath it, so the control says where it goes.
+        // Always provide a way back. Direct entry has no previous route,
+        // so its back action navigates to Collections instead.
         leading: canPop
             ? const BackButton()
             : IconButton(
@@ -171,9 +164,9 @@ class _CollectionSavedItemsScreenState
                 onPressed: () => context.go(AppRoutes.collections),
               ),
         actions: [
-          // Two independent conditions, both required: the listing is settled,
-          // and the collection is known not to be Unsorted. Unknown identity
-          // hides the action rather than assuming it is safe.
+          // Deletion is offered only when the listing is settled and the
+          // collection is confirmed not to be Unsorted. Unknown identity
+          // hides the action rather than assuming deletion is allowed.
           if (loaded != null && identity != null && !identity.isUnsorted)
             PopupMenuButton<_CollectionAction>(
               tooltip: 'Collection actions',
@@ -206,14 +199,12 @@ class _CollectionSavedItemsScreenState
     );
   }
 
-  /// The row for this collection in the **already-loaded** Collections list.
+  /// Finds this collection in the already-loaded Collections list.
   ///
-  /// `ref.exists` is what keeps this from becoming a fetch: opening a collection
-  /// directly must not issue `GET /collections` just to decide whether a menu
-  /// action exists. When that list has never been loaded the identity is unknown
-  /// and the action stays hidden, rather than guessing from the display name —
-  /// Unsorted is resolved by `system_key`, never by its name (**D2**), and the
-  /// server still refuses a delete of it defensively.
+  /// Does not trigger a fetch. If the list has not been loaded or the
+  /// collection cannot be found in its current data, its identity remains
+  /// unknown and the deletion action stays hidden. Unsorted is identified
+  /// by its system identifier, not by its display name.
   CollectionSummary? _knownIdentity(WidgetRef ref) {
     if (!ref.exists(collectionsProvider)) return null;
 
@@ -228,23 +219,24 @@ class _CollectionSavedItemsScreenState
     return null;
   }
 
-  /// Asks for the one disposition the backend requires, then leaves when the
-  /// collection is known gone.
+  /// Starts the appropriate deletion flow and leaves when the collection
+  /// is confirmed to be gone.
   ///
-  /// **Empty and non-empty are different questions.** With the whole collection
-  /// loaded and no items, there is nothing to keep or discard, so a single
-  /// confirmation is enough and no Move option is offered. Otherwise the sheet
-  /// collects Move / Delete / Keep and states that deleting is irreversible.
+  /// An empty collection needs only a destructive confirmation because
+  /// there are no items to move or discard. A non-empty collection uses the
+  /// decision sheet, which offers Move, Delete, and Keep.
   ///
-  /// The controller owns the request, the in-flight guard, cache reconciliation
-  /// and every message. This method owns only the order of decisions and
-  /// navigation, and **never retries on its own**.
+  /// The loaded item count is treated as a total only when all pages have
+  /// been fetched. Otherwise, the count passed to the sheet is null.
+  ///
+  /// The controller handles the request, in-flight guard, cache updates,
+  /// and user feedback. This method handles the decision flow and navigation;
+  /// it does not retry deletion automatically.
   Future<void> _startDeletion(CollectionSavedItemsState listing) async {
     if (ref.read(collectionDeletionProvider)) return;
 
     final name = listing.collectionName;
-    // A total only when the loaded pages cover the collection. `null` means
-    // "there are more than this", which the sheet must not render as a count.
+    // A count is exact only when the listing has no additional pages.
     final itemCount = listing.hasMore ? null : listing.items.length;
 
     if (itemCount == 0) {
@@ -288,11 +280,10 @@ class _CollectionSavedItemsScreenState
     if (result == DeleteCollectionSheetResult.deleted) _leave();
   }
 
-  /// The collection's name, or a placeholder of the same shape while it is read.
+  /// Displays the collection name or a placeholder while the first page loads.
   ///
-  /// A second `Skeletonizer` beside the row list rather than around it: nesting
-  /// one inside another would skeletonize the placeholders themselves. Both
-  /// inherit the config `StashItApp` installs, so the treatment is the app's.
+  /// The header uses its own [Skeletonizer] rather than wrapping the entire
+  /// listing. This keeps the row placeholders from being skeletonized twice.
   Widget _header(
     BuildContext context,
     AsyncValue<CollectionSavedItemsState> listing,
@@ -315,8 +306,8 @@ class _CollectionSavedItemsScreenState
         AppMetrics.space3,
       ),
       child: name == null
-          // The placeholder never reaches a screen reader: it exists so the bone
-          // has a realistic length, not to present an invented name as fact.
+          // The placeholder is visual only; it must not be announced as
+          // the collection's actual name.
           ? ExcludeSemantics(
               child: Skeletonizer(child: Text('Collection name', style: style)),
             )
@@ -329,21 +320,16 @@ class _CollectionSavedItemsScreenState
     AsyncValue<CollectionSavedItemsState> listing,
   ) {
     return switch (listing) {
-      // [_rows] decides between the empty state and the list, because an empty
-      // page is a *successful* answer and must not look like a loading one.
+      // A successful empty page is handled separately from loading and errors.
       AsyncData(:final value) => _rows(context, value),
 
-      // The verified `COLLECTION_NOT_FOUND`. Missing and another user's
-      // collection share one response on purpose, so the copy says neither. No
-      // Retry: re-reading cannot make the collection available, and offering one
-      // would promise a recovery that cannot happen.
+      // A verified not-found response does not distinguish a deleted
+      // collection from one belonging to another account. No retry is offered.
       AsyncError(:final error, isLoading: false)
           when error is ApiFailureNotFound =>
         _NotFound(onBack: _leave),
 
-      // A failed first page. Retry issues a new initial request through the
-      // controller, which also refuses a second one while the first is in flight.
-      // Pulling to refresh is the same recovery, so the state stays usable.
+      // A failed initial read can be retried explicitly or through pull-to-refresh.
       AsyncError(:final error, isLoading: false) => _refreshable(
         _LoadError(
           failure: error,
@@ -353,26 +339,22 @@ class _CollectionSavedItemsScreenState
         ),
       ),
 
-      // A manual retry in flight. The controller publishes `AsyncLoading` while it
-      // refetches page one, so the skeleton is the honest state: nothing from the
-      // previous attempt is still being shown.
+      // A retry replaces the failed first-page result, so show the initial
+      // loading skeleton while the request is in progress.
       AsyncError() => const SavedItemSkeletonList(showCollectionChip: false),
 
-      // A genuine first load. A pull does not reach here: it keeps the current
-      // rows (or the current empty/error state) in the tree and shows only the
-      // RefreshIndicator.
+      // Initial load: no previous page is available to keep on screen.
       _ => const SavedItemSkeletonList(showCollectionChip: false),
     };
   }
 
   Widget _rows(BuildContext context, CollectionSavedItemsState state) {
-    // An empty page is a successful answer, not an error and not a loading
-    // state: this collection has nothing in it. It is still refreshable, because
-    // the answer may have changed on the server since it was read.
+    // An empty page is a successful result. Keep it refreshable because
+    // the collection may receive items after this response.
     if (state.items.isEmpty) return _refreshable(const _Empty());
 
-    // The footer is one of two things or nothing. A failed page keeps its Retry
-    // until the user taps it, so the list never resumes that cursor by itself.
+    // A failed next-page request stays visible until the user explicitly
+    // retries it. Otherwise, show the loading indicator or no footer.
     final footer = state.loadMoreFailed
         ? _LoadMoreFailed(
             onRetry: () => ref
@@ -389,9 +371,8 @@ class _CollectionSavedItemsScreenState
       onRefresh: _refresh,
       child: ListView.separated(
         controller: _scrollController,
-        // A short first page may not fill the viewport. Always-scrollable
-        // physics is what lets the pull gesture reach RefreshIndicator in that
-        // case, and is harmless once the list is long enough to scroll.
+        // Allow pull-to-refresh even when the first page does not fill
+        // the viewport.
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(
           AppMetrics.space3,
@@ -400,27 +381,25 @@ class _CollectionSavedItemsScreenState
           AppMetrics.space4,
         ),
         itemCount: state.items.length + (footer == null ? 0 : 1),
-        // Inventory slots are separate cards on the canvas, not rows divided by a
-        // hairline.
+        // Each item is a separate card rather than a row divided by a line.
         separatorBuilder: (context, index) => const SizedBox(height: 9),
         itemBuilder: (context, index) {
           if (index >= state.items.length) return footer!;
           final item = state.items[index];
           return SavedItemRow(
             item: item,
-            // One collection, so the header already says which one. Hidden on the
-            // row rather than repeated in smaller type.
+            // The collection name is already shown in the screen header.
             showCollectionChip: false,
-            // Pushed above the shell, so returning pops back to this collection
-            // with its pages and scroll position intact. The detail reads the item
-            // again; it never trusts this row's copy as current. The origin lets
-            // the detail pop this screen too if the user deletes this collection
-            // after deleting its last item.
+            // Push the detail route so returning preserves this listing's
+            // loaded pages and scroll position. The detail screen fetches
+            // the item again rather than relying on this potentially stale
+            // row data. The origin also lets the detail screen return here
+            // if the collection is deleted after its last item is removed.
             onTap: () => context.push(
               AppRoutes.savedItemDetail(item.id),
               extra: SavedItemDetailOrigin.collection(widget.collectionId),
             ),
-            // No `onRetry`: enrichment is acted on in the saved-item detail.
+            // Enrichment retry is available from the saved-item detail screen.
           );
         },
       ),
@@ -428,18 +407,10 @@ class _CollectionSavedItemsScreenState
   }
 }
 
-/// The actions the header overflow can offer.
-///
-/// One entry today. Named rather than a bare `VoidCallback` so a second action
-/// cannot be added later without the `switch` that dispatches it saying what it
-/// does.
+/// Actions available from the collection app bar.
 enum _CollectionAction { delete }
 
-/// A quiet marker at the end of the list while the next page is in flight.
-///
-/// Distinct from the skeleton because it appears *under* real rows: it says more
-/// is coming without pretending the whole list is loading again. Mirrors the
-/// Inbox's footer, which is private to that screen.
+/// Footer shown while the next page is loading.
 class _LoadingMoreRow extends StatelessWidget {
   const _LoadingMoreRow();
 
@@ -471,13 +442,11 @@ class _LoadingMoreRow extends StatelessWidget {
   }
 }
 
-/// The failed page, with the only control that may retry it.
+/// Footer shown when loading the next page fails.
 ///
-/// The rows above this are still valid — a later page failing does not make the
-/// earlier ones wrong — so it sits at the end of the list rather than replacing
-/// it. The copy is client-owned: the backend's `message` is never rendered
-/// (**[D22]**), and this is a read, so nothing here claims an item's fate
-/// (**[D15]**).
+/// Previously loaded rows remain visible because a later-page failure does
+/// not invalidate earlier pages. The footer provides the explicit retry
+/// action for the failed page.
 class _LoadMoreFailed extends StatelessWidget {
   const _LoadMoreFailed({required this.onRetry});
 
@@ -512,12 +481,10 @@ class _LoadMoreFailed extends StatelessWidget {
   }
 }
 
-/// This collection has nothing in it.
+/// Empty state shown when the collection has no saved items.
 ///
-/// A successful answer with no rows, so it carries no Retry and no error colour.
-/// It never claims the items were deleted or never existed — **[D15]**
-/// distinguishes "known not saved" from "uncertain", and an empty page is simply
-/// an empty page.
+/// An empty page is a successful read, not an error. It therefore has no
+/// retry action or error styling.
 class _Empty extends StatelessWidget {
   const _Empty();
 
@@ -552,13 +519,11 @@ class _Empty extends StatelessWidget {
   }
 }
 
-/// The collection is gone, or is not this account's.
+/// State shown when the collection is unavailable.
 ///
-/// Only [ApiFailureNotFound] reaches this state, and the copy never says which of
-/// the two happened — the backend uses one response on purpose so ids cannot be
-/// enumerated. **There is no Retry**: the server has already said the resource is
-/// unavailable, and re-reading cannot change that. The action is a way out, not a
-/// retry.
+/// The same not-found response can mean that the collection was deleted
+/// or belongs to another account. The UI does not reveal which case occurred.
+/// No retry is offered because another read cannot make the resource available.
 class _NotFound extends StatelessWidget {
   const _NotFound({required this.onBack});
 
@@ -601,11 +566,10 @@ class _NotFound extends StatelessWidget {
   }
 }
 
-/// Every other failed read: transport, server, auth, unreadable, rate limit.
+/// Error state for failed reads other than a verified not-found response.
 ///
-/// Deliberately distinct from [_NotFound]. A malformed `404` is an unreadable
-/// response, not a missing collection, and must offer a retry; only the verified
-/// `COLLECTION_NOT_FOUND` code may claim the collection is gone.
+/// A malformed not-found response is not treated as proof that the
+/// collection is missing. It remains a read failure with an available retry.
 class _LoadError extends StatelessWidget {
   const _LoadError({required this.failure, required this.onRetry});
 
@@ -649,14 +613,12 @@ class _LoadError extends StatelessWidget {
     );
   }
 
-  /// Client-owned copy per failure. The backend's `message` is never rendered
-  /// (**[D22]**); `genericReadFailureMessage` supplies the feature-agnostic
-  /// remainder.
+  /// Returns client-owned copy for known failure types, falling back to
+  /// the shared read-failure message for other errors.
   ///
-  /// A read is not a write, so every one of these is "known not shown" rather than
-  /// uncertain: there is no request whose outcome is in doubt, only a page that did
-  /// not arrive. **[D15]** therefore does not license "we could not confirm"
-  /// wording here, and none uses it.
+  /// These are failed reads, not writes with an uncertain outcome. The UI
+  /// therefore describes the page as unavailable rather than suggesting
+  /// that an operation may or may not have completed.
   static String _messageFor(Object failure) => switch (failure) {
     ApiFailureSessionEnded() =>
       'Your session has ended. Sign in again to see this collection.',

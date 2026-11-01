@@ -3,13 +3,12 @@ import 'package:flutter/foundation.dart';
 import '../../saved_items/domain/saved_item_summary.dart';
 import 'search_collection.dart';
 
-/// One successful `GET /search` answer, after the wire shape has been mapped
-/// away.
+/// Holds a successful `GET /search` response after mapping it to domain models.
 ///
-/// **Two independent groups, each in the order the server sent it.** Collections
-/// and saved items are never merged, interleaved or re-sorted: the backend ranks
-/// each array by relevance, and a second ordering rule here could disagree with
-/// it (**D4**). The presentation decides that Collections render first.
+/// Collections and saved items remain separate groups, each preserving the
+/// order returned by the server. The client does not merge, interleave or
+/// re-sort them. The presentation layer determines how the groups are
+/// displayed, with collections rendered first.
 @immutable
 class SearchResults {
   const SearchResults({required this.collections, required this.savedItems});
@@ -18,10 +17,10 @@ class SearchResults {
 
   final List<SavedItemSummary> savedItems;
 
-  /// Whether the successful answer matched nothing in either group.
+  /// Whether both result groups are empty.
   ///
-  /// This is a **successful empty result**, not a failure and not evidence that
-  /// anything was never saved.
+  /// An empty result is a successful search outcome, not a failure or evidence
+  /// that an item was never saved.
   bool get isEmpty => collections.isEmpty && savedItems.isEmpty;
 
   @override

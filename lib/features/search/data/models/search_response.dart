@@ -3,16 +3,12 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'search_response.freezed.dart';
 part 'search_response.g.dart';
 
-/// The collection an item is filed in, as `GET /search` reports it.
+/// The collection associated with a saved item in a `GET /search` response.
 ///
-/// ```json
-/// { "id": "...", "name": "Wishlist" }
-/// ```
-///
-/// **Only `id` and `name`.** Search's saved-item shape carries this nested
-/// object so a result can say where it lives without a second request. It is
-/// deliberately narrower than the collection listing: `type`, `system_key`,
-/// counts and timestamps are absent, so none of them may be inferred here.
+/// Contains only `id` and `name`. This nested object identifies where the
+/// saved item belongs without requiring another request. It is narrower than
+/// the collection listing model: type, system key, counts and timestamps are
+/// not included and must not be inferred.
 @freezed
 abstract class SearchSavedItemCollectionResponse
     with _$SearchSavedItemCollectionResponse {
@@ -26,31 +22,18 @@ abstract class SearchSavedItemCollectionResponse
   ) => _$SearchSavedItemCollectionResponseFromJson(json);
 }
 
-/// One saved item in a `GET /search` response.
+/// One saved item returned by `GET /search`.
 ///
-/// ```json
-/// {
-///   "id": "...", "title": "...", "url": "...", "domain": "...",
-///   "image_url": "...", "enrichment_status": "completed",
-///   "collection": { "id": "...", "name": "..." },
-///   "created_at": "..."
-/// }
-/// ```
+/// Declares only the fields supplied by this endpoint. It does not include
+/// description, platform, last enrichment time, update time, a top-level
+/// collection ID or a relevance score.
 ///
-/// **Every documented field is declared, and nothing else.** Search does not
-/// return `description`, `platform`, `last_enriched_at`, `updated_at`, a
-/// top-level `collection_id` or a relevance score, so this DTO has no property
-/// for any of them. A presentation layer cannot accidentally display a value
-/// the endpoint never sent.
+/// `title`, `domain` and `image_url` are nullable. A null value is a valid
+/// response state; for example, a completed item may have no title. The client
+/// does not derive replacement values from the URL.
 ///
-/// **[D21] The nullable three stay nullable.** `title`, `domain` and `image_url`
-/// are reported as an explicit `null` on a key that is always present, and a
-/// `null` is an ordinary state — a `completed` item with no title is normal, not
-/// a fault. No value is derived from the URL in their place.
-///
-/// **Every field names its wire key.** The backend's JSON is snake_case;
-/// without `@JsonKey` the generated decoder looks for camelCase and fails at
-/// runtime as a `TypeError`, which surfaces as an unreadable response.
+/// Each field whose JSON key uses snake_case declares its wire name explicitly
+/// so the generated decoder reads the correct key.
 @freezed
 abstract class SearchSavedItemResponse with _$SearchSavedItemResponse {
   const factory SearchSavedItemResponse({
@@ -68,12 +51,12 @@ abstract class SearchSavedItemResponse with _$SearchSavedItemResponse {
       _$SearchSavedItemResponseFromJson(json);
 }
 
-/// One collection in a `GET /search` response.
+/// One collection returned by `GET /search`.
 ///
-/// **Only `id` and `name`.** A collection result is a destination, not a record
-/// of one, so counts, type, system identity and timestamps are all absent. This
-/// is intentionally not `CollectionSummary`: that model requires fields Search
-/// does not return, and reusing it would force this feature to invent them.
+/// Contains only `id` and `name`. Search returns a collection as a possible
+/// destination, not as a full collection record. Counts, type, system
+/// identity and timestamps are not available, so this DTO is intentionally
+/// separate from `CollectionSummary`.
 @freezed
 abstract class SearchCollectionResponse with _$SearchCollectionResponse {
   const factory SearchCollectionResponse({
@@ -85,15 +68,14 @@ abstract class SearchCollectionResponse with _$SearchCollectionResponse {
       _$SearchCollectionResponseFromJson(json);
 }
 
-/// `data` of a successful `GET /search`.
+/// The `data` object in a successful `GET /search` response.
 ///
-/// **Both arrays are always present.** A search that matched nothing is a
-/// successful response with two empty arrays, never a `404` and never `null`.
-/// Neither `data` nor either array is nullable, so a response that omits one is
-/// a shape this client does not understand rather than an empty result.
+/// Both arrays are required and non-null. A search with no matches is still a
+/// successful response containing two empty arrays. If either array is
+/// missing or null, the response does not match the expected contract.
 ///
-/// **Order is the server's.** Each array arrives best match first. Nothing here
-/// re-sorts, merges or interleaves them.
+/// Each array is returned in server-defined relevance order, with the best
+/// matches first. The client does not re-sort, merge or interleave the arrays.
 @freezed
 abstract class SearchDataResponse with _$SearchDataResponse {
   const factory SearchDataResponse({
@@ -106,18 +88,13 @@ abstract class SearchDataResponse with _$SearchDataResponse {
       _$SearchDataResponseFromJson(json);
 }
 
-/// The whole `200` body of `GET /search`.
+/// The complete `200` response body of `GET /search`.
 ///
-/// ```json
-/// {
-///   "data": { "saved_items": [ ... ], "collections": [ ... ] },
-///   "message": "search completed successfully"
-/// }
-/// ```
-///
-/// **No `meta`.** Search is capped rather than paged: there is no cursor, no
-/// total count and no truncation flag. The client therefore cannot know whether
-/// a capped group has more matches, and must not claim that it does.
+/// The response contains `data` and an optional `message`. There is no `meta`
+/// object because search is capped rather than paginated. The response
+/// provides no cursor, total count or truncation indicator, so the client
+/// cannot determine whether additional matches exist beyond the returned
+/// results.
 @freezed
 abstract class SearchResponse with _$SearchResponse {
   const factory SearchResponse({

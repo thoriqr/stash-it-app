@@ -5,18 +5,11 @@ import 'list_saved_items_response.dart';
 part 'collection_saved_items_response.freezed.dart';
 part 'collection_saved_items_response.g.dart';
 
-/// The collection a page of saved items was read from.
+/// The collection associated with a page of saved items.
 ///
-/// ```json
-/// { "id": "...", "name": "Wishlist" }
-/// ```
-///
-/// **Only `id` and `name`.** The backend's
-/// `ListedSavedItemsCollectionResponse` is deliberately the narrowest collection
-/// shape it has: the caller already arrived knowing the id, so the one thing it
-/// cannot know from the path is the name. `type`, `system_key` and the counts
-/// belong to `GET /collections`, and **D2** forbids deciding which collection is
-/// the system one from a display name — so nothing here may be used for that.
+/// Contains only `id` and `name`. The collection ID is already known from the
+/// request path, while the name is needed by the client for display. Collection
+/// type and counts are provided separately by `GET /collections`.
 @freezed
 abstract class ListedSavedItemsCollectionResponse
     with _$ListedSavedItemsCollectionResponse {
@@ -30,38 +23,23 @@ abstract class ListedSavedItemsCollectionResponse
   ) => _$ListedSavedItemsCollectionResponseFromJson(json);
 }
 
-/// One row of `GET /collections/{id}/saved-items` — the backend's
-/// `ListedSavedItemResponse`.
+/// One item returned by `GET /collections/{id}/saved-items`.
 ///
-/// ```json
-/// {
-///   "id": "...", "url": "...", "domain": "...", "platform": "youtube",
-///   "title": "...", "description": "...", "image_url": "...",
-///   "collection_id": "...", "enrichment_status": "completed",
-///   "last_enriched_at": "...", "created_at": "...", "updated_at": "..."
-/// }
-/// ```
+/// This DTO is separate from [ListedSavedItemResponse] because the collection
+/// listing reports its collection once in `data.collection`. Each item contains
+/// only `collection_id`, unlike Inbox items, which include a nested collection.
 ///
-/// **A second type, and not a reuse of [ListedSavedItemResponse].** The Inbox
-/// listing nests a `collection` object in every row because it spans collections;
-/// this listing names the collection once, in `data.collection`, and the row has
-/// only `collection_id`. Declaring that field optional on the Inbox DTO would make
-/// a required part of *that* contract look optional and turn a real contract
-/// change into a silent difference, so the two shapes stay separate.
+/// All documented response fields are declared, including fields not currently
+/// used by the presentation layer, so changes to the API response remain
+/// detectable.
 ///
-/// **Every documented field is declared**, including the ones presentation does
-/// not read. A DTO that dropped documented keys would make a contract change
-/// invisible until something needed the field.
+/// `domain`, `platform`, `title`, `description`, `image_url` and
+/// `last_enriched_at` are nullable fields. In particular, a completed item may
+/// legitimately have a null `title`; this does not indicate an enrichment
+/// failure.
 ///
-/// **[D21] The nullable six stay nullable.** `domain`, `platform`, `title`,
-/// `description`, `image_url` and `last_enriched_at` are reported as an explicit
-/// `null` on a key that is always present. `title: null` on a `completed` item is
-/// **[D17]** confirmed and ordinary — it is not a fault, and nothing here fills it
-/// in.
-///
-/// **Every field names its wire key.** The backend's JSON is snake_case; without
-/// `@JsonKey` the generated decoder looks for camelCase and fails at runtime as a
-/// `TypeError`, which surfaces as an unreadable response rather than a decode bug.
+/// Each field whose wire key uses snake_case declares its corresponding
+/// [JsonKey] so the generated decoder reads the correct JSON key.
 @freezed
 abstract class CollectionSavedItemResponse with _$CollectionSavedItemResponse {
   const factory CollectionSavedItemResponse({
@@ -83,16 +61,14 @@ abstract class CollectionSavedItemResponse with _$CollectionSavedItemResponse {
       _$CollectionSavedItemResponseFromJson(json);
 }
 
-/// `data` of a successful `GET /collections/{id}/saved-items`.
+/// The `data` payload of a successful
+/// `GET /collections/{id}/saved-items` response.
 ///
-/// **The collection is reported on every response, including an empty one.** The
-/// backend states this explicitly: an empty collection is an ordinary state and
-/// still has a name worth showing, so a client never has to distinguish "no
-/// items" from "no collection" to decide what to render.
+/// The collection is included even when it contains no saved items, so the
+/// client can still display its name in the empty state.
 ///
-/// **Not nullable, and the list is never `null`.** An empty collection answers
-/// `"saved_items": []`, so a missing `data` or a null list is a shape this client
-/// does not understand rather than an empty result.
+/// Both `collection` and `saved_items` are required. An empty collection is
+/// represented by an empty `saved_items` list, not a missing or null value.
 @freezed
 abstract class ListCollectionSavedItemsDataResponse
     with _$ListCollectionSavedItemsDataResponse {
@@ -107,25 +83,13 @@ abstract class ListCollectionSavedItemsDataResponse
   ) => _$ListCollectionSavedItemsDataResponseFromJson(json);
 }
 
-/// The whole `200` body of `GET /collections/{id}/saved-items`.
+/// The complete `200` response from
+/// `GET /collections/{id}/saved-items`.
 ///
-/// ```json
-/// {
-///   "data": {
-///     "collection": { "id": "...", "name": "Wishlist" },
-///     "saved_items": [ ... ]
-///   },
-///   "message": "saved items retrieved successfully",
-///   "meta": { "cursor": { "has_more": true, "next_cursor": "eyJ2Ijox..." } }
-/// }
-/// ```
+/// Reuses [ListSavedItemsMetaResponse] for cursor pagination, keeping the
+/// continuation metadata consistent with the Inbox listing.
 ///
-/// `meta` reuses [ListSavedItemsMetaResponse] rather than restating the cursor
-/// shape: both listings are cursor-paginated the same way, and two hand-written
-/// copies of `{has_more, next_cursor}` would be one more thing to keep in step.
-///
-/// **`next_cursor` is the only continuation signal.** It is explicitly `null`
-/// whenever `has_more` is false, and always on an empty page.
+/// `next_cursor` is null when `has_more` is false and on an empty page.
 @freezed
 abstract class ListCollectionSavedItemsResponse
     with _$ListCollectionSavedItemsResponse {
