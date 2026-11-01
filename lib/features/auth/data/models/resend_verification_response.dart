@@ -3,17 +3,13 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'resend_verification_response.freezed.dart';
 part 'resend_verification_response.g.dart';
 
-/// `data` of a successful resend.
+/// Represents the response data from a successful PIN resend.
 ///
-/// Shared by `POST /auth/register/verification/{verification_id}/resend` and
-/// `POST /auth/password-reset/verification/{verification_id}/resend`.
+/// Shared by registration and password-reset resend endpoints.
 ///
-/// ```json
-/// { "verification_id": "01a0f359-093b-737a-963a-80f7ca6768ed" }
-/// ```
-///
-/// The verification id is unchanged by a resend; the response repeats it. The
-/// cooldown is not part of this response and must be refreshed with GET.
+/// The verification ID remains unchanged after a resend. The response repeats
+/// that ID, while the updated cooldown must be retrieved separately through
+/// the corresponding verification status endpoint.
 @freezed
 abstract class ResendVerificationResponse with _$ResendVerificationResponse {
   const factory ResendVerificationResponse({

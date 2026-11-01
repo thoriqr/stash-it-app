@@ -5,23 +5,18 @@ import 'auth_user.dart';
 part 'login_response.freezed.dart';
 part 'login_response.g.dart';
 
-/// `data` of a successful sign-in-shaped response.
+/// Represents the response data returned after successful authentication.
 ///
-/// Used by `POST /auth/login`, `POST /auth/login/google` when authenticated, and
-/// `POST /auth/register/finalize/social`. All three return exactly the same three
-/// keys:
+/// Used by:
+/// - `POST /auth/login`
+/// - `POST /auth/login/google` when authenticated
+/// - `POST /auth/register/finalize/social`
 ///
-/// ```json
-/// { "access_token": "...", "refresh_token": "...", "user": { ... } }
-/// ```
+/// All three endpoints return the same access token, refresh token, and user
+/// fields.
 ///
-/// Nothing is read from the request context — the backend derives the user from
-/// the verified credentials, never from a body field a caller could choose.
-///
-/// **Every field names its wire key explicitly.** The backend's JSON is
-/// snake_case; without `@JsonKey` the generated decoder looks for camelCase and
-/// fails on a `null` cast at runtime, which surfaces as an unreadable response
-/// rather than as a decode bug. The Dart names stay camelCase.
+/// Explicit JSON keys map the API's snake_case fields to Dart's camelCase
+/// properties.
 @freezed
 abstract class LoginResponse with _$LoginResponse {
   const factory LoginResponse({

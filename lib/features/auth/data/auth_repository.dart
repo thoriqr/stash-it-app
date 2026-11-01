@@ -25,7 +25,7 @@ import 'models/verification_status_response.dart';
 
 /// The outcome of a successful sign-in.
 ///
-/// Carries the user alongside the tokens so the caller can act on the sign-in
+/// Carries the user alongside the tokens so the caller can adopt the session
 /// immediately. It is returned rather than persisted — see [AuthUser].
 class LoginOutcome {
   const LoginOutcome({required this.tokens, required this.user});
@@ -34,11 +34,11 @@ class LoginOutcome {
   final AuthUser user;
 }
 
-/// The three documented outcomes of `POST /auth/login/google`.
+/// The three supported outcomes of Google sign-in.
 ///
 /// Only [GoogleSignInAuthenticated] carries a session. The other two are
-/// intermediate states: the app must remain signed out and continue the named
-/// flow.
+/// intermediate states: the app must remain signed out and continue the
+/// corresponding flow.
 sealed class GoogleSignInResult {
   const GoogleSignInResult();
 }
@@ -57,7 +57,7 @@ final class GoogleAccountLinkRequired extends GoogleSignInResult {
 
   final String confirmationId;
 
-  /// The provider string the backend returned for the pending link.
+  /// The provider identifier returned for the pending account link.
   final String provider;
 }
 
@@ -67,33 +67,25 @@ final class GoogleRegistrationRequired extends GoogleSignInResult {
   final String verificationId;
 }
 
-/// Auth operations, with failures already translated.
+/// Auth operations with API failures translated into [ApiFailure].
 ///
-/// This is the only layer that converts a [DioException] into an [ApiFailure],
-/// so a caller never has to know Dio exists (`AGENTS.md` §2, rule 4). It is a
-/// concrete class with no interface: there is one implementation, and
-/// `AGENTS.md` §2 explicitly declines interfaces for that case.
+/// This is the boundary that converts [DioException] into [ApiFailure], so
+/// callers do not need to handle Dio-specific errors.
 ///
-/// **Sign-in and sign-out only. Renewal is not here.** `SessionController`
-/// performs it directly against `refreshApi`, and has to: only that path
-/// coordinates concurrent renewals into one submission, reads the refresh token
-/// as renewal begins, persists the rotated pair before handing it back, and ends
-/// the session on a terminal refusal. A repository method could do none of those
-/// — the backend revokes the whole session on a second presentation of a spent
-/// token — so offering one here was a way to reach a session-destroying call by
-/// accident. An earlier version of this class did offer it and had no callers.
+/// **Sign-in and sign-out only. Renewal is handled by [SessionController].**
+/// The session controller coordinates concurrent renewals, persists rotated
+/// credentials, and handles terminal session failures. Keeping renewal out of
+/// this repository prevents callers from bypassing that lifecycle.
 class AuthRepository {
   const AuthRepository({required this.authApi});
 
   final AuthApi authApi;
 
-  /// Signs in with an email and password, creating a new server session.
+  /// Signs in with an email and password, creating a new session.
   ///
-  /// Throws [ApiFailure] on any refusal. `INVALID_CREDENTIALS` arrives as
-  /// [ApiFailureAuthRequired] — a `401` that means these details were wrong,
-  /// which is the same shape as "you are not signed in" and different in
-  /// meaning, so it is mapped like any other `401` and never read as a session
-  /// event.
+  /// Throws [ApiFailure] on refusal. `INVALID_CREDENTIALS` is mapped to
+  /// [ApiFailureAuthRequired], but does not indicate that an existing session
+  /// has expired.
   Future<LoginOutcome> login({
     required String email,
     required String password,
@@ -104,8 +96,7 @@ class AuthRepository {
       );
       final data = response.data;
 
-      // A `200` with no `data` is a shape this client does not understand.
-      // Treated as unreadable rather than as an empty session.
+      // A successful response without data cannot be treated as a session.
       if (data == null) {
         throw const ApiFailureUnreadableResponse();
       }
@@ -124,9 +115,9 @@ class AuthRepository {
 
   /// Signs in with a Google ID token.
   ///
-  /// Only the authenticated outcome produces a session. The account-link and
-  /// registration outcomes are returned as intermediate states, and the caller
-  /// must not store or adopt anything for them.
+  /// Only the authenticated outcome produces a session. Account-link and
+  /// registration outcomes are intermediate states; the caller must not store
+  /// or adopt credentials for them.
   Future<GoogleSignInResult> loginGoogle({required String idToken}) async {
     try {
       final response = await authApi.loginGoogle(
@@ -163,7 +154,7 @@ class AuthRepository {
           return GoogleRegistrationRequired(verificationId: verificationId);
 
         default:
-          // An outcome this client does not understand cannot be acted on.
+          // Unknown outcomes cannot be safely handled by this client.
           throw const ApiFailureUnreadableResponse();
       }
     } on DioException catch (error) {
@@ -175,7 +166,7 @@ class AuthRepository {
     }
   }
 
-  /// Reads the account-link confirmation details without authorizing anything.
+  /// Reads account-link confirmation details without authorizing the link.
   Future<AccountLinkConfirmationResponse> getGoogleAccountLinkConfirmation({
     required String confirmationId,
   }) async {
@@ -270,14 +261,12 @@ class AuthRepository {
     );
   }
 
-  /// Starts (or resumes) manual registration.
+  /// Starts or resumes manual registration.
   ///
-  /// Returns the whole response rather than only the verification id, because
-  /// `verification_status` decides what the caller must do next: `verified` means
-  /// PIN verification has already completed and no PIN may be requested. A `201`
-  /// whose envelope lacks `data` is unreadable rather than a successful
-  /// registration: without an id the client cannot make the next contractually
-  /// required call.
+  /// Returns the full response because `verification_status` determines the
+  /// next step: `verified` means PIN verification is already complete and no
+  /// PIN should be requested. A successful response without data is unreadable
+  /// because the client needs the verification ID to continue.
   Future<RegisterManualResponse> registerManual({required String email}) async {
     try {
       final response = await authApi.registerManual(
@@ -298,16 +287,16 @@ class AuthRepository {
     }
   }
 
-  /// Starts (or resumes) recovery for a verified manual registration whose raw
-  /// continuation token this device no longer has.
+  /// Starts or resumes recovery when the continuation token for a verified
+  /// manual registration is no longer available on this device.
   ///
-  /// The response has the same shape as [registerManual] and reports `pending`;
-  /// the returned id is used with the existing PIN, status, resend and verify
-  /// routes. A `201` whose envelope lacks `data` is unreadable: without an id
-  /// the caller cannot request the recovery PIN.
+  /// The response has the same shape as [registerManual] and reports `pending`.
+  /// Its verification ID is used with the existing PIN, status, resend, and
+  /// verify operations. A successful response without data is unreadable
+  /// because the client needs the ID to request the recovery PIN.
   ///
-  /// This call does not expire or replace the old registration. That happens
-  /// only when the recovery PIN is verified.
+  /// The existing registration remains valid until the recovery PIN is
+  /// successfully verified.
   Future<RegisterManualResponse> initiateManualRecovery({
     required String email,
   }) async {
@@ -332,15 +321,9 @@ class AuthRepository {
 
   /// Requests the first registration PIN for [verificationId].
   ///
-  /// The `201` body repeats [verificationId], which the caller already has, so
-  /// this returns nothing instead of a second parsed id. The body is still
-  /// decoded, and a body that cannot be decoded surfaces as
-  /// [ApiFailureUnreadableResponse]. Because the server issued the code before
-  /// answering, that failure does not establish that issuance or email delivery
-  /// failed, and no caller may say that it does (**D15**, **D16**).
-  ///
-  /// Dio, transport and decoder failures remain classified through the same
-  /// boundary as every other repository call.
+  /// The response repeats the verification ID, which the caller already has,
+  /// so this method returns nothing. The response is still decoded; if decoding
+  /// fails, the client cannot determine whether the PIN was issued or delivered.
   Future<void> createPin({required String verificationId}) async {
     try {
       await authApi.createPin(verificationId);
@@ -355,8 +338,8 @@ class AuthRepository {
 
   /// Reads the current status of a registration verification.
   ///
-  /// A `200` whose envelope lacks `data` is unreadable: without the status the
-  /// screen cannot represent the verification lifecycle.
+  /// A successful response without data is unreadable because the screen needs
+  /// the status to represent the verification lifecycle.
   Future<VerificationStatusResponse> getVerification({
     required String verificationId,
   }) async {
@@ -378,8 +361,8 @@ class AuthRepository {
 
   /// Requests a replacement PIN for [verificationId].
   ///
-  /// Returns the verification id the server confirms (unchanged). A `200` whose
-  /// envelope lacks `data` is unreadable.
+  /// Returns the verification ID confirmed by the response. It remains
+  /// unchanged. A successful response without data is unreadable.
   Future<String> resendVerification({required String verificationId}) async {
     try {
       final response = await authApi.resendVerification(verificationId);
@@ -471,12 +454,11 @@ class AuthRepository {
     }
   }
 
-  /// Revokes the current server session.
+  /// Revokes the current session.
   ///
-  /// Idempotent server-side, so a retry after a lost response is harmless.
-  /// Failures propagate as [ApiFailure]: a logout whose network call failed must
-  /// still clear local credentials, and that ordering is enforced by the caller,
-  /// which is why this does not clear anything itself.
+  /// The operation is idempotent, so retrying after a lost response is safe.
+  /// Failures propagate as [ApiFailure]. The caller remains responsible for
+  /// clearing local credentials, even when the request fails.
   Future<void> logout() async {
     try {
       await authApi.logout();
@@ -485,11 +467,10 @@ class AuthRepository {
     }
   }
 
-  /// Starts (or resumes) a password reset and returns the server-issued
-  /// verification id.
+  /// Starts or resumes a password reset and returns its verification ID.
   ///
-  /// The id is identical in shape for an address with no account; the client must
-  /// not use the response to infer account existence.
+  /// The response has the same shape whether or not the email belongs to an
+  /// existing account. The client must not use it to infer account existence.
   Future<String> requestPasswordReset({required String email}) async {
     try {
       final response = await authApi.requestPasswordReset(
@@ -511,8 +492,8 @@ class AuthRepository {
 
   /// Reads the current password-reset verification status.
   ///
-  /// A body is returned only while the verification is pending; a terminal
-  /// verification surfaces as a typed refusal.
+  /// A response is available only while verification is pending. A terminal
+  /// verification is returned as a typed refusal.
   Future<VerificationStatusResponse> getPasswordResetVerification({
     required String verificationId,
   }) async {
@@ -536,8 +517,9 @@ class AuthRepository {
 
   /// Issues the first PIN for a pending password reset.
   ///
-  /// The `201` body repeats the id the caller already has, so this returns
-  /// nothing. An unreadable `201` is not proof that no PIN was issued.
+  /// The response repeats the verification ID, which the caller already has,
+  /// so this method returns nothing. An unreadable response does not establish
+  /// whether the PIN was issued.
   Future<void> createPasswordResetPin({required String verificationId}) async {
     try {
       await authApi.createPasswordResetPin(verificationId);
@@ -618,10 +600,10 @@ class AuthRepository {
     }
   }
 
-  /// Completes the reset with the continuation token and new password.
+  /// Completes the password reset with the continuation token and new password.
   ///
-  /// A successful `200` is the only receipt; the backend returns no payload and
-  /// revokes every session for the account.
+  /// A successful response confirms completion. All existing sessions for the
+  /// account are revoked, so the user must sign in again on other devices.
   Future<void> finalizePasswordReset({
     required String continuationToken,
     required String password,

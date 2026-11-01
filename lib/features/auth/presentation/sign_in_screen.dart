@@ -13,21 +13,11 @@ import 'package:stash_it_app/features/auth/presentation/widgets/google_sign_in_b
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
-/// Manual sign-in, following `docs/design-explorations/auth.html`.
+/// Screen for signing in with email and password or Google.
 ///
-/// Reached from the auth entry screen. The router also allows a direct entry,
-/// so this screen does not check whether a session exists — doing so in both
-/// places is how the two drift apart.
-///
-/// Covers manual sign-in and offers the shared Google entry point. Registration,
-/// password reset and social registration exist as peer auth routes; Google
-/// sign-in and social registration start from this form's shared button. The
-/// Forgot password action opens the password-reset request screen.
-///
-/// The behaviour is unchanged from the prototype: the same validators, the same
-/// client-side email and password rules that mirror the server's, the same
-/// dismissal-not-retry failure message, and the same `ApiFailure` mapping. Only
-/// the presentation follows the approved design system.
+/// The router also permits direct entry, so session checks and redirects remain
+/// centralized in the router rather than being duplicated here. Registration
+/// and password reset are available through their respective routes.
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key, this.contextualMessage});
 
@@ -76,13 +66,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _googleBusy = false;
   String? _message;
 
-  /// Whether the password is masked. The field starts obscured, and only this
-  /// screen controls it: the toggle is a view of the entered value, not a
-  /// change to it.
+  /// Whether the password is currently masked.
   bool _obscurePassword = true;
 
-  /// How [_message] is presented. Defaults to danger so every ordinary
-  /// sign-in failure keeps the treatment it had before tones existed.
+  /// Presentation tone for [_message]. Ordinary sign-in failures use danger.
   AuthMessageTone _messageTone = AuthMessageTone.danger;
 
   @override
@@ -95,10 +82,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Future<void> _submit() async {
     if (_submitting || _googleBusy) return;
 
-    // Client-side validation mirrors the server's rules
-    // (`login/request.go`: `required,email,max=254` and `required,min=8,max=128`)
-    // so the common mistakes never cost a round trip. The server stays the
-    // authority — its `VALIDATION_ERROR` is still handled below.
+    // Validate common input errors locally before sending the request.
+    // The API remains authoritative and its validation failures are handled below.
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() {
@@ -112,8 +97,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           .signIn(_emailController.text.trim(), _passwordController.text);
 
       if (!mounted) return;
-      // The router redirect moves the user on a successful sign-in; this only
-      // covers the case where the app has no router attached.
+      // Successful sign-in is handled by the router redirect.
+      // Reset the loading state if no router redirect takes place.
       if (mounted) setState(() => _submitting = false);
     } on ApiFailure catch (failure) {
       if (!mounted) return;
@@ -121,16 +106,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         _submitting = false;
         _message = messageFor(failure);
 
-        // Explicit even though it is the default: this is the branch that must
-        // keep the danger treatment, and saying so here stops a later default
-        // change from quietly re-toning every sign-in failure.
+        // Keep sign-in failures visually distinct from informational messages.
         _messageTone = AuthMessageTone.danger;
       });
     } catch (_) {
-      // A credential-storage failure surfaces here as
-      // `ApiFailureCredentialStorage`, which is an `ApiFailure` and is handled
-      // above. Anything else is a defect, and the user is told the attempt did
-      // not complete rather than being shown a stack trace.
+      // Unexpected failures are shown as an incomplete sign-in attempt.
+      // Typed credential-storage failures are handled by the ApiFailure branch.
       if (!mounted) return;
       setState(() {
         _submitting = false;
@@ -145,8 +126,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final tokens = AppTheme.tokensOf(context);
 
     return Scaffold(
-      // The brand row replaces the app bar: auth sits outside the four
-      // destinations, so it carries the wordmark rather than a screen title.
+      // The brand row provides the identity for this auth screen without an app bar.
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -225,9 +205,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                             textInputAction: TextInputAction.done,
                             onSubmitted: (_) => _submit(),
                             suffixIcon: IconButton(
-                              // Inline and inside the field: a separate control outside
-                              // would read as another form action. It only flips the
-                              // mask, so it can neither submit nor validate.
+                              // Keep the visibility toggle inside the field.
+                              // It only changes masking and does not submit the form.
                               onPressed: _submitting || _googleBusy
                                   ? null
                                   : _togglePasswordVisibility,
@@ -308,25 +287,21 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     );
   }
 
-  /// Shows or masks the entered password without touching its value.
+  /// Toggles password masking without changing the entered value.
   ///
-  /// Deliberately not part of [_submit]: the control is an inspection aid, so
-  /// it never validates or posts the form.
+  /// This control does not validate or submit the form.
   void _togglePasswordVisibility() {
     setState(() => _obscurePassword = !_obscurePassword);
   }
 
-  /// Clears a failure message so the form can be corrected and resubmitted.
+  /// Dismisses the current failure message without retrying the request.
   ///
-  /// A dismissal, not a retry button: retrying the same credentials immediately
-  /// would spend another attempt against the per-email budget that produced the
-  /// failure in the first place. The user edits and submits deliberately.
+  /// The user can correct the form and submit again when ready.
   void _dismissMessage() {
     setState(() => _message = null);
   }
 
-  /// Tracks the shared Google button so this form cannot start a competing
-  /// request while the picker or one of its follow-up calls is in flight.
+  /// Tracks Google sign-in activity to prevent overlapping authentication requests.
   void _setGoogleBusy(bool busy) {
     if (!mounted) return;
     setState(() {
@@ -335,28 +310,22 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     });
   }
 
-  /// Replaces this form with the registration start screen, as a peer.
+  /// Navigates to the registration start screen.
   void _openSignUp() => context.go(AppRoutes.signUp);
 
-  /// Opens the password-reset request screen, as a peer.
+  /// Navigates to the password-reset request screen.
   void _openForgotPassword() => context.go(AppRoutes.forgotPassword);
 }
 
-/// Client-owned copy for a failed sign-in.
+/// Returns client-owned copy for a sign-in failure.
 ///
-/// **[D22] Selected from the typed [ApiFailure], never from `error.message`.**
-/// The backend's messages are English prose that is not part of any contract.
-///
-/// **[D15] The three server states stay distinct.** A `429` reports a countdown
-/// because the server sent one; a `503` and an offline device both say
-/// "unavailable" but are reached differently and must not be collapsed. No
-/// variant below ever claims the account or the service is broken.
+/// Messages are selected by typed [ApiFailure] values rather than server-provided
+/// error text. Rate limits, server unavailability, and connection failures retain
+/// distinct messages because they represent different outcomes.
 String messageFor(ApiFailure failure) {
   return switch (failure) {
-    // Deliberately identical for a wrong password and an unknown address: the
-    // backend answers both with `INVALID_CREDENTIALS` so the endpoint cannot be
-    // used to discover which addresses are registered, and this client must not
-    // undo that by describing them differently.
+    // Use the same message for an incorrect password and an unknown email.
+    // This prevents the sign-in screen from revealing whether an account exists.
     ApiFailureAuthRequired() =>
       "That doesn't look like a valid email or password.",
 
@@ -371,21 +340,13 @@ String messageFor(ApiFailure failure) {
     ApiFailureServerUnavailable() =>
       'Sign in is temporarily unavailable. Try again shortly.',
 
-    // Known not saved / not signed in — but for sign-in this means the server
-    // failed, not that anything is uncertain, so it does not use the
-    // "we can't confirm" wording reserved for a lost request.
+    // The server returned a failure response, so the request is known to have
+    // failed. Reserve unconfirmed wording for requests with an unknown outcome.
     ApiFailureServerFault() =>
       'We could not reach the server. Try again shortly.',
 
-    // `ApiFailureNotFound` is unreachable on these routes: none of them answers
-    // `RESOURCE_NOT_FOUND`. `ApiFailureCollectionNameAlreadyExists`,
-    // `ApiFailureCollectionNotEmpty`, `ApiFailureUnsortedCollectionProtected`
-    // and `ApiFailureCollectionDeleteTargetNotFound` are likewise
-    // collection-route outcomes. The profile and password variants belong to
-    // `GET`/`PATCH /users/me` and `PUT /users/me/password`, none of which sign-in
-    // calls. All are grouped with the unreadable replies rather than given
-    // sign-in copy for an outcome sign-in cannot produce, and the closed
-    // taxonomy stays exhaustive.
+    // These failures belong to other operations and are not expected during
+    // sign-in. Keep the mapping exhaustive and use the unreadable-reply fallback.
     ApiFailureNotFound() ||
     ApiFailureUserNotFound() ||
     ApiFailureCurrentPasswordInvalid() ||
@@ -405,9 +366,8 @@ String messageFor(ApiFailure failure) {
     ApiFailureUnreadableResponse() =>
       "We couldn't read the server's reply. Try again.",
 
-    // The one uncertain case. States plainly that the attempt is unconfirmed
-    // rather than implying the account is untouched — the request may have been
-    // applied even though no answer arrived.
+    // The request may have been applied even though no response arrived.
+    // Do not imply that the account was left unchanged.
     ApiFailureTransport() =>
       'No connection to the server. We could not confirm this sign-in.',
 
@@ -421,8 +381,7 @@ String messageFor(ApiFailure failure) {
   };
 }
 
-/// The quiet route to registration, kept on the sign-in screen so a new account
-/// is never stranded.
+/// Provides a route to registration from the sign-in screen.
 class _SignUpPrompt extends StatelessWidget {
   const _SignUpPrompt({required this.onPressed});
 

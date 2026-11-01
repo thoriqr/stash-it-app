@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 
-/// The wordmark and its mark: the one place the brand is set on an auth screen.
+/// Displays the brand mark and wordmark on authentication screens.
 ///
-/// Shared by `AuthEntryScreen` and `SignInScreen` because both sit outside the
-/// four destinations (D1) and therefore carry the wordmark instead of an app
-/// bar. Keeping one widget is what keeps the two screens' brand block identical.
+/// Shared by [AuthEntryScreen] and [SignInScreen] to keep their branding
+/// consistent.
 class AuthBrandRow extends StatelessWidget {
   const AuthBrandRow({super.key});
 

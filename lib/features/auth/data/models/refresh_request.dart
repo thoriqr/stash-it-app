@@ -3,16 +3,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'refresh_request.freezed.dart';
 part 'refresh_request.g.dart';
 
-/// Body of `POST /auth/refresh`.
+/// Request body for `POST /auth/refresh`.
 ///
-/// ```json
-/// { "refresh_token": "..." }
-/// ```
-///
-/// The refresh token is the *entire* credential here. The endpoint carries no
-/// bearer guard — the token in this body is what authorizes the call, and no
-/// user or session id is accepted from the request
-/// (`internal/api/auth/session/routes.go:43`).
+/// The refresh token is the credential used to authorize this request.
+/// No bearer token or separate user or session identifier is required.
 @freezed
 abstract class RefreshRequest with _$RefreshRequest {
   const factory RefreshRequest({

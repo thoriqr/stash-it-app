@@ -3,18 +3,13 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// Normalizes an email the same way the backend's `NormalizeEmail` does.
-///
-/// Used only for local scoping — deciding whether a stored continuation belongs
-/// to the address the user just entered. The wire value is unaffected; the
-/// backend normalizes what it receives.
+/// Normalizes an email for local comparison and scoping.
 String normalizeRegistrationEmail(String email) => email.trim().toLowerCase();
 
-/// A registration continuation token, together with the address it belongs to.
+/// A registration continuation token and the address it belongs to.
 ///
-/// [email] is always normalized. [token] is the raw token returned once by
-/// `POST /auth/register/verification/{id}/verify`; the backend stores only its
-/// hash and cannot reconstruct it.
+/// [email] is always normalized. [token] is the raw continuation token,
+/// which is returned only once and cannot be recovered if lost.
 class StoredRegistrationContinuation {
   const StoredRegistrationContinuation({
     required this.email,
@@ -27,37 +22,35 @@ class StoredRegistrationContinuation {
 
 /// Persists the raw registration continuation token across app restarts.
 ///
-/// This is deliberately separate from `SecureCredentialStore`:
+/// Separate from the session credential store:
 ///
-/// - The token is registration-flow state, not a session credential. It must not
-///   be adopted as a session, refreshed, or cleared by signing out.
-/// - The credential store owns exactly the access/refresh pair, and its
-///   all-or-nothing write exists because those two values rotate together. This
-///   value has no partner and is written with a single key.
-/// - Both classes share one [FlutterSecureStorage], so no new dependency is
-///   introduced and the existing in-memory test double works unchanged.
+/// - This token belongs to the registration flow, not an authenticated
+///   session. It must not be adopted as a session, refreshed, or cleared by
+///   signing out.
+/// - The session credential store manages the access/refresh token pair,
+///   while this store manages an independent single value.
+/// - Both stores use the same [FlutterSecureStorage] instance.
 ///
 /// **One slot, one key.** The value is a JSON object holding the normalized
-/// email and the raw token. A token for a different email overwrites the record;
-/// concurrent registrations on one device are not a supported flow. No expiry is
-/// stored: no response exposes the continuation's expiry, and a device-clock
-/// deadline would make the client its own authority over a server-owned
-/// lifetime.
+/// email and raw token. A token for a different email overwrites the record;
+/// concurrent registrations on one device are not supported. No expiry is
+/// stored because the continuation's expiry is not available to the client.
+/// Its validity remains determined by the server.
 class RegistrationContinuationStore {
   const RegistrationContinuationStore(this._storage);
 
-  /// Namespaced so clearing or adding other values cannot collide with it.
+  /// Namespaced to avoid collisions with other stored values.
   static const String storageKey = 'stash_it.auth.registration_continuation';
 
   final FlutterSecureStorage _storage;
 
-  /// The stored record, or null when none is usable.
+  /// Returns the stored record, or null when none is usable.
   ///
-  /// A missing, empty, malformed or structurally invalid value reads as null:
-  /// the record is a convenience, and a corrupt one must not make sign-up
-  /// unusable. Platform read failures propagate, matching
-  /// `SecureCredentialStore`, so a caller can decide whether the registration
-  /// can still proceed (it can — without recovery).
+  /// Missing, empty, malformed, or structurally invalid values return null.
+  /// A corrupt record must not make registration unusable. Platform read
+  /// failures propagate so the caller can decide how to proceed. Registration
+  /// can continue without the stored token, but recovery across app restarts
+  /// will not be available.
   Future<StoredRegistrationContinuation?> read() async {
     final raw = await _storage.read(key: storageKey);
     if (raw == null || raw.isEmpty) return null;
@@ -84,9 +77,8 @@ class RegistrationContinuationStore {
 
   /// Stores [token] against [email], replacing any previous record.
   ///
-  /// A platform failure propagates: the caller decides whether to continue (it
-  /// can) and whether to tell the user that recovery across a restart is not
-  /// available.
+  /// Platform write failures propagate. Registration can still continue, but
+  /// recovery across an app restart will not be available.
   Future<void> write({required String email, required String token}) async {
     final normalizedEmail = normalizeRegistrationEmail(email);
     if (normalizedEmail.isEmpty) {
@@ -102,17 +94,15 @@ class RegistrationContinuationStore {
     );
   }
 
-  /// Removes the stored record, leaving every other key alone.
+  /// Removes the stored record without affecting other keys.
   Future<void> clear() async {
     await _storage.delete(key: storageKey);
   }
 
   /// Removes the record only when it holds [token].
   ///
-  /// A route extra can carry a token different from the newest stored one (for
-  /// example an old navigation replayed after a newer registration verified).
-  /// Clearing unconditionally would discard the newer capability, so the match
-  /// is checked first. A read failure propagates and nothing is cleared.
+  /// Prevents an outdated navigation event from deleting a newer registration
+  /// continuation. A read failure propagates and nothing is cleared.
   Future<void> clearIfToken(String token) async {
     final stored = await read();
     if (stored != null && stored.token == token) {
@@ -121,11 +111,10 @@ class RegistrationContinuationStore {
   }
 }
 
-/// The registration continuation store, overridden in `bootstrap` and in tests.
+/// Provides the registration continuation store.
 ///
-/// A plain [Provider] for the same reason as `credentialStoreProvider`: the
-/// value never changes, and the deliberate default keeps a platform channel out
-/// of any test that has not substituted a store.
+/// Override this provider during app initialization and in tests. The default
+/// throws to ensure a real or test implementation is supplied.
 final Provider<RegistrationContinuationStore>
 registrationContinuationStoreProvider = Provider<RegistrationContinuationStore>(
   (ref) => throw UnimplementedError(

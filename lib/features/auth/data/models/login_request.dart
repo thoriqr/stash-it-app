@@ -3,17 +3,12 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'login_request.freezed.dart';
 part 'login_request.g.dart';
 
-/// Body of `POST /auth/login`.
+/// Request body for `POST /auth/login`.
 ///
-/// ```json
-/// { "email": "user@example.com", "password": "..." }
-/// ```
-///
-/// Both fields are `required` server-side
-/// (`internal/api/auth/login/request.go`), with `email` capped at 254 and
-/// `password` between 8 and 128. Those bounds are mirrored in `SignInScreen`'s
-/// validation so the common mistake is caught without a round trip; the server
-/// remains the authority and its `VALIDATION_ERROR` is still handled.
+/// Both email and password are required. Their input constraints are also
+/// validated by the sign-in screen so common mistakes can be caught before
+/// submitting the request. The server remains the final authority for
+/// validation, and the client handles `VALIDATION_ERROR` responses.
 @freezed
 abstract class LoginRequest with _$LoginRequest {
   const factory LoginRequest({

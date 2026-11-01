@@ -1,16 +1,13 @@
 /// Copy shared by the authentication screens.
 ///
-/// Kept outside both screens because two of them show it: the entry screen when
-/// a session ends, and the sign-in form when an attempt fails with
-/// `ApiFailureSessionEnded`. One constant is what stops the two explanations of
-/// the same event from drifting apart.
+/// Used on the entry screen when a session ends and on the sign-in screen when
+/// an attempt fails because the session has ended. Keeping one constant
+/// ensures both screens show the same explanation.
 library;
 
-/// Copy for a session that ended while the user was elsewhere.
+/// Message shown when a session has ended.
 ///
-/// **Neutral and factual.** It says the session ended and what to do next, and
-/// makes no claim about why — the backend's reason is not shown to users
-/// ([D22]), and an expiry the user did not cause is not presented as a mistake
-/// they made.
+/// Neutral and factual: explains what happened and what the user should do
+/// next without speculating about the cause.
 const String sessionEndedMessage =
     'Your session has ended. Sign in again to continue.';

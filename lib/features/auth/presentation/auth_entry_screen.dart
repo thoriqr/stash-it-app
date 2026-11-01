@@ -11,16 +11,11 @@ import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.d
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
-/// The landing screen for a signed-out user.
+/// The landing screen for signed-out users.
 ///
-/// It sits outside the four destinations (D1), like `SignInScreen` and
-/// `SignUpScreen`, and carries the wordmark instead of an app bar. The router
-/// allows all signed-out auth screens while signed out; everything else
-/// redirects here.
-///
-/// The screen owns the explanation of an ended session. The sign-in form owns
-/// manual credentials and Google sign-in, and the sign-up form owns manual
-/// registration and Google sign-in; both remain separate peer flows.
+/// Displays the app branding and entry points for sign-in and registration.
+/// The explanation of an ended session is also shown here, while each
+/// authentication form handles its own sign-in or registration flow.
 class AuthEntryScreen extends ConsumerStatefulWidget {
   const AuthEntryScreen({super.key});
 
@@ -29,28 +24,22 @@ class AuthEntryScreen extends ConsumerStatefulWidget {
 }
 
 class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
-  /// Whether the one-time explanation of an ended session is showing.
+  /// Whether the one-time explanation of an ended session is visible.
   ///
-  /// Set from `SessionController.consumeSessionEnded` in `initState`, so it
-  /// appears on the visit produced by the expiry and never on a later rebuild
-  /// or a later visit. This is local widget state, not a second source of truth:
-  /// the fact itself stays in the session controller, which clears it as it is
-  /// read.
+  /// Initialized by consuming the session-ended notice. The notice is consumed
+  /// once, so it does not reappear on subsequent rebuilds or visits.
   bool _showSessionEnded = false;
 
   @override
   void initState() {
     super.initState();
 
-    // A session can end while the user is somewhere else entirely: a renewal the
-    // backend refuses terminally clears the credentials, the router sends them
-    // here, and nothing else would say why. The reason is *consumed* rather than
-    // stored, so it appears once — see `SessionController.consumeSessionEnded`.
+    // A session may end while the user is on another screen. When they return
+    // here, show the reason once so the redirect does not appear unexplained.
     //
-    // A deliberate sign-out does not set it: `AuthState.signOut` discards the
-    // session directly rather than ending it, so asking to be signed out is never
-    // reported back as an expiry. An ambiguous renewal failure does not set it
-    // either, because nothing ended the session — only `_endSession` does.
+    // A deliberate sign-out does not show this notice. An uncertain renewal
+    // failure does not show it either, because neither means the session has
+    // definitively ended.
     if (ref.read(sessionControllerProvider.notifier).consumeSessionEnded()) {
       _showSessionEnded = true;
     }
@@ -62,9 +51,7 @@ class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
     final pendingCount = ref.watch(pendingUrlCountProvider);
 
     return Scaffold(
-      // The brand row replaces the app bar, as on the sign-in form: auth sits
-      // outside the four destinations, so it carries the wordmark rather than a
-      // screen title.
+      // Authentication screens use the brand row instead of an app bar.
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -97,10 +84,7 @@ class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
                     const SizedBox(height: AppMetrics.space4),
                     AuthMessageBand(
                       message: sessionEndedMessage,
-                      // Warning, not danger: `design-system.md` §6.5 files expiry
-                      // under Warning. Nothing the user did failed here — a
-                      // session simply lapsed — and a danger band would read as
-                      // a mistake of theirs.
+                      // A session expiry is a warning, not a user-caused failure.
                       tone: AuthMessageTone.warning,
                       onDismiss: _dismissSessionEnded,
                     ),
@@ -133,11 +117,10 @@ class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
     );
   }
 
-  /// Hides the explanation of an ended session.
+  /// Hides the session-ended explanation.
   ///
-  /// A dismissal, not a retry: there is no action to retry until the user opens
-  /// the sign-in form. The flag is already consumed, so the message cannot
-  /// return on a rebuild or a later visit.
+  /// Dismissing the notice does not retry anything. The notice has already
+  /// been consumed and will not return on a rebuild or later visit.
   void _dismissSessionEnded() {
     setState(() => _showSessionEnded = false);
   }

@@ -5,16 +5,16 @@ import 'auth_user.dart';
 part 'login_google_response.freezed.dart';
 part 'login_google_response.g.dart';
 
-/// `data` of `POST /auth/login/google` and the account-link confirm route.
+/// Represents the response data from Google login and account-link confirmation.
 ///
-/// The backend returns one of three outcomes in the same envelope:
+/// The `outcome` field identifies one of three possible results:
 ///
-/// - `authenticated` — tokens and user are present.
-/// - `account_link_required` — `provider` and `confirmation_id` are present.
-/// - `registration_required` — `verification_id` is present.
+/// - `authenticated`: access token, refresh token, and user are available.
+/// - `account_link_required`: provider and confirmation ID are available.
+/// - `registration_required`: verification ID is available.
 ///
-/// The actual Go handler/mapper includes `outcome` on every outcome. The
-/// generated Swagger success type does not, so this model follows the code.
+/// The `outcome` field is part of the API response and is required for
+/// distinguishing these flows.
 @freezed
 abstract class LoginGoogleResponse with _$LoginGoogleResponse {
   const factory LoginGoogleResponse({

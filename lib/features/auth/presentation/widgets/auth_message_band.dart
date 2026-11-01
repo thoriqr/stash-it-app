@@ -1,48 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 
-/// How a message band presents itself.
-///
-/// `design-system.md` §6.5 gives five feedback treatments. Only two of them can
-/// appear on the auth screens, and the distinction is the point rather than
-/// decoration:
-///
-/// | Situation | Treatment | Mark |
-/// | --- | --- | --- |
-/// | **Warning** (budget spent, **expiry**) | `warning-soft` + `warning-border` | filled |
-/// | **Failure** (known) | `danger-soft` + `danger-border` | filled |
-///
-/// An expiry is filed under Warning by the specification, so it must not wear
-/// the Failure colours: the user did not do anything wrong, and a danger band
-/// reads as a mistake they made. The fifth row — **Uncertain**, the same warning
-/// colours with a *hollow* mark — is deliberately not modelled here. No auth
-/// screen currently asks for it, so adding a third tone now would be a case with
-/// no caller.
+/// Defines the visual treatment of an authentication message.
 enum AuthMessageTone {
-  /// A confirmed failure of something the user attempted.
+  /// A confirmed failure of an action the user attempted.
   danger,
 
-  /// Something lapsed without the user attempting it.
+  /// A condition that expired or lapsed without a user action.
   warning,
 }
 
-/// A message band, optionally dismissible.
+/// A message band with optional dismissal.
+////
+//// Shared by authentication screens for displaying failures and notices.
+/// The tone determines the fill, border, and mark color without changing the
+/// layout or message wrapping.
 ///
-/// Shared by the auth screens so the session-expiry notice and an ordinary
-/// sign-in failure are the same band, differing only in tone. The tone decides
-/// the fill, border and mark; the layout is identical either way, so a change of
-/// treatment never changes the band's height or its wrapping.
-///
-/// A band with no [onDismiss] has no Dismiss action. That is for a state whose
-/// only escape is the Retry action beside it — dismissing the explanation
-/// without loading anything would leave the screen with nothing to show.
-///
-/// The message and Dismiss share one row. They were stacked, and because
-/// Material gives a `TextButton` a 48 px minimum target the dismiss row alone
-/// was taller than the sentence above it, so a one-line failure occupied roughly
-/// a hundred pixels with an empty gap under the text. Inline, the band is as
-/// tall as the message it has to show — and a longer message still wraps, because
-/// the text is the flexible child and Dismiss is not.
+/// When [onDismiss] is null, the band remains visible until the underlying
+/// state changes. This is useful when the user must resolve the state through
+/// another action, such as Retry.
 class AuthMessageBand extends StatelessWidget {
   const AuthMessageBand({
     required this.message,
@@ -53,11 +29,10 @@ class AuthMessageBand extends StatelessWidget {
 
   final String message;
 
-  /// Null for a band that must stay visible until the state behind it changes.
+  /// Null when the message must remain visible until its state changes.
   final VoidCallback? onDismiss;
 
-  /// Defaults to [AuthMessageTone.danger], so an ordinary sign-in failure keeps
-  /// the treatment it has always had without each call site naming it.
+  /// Defaults to [AuthMessageTone.danger] for ordinary sign-in failures.
   final AuthMessageTone tone;
 
   @override
@@ -86,17 +61,16 @@ class AuthMessageBand extends StatelessWidget {
         borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
       ),
       child: Row(
-        // Centred, so a single-line message and its dismiss action read as one
-        // unit rather than as two unrelated rows.
+        // Keeps a single-line message and its dismiss action vertically aligned.
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // The flexible child: this is what wraps when a message is long.
+          // The message takes the available width and wraps when necessary.
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  // Sits on the first line's baseline rather than the row's top.
+                  // Aligns the mark with the first line of text.
                   padding: const EdgeInsets.only(top: 5),
                   child: Container(width: 5, height: 5, color: mark),
                 ),
@@ -117,9 +91,7 @@ class AuthMessageBand extends StatelessWidget {
             TextButton(
               onPressed: onDismiss,
               style: TextButton.styleFrom(
-                // 32 px rather than Material's 48: the band is a confirmation of
-                // a failure, not the primary action, and its own target still
-                // clears WCAG 2.5.8's 24 px minimum by a comfortable margin.
+                // Compact target while remaining above the 24 px WCAG minimum.
                 minimumSize: const Size(0, 32),
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppMetrics.space2,

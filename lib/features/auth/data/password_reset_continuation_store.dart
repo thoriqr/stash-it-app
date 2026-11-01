@@ -3,18 +3,13 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// Normalizes an email the same way the backend's `NormalizeEmail` does.
-///
-/// Used only for local scoping — deciding whether a stored password-reset
-/// continuation belongs to the address being displayed. The wire value is
-/// unaffected; the backend normalizes what it receives.
+/// Normalizes an email for local comparison and scoping.
 String normalizePasswordResetEmail(String email) => email.trim().toLowerCase();
 
 /// A password-reset continuation token and the address it belongs to.
 ///
-/// [email] is always normalized. [token] is the raw token returned once by
-/// `POST /auth/password-reset/verification/{id}/verify`; the backend stores only
-/// its hash and cannot reconstruct it.
+/// [email] is always normalized. [token] is the raw continuation token,
+/// which is returned only once and cannot be recovered if lost.
 class StoredPasswordResetContinuation {
   const StoredPasswordResetContinuation({
     required this.email,
@@ -28,36 +23,32 @@ class StoredPasswordResetContinuation {
 /// Persists the raw password-reset continuation token across navigation and app
 /// restarts.
 ///
-/// Separate from `SecureCredentialStore` and from the registration continuation
+/// Separate from the session credential store and registration continuation
 /// store:
 ///
-/// - It is a single-purpose capability, not a session credential, and it is
-///   cleared only by this store.
-/// - A different key means clearing or rotating an access/refresh pair or an
-///   unrelated registration continuation cannot remove it.
-/// - It uses the same `FlutterSecureStorage` as both, so no new dependency or
-///   storage mechanism is introduced.
+/// - It is a single-purpose credential, not a session credential, and is
+///   managed independently.
+/// - Its dedicated key prevents session credential updates or changes to the
+///   registration continuation from affecting it.
+/// - It uses the existing [FlutterSecureStorage] instance.
 ///
 /// **One slot, one key.** The value is a JSON object holding the normalized
-/// email and the raw token. A token for another address overwrites the record;
-/// concurrent password resets on one device are not a supported flow. No expiry
-/// is stored: no response exposes the continuation's expiry, and a device-clock
-/// deadline would make the client its own authority over a server-owned
-/// lifetime.
+/// email and raw token. A token for another address overwrites the record;
+/// concurrent password resets on one device are not supported. No expiry is
+/// stored because the continuation's expiry is not available to the client.
+/// The server remains authoritative for its validity.
 class PasswordResetContinuationStore {
   const PasswordResetContinuationStore(this._storage);
 
-  /// Namespaced so clearing or adding other values cannot collide with it.
+  /// Namespaced to avoid collisions with other stored values.
   static const String storageKey = 'stash_it.auth.password_reset_continuation';
 
   final FlutterSecureStorage _storage;
 
-  /// The stored record, or null when none is usable.
+  /// Returns the stored record, or null when none is usable.
   ///
-  /// A missing, empty, malformed or structurally invalid value reads as null: a
-  /// corrupt record must not make the reset flow unusable. Platform read
-  /// failures propagate, so a caller can decide whether to retry rather than
-  /// silently starting over.
+  /// Missing, empty, malformed, or structurally invalid values return null.
+  /// Platform read failures propagate so the caller can decide whether to retry.
   Future<StoredPasswordResetContinuation?> read() async {
     final raw = await _storage.read(key: storageKey);
     if (raw == null || raw.isEmpty) return null;
@@ -84,10 +75,8 @@ class PasswordResetContinuationStore {
 
   /// Stores [token] against [email], replacing any previous record.
   ///
-  /// A platform failure propagates: the verification screen decides whether the
-  /// reset can continue. It does not navigate to the password form when the
-  /// token could not be saved, because that form reads the token back from this
-  /// store.
+  /// Platform write failures propagate. The caller must not continue to the
+  /// password form unless the token has been saved successfully.
   Future<void> write({required String email, required String token}) async {
     final normalizedEmail = normalizePasswordResetEmail(email);
     if (normalizedEmail.isEmpty) {
@@ -103,14 +92,14 @@ class PasswordResetContinuationStore {
     );
   }
 
-  /// Removes the stored record, leaving every other key alone.
+  /// Removes the stored record without affecting other keys.
   Future<void> clear() async {
     await _storage.delete(key: storageKey);
   }
 
   /// Removes the record only when it holds [token].
   ///
-  /// A stale screen must not erase a newer reset's record.
+  /// Prevents a stale screen from erasing a newer reset's record.
   Future<void> clearIfToken(String token) async {
     final stored = await read();
     if (stored != null && stored.token == token) {
@@ -119,11 +108,10 @@ class PasswordResetContinuationStore {
   }
 }
 
-/// The password-reset continuation store, overridden in `bootstrap` and tests.
+/// Provides the password-reset continuation store.
 ///
-/// A plain [Provider] for the same reason as `credentialStoreProvider`: the
-/// value never changes, and the deliberate default keeps a platform channel out
-/// of any test that has not substituted a store.
+/// Override this provider during app initialization and in tests. The default
+/// throws to ensure a real or test implementation is supplied.
 final Provider<PasswordResetContinuationStore>
 passwordResetContinuationStoreProvider =
     Provider<PasswordResetContinuationStore>(

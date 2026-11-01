@@ -3,16 +3,15 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'request_password_reset_response.freezed.dart';
 part 'request_password_reset_response.g.dart';
 
-/// `data` of a successful `POST /auth/password-reset`.
+/// Represents the response data from `POST /auth/password-reset`.
 ///
-/// ```json
-/// { "verification_id": "01a0f359-093b-737a-963a-80f7ca6768ed" }
-/// ```
+/// The verification ID is used to continue the password-reset verification
+/// flow.
 ///
-/// The id is the credential for the reset verification routes. For an address
-/// with no account it is a random, unpersisted placeholder: the response shape
-/// is identical on purpose, so this body cannot be used to discover which
-/// addresses are registered.
+/// The API returns the same response shape whether or not an account exists
+/// for the submitted email address. For addresses without an account, the ID
+/// is a random placeholder. The client must not use this value to infer
+/// account existence.
 @freezed
 abstract class RequestPasswordResetResponse
     with _$RequestPasswordResetResponse {
