@@ -10,6 +10,7 @@ import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/password_reset_continuation_store.dart';
 import 'package:stash_it_app/features/auth/presentation/password_reset_finalize_screen.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/features/auth/presentation/password_reset_request_screen.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
@@ -73,7 +74,10 @@ void main() {
     );
   }
 
-  Future<void> pumpBare(WidgetTester tester) async {
+  Future<void> pumpBare(
+    WidgetTester tester, {
+    Locale locale = const Locale('en'),
+  }) async {
     container.read(appDioProvider).httpClientAdapter = adapter;
     container.read(refreshDioProvider).httpClientAdapter = adapter;
 
@@ -83,6 +87,9 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          locale: locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: const PasswordResetFinalizeScreen(),
         ),
       ),
@@ -122,6 +129,8 @@ void main() {
         child: MaterialApp.router(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           routerConfig: router,
         ),
       ),
@@ -159,6 +168,34 @@ void main() {
     expect(find.textContaining(email), findsOneWidget);
     expect(find.widgetWithText(AppButton, 'Reset password'), findsOneWidget);
     expect((await continuationStore.read())?.token, token);
+  });
+
+  testWidgets('renders Indonesian password labels and validation', (
+    tester,
+  ) async {
+    await continuationStore.write(email: email, token: token);
+    scriptContinuation();
+
+    await pumpBare(tester, locale: const Locale('id'));
+
+    expect(find.text('Pilih kata sandi baru'), findsOneWidget);
+    expect(find.text('Pilih kata sandi baru untuk $email.'), findsOneWidget);
+    expect(find.text('Kata sandi baru'), findsOneWidget);
+    expect(find.text('Konfirmasi kata sandi baru'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Reset kata sandi'), findsOneWidget);
+    expect(
+      find.widgetWithText(AppButton, 'Gunakan email lain'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(AppButton, 'Kembali ke halaman masuk'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.widgetWithText(AppButton, 'Reset kata sandi'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Masukkan kata sandi baru.'), findsOneWidget);
   });
 
   testWidgets(

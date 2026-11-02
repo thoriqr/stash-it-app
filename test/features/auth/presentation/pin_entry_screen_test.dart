@@ -7,6 +7,7 @@ import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/registration_continuation_store.dart';
 import 'package:stash_it_app/features/auth/presentation/pin_entry_screen.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/core/error/api_error_codes.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
 import 'package:stash_it_app/app/feedback/feedback_controller.dart';
@@ -15,6 +16,8 @@ import 'package:stash_it_app/shared/widgets/app_button.dart';
 import '../../../support/fake_http.dart';
 
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
   const verificationId = '01a0f359-093b-737a-963a-80f7ca6768ed';
 
   late InMemorySecureStorage backend;
@@ -41,7 +44,11 @@ void main() {
     addTearDown(container.dispose);
   });
 
-  Future<void> pumpScreen(WidgetTester tester, {String? email}) async {
+  Future<void> pumpScreen(
+    WidgetTester tester, {
+    String? email,
+    Locale locale = const Locale('en'),
+  }) async {
     container.read(appDioProvider).httpClientAdapter = adapter;
     container.read(refreshDioProvider).httpClientAdapter = adapter;
 
@@ -51,6 +58,9 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          locale: locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: PinEntryScreen(verificationId: verificationId, email: email),
         ),
       ),
@@ -443,7 +453,100 @@ void main() {
     final feedback = container.read(feedbackProvider);
     expect(feedback, isNotNull);
     expect(feedback!.tone, FeedbackTone.success);
-    expect(feedback.copy, 'A new PIN has been sent.');
+    expect(feedback.resolve(english), 'A new PIN has been sent.');
+  });
+
+  testWidgets('renders Indonesian instructions, invalid copy and feedback', (
+    tester,
+  ) async {
+    adapter.onMethod(
+      'GET',
+      '/auth/register/verification/$verificationId',
+      body: {
+        'data': {
+          'verification_id': verificationId,
+          'status': 'pending',
+          'pin_issued': true,
+          'resend_in_seconds': 0,
+        },
+        'message': 'verification retrieved',
+      },
+    );
+    adapter.onMethod(
+      'POST',
+      '/auth/register/verification/$verificationId/verify',
+      status: 409,
+      body: errorBody(ApiErrorCode.invalidVerificationCode),
+    );
+    adapter.onMethod(
+      'POST',
+      '/auth/register/verification/$verificationId/resend',
+      body: {
+        'data': {'verification_id': verificationId},
+        'message': 'verification code resent',
+      },
+    );
+
+    await pumpScreen(
+      tester,
+      email: 'reader@example.com',
+      locale: const Locale('id'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Masukkan PIN Anda'), findsOneWidget);
+    expect(
+      find.text(
+        'Kami mengirim PIN ke alamat email Anda. Masukkan di bawah untuk '
+        'melanjutkan.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(AppButton, 'Verifikasi PIN'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Kirim ulang PIN'), findsOneWidget);
+    expect(
+      find.widgetWithText(AppButton, 'Kembali ke halaman masuk'),
+      findsOneWidget,
+    );
+
+    await tester.enterText(find.byType(TextField), '123456');
+    await tester.tap(find.widgetWithText(AppButton, 'Verifikasi PIN'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('PIN itu tidak benar. Coba lagi.'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(AppButton, 'Kirim ulang PIN'));
+    await tester.pumpAndSettle();
+
+    final feedback = container.read(feedbackProvider);
+    expect(feedback, isNotNull);
+    expect(feedback!.tone, FeedbackTone.success);
+    expect(feedback.resolve(indonesian), 'PIN baru telah dikirim.');
+  });
+
+  testWidgets('renders the Indonesian expired-registration state', (
+    tester,
+  ) async {
+    adapter.onMethod(
+      'GET',
+      '/auth/register/verification/$verificationId',
+      status: 409,
+      body: errorBody(ApiErrorCode.verificationNotPending),
+    );
+
+    await pumpScreen(tester, locale: const Locale('id'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Periksa email Anda'), findsOneWidget);
+    expect(
+      find.text(
+        'Langkah pendaftaran ini sudah tidak terbuka. Mulai ulang dengan email '
+        'yang sama untuk melanjutkan.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(AppButton, 'Mulai ulang'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Coba lagi'), findsNothing);
   });
 
   group('continuation persistence', () {
@@ -521,8 +624,9 @@ void main() {
       final feedback = container.read(feedbackProvider);
       expect(feedback, isNotNull);
       expect(feedback!.tone, FeedbackTone.warning);
-      expect(feedback.copy, contains('could not save'));
-      expect(feedback.copy, contains('PIN verified'));
+      expect(feedback.resolve(english), contains('could not save'));
+      expect(feedback.resolve(english), contains('PIN verified'));
+      expect(feedback.resolve(indonesian), contains('PIN terverifikasi'));
     });
   });
 }

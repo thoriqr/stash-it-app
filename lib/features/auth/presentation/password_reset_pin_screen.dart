@@ -13,6 +13,7 @@ import 'package:stash_it_app/features/auth/data/models/verification_status_respo
 import 'package:stash_it_app/features/auth/data/password_reset_continuation_store.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_confirm_dialog.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
@@ -218,9 +219,9 @@ class _PasswordResetPinScreenState extends ConsumerState<PasswordResetPinScreen>
       ref
           .read(feedbackProvider.notifier)
           .show(
-            const AppFeedback(
+            AppFeedback.localized(
               tone: FeedbackTone.success,
-              copy: 'A new PIN has been sent.',
+              message: (localizations) => localizations.newPinSent,
             ),
           );
       await _loadStatus();
@@ -277,8 +278,9 @@ class _PasswordResetPinScreenState extends ConsumerState<PasswordResetPinScreen>
         // verification would otherwise replace a record without the required
         // disclosure.
         setState(() {
-          _localVerifyFailure =
-              'We could not check the saved reset on this device. Try again.';
+          _localVerifyFailure = AppLocalizations.of(
+            context,
+          ).authResetSavedCheckLocalFailure;
         });
         return;
       }
@@ -288,12 +290,13 @@ class _PasswordResetPinScreenState extends ConsumerState<PasswordResetPinScreen>
       if (saved != null &&
           !_replacementConfirmed &&
           _requiresReplacementDisclosure(saved)) {
+        final l10n = AppLocalizations.of(context);
         final confirmed = await showAppConfirmDialog(
           context: context,
-          title: 'Replace saved password reset?',
-          message: _replacementMessage(saved.email),
-          cancelLabel: 'Keep saved reset',
-          confirmLabel: 'Replace and verify',
+          title: l10n.authReplaceSavedResetTitle,
+          message: _replacementMessage(saved.email, l10n),
+          cancelLabel: l10n.authKeepSavedReset,
+          confirmLabel: l10n.authReplaceAndVerify,
           destructive: true,
         );
         if (!mounted) return;
@@ -416,17 +419,14 @@ class _PasswordResetPinScreenState extends ConsumerState<PasswordResetPinScreen>
     return normalizePasswordResetEmail(incoming) != saved.email;
   }
 
-  String _replacementMessage(String savedEmail) {
+  String _replacementMessage(
+    String savedEmail,
+    AppLocalizations localizations,
+  ) {
     final incoming = widget.email;
-    final consequence = incoming == null
-        ? 'If this PIN verifies, it may replace it; the saved reset for '
-              '$savedEmail may no longer be available on this device.'
-        : 'If this PIN verifies for $incoming, it will replace it; the saved '
-              'reset for $savedEmail will no longer be available on this '
-              'device.';
-
-    return 'A saved password reset for $savedEmail is on this device. '
-        '$consequence This does not cancel it on the server.';
+    return incoming == null
+        ? localizations.authResetReplacementUnknownIncoming(savedEmail)
+        : localizations.authResetReplacementKnownIncoming(incoming, savedEmail);
   }
 
   @override
@@ -473,7 +473,7 @@ class _PasswordResetPinScreenState extends ConsumerState<PasswordResetPinScreen>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Check your email',
+          AppLocalizations.of(context).authCheckYourEmail,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
@@ -485,33 +485,23 @@ class _PasswordResetPinScreenState extends ConsumerState<PasswordResetPinScreen>
   }
 
   Widget _buildTerminal(AppTokens tokens, _PinTerminal terminal) {
+    final l10n = AppLocalizations.of(context);
     final copy = switch (terminal) {
       _PinTerminal.alreadyVerified => (
-        title: 'Reset already verified',
-        body:
-            'This reset\'s PIN step is already complete. If this device has '
-            'the saved reset, continue from the password reset screen. '
-            'Otherwise wait up to 15 minutes for it to expire and request a '
-            'new one.',
+        title: l10n.authResetAlreadyVerifiedTitle,
+        body: l10n.authResetAlreadyVerifiedBody,
       ),
       _PinTerminal.inactive => (
-        title: 'Reset no longer active',
-        body:
-            'This password reset is no longer active. Request a new one to '
-            'continue.',
+        title: l10n.authResetNoLongerActiveTitle,
+        body: l10n.authResetNoLongerActiveBody,
       ),
       _PinTerminal.unavailable => (
-        title: 'Reset not available',
-        body:
-            'We could not find that password reset. Check the address or start '
-            'again.',
+        title: l10n.authResetNotAvailableTitle,
+        body: l10n.authResetNotAvailableBody,
       ),
       _PinTerminal.storageFailure => (
-        title: 'Reset verified, but not saved',
-        body:
-            'Your PIN was verified, but this device could not save the reset '
-            'securely. The reset cannot continue here. Request a new one after '
-            'this reset expires, which takes up to 15 minutes.',
+        title: l10n.authResetVerifiedNotSavedTitle,
+        body: l10n.authResetVerifiedNotSavedBody,
       ),
     };
 
@@ -532,13 +522,13 @@ class _PasswordResetPinScreenState extends ConsumerState<PasswordResetPinScreen>
         ),
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Back to password reset',
+          label: l10n.authBackToPasswordReset,
           variant: AppButtonVariant.primary,
           onPressed: _openResetStart,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.quiet,
           onPressed: _openSignIn,
         ),
@@ -547,37 +537,38 @@ class _PasswordResetPinScreenState extends ConsumerState<PasswordResetPinScreen>
   }
 
   Widget _buildLoadError(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     final failure = _loadFailure!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Check your email',
+          l10n.authCheckYourEmail,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
         ),
         const SizedBox(height: AppMetrics.space4),
         AuthMessageBand(
-          message: _loadMessageFor(failure),
+          message: _loadMessageFor(failure, l10n),
           tone: AuthMessageTone.danger,
         ),
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Retry',
+          label: l10n.authRetry,
           variant: AppButtonVariant.primary,
           onPressed: _loadStatus,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Back to password reset',
+          label: l10n.authBackToPasswordReset,
           variant: AppButtonVariant.secondary,
           onPressed: _openResetStart,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.quiet,
           onPressed: _openSignIn,
         ),
@@ -599,6 +590,7 @@ class _PasswordResetPinScreenState extends ConsumerState<PasswordResetPinScreen>
   }
 
   Widget _buildPending(AppTokens tokens, VerificationStatusResponse status) {
+    final l10n = AppLocalizations.of(context);
     final resendEnabled =
         !_verifying &&
         !_resending &&
@@ -606,31 +598,32 @@ class _PasswordResetPinScreenState extends ConsumerState<PasswordResetPinScreen>
         status.status == 'pending';
 
     final email = widget.email;
-    final sentCopy = email == null
-        ? 'We sent a PIN to your email address. Enter it below to choose a new '
-              'password.'
-        : 'We sent a PIN to $email. Enter it below to choose a new password.';
+    final sentCopy = status.pinIssued
+        ? (email == null
+              ? l10n.authResetPinSentGenericIssued
+              : l10n.authResetPinSentToEmailIssued(email))
+        : (email == null
+              ? l10n.authResetPinSentGeneric
+              : l10n.authResetPinSentToEmail(email));
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Enter your PIN',
+          l10n.authEnterYourPin,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
         ),
         const SizedBox(height: AppMetrics.space1),
         Text(
-          status.pinIssued
-              ? '$sentCopy If you already have one, enter it below.'
-              : sentCopy,
+          sentCopy,
           style: AppTypography.body.copyWith(color: tokens.textSecondary),
         ),
         const SizedBox(height: AppMetrics.space6),
         AppField(
-          label: 'PIN',
+          label: l10n.authPinLabel,
           controller: _pinController,
           enabled: !_verifying && !_resending,
           keyboardType: TextInputType.number,
@@ -646,7 +639,7 @@ class _PasswordResetPinScreenState extends ConsumerState<PasswordResetPinScreen>
         if (_verifyFailure case final failure?) ...[
           const SizedBox(height: AppMetrics.space4),
           AuthMessageBand(
-            message: _verifyMessageFor(failure),
+            message: _verifyMessageFor(failure, l10n),
             onDismiss: () => setState(() => _verifyFailure = null),
             tone: AuthMessageTone.danger,
           ),
@@ -654,14 +647,14 @@ class _PasswordResetPinScreenState extends ConsumerState<PasswordResetPinScreen>
         if (_resendFailure case final failure?) ...[
           const SizedBox(height: AppMetrics.space4),
           AuthMessageBand(
-            message: _resendMessageFor(failure),
+            message: _resendMessageFor(failure, l10n),
             onDismiss: () => setState(() => _resendFailure = null),
             tone: AuthMessageTone.danger,
           ),
         ],
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Verify PIN',
+          label: l10n.authVerifyPin,
           variant: AppButtonVariant.primary,
           busy: _verifying,
           onPressed: _verifying ? null : _verifyPin,
@@ -669,17 +662,17 @@ class _PasswordResetPinScreenState extends ConsumerState<PasswordResetPinScreen>
         const SizedBox(height: AppMetrics.space6),
         AppButton(
           label: _resending
-              ? 'Sending…'
+              ? l10n.authSending
               : (_remainingSeconds > 0
-                    ? 'Resend PIN in $_remainingSeconds s'
-                    : 'Resend PIN'),
+                    ? l10n.authResendPinIn(_remainingSeconds)
+                    : l10n.authResendPin),
           variant: AppButtonVariant.secondary,
           busy: _resending,
           onPressed: resendEnabled ? _resend : null,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.quiet,
           onPressed: _verifying ? null : _openSignIn,
         ),
@@ -687,63 +680,52 @@ class _PasswordResetPinScreenState extends ConsumerState<PasswordResetPinScreen>
     );
   }
 
-  String _loadMessageFor(ApiFailure failure) {
+  String _loadMessageFor(ApiFailure failure, AppLocalizations localizations) {
     return switch (failure) {
-      ApiFailureTransport() =>
-        'No connection to the server. We could not check this reset. Try again.',
-      ApiFailureUnreadableResponse() =>
-        'We could not read the server\'s reply. Try again.',
+      ApiFailureTransport() => localizations.authResetLoadTransport,
+      ApiFailureUnreadableResponse() => localizations.genericReadUnreadable,
       ApiFailureRateLimited(:final retryAfter) =>
         retryAfter != null
-            ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
-            : 'Too many attempts. Try again shortly.',
-      ApiFailureServerUnavailable() =>
-        'Password reset is temporarily unavailable. Try again shortly.',
-      ApiFailureServerFault() =>
-        'We could not check this reset. Try again shortly.',
-      _ => 'We could not check this reset. Try again.',
+            ? localizations.authTooManyAttemptsWithWait(retryAfter.inSeconds)
+            : localizations.genericReadRateLimited,
+      ApiFailureServerUnavailable() => localizations.authResetUnavailableShort,
+      ApiFailureServerFault() => localizations.authResetLoadServerFault,
+      _ => localizations.authResetLoadGeneric,
     };
   }
 
-  String _verifyMessageFor(ApiFailure failure) {
+  String _verifyMessageFor(ApiFailure failure, AppLocalizations localizations) {
     return switch (failure) {
-      ApiFailureInvalidVerificationCode() =>
-        'That PIN is not correct. Try again.',
+      ApiFailureInvalidVerificationCode() => localizations.authPinInvalid,
       ApiFailureVerificationCodeAttemptsExceeded() =>
-        'Too many incorrect PINs. Request a new reset.',
+        localizations.authPinAttemptsExceededReset,
       ApiFailureRateLimited(:final retryAfter) =>
         retryAfter != null
-            ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
-            : 'Too many attempts. Try again shortly.',
+            ? localizations.authTooManyAttemptsWithWait(retryAfter.inSeconds)
+            : localizations.genericReadRateLimited,
       ApiFailureServerUnavailable() =>
-        'Verification is temporarily unavailable. Try again shortly.',
-      ApiFailureServerFault() =>
-        'We could not verify your PIN. Try again shortly.',
-      ApiFailureTransport() =>
-        'No connection to the server. We could not confirm your PIN.',
-      ApiFailureUnreadableResponse() =>
-        'We could not read the server\'s reply. Try again.',
-      ApiFailureValidation() => 'Enter a 6-digit PIN.',
-      _ => 'We could not verify your PIN. Try again.',
+        localizations.authVerificationUnavailable,
+      ApiFailureServerFault() => localizations.authPinVerifyServerFault,
+      ApiFailureTransport() => localizations.authPinVerifyTransport,
+      ApiFailureUnreadableResponse() => localizations.genericReadUnreadable,
+      ApiFailureValidation() => localizations.authEnterSixDigitPin,
+      _ => localizations.authPinVerifyGeneric,
     };
   }
 
-  String _resendMessageFor(ApiFailure failure) {
+  String _resendMessageFor(ApiFailure failure, AppLocalizations localizations) {
     return switch (failure) {
       ApiFailureVerificationResendCooldown() =>
-        'A PIN was sent to this email recently. Try again shortly.',
+        localizations.authPinRecentlySent,
       ApiFailurePinEmailDeliveryFailed() =>
-        'We could not confirm the PIN email was sent. Check your inbox before '
-            'trying again.',
+        localizations.authPinEmailUnconfirmed,
       ApiFailureRateLimited(:final retryAfter) =>
         retryAfter != null
-            ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
-            : 'Too many attempts. Try again shortly.',
-      ApiFailureServerUnavailable() =>
-        'PIN delivery is temporarily unavailable. Try again shortly.',
-      ApiFailureTransport() =>
-        'No connection to the server. We could not request a new PIN.',
-      _ => 'We could not request a new PIN. Try again.',
+            ? localizations.authTooManyAttemptsWithWait(retryAfter.inSeconds)
+            : localizations.genericReadRateLimited,
+      ApiFailureServerUnavailable() => localizations.authResetResendUnavailable,
+      ApiFailureTransport() => localizations.authResetResendTransport,
+      _ => localizations.authResetResendGeneric,
     };
   }
 }

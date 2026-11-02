@@ -10,6 +10,7 @@ import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/password_reset_continuation_store.dart';
 import 'package:stash_it_app/features/auth/presentation/password_reset_request_screen.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_http.dart';
@@ -125,7 +126,10 @@ void main() {
     );
   }
 
-  Future<void> pumpBare(WidgetTester tester) async {
+  Future<void> pumpBare(
+    WidgetTester tester, {
+    Locale locale = const Locale('en'),
+  }) async {
     container.read(appDioProvider).httpClientAdapter = adapter;
     container.read(refreshDioProvider).httpClientAdapter = adapter;
 
@@ -135,6 +139,9 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          locale: locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: const PasswordResetRequestScreen(),
         ),
       ),
@@ -180,6 +187,8 @@ void main() {
         child: MaterialApp.router(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           routerConfig: router,
         ),
       ),
@@ -194,6 +203,32 @@ void main() {
     await tester.tap(button);
     await tester.pumpAndSettle();
   }
+
+  testWidgets('renders Indonesian request labels, actions and validation', (
+    tester,
+  ) async {
+    await pumpBare(tester, locale: const Locale('id'));
+
+    expect(find.text('Reset kata sandi Anda'), findsOneWidget);
+    expect(
+      find.text(
+        'Masukkan alamat email Anda. Jika akun tersedia, kami akan mengirim '
+        'PIN untuk mengonfirmasinya.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Email'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Kirim PIN reset'), findsOneWidget);
+    expect(
+      find.widgetWithText(AppButton, 'Kembali ke halaman masuk'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.widgetWithText(AppButton, 'Kirim PIN reset'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Masukkan alamat email Anda.'), findsOneWidget);
+  });
 
   testWidgets(
     'with nothing stored it shows the email form and sends no request',
@@ -329,7 +364,10 @@ void main() {
 
     expect(find.byType(TextFormField), findsOneWidget);
     expect(
-      find.text('This password reset is no longer active. Request a new one.'),
+      find.text(
+        'This password reset is no longer active. Request a new one to '
+        'continue.',
+      ),
       findsOneWidget,
     );
     expect(

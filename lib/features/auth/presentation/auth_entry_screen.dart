@@ -6,9 +6,9 @@ import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/pending_urls/application/pending_urls_controller.dart';
 import 'package:stash_it_app/features/pending_urls/presentation/widgets/pending_urls_entry.dart';
-import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 /// The landing screen for signed-out users.
@@ -47,6 +47,7 @@ class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final pendingCount = ref.watch(pendingUrlCountProvider);
 
@@ -68,14 +69,14 @@ class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
                   const AuthBrandRow(),
                   const SizedBox(height: AppMetrics.space5),
                   Text(
-                    'A place for things you find on the internet.',
+                    l10n.authEntryHeadline,
                     style: AppTypography.screenHeading.copyWith(
                       color: tokens.textPrimary,
                     ),
                   ),
                   const SizedBox(height: AppMetrics.space1),
                   Text(
-                    'Save a link from any browser, then find it again here.',
+                    l10n.authEntryDescription,
                     style: AppTypography.body.copyWith(
                       color: tokens.textSecondary,
                     ),
@@ -83,7 +84,7 @@ class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
                   if (_showSessionEnded) ...[
                     const SizedBox(height: AppMetrics.space4),
                     AuthMessageBand(
-                      message: sessionEndedMessage,
+                      message: l10n.sessionEnded,
                       // A session expiry is a warning, not a user-caused failure.
                       tone: AuthMessageTone.warning,
                       onDismiss: _dismissSessionEnded,
@@ -91,13 +92,13 @@ class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
                   ],
                   const SizedBox(height: AppMetrics.space6),
                   AppButton(
-                    label: 'Sign in',
+                    label: l10n.authSignIn,
                     variant: AppButtonVariant.primary,
                     onPressed: () => context.go(AppRoutes.signIn),
                   ),
                   const SizedBox(height: AppMetrics.space3),
                   AppButton(
-                    label: 'Create an account',
+                    label: l10n.authCreateAnAccount,
                     variant: AppButtonVariant.secondary,
                     onPressed: () => context.go(AppRoutes.signUp),
                   ),

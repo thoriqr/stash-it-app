@@ -8,6 +8,7 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/data/models/account_link_confirmation_response.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 /// Confirms linking a Google identity to an existing Stash-it account.
@@ -192,7 +193,7 @@ class _GoogleAccountLinkScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Link your Google account',
+          AppLocalizations.of(context).authLinkYourGoogleAccount,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
@@ -204,37 +205,27 @@ class _GoogleAccountLinkScreenState
   }
 
   Widget _buildTerminal(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     final copy = switch (_terminal!) {
       _AccountLinkTerminal.invalid => (
-        title: 'Link unavailable',
-        body:
-            'This account-link request is no longer active. It may have expired '
-            'or already been used. Start again with Google to sign in.',
+        title: l10n.authLinkInvalidTitle,
+        body: l10n.authLinkInvalidBody,
       ),
       _AccountLinkTerminal.identityMismatch => (
-        title: 'Different Google account',
-        body:
-            'The Google account used here does not match the one this link was '
-            'started with. Start again and choose the account you originally '
-            'used.',
+        title: l10n.authLinkDifferentAccountTitle,
+        body: l10n.authLinkDifferentAccountBody,
       ),
       _AccountLinkTerminal.expiredToken => (
-        title: 'Google sign-in expired',
-        body:
-            'Google no longer accepts the sign-in used for this link. Start '
-            'again with Google to continue.',
+        title: l10n.authGoogleSignInExpiredTitle,
+        body: l10n.authGoogleSignInExpiredBody,
       ),
       _AccountLinkTerminal.sessionFailed => (
-        title: 'Accounts linked',
-        body:
-            'Your Google account is now linked, but signing in did not finish. '
-            'Continue with Google again to sign in.',
+        title: l10n.authAccountsLinkedTitle,
+        body: l10n.authAccountsLinkedBody,
       ),
       _AccountLinkTerminal.alreadyLinked => (
-        title: 'Google account already linked',
-        body:
-            'This Google account is already linked to a Stash-it account. '
-            'Continue with Google to sign in.',
+        title: l10n.authGoogleAlreadyLinkedTitle,
+        body: l10n.authGoogleAlreadyLinkedBody,
       ),
     };
 
@@ -255,7 +246,7 @@ class _GoogleAccountLinkScreenState
         ),
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.primary,
           onPressed: _startAgain,
         ),
@@ -264,31 +255,32 @@ class _GoogleAccountLinkScreenState
   }
 
   Widget _buildLoadError(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     final failure = _loadFailure!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Link your Google account',
+          l10n.authLinkYourGoogleAccount,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
         ),
         const SizedBox(height: AppMetrics.space4),
         AuthMessageBand(
-          message: _loadMessageFor(failure),
+          message: _loadMessageFor(failure, l10n),
           tone: AuthMessageTone.danger,
         ),
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Retry',
+          label: l10n.authRetry,
           variant: AppButtonVariant.primary,
           onPressed: _load,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.quiet,
           onPressed: _startAgain,
         ),
@@ -297,6 +289,7 @@ class _GoogleAccountLinkScreenState
   }
 
   Widget _buildConfirmation(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     final confirmation = _confirmation!;
     final displayName = confirmation.displayNameSnapshot.trim();
     final maskedEmail = confirmation.maskedUserEmail.trim();
@@ -306,7 +299,7 @@ class _GoogleAccountLinkScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Link your Google account',
+          l10n.authLinkYourGoogleAccount,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
@@ -314,37 +307,35 @@ class _GoogleAccountLinkScreenState
         const SizedBox(height: AppMetrics.space1),
         Text(
           maskedEmail.isEmpty
-              ? 'Stash-it found an existing account for this email. Link the '
-                    'Google account you just verified to it?'
-              : 'Stash-it found an existing account for $maskedEmail. Link the '
-                    'Google account you just verified to it?',
+              ? l10n.authLinkExistingAccount
+              : l10n.authLinkExistingAccountForEmail(maskedEmail),
           style: AppTypography.body.copyWith(color: tokens.textSecondary),
         ),
         if (displayName.isNotEmpty) ...[
           const SizedBox(height: AppMetrics.space3),
           Text(
-            'Google profile: $displayName',
+            l10n.authGoogleProfile(displayName),
             style: AppTypography.meta.copyWith(color: tokens.textSecondary),
           ),
         ],
         if (_submitFailure case final failure?) ...[
           const SizedBox(height: AppMetrics.space4),
           AuthMessageBand(
-            message: _submitMessageFor(failure),
+            message: _submitMessageFor(failure, l10n),
             onDismiss: () => setState(() => _submitFailure = null),
             tone: AuthMessageTone.danger,
           ),
         ],
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Link account',
+          label: l10n.authLinkAccount,
           variant: AppButtonVariant.primary,
           busy: _submitting,
           onPressed: _submitting ? null : _confirm,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Cancel',
+          label: l10n.authCancel,
           variant: AppButtonVariant.quiet,
           onPressed: _submitting ? null : _startAgain,
         ),
@@ -352,40 +343,30 @@ class _GoogleAccountLinkScreenState
     );
   }
 
-  String _loadMessageFor(ApiFailure failure) {
+  String _loadMessageFor(ApiFailure failure, AppLocalizations localizations) {
     return switch (failure) {
       ApiFailureRateLimited(:final retryAfter) =>
         retryAfter != null
-            ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
-            : 'Too many attempts. Try again shortly.',
-      ApiFailureServerUnavailable() =>
-        'Account linking is temporarily unavailable. Try again shortly.',
-      ApiFailureTransport() =>
-        'No connection to the server. We could not check this link.',
-      ApiFailureUnreadableResponse() =>
-        'We could not read the server\'s reply. Try again.',
-      _ => 'We could not check this link. Try again.',
+            ? localizations.authTooManyAttemptsWithWait(retryAfter.inSeconds)
+            : localizations.genericReadRateLimited,
+      ApiFailureServerUnavailable() => localizations.authLinkUnavailableShort,
+      ApiFailureTransport() => localizations.authLinkCheckTransport,
+      ApiFailureUnreadableResponse() => localizations.genericReadUnreadable,
+      _ => localizations.authLinkCheckGeneric,
     };
   }
 
-  String _submitMessageFor(ApiFailure failure) {
+  String _submitMessageFor(ApiFailure failure, AppLocalizations localizations) {
     return switch (failure) {
       ApiFailureRateLimited(:final retryAfter) =>
         retryAfter != null
-            ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
-            : 'Too many attempts. Try again shortly.',
-      ApiFailureServerUnavailable() =>
-        'Account linking is temporarily unavailable. Try again shortly.',
-      ApiFailureTransport() =>
-        'We could not confirm whether the link completed. Continue with Google '
-            'to sign in; if it was not linked, start again.',
-      ApiFailureUnreadableResponse() =>
-        'We could not confirm whether the link completed. Continue with Google '
-            'to sign in; if it was not linked, start again.',
-      ApiFailureServerFault() =>
-        'We could not confirm whether the link completed. Continue with Google '
-            'to sign in; if it was not linked, start again.',
-      _ => 'We could not link this account. Try again.',
+            ? localizations.authTooManyAttemptsWithWait(retryAfter.inSeconds)
+            : localizations.genericReadRateLimited,
+      ApiFailureServerUnavailable() => localizations.authLinkUnavailableShort,
+      ApiFailureTransport() ||
+      ApiFailureUnreadableResponse() ||
+      ApiFailureServerFault() => localizations.authLinkOutcomeUnconfirmed,
+      _ => localizations.authLinkFailed,
     };
   }
 }

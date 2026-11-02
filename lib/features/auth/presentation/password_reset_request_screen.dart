@@ -9,6 +9,7 @@ import 'package:stash_it_app/features/auth/application/password_reset_recovery.d
 import 'package:stash_it_app/features/auth/data/password_reset_continuation_store.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -105,9 +106,9 @@ class _PasswordResetRequestScreenState
       // safe because a new request never clears the saved record.
       setState(() {
         _mode = _RequestMode.form;
-        _failureMessage =
-            'We could not check for a saved password reset. You can request a '
-            'new one.';
+        _failureMessage = AppLocalizations.of(
+          context,
+        ).authResetSavedCheckFailure;
       });
     }
   }
@@ -147,9 +148,9 @@ class _PasswordResetRequestScreenState
             _stored = null;
             _mode = _RequestMode.form;
             _savedResetNotice = null;
-            _failureMessage =
-                'This password reset was already completed. Sign in with your '
-                'new password, or request a new reset.';
+            _failureMessage = AppLocalizations.of(
+              context,
+            ).authResetAlreadyCompletedNotice;
           });
           return;
 
@@ -161,16 +162,19 @@ class _PasswordResetRequestScreenState
             _stored = null;
             _mode = _RequestMode.form;
             _savedResetNotice = null;
-            _failureMessage =
-                'Your previous password reset is no longer active. Request a '
-                'new one.';
+            _failureMessage = AppLocalizations.of(
+              context,
+            ).authResetPreviousInactive;
           });
           return;
 
         case PasswordResetContinuationOutcome.unconfirmed:
           setState(() {
             _checkingStored = false;
-            _failureMessage = _continuationCheckMessageFor(failure);
+            _failureMessage = _continuationCheckMessageFor(
+              failure,
+              AppLocalizations.of(context),
+            );
           });
           return;
       }
@@ -178,8 +182,9 @@ class _PasswordResetRequestScreenState
       if (!mounted) return;
       setState(() {
         _checkingStored = false;
-        _failureMessage =
-            'We could not check your saved password reset. Try again.';
+        _failureMessage = AppLocalizations.of(
+          context,
+        ).authResetSavedCheckGeneric;
       });
     }
   }
@@ -199,7 +204,10 @@ class _PasswordResetRequestScreenState
     if (stored != null && normalizePasswordResetEmail(email) == stored.email) {
       setState(() {
         _mode = _RequestMode.continueReset;
-        _savedResetNotice = _savedResetMessage(stored.email);
+        _savedResetNotice = _savedResetMessage(
+          stored.email,
+          AppLocalizations.of(context),
+        );
         _failureMessage = null;
       });
       return;
@@ -284,8 +292,7 @@ class _PasswordResetRequestScreenState
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _failureMessage =
-            'Something went wrong starting the password reset. Try again.';
+        _failureMessage = AppLocalizations.of(context).authResetStartGeneric;
       });
     }
   }
@@ -324,7 +331,10 @@ class _PasswordResetRequestScreenState
           _submitting = false;
           _stored = saved;
           _mode = _RequestMode.continueReset;
-          _savedResetNotice = _savedResetMessage(saved.email);
+          _savedResetNotice = _savedResetMessage(
+            saved.email,
+            AppLocalizations.of(context),
+          );
           _failureMessage = null;
         });
         return;
@@ -342,8 +352,9 @@ class _PasswordResetRequestScreenState
       setState(() {
         _submitting = false;
         _mode = _RequestMode.form;
-        _failureMessage =
-            'This password reset is no longer active. Request a new one.';
+        _failureMessage = AppLocalizations.of(
+          context,
+        ).authResetNoLongerActiveBody;
       });
       return;
     }
@@ -361,15 +372,16 @@ class _PasswordResetRequestScreenState
     if (failure is ApiFailurePasswordResetAlreadyPending) {
       setState(() {
         _submitting = false;
-        _failureMessage =
-            'A password reset is already in progress. Try again shortly.';
+        _failureMessage = AppLocalizations.of(
+          context,
+        ).authResetAlreadyInProgress;
       });
       return;
     }
 
     setState(() {
       _submitting = false;
-      _failureMessage = _startMessageFor(failure);
+      _failureMessage = _startMessageFor(failure, AppLocalizations.of(context));
     });
   }
 
@@ -383,52 +395,43 @@ class _PasswordResetRequestScreenState
     }
   }
 
-  String _startMessageFor(ApiFailure failure) {
+  String _startMessageFor(ApiFailure failure, AppLocalizations localizations) {
     return switch (failure) {
       ApiFailureRateLimited(:final retryAfter) =>
         retryAfter != null
-            ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
-            : 'Too many attempts. Try again shortly.',
-      ApiFailureServerUnavailable() =>
-        'Password reset is temporarily unavailable. Try again shortly.',
-      ApiFailureServerFault() =>
-        'We could not start the password reset. Try again shortly.',
-      ApiFailureTransport() =>
-        'No connection to the server. We could not start the password reset.',
-      ApiFailureUnreadableResponse() =>
-        'We could not read the server\'s reply, so we could not start the '
-            'password reset. Try again.',
+            ? localizations.authTooManyAttemptsWithWait(retryAfter.inSeconds)
+            : localizations.genericReadRateLimited,
+      ApiFailureServerUnavailable() => localizations.authResetUnavailableShort,
+      ApiFailureServerFault() => localizations.authResetStartServerFault,
+      ApiFailureTransport() => localizations.authResetStartTransport,
+      ApiFailureUnreadableResponse() => localizations.authResetStartUnreadable,
       ApiFailurePinEmailDeliveryFailed() =>
-        'We could not confirm the PIN email was sent. Check your inbox before '
-            'trying again.',
-      ApiFailureValidation() => 'Check your email address, then try again.',
-      _ => 'We could not start the password reset. Try again.',
+        localizations.authPinEmailUnconfirmed,
+      ApiFailureValidation() => localizations.authCheckEmailThenTryAgain,
+      _ => localizations.authResetStartGeneric,
     };
   }
 
-  String _continuationCheckMessageFor(ApiFailure failure) {
+  String _continuationCheckMessageFor(
+    ApiFailure failure,
+    AppLocalizations localizations,
+  ) {
     return switch (failure) {
-      ApiFailureTransport() =>
-        'No connection to the server. We could not check your saved password '
-            'reset. Try again.',
+      ApiFailureTransport() => localizations.authResetSavedCheckTransport,
       ApiFailureUnreadableResponse() =>
-        'We could not confirm whether your saved password reset is still '
-            'active. Try again.',
+        localizations.authResetSavedCheckUnreadable,
       ApiFailureRateLimited(:final retryAfter) =>
         retryAfter != null
-            ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
-            : 'Too many attempts. Try again shortly.',
-      ApiFailureServerUnavailable() =>
-        'Password reset is temporarily unavailable. Try again shortly.',
-      ApiFailureServerFault() =>
-        'We could not check your saved password reset. Try again shortly.',
-      _ => 'We could not check your saved password reset. Try again.',
+            ? localizations.authTooManyAttemptsWithWait(retryAfter.inSeconds)
+            : localizations.genericReadRateLimited,
+      ApiFailureServerUnavailable() => localizations.authResetUnavailableShort,
+      ApiFailureServerFault() => localizations.authResetSavedCheckServerFault,
+      _ => localizations.authResetSavedCheckGeneric,
     };
   }
 
-  String _savedResetMessage(String email) =>
-      'A saved password reset for $email is available on this device. '
-      'Continue it, or use a different email.';
+  String _savedResetMessage(String email, AppLocalizations localizations) =>
+      localizations.authResetSavedContinueMessage(email);
 
   void _openSignIn() => context.go(AppRoutes.signIn);
 
@@ -483,7 +486,7 @@ class _PasswordResetRequestScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Reset your password',
+          AppLocalizations.of(context).authResetPasswordTitle,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
@@ -495,6 +498,8 @@ class _PasswordResetRequestScreenState
   }
 
   Widget _buildForm(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
+
     return Form(
       key: _formKey,
       child: Column(
@@ -502,20 +507,19 @@ class _PasswordResetRequestScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Reset your password',
+            l10n.authResetPasswordTitle,
             style: AppTypography.screenHeading.copyWith(
               color: tokens.textPrimary,
             ),
           ),
           const SizedBox(height: AppMetrics.space1),
           Text(
-            'Enter your email address. If an account exists, we will send a '
-            'PIN to confirm it.',
+            l10n.authResetRequestDescription,
             style: AppTypography.body.copyWith(color: tokens.textSecondary),
           ),
           const SizedBox(height: AppMetrics.space6),
           AppField(
-            label: 'Email',
+            label: l10n.authEmailLabel,
             controller: _emailController,
             enabled: !_submitting,
             keyboardType: TextInputType.emailAddress,
@@ -524,12 +528,12 @@ class _PasswordResetRequestScreenState
             onSubmitted: (_) => _submit(),
             validator: (value) {
               final email = value?.trim() ?? '';
-              if (email.isEmpty) return 'Enter your email address.';
+              if (email.isEmpty) return l10n.authEnterEmail;
               if (!RegExp(r'^[^@\s]+@[^@\s]+$').hasMatch(email)) {
-                return 'Enter a valid email address.';
+                return l10n.authInvalidEmail;
               }
               if (email.length > 255) {
-                return 'That email address is too long.';
+                return l10n.authEmailTooLong;
               }
               return null;
             },
@@ -544,14 +548,14 @@ class _PasswordResetRequestScreenState
           ],
           const SizedBox(height: AppMetrics.space6),
           AppButton(
-            label: 'Send reset PIN',
+            label: l10n.authSendResetPin,
             variant: AppButtonVariant.primary,
             busy: _submitting,
             onPressed: _submitting ? null : _submit,
           ),
           const SizedBox(height: AppMetrics.space3),
           AppButton(
-            label: 'Back to sign in',
+            label: l10n.authBackToSignIn,
             variant: AppButtonVariant.quiet,
             onPressed: _submitting ? null : _openSignIn,
           ),
@@ -561,6 +565,7 @@ class _PasswordResetRequestScreenState
   }
 
   Widget _buildContinue(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     final stored = _stored!;
 
     return Column(
@@ -568,15 +573,14 @@ class _PasswordResetRequestScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Continue password reset',
+          l10n.authResetContinueTitle,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
         ),
         const SizedBox(height: AppMetrics.space1),
         Text(
-          _savedResetNotice ??
-              'A password reset is in progress for ${stored.email}.',
+          _savedResetNotice ?? l10n.authResetInProgressFor(stored.email),
           style: AppTypography.body.copyWith(color: tokens.textSecondary),
         ),
         if (_failureMessage case final message?) ...[
@@ -589,20 +593,20 @@ class _PasswordResetRequestScreenState
         ],
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Continue',
+          label: l10n.authContinue,
           variant: AppButtonVariant.primary,
           busy: _checkingStored,
           onPressed: _checkingStored ? null : _continueStored,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Use a different email',
+          label: l10n.authUseDifferentEmail,
           variant: AppButtonVariant.secondary,
           onPressed: _checkingStored ? null : _useDifferentEmail,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.quiet,
           onPressed: _checkingStored ? null : _openSignIn,
         ),
@@ -611,22 +615,21 @@ class _PasswordResetRequestScreenState
   }
 
   Widget _buildWaiting(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Reset already verified',
+          l10n.authResetAlreadyVerifiedTitle,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
         ),
         const SizedBox(height: AppMetrics.space1),
         Text(
-          'This password reset was already verified, but this device does not '
-          'have a usable saved reset for this email. Requesting another PIN is '
-          'not possible. The reset expires within 15 minutes; after that you can '
-          'request a new one.',
+          l10n.authResetAlreadyVerifiedWaitingBody,
           style: AppTypography.body.copyWith(color: tokens.textSecondary),
         ),
         if (_failureMessage case final message?) ...[
@@ -639,14 +642,14 @@ class _PasswordResetRequestScreenState
         ],
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Try again',
+          label: l10n.authTryAgain,
           variant: AppButtonVariant.primary,
           busy: _submitting,
           onPressed: _submitting ? null : _retryWaiting,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.quiet,
           onPressed: _submitting ? null : _openSignIn,
         ),
@@ -655,31 +658,32 @@ class _PasswordResetRequestScreenState
   }
 
   Widget _buildNeutral(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Check your email',
+          l10n.authCheckYourEmail,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
         ),
         const SizedBox(height: AppMetrics.space1),
         Text(
-          'If an account exists for that address, we have sent a password '
-          'reset PIN.',
+          l10n.authResetNeutralBody,
           style: AppTypography.body.copyWith(color: tokens.textSecondary),
         ),
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Use a different email',
+          label: l10n.authUseDifferentEmail,
           variant: AppButtonVariant.secondary,
           onPressed: _useDifferentEmail,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.quiet,
           onPressed: _openSignIn,
         ),
@@ -688,6 +692,7 @@ class _PasswordResetRequestScreenState
   }
 
   Widget _buildPinSent(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     final email = _submittedEmail ?? _emailController.text.trim();
 
     return Column(
@@ -695,19 +700,19 @@ class _PasswordResetRequestScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Check your email',
+          l10n.authCheckYourEmail,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
         ),
         const SizedBox(height: AppMetrics.space1),
         Text(
-          'We sent a password reset PIN to $email.',
+          l10n.authResetPinSentBody(email),
           style: AppTypography.body.copyWith(color: tokens.textSecondary),
         ),
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.secondary,
           onPressed: _openSignIn,
         ),

@@ -1,7 +1,9 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/core/error/api_error_body.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
-import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
+import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 /// The client-owned copy for a failed sign-in.
 ///
@@ -11,20 +13,23 @@ import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
 /// different things; **[D16]** an uncertain outcome never says the attempt did
 /// not happen.
 ///
-/// `messageFor` is a pure function of the typed failure, so it is tested here
-/// directly rather than through a widget.
+/// The mapping is a pure function of the typed failure and the active
+/// localization, so it is tested here directly rather than through a widget.
 void main() {
-  group('messageFor', () {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
+
+  group('authSignInMessageFor', () {
     test('a wrong password and an unknown address read identically', () {
       // The backend answers both with INVALID_CREDENTIALS so the endpoint
       // cannot be used to enumerate registered addresses. Describing them
       // differently here would undo that.
       expect(
-        messageFor(const ApiFailureAuthRequired()),
-        messageFor(const ApiFailureAuthRequired()),
+        authSignInMessageFor(const ApiFailureAuthRequired(), english),
+        authSignInMessageFor(const ApiFailureAuthRequired(), english),
       );
       expect(
-        messageFor(const ApiFailureAuthRequired()),
+        authSignInMessageFor(const ApiFailureAuthRequired(), english),
         "That doesn't look like a valid email or password.",
       );
     });
@@ -33,17 +38,19 @@ void main() {
       'a rate limit reports the countdown only when the server sent one',
       () {
         expect(
-          messageFor(
+          authSignInMessageFor(
             const ApiFailureRateLimited(
               code: 'LOGIN_RATE_LIMIT_EXCEEDED',
               retryAfter: Duration(seconds: 42),
             ),
+            english,
           ),
           contains('42 seconds'),
         );
         expect(
-          messageFor(
+          authSignInMessageFor(
             const ApiFailureRateLimited(code: 'LOGIN_RATE_LIMIT_EXCEEDED'),
+            english,
           ),
           'Too many attempts. Try again shortly.',
           reason: 'a countdown may never be fabricated',
@@ -52,10 +59,14 @@ void main() {
     );
 
     test('a 503 and an offline device are not collapsed into one another', () {
-      final unavailable = messageFor(
+      final unavailable = authSignInMessageFor(
         const ApiFailureServerUnavailable(code: 'SERVICE_UNAVAILABLE'),
+        english,
       );
-      final offline = messageFor(const ApiFailureTransport());
+      final offline = authSignInMessageFor(
+        const ApiFailureTransport(),
+        english,
+      );
 
       expect(unavailable, isNot(offline));
       expect(unavailable, contains('temporarily unavailable'));
@@ -65,7 +76,10 @@ void main() {
     test('an uncertain outcome never states that nothing happened', () {
       // [D16] the request may have been applied even though no answer arrived,
       // so the copy must not claim the account is untouched.
-      final uncertain = messageFor(const ApiFailureTransport());
+      final uncertain = authSignInMessageFor(
+        const ApiFailureTransport(),
+        english,
+      );
 
       expect(uncertain, contains('could not confirm'));
       expect(uncertain, isNot(contains("didn't")));
@@ -76,7 +90,10 @@ void main() {
     test('a server fault is not dressed as uncertainty', () {
       // A 5xx is a known failure of the server, so it must not borrow the
       // "we could not confirm" wording reserved for a lost request.
-      final fault = messageFor(const ApiFailureServerFault());
+      final fault = authSignInMessageFor(
+        const ApiFailureServerFault(),
+        english,
+      );
 
       expect(fault, isNot(contains('could not confirm')));
       expect(fault, contains('could not reach the server'));
@@ -98,7 +115,7 @@ void main() {
       ];
 
       for (final failure in everyFailure) {
-        final copy = messageFor(failure);
+        final copy = authSignInMessageFor(failure, english);
         expect(copy, isNotEmpty, reason: '${failure.runtimeType} has copy');
         expect(
           copy.toLowerCase(),
@@ -113,6 +130,71 @@ void main() {
               'name as user-facing prose',
         );
       }
+    });
+
+    test('typed failures resolve to Indonesian copy', () {
+      expect(
+        authSignInMessageFor(const ApiFailureAuthRequired(), indonesian),
+        'Email atau kata sandi itu tampaknya tidak valid.',
+      );
+      expect(
+        authSignInMessageFor(
+          const ApiFailureRateLimited(
+            code: 'LOGIN_RATE_LIMIT_EXCEEDED',
+            retryAfter: Duration(seconds: 42),
+          ),
+          indonesian,
+        ),
+        contains('42 detik'),
+      );
+      expect(
+        authSignInMessageFor(const ApiFailureTransport(), indonesian),
+        contains('tidak dapat memastikan'),
+      );
+      expect(
+        authSignInMessageFor(const ApiFailureServerFault(), indonesian),
+        contains('tidak dapat menghubungi server'),
+      );
+    });
+  });
+
+  group('authRegistrationMessageFor', () {
+    test('typed registration failures resolve to Indonesian copy', () {
+      expect(
+        authRegistrationMessageFor(
+          const ApiFailureRegistrationAlreadyCompleted(
+            code: 'REGISTRATION_ALREADY_COMPLETED',
+          ),
+          indonesian,
+        ),
+        'Akun dengan email ini sudah ada. Silakan masuk.',
+      );
+      expect(
+        authRegistrationMessageFor(
+          const ApiFailureRateLimited(
+            code: 'PIN_RATE_LIMIT_EXCEEDED',
+            retryAfter: Duration(seconds: 42),
+          ),
+          indonesian,
+        ),
+        contains('42 detik'),
+      );
+      expect(
+        authRegistrationMessageFor(
+          const ApiFailurePinEmailDeliveryFailed(),
+          indonesian,
+        ),
+        contains('tidak dapat memastikan email PIN'),
+      );
+      expect(
+        authRegistrationMessageFor(
+          const ApiFailureRegistrationRestartRequired(
+            code: 'REGISTRATION_RESTART_REQUIRED',
+          ),
+          indonesian,
+        ),
+        'Pendaftaran itu tidak dapat dilanjutkan lagi. Mulai pendaftaran baru.',
+      );
     });
   });
 }

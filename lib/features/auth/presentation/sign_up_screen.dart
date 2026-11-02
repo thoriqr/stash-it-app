@@ -8,10 +8,12 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/application/registration_recovery.dart';
 import 'package:stash_it_app/features/auth/data/auth_repository.dart';
 import 'package:stash_it_app/features/auth/data/registration_continuation_store.dart';
+import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_back_button.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/google_sign_in_button.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -147,7 +149,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         _submitting = false;
         _verifiedBlockedEmail = null;
         _blockedReason = null;
-        _failureMessage = registrationMessageFor(failure);
+        _failureMessage = authRegistrationMessageFor(
+          failure,
+          AppLocalizations.of(context),
+        );
       });
     } catch (_) {
       if (!mounted) return;
@@ -155,8 +160,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         _submitting = false;
         _verifiedBlockedEmail = null;
         _blockedReason = null;
-        _failureMessage =
-            'Something went wrong starting your registration. Try again.';
+        _failureMessage = AppLocalizations.of(context).authSignUpGenericFailure;
       });
     }
   }
@@ -217,9 +221,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           _submitting = false;
           _verifiedBlockedEmail = email;
           _blockedReason = _BlockedReason.noToken;
-          _failureMessage =
-              'We could not match that registration to this email. Try again '
-              'with the same address.';
+          _failureMessage = AppLocalizations.of(
+            context,
+          ).authRegistrationMismatch;
         });
         return;
       }
@@ -248,8 +252,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             _submitting = false;
             _verifiedBlockedEmail = null;
             _blockedReason = null;
-            _failureMessage =
-                'This registration was already completed. Sign in instead.';
+            _failureMessage = AppLocalizations.of(
+              context,
+            ).authRegistrationAlreadyCompletedSignIn;
           });
           return;
 
@@ -262,7 +267,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
               _submitting = false;
               _verifiedBlockedEmail = null;
               _blockedReason = null;
-              _failureMessage = registrationMessageFor(failure);
+              _failureMessage = authRegistrationMessageFor(
+                failure,
+                AppLocalizations.of(context),
+              );
             });
             return;
           }
@@ -275,7 +283,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             _submitting = false;
             _verifiedBlockedEmail = email;
             _blockedReason = _BlockedReason.savedCodeUnconfirmed;
-            _failureMessage = _recoveryMessageFor(failure);
+            _failureMessage = _recoveryMessageFor(
+              failure,
+              AppLocalizations.of(context),
+            );
           });
           return;
       }
@@ -317,7 +328,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         _submitting = false;
         _verifiedBlockedEmail = null;
         _blockedReason = null;
-        _failureMessage = registrationMessageFor(failure);
+        _failureMessage = authRegistrationMessageFor(
+          failure,
+          AppLocalizations.of(context),
+        );
       });
     }
   }
@@ -384,7 +398,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         // proceed through PIN verification or registration finalization.
         setState(() {
           _submitting = false;
-          _failureMessage = 'Recovery could not be started. Try again.';
+          _failureMessage = AppLocalizations.of(
+            context,
+          ).authRecoveryCouldNotStart;
         });
         return;
       }
@@ -418,13 +434,18 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           _verifiedBlockedEmail = null;
           _blockedReason = null;
         }
-        _failureMessage = _recoveryStartMessageFor(failure);
+        _failureMessage = _recoveryStartMessageFor(
+          failure,
+          AppLocalizations.of(context),
+        );
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _failureMessage = 'Something went wrong starting recovery. Try again.';
+        _failureMessage = AppLocalizations.of(
+          context,
+        ).authRecoveryGenericFailure;
       });
     }
   }
@@ -461,32 +482,31 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     }
   }
 
-  String _recoveryMessageFor(ApiFailure failure) {
+  String _recoveryMessageFor(
+    ApiFailure failure,
+    AppLocalizations localizations,
+  ) {
     return switch (failure) {
-      ApiFailureTransport() =>
-        'No connection to the server. We could not check that registration. '
-            'Try again.',
+      ApiFailureTransport() => localizations.authRegistrationCheckTransport,
       ApiFailureUnreadableResponse() =>
-        'We could not read the server\'s reply, so we could not check that '
-            'registration. Try again.',
-      ApiFailureServerUnavailable() || ApiFailureServerFault() =>
-        'We could not check that registration. Try again shortly.',
-      _ => registrationMessageFor(failure),
+        localizations.authRegistrationCheckUnreadable,
+      ApiFailureServerUnavailable() ||
+      ApiFailureServerFault() => localizations.authRegistrationCheckUnavailable,
+      _ => authRegistrationMessageFor(failure, localizations),
     };
   }
 
-  String _recoveryStartMessageFor(ApiFailure failure) {
+  String _recoveryStartMessageFor(
+    ApiFailure failure,
+    AppLocalizations localizations,
+  ) {
     return switch (failure) {
-      ApiFailureTransport() =>
-        'No connection to the server. We could not start recovery. Try again.',
-      ApiFailureUnreadableResponse() =>
-        'We could not confirm whether recovery started. Try again.',
-      ApiFailureServerUnavailable() =>
-        'Recovery is temporarily unavailable. Try again shortly.',
-      ApiFailureServerFault() =>
-        'We could not start recovery. Try again shortly.',
-      ApiFailureValidation() => 'Check your email address, then try again.',
-      _ => registrationMessageFor(failure),
+      ApiFailureTransport() => localizations.authRecoveryTransport,
+      ApiFailureUnreadableResponse() => localizations.authRecoveryUnreadable,
+      ApiFailureServerUnavailable() => localizations.authRecoveryUnavailable,
+      ApiFailureServerFault() => localizations.authRecoveryServerFault,
+      ApiFailureValidation() => localizations.authCheckEmailThenTryAgain,
+      _ => authRegistrationMessageFor(failure, localizations),
     };
   }
 
@@ -546,6 +566,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   /// Email form shown before registration progresses.
   Widget _buildForm(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
+
     return Form(
       key: _formKey,
       child: Column(
@@ -553,19 +575,19 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Create your account',
+            l10n.authSignUpTitle,
             style: AppTypography.screenHeading.copyWith(
               color: tokens.textPrimary,
             ),
           ),
           const SizedBox(height: AppMetrics.space1),
           Text(
-            'Enter your email address. We will send you a PIN to confirm it.',
+            l10n.authSignUpDescription,
             style: AppTypography.body.copyWith(color: tokens.textSecondary),
           ),
           const SizedBox(height: AppMetrics.space6),
           AppField(
-            label: 'Email',
+            label: l10n.authEmailLabel,
             controller: _emailController,
             enabled: !_submitting && !_googleBusy,
             keyboardType: TextInputType.emailAddress,
@@ -574,9 +596,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             onSubmitted: (_) => _submit(),
             validator: (value) {
               final email = value?.trim() ?? '';
-              if (email.isEmpty) return 'Enter your email address.';
+              if (email.isEmpty) return l10n.authEnterEmail;
               if (!RegExp(r'^[^@\s]+@[^@\s]+$').hasMatch(email)) {
-                return 'Enter a valid email address.';
+                return l10n.authInvalidEmail;
               }
               return null;
             },
@@ -591,7 +613,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           ],
           const SizedBox(height: AppMetrics.space6),
           AppButton(
-            label: 'Send PIN',
+            label: l10n.authSendPin,
             variant: AppButtonVariant.primary,
             busy: _submitting,
             onPressed: _googleBusy ? null : _submit,
@@ -614,25 +636,26 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   ///
   /// It confirms only that a PIN was sent, not that an account has been created.
   Widget _buildPinSent(AppTokens tokens, String email) {
+    final l10n = AppLocalizations.of(context);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Check your email',
+          l10n.authCheckYourEmail,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
         ),
         const SizedBox(height: AppMetrics.space1),
         Text(
-          'We sent a PIN to $email. You will need it to finish creating your '
-          'account.',
+          l10n.authPinSentToEmail(email),
           style: AppTypography.body.copyWith(color: tokens.textSecondary),
         ),
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.secondary,
           onPressed: _openSignIn,
         ),
@@ -646,6 +669,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   /// again or replaced through explicit recovery. This view never starts recovery
   /// automatically.
   Widget _buildVerifiedBlocked(AppTokens tokens, String email) {
+    final l10n = AppLocalizations.of(context);
     final savedCodeUnconfirmed =
         _blockedReason == _BlockedReason.savedCodeUnconfirmed;
 
@@ -654,7 +678,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Verification already complete',
+          l10n.authVerificationComplete,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
@@ -662,12 +686,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         const SizedBox(height: AppMetrics.space1),
         Text(
           savedCodeUnconfirmed
-              ? 'We could not check the code saved on this device for $email. '
-                    'Try again, or recover the registration with a new PIN. '
-                    'Recovering replaces this device\'s saved code.'
-              : 'This email has already been verified, but this device does not '
-                    'have the code needed to finish it. Recover it with a new '
-                    'PIN sent to $email.',
+              ? l10n.authVerifiedSavedCodeUnconfirmed(email)
+              : l10n.authVerifiedNoToken(email),
           style: AppTypography.body.copyWith(color: tokens.textSecondary),
         ),
         if (_failureMessage case final message?) ...[
@@ -681,34 +701,34 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         const SizedBox(height: AppMetrics.space6),
         if (savedCodeUnconfirmed) ...[
           AppButton(
-            label: 'Try again',
+            label: l10n.authTryAgain,
             variant: AppButtonVariant.primary,
             busy: _submitting,
             onPressed: _submitting ? null : _retrySavedCode,
           ),
           const SizedBox(height: AppMetrics.space3),
           AppButton(
-            label: 'Recover this registration',
+            label: l10n.authRecoverRegistration,
             variant: AppButtonVariant.secondary,
             onPressed: _submitting ? null : _recoverRegistration,
           ),
         ] else ...[
           AppButton(
-            label: 'Recover this registration',
+            label: l10n.authRecoverRegistration,
             variant: AppButtonVariant.primary,
             busy: _submitting,
             onPressed: _submitting ? null : _recoverRegistration,
           ),
           const SizedBox(height: AppMetrics.space3),
           AppButton(
-            label: 'Use a different email',
+            label: l10n.authUseDifferentEmail,
             variant: AppButtonVariant.secondary,
             onPressed: _submitting ? null : _useDifferentEmail,
           ),
         ],
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.quiet,
           onPressed: _submitting ? null : _openSignIn,
         ),
@@ -749,6 +769,7 @@ class _SignInPrompt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Row(
@@ -756,12 +777,12 @@ class _SignInPrompt extends StatelessWidget {
       children: [
         Flexible(
           child: Text(
-            'Already have an account?',
+            l10n.authAlreadyHaveAccount,
             style: AppTypography.meta.copyWith(color: tokens.textSecondary),
           ),
         ),
         AppButton(
-          label: 'Sign in',
+          label: l10n.authSignIn,
           variant: AppButtonVariant.quiet,
           small: true,
           block: false,
@@ -770,103 +791,4 @@ class _SignInPrompt extends StatelessWidget {
       ],
     );
   }
-}
-
-/// Returns client-owned messages for registration failures and incomplete outcomes.
-///
-/// Messages are selected from typed [ApiFailure] values. Each failure retains
-/// its own correction, and uncertain outcomes are not presented as confirmed
-/// failures. In particular, an unreadable PIN response does not prove that the
-/// PIN was not issued or emailed.
-String registrationMessageFor(ApiFailure failure) {
-  return switch (failure) {
-    // Registration is complete; direct the user to sign in instead.
-    ApiFailureRegistrationAlreadyCompleted() =>
-      'An account already exists for this email. Sign in instead.',
-
-    // The normal verification is still pending; continue with that flow.
-    ApiFailureRegistrationAlreadyPending() =>
-      'This registration is already waiting for a PIN. Continue with that step.',
-
-    // Another registration attempt is already in progress; retry without changing
-    // the email address.
-    ApiFailureRegistrationRetryable() =>
-      'Another sign-up attempt was already in progress. Try again.',
-
-    // This email is already being registered with a different Google account.
-    ApiFailureRegistrationIdentityMismatch() =>
-      'A sign-up for this email is already in progress with a different '
-          'Google account. Try again after it expires.',
-
-    ApiFailureRegistrationRestartRequired() =>
-      'That registration can no longer continue. Start a new one.',
-
-    // This response provides no countdown, so show a short cooldown message.
-    ApiFailureVerificationResendCooldown() =>
-      'A PIN was sent to this email recently. Try again shortly.',
-
-    // PIN creation succeeded, but email delivery could not be confirmed.
-    ApiFailurePinEmailDeliveryFailed() =>
-      'We could not confirm the PIN email was sent. Check your inbox before '
-          'trying again.',
-
-    ApiFailureRateLimited(:final retryAfter) =>
-      retryAfter != null
-          ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
-          : 'Too many attempts. Try again shortly.',
-
-    ApiFailureServerUnavailable() =>
-      'Sign-up is temporarily unavailable. Try again shortly.',
-
-    ApiFailureServerFault() =>
-      'The server could not start your registration. Try again shortly.',
-
-    // The request may have been applied even though no response arrived.
-    ApiFailureTransport() =>
-      'No connection to the server. We could not confirm whether your '
-          'registration started.',
-
-    // An unreadable response does not establish whether registration started or
-    // a PIN was sent. Ask the user to check the inbox before retrying.
-    ApiFailureUnreadableResponse() =>
-      'We could not read the server\'s reply, so we cannot confirm whether your '
-          'registration started or a PIN was sent. Check your inbox before '
-          'trying again.',
-
-    ApiFailureValidation() => 'Check your email address, then try again.',
-
-    // These outcomes mean the saved continuation cannot be used; start a new flow.
-    ApiFailureRegistrationContinuationExpired() ||
-    ApiFailureRegistrationContinuationRequired() ||
-    ApiFailureInvalidRegistrationType() =>
-      'That registration can no longer continue. Start a new one.',
-
-    // A consumed continuation means registration is complete; direct the user to sign in.
-    ApiFailureRegistrationContinuationConsumed() =>
-      'This registration was already completed. Sign in instead.',
-
-    // These failures are not expected during registration start. Keep the mapping
-    // exhaustive and use the general registration error message.
-    ApiFailureNotFound() ||
-    ApiFailureUserNotFound() ||
-    ApiFailureCurrentPasswordInvalid() ||
-    ApiFailureCurrentPasswordRequired() ||
-    ApiFailureUnexpectedCurrentPassword() ||
-    ApiFailurePasswordCredentialAlreadyExists() ||
-    ApiFailurePasswordAlreadyChanged() ||
-    ApiFailureCollectionNameAlreadyExists() ||
-    ApiFailureCollectionNotEmpty() ||
-    ApiFailureUnsortedCollectionProtected() ||
-    ApiFailureCollectionDeleteTargetNotFound() ||
-    ApiFailureMalformedRequest() ||
-    ApiFailureAuthRequired() ||
-    ApiFailureInvalidVerificationCode() ||
-    ApiFailureVerificationCodeAttemptsExceeded() ||
-    ApiFailureSessionEnded() ||
-    ApiFailureRefreshUncertain() ||
-    ApiFailureCredentialStorage() ||
-    ApiFailurePasswordReset() ||
-    ApiFailureGoogleAuth() =>
-      'We could not start your registration. Try again.',
-  };
 }

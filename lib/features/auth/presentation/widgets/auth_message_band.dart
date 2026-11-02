@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 /// Defines the visual treatment of an authentication message.
 enum AuthMessageTone {
@@ -99,7 +100,7 @@ class AuthMessageBand extends StatelessWidget {
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 visualDensity: VisualDensity.compact,
               ),
-              child: const Text('Dismiss'),
+              child: Text(AppLocalizations.of(context).dismissAction),
             ),
           ],
         ],

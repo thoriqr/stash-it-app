@@ -7,9 +7,9 @@ import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/data/auth_repository.dart';
 import 'package:stash_it_app/features/auth/data/google_auth_service.dart';
-import 'package:stash_it_app/features/auth/presentation/sign_up_screen.dart'
-    show registrationMessageFor;
+import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 /// The shared Google authentication entry point.
@@ -95,14 +95,24 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
       }
     } on GoogleAuthException catch (failure) {
       if (!mounted) return;
-      setState(() => _message = _googleAuthMessage(failure));
+      setState(
+        () => _message = _googleAuthMessage(
+          failure,
+          AppLocalizations.of(context),
+        ),
+      );
     } on ApiFailure catch (failure) {
       if (!mounted) return;
-      setState(() => _message = _googleFailureMessage(failure));
+      setState(
+        () => _message = _googleFailureMessage(
+          failure,
+          AppLocalizations.of(context),
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
       setState(
-        () => _message = 'Google sign-in could not be completed. Try again.',
+        () => _message = AppLocalizations.of(context).authGoogleGenericFailure,
       );
     } finally {
       _setBusy(false);
@@ -124,7 +134,12 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
       // the authoritative cooldown; entering it is the correct continuation.
     } on ApiFailure catch (failure) {
       if (!mounted) return;
-      setState(() => _message = registrationMessageFor(failure));
+      setState(
+        () => _message = authRegistrationMessageFor(
+          failure,
+          AppLocalizations.of(context),
+        ),
+      );
       return;
     }
 
@@ -139,56 +154,52 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
     );
   }
 
-  String _googleAuthMessage(GoogleAuthException failure) {
+  String _googleAuthMessage(
+    GoogleAuthException failure,
+    AppLocalizations localizations,
+  ) {
     return switch (failure.failure) {
-      GoogleAuthFailure.notConfigured =>
-        'Google sign-in is not configured for this build.',
-      GoogleAuthFailure.unavailable =>
-        'Google sign-in could not start. Try again.',
-      GoogleAuthFailure.missingIdToken =>
-        'Google did not return a sign-in token. Try again.',
+      GoogleAuthFailure.notConfigured => localizations.authGoogleNotConfigured,
+      GoogleAuthFailure.unavailable => localizations.authGoogleCouldNotStart,
+      GoogleAuthFailure.missingIdToken => localizations.authGoogleMissingToken,
     };
   }
 
-  String _googleFailureMessage(ApiFailure failure) {
+  String _googleFailureMessage(
+    ApiFailure failure,
+    AppLocalizations localizations,
+  ) {
     return switch (failure) {
-      ApiFailureInvalidGoogleToken() =>
-        'Google could not verify that sign-in. Try again.',
+      ApiFailureInvalidGoogleToken() => localizations.authGoogleInvalidToken,
       ApiFailureRegistrationIdentityMismatch() =>
-        'A registration for this email is already in progress under a '
-            'different account. Try again after it expires.',
+        localizations.authGoogleRegistrationIdentityMismatch,
       ApiFailureAccountLinkSessionFailed() =>
-        'Your accounts were linked, but sign-in did not finish. Continue with '
-            'Google again.',
+        localizations.authGoogleLinkSessionFailed,
       ApiFailureAccountLinkIdentityMismatch() =>
-        'That Google account does not match the account being linked.',
+        localizations.authGoogleLinkIdentityMismatch,
       ApiFailureAccountLinkConfirmationInvalid() =>
-        'This account-link request is no longer active. Start again.',
+        localizations.authGoogleLinkConfirmationInactive,
       ApiFailureRegistrationAlreadyCompleted() =>
-        'This account already exists. Continue with Google or sign in.',
+        localizations.authGoogleAccountExists,
       ApiFailurePinEmailDeliveryFailed() =>
-        'We could not confirm the PIN email was sent. Check your inbox before '
-            'trying again.',
+        localizations.authPinEmailUnconfirmed,
       ApiFailureRateLimited(:final retryAfter) =>
         retryAfter != null
-            ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
-            : 'Too many attempts. Try again shortly.',
-      ApiFailureServerUnavailable() =>
-        'Google sign-in is temporarily unavailable. Try again shortly.',
-      ApiFailureServerFault() =>
-        'We could not start Google sign-in. Try again shortly.',
-      ApiFailureTransport() =>
-        'No connection to the server. We could not start Google sign-in.',
-      ApiFailureUnreadableResponse() =>
-        'We could not read the server\'s reply, so we could not start Google '
-            'sign-in. Try again.',
-      ApiFailureValidation() => 'Check your details, then try again.',
-      _ => 'Google sign-in could not be completed. Try again.',
+            ? localizations.authTooManyAttemptsWithWait(retryAfter.inSeconds)
+            : localizations.genericReadRateLimited,
+      ApiFailureServerUnavailable() => localizations.authGoogleUnavailable,
+      ApiFailureServerFault() => localizations.authGoogleServerFault,
+      ApiFailureTransport() => localizations.authGoogleTransport,
+      ApiFailureUnreadableResponse() => localizations.authGoogleUnreadable,
+      ApiFailureValidation() => localizations.authCheckDetailsThenTryAgain,
+      _ => localizations.authGoogleGenericFailure,
     };
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -202,7 +213,7 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
           const SizedBox(height: AppMetrics.space4),
         ],
         AppButton(
-          label: 'Continue with Google',
+          label: l10n.authContinueWithGoogle,
           variant: AppButtonVariant.secondary,
           busy: _busy,
           onPressed: (_busy || !widget.enabled) ? null : _continueWithGoogle,

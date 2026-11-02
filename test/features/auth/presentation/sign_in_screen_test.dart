@@ -11,6 +11,7 @@ import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/google_auth_service.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -58,7 +59,10 @@ void main() {
 
   /// Pumps the screen with the app's real themes, so the styling under test is
   /// the one that ships.
-  Future<void> pumpSignIn(WidgetTester tester) async {
+  Future<void> pumpSignIn(
+    WidgetTester tester, {
+    Locale locale = const Locale('en'),
+  }) async {
     container.read(appDioProvider).httpClientAdapter = adapter;
     container.read(refreshDioProvider).httpClientAdapter = adapter;
 
@@ -68,6 +72,9 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          locale: locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: const SignInScreen(),
         ),
       ),
@@ -255,6 +262,56 @@ void main() {
     });
   });
 
+  testWidgets('renders Indonesian labels, actions and validation', (
+    tester,
+  ) async {
+    await pumpSignIn(tester, locale: const Locale('id'));
+
+    expect(find.text('Masuk ke Stash It'), findsOneWidget);
+    expect(
+      find.text('Gunakan email dan kata sandi akun Stash It Anda.'),
+      findsOneWidget,
+    );
+    expect(find.text('Email'), findsOneWidget);
+    expect(find.text('Kata sandi'), findsOneWidget);
+    expect(find.text('Lupa kata sandi?'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Masuk'), findsOneWidget);
+    expect(
+      find.widgetWithText(AppButton, 'Lanjutkan dengan Google'),
+      findsOneWidget,
+    );
+    expect(find.text('Belum punya akun?'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Buat akun'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(AppButton, 'Masuk'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Masukkan alamat email Anda.'), findsOneWidget);
+    expect(find.text('Masukkan kata sandi Anda.'), findsOneWidget);
+  });
+
+  testWidgets('shows the Indonesian registration-success message', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        locale: const Locale('id'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: const SignInScreen(contextualMessage: 'registration-success'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Pendaftaran berhasil. Silakan masuk dengan akun baru Anda.'),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(TextButton, 'Tutup'), findsOneWidget);
+  });
+
   group('Google sign-in', () {
     testWidgets('offers Google sign-in', (tester) async {
       await pumpSignIn(tester);
@@ -291,6 +348,25 @@ void main() {
 
       expect(
         find.text('Google sign-in could not start. Try again.'),
+        findsOneWidget,
+      );
+      expect(container.read(authStateProvider), AuthStatus.signedOut);
+    });
+
+    testWidgets('a Google client failure is localized in Indonesian', (
+      tester,
+    ) async {
+      google.result = () async =>
+          throw const GoogleAuthException(GoogleAuthFailure.unavailable);
+      await pumpSignIn(tester, locale: const Locale('id'));
+
+      await tester.tap(
+        find.widgetWithText(AppButton, 'Lanjutkan dengan Google'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Proses masuk Google tidak dapat dimulai. Coba lagi.'),
         findsOneWidget,
       );
       expect(container.read(authStateProvider), AuthStatus.signedOut);
@@ -606,6 +682,8 @@ void main() {
           container: container,
           child: MaterialApp.router(
             theme: AppTheme.light(),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             routerConfig: router,
           ),
         ),
@@ -729,6 +807,8 @@ void main() {
       MaterialApp(
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: const SignInScreen(contextualMessage: 'registration-success'),
       ),
     );
@@ -759,6 +839,8 @@ void main() {
       MaterialApp(
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: const SignInScreen(contextualMessage: 'registration-uncertain'),
       ),
     );
@@ -783,6 +865,8 @@ void main() {
       MaterialApp(
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: const SignInScreen(contextualMessage: 'password-reset-success'),
       ),
     );
@@ -813,6 +897,8 @@ void main() {
       MaterialApp(
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: const SignInScreen(contextualMessage: 'password-reset-uncertain'),
       ),
     );

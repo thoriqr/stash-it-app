@@ -8,8 +8,8 @@ import 'package:stash_it_app/core/network/token_provider.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_entry_screen.dart';
-import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
 import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/features/pending_urls/presentation/widgets/pending_urls_entry.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
@@ -26,6 +26,7 @@ import '../../../support/pending_urls.dart';
 /// now lives on the sign-in and sign-up forms and is covered there.
 void main() {
   const entryHeading = 'A place for things you find on the internet.';
+  final english = lookupAppLocalizations(const Locale('en'));
 
   late ProviderContainer container;
   late PendingUrlStore pendingStore;
@@ -52,6 +53,8 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: const AuthEntryScreen(),
         ),
       ),
@@ -96,7 +99,7 @@ void main() {
     );
 
     // An expiry is only shown when one happened; a plain visit is not an event.
-    expect(find.text(sessionEndedMessage), findsNothing);
+    expect(find.text(english.sessionEnded), findsNothing);
   });
 
   testWidgets('the account-creation action is enabled', (tester) async {
@@ -155,6 +158,8 @@ void main() {
         container: container,
         child: MaterialApp.router(
           theme: AppTheme.light(),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           routerConfig: router,
         ),
       ),
@@ -173,19 +178,19 @@ void main() {
     await armSessionEnded();
     await pumpEntry(tester);
 
-    expect(find.text(sessionEndedMessage), findsOneWidget);
+    expect(find.text(english.sessionEnded), findsOneWidget);
     expect(find.widgetWithText(TextButton, 'Dismiss'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(TextButton, 'Dismiss'));
     await tester.pumpAndSettle();
-    expect(find.text(sessionEndedMessage), findsNothing);
+    expect(find.text(english.sessionEnded), findsNothing);
     expect(find.text(entryHeading), findsOneWidget);
 
     // A fresh mount is the stronger case: a new State runs initState again, and
     // only the consumed flag stops the message coming back.
     await tester.pumpWidget(const SizedBox.shrink());
     await pumpEntry(tester);
-    expect(find.text(sessionEndedMessage), findsNothing);
+    expect(find.text(english.sessionEnded), findsNothing);
   });
 
   testWidgets('does not overflow at 320x640 with the warning visible', (
@@ -198,7 +203,7 @@ void main() {
     await armSessionEnded();
     await pumpEntry(tester);
 
-    expect(find.text(sessionEndedMessage), findsOneWidget);
+    expect(find.text(english.sessionEnded), findsOneWidget);
     expect(find.widgetWithText(AppButton, 'Sign in'), findsOneWidget);
 
     // The second action is below the fold on a narrow phone; the screen must
@@ -226,7 +231,7 @@ void main() {
     await armSessionEnded();
     await pumpEntry(tester);
 
-    expect(find.text(sessionEndedMessage), findsOneWidget);
+    expect(find.text(english.sessionEnded), findsOneWidget);
     expect(find.byType(PendingUrlsEntry), findsOneWidget);
 
     await tester.ensureVisible(find.byType(PendingUrlsEntry));

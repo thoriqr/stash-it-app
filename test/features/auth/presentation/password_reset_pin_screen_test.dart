@@ -12,11 +12,13 @@ import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/password_reset_continuation_store.dart';
 import 'package:stash_it_app/features/auth/presentation/password_reset_pin_screen.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_http.dart';
 
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
   const verificationId = '01a0f359-093b-737a-963a-80f7ca6768ed';
   const email = 'reader@example.com';
   const token = 'raw-password-reset-token';
@@ -96,7 +98,11 @@ void main() {
     );
   }
 
-  Future<void> pumpBare(WidgetTester tester, {String? carriedEmail}) async {
+  Future<void> pumpBare(
+    WidgetTester tester, {
+    String? carriedEmail,
+    Locale locale = const Locale('en'),
+  }) async {
     container.read(appDioProvider).httpClientAdapter = adapter;
     container.read(refreshDioProvider).httpClientAdapter = adapter;
 
@@ -106,6 +112,9 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          locale: locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: PasswordResetPinScreen(
             verificationId: verificationId,
             email: carriedEmail,
@@ -152,6 +161,8 @@ void main() {
         child: MaterialApp.router(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           routerConfig: router,
         ),
       ),
@@ -167,6 +178,39 @@ void main() {
     await tester.tap(find.widgetWithText(AppButton, 'Verify PIN'));
     await tester.pumpAndSettle();
   }
+
+  testWidgets('renders Indonesian instructions, countdown and invalid copy', (
+    tester,
+  ) async {
+    scriptStatus(resendInSeconds: 30);
+    scriptVerify(httpStatus: 409, body: errorBody('INVALID_VERIFICATION_CODE'));
+
+    await pumpBare(tester, locale: const Locale('id'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Masukkan PIN Anda'), findsOneWidget);
+    expect(
+      find.text(
+        'Kami mengirim PIN ke alamat email Anda. Jika Anda sudah memilikinya, '
+        'masukkan di bawah untuk memilih kata sandi baru.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(AppButton, 'Kirim ulang PIN dalam 30 dtk'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(AppButton, 'Kembali ke halaman masuk'),
+      findsOneWidget,
+    );
+
+    await tester.enterText(find.byType(TextField), '123456');
+    await tester.tap(find.widgetWithText(AppButton, 'Verifikasi PIN'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('PIN itu tidak benar. Coba lagi.'), findsOneWidget);
+  });
 
   testWidgets('shows the pending PIN state', (tester) async {
     scriptStatus();
@@ -278,7 +322,7 @@ void main() {
     final feedback = container.read(feedbackProvider);
     expect(feedback, isNotNull);
     expect(feedback!.tone, FeedbackTone.success);
-    expect(feedback.copy, 'A new PIN has been sent.');
+    expect(feedback.resolve(english), 'A new PIN has been sent.');
     expect(
       find.widgetWithText(AppButton, 'Resend PIN in 60 s'),
       findsOneWidget,

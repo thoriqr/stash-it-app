@@ -10,6 +10,7 @@ import 'package:stash_it_app/features/auth/data/models/password_reset_continuati
 import 'package:stash_it_app/features/auth/data/password_reset_continuation_store.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -297,7 +298,7 @@ class _PasswordResetFinalizeScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Choose a new password',
+          AppLocalizations.of(context).authChooseNewPassword,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
@@ -309,32 +310,31 @@ class _PasswordResetFinalizeScreenState
   }
 
   Widget _buildStorageReadError(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Reset unavailable',
+          l10n.authResetUnavailable,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
         ),
         const SizedBox(height: AppMetrics.space4),
         AuthMessageBand(
-          message:
-              'We could not read the saved password reset from this device. '
-              'Try again.',
+          message: l10n.authResetStorageReadFailure,
           tone: AuthMessageTone.danger,
         ),
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Retry',
+          label: l10n.authRetry,
           variant: AppButtonVariant.primary,
           onPressed: _load,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.quiet,
           onPressed: () => _openSignIn(),
         ),
@@ -343,6 +343,7 @@ class _PasswordResetFinalizeScreenState
   }
 
   Widget _buildLoadError(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     final failure = _loadFailure!;
 
     return Column(
@@ -350,25 +351,25 @@ class _PasswordResetFinalizeScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Reset unavailable',
+          l10n.authResetUnavailable,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
         ),
         const SizedBox(height: AppMetrics.space4),
         AuthMessageBand(
-          message: _loadMessageFor(failure),
+          message: _loadMessageFor(failure, l10n),
           tone: AuthMessageTone.danger,
         ),
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Retry',
+          label: l10n.authRetry,
           variant: AppButtonVariant.primary,
           onPressed: _load,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.quiet,
           onPressed: () => _openSignIn(),
         ),
@@ -377,25 +378,22 @@ class _PasswordResetFinalizeScreenState
   }
 
   Widget _buildTerminal(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     final terminal = _terminal!;
     final completed = terminal == _FinalizeTerminal.completed;
 
     final copy = switch (terminal) {
       _FinalizeTerminal.completed => (
-        title: 'Password reset completed',
-        body:
-            'This password reset was already completed. Sign in with your new '
-            'password.',
+        title: l10n.authResetCompletedTitle,
+        body: l10n.authResetCompletedBody,
       ),
       _FinalizeTerminal.inactive => (
-        title: 'Reset unavailable',
-        body:
-            'This password reset is no longer active. Request a new one to '
-            'continue.',
+        title: l10n.authResetUnavailable,
+        body: l10n.authResetNoLongerActiveBody,
       ),
       _FinalizeTerminal.noReset => (
-        title: 'No reset in progress',
-        body: 'Start a password reset from sign-in to choose a new password.',
+        title: l10n.authNoResetInProgressTitle,
+        body: l10n.authNoResetInProgressBody,
       ),
     };
 
@@ -417,25 +415,25 @@ class _PasswordResetFinalizeScreenState
         const SizedBox(height: AppMetrics.space6),
         if (completed) ...[
           AppButton(
-            label: 'Back to sign in',
+            label: l10n.authBackToSignIn,
             variant: AppButtonVariant.primary,
             onPressed: () => _openSignIn(),
           ),
           const SizedBox(height: AppMetrics.space3),
           AppButton(
-            label: 'Start a new reset',
+            label: l10n.authStartNewReset,
             variant: AppButtonVariant.secondary,
             onPressed: _openResetStart,
           ),
         ] else ...[
           AppButton(
-            label: 'Start a new reset',
+            label: l10n.authStartNewReset,
             variant: AppButtonVariant.primary,
             onPressed: _openResetStart,
           ),
           const SizedBox(height: AppMetrics.space3),
           AppButton(
-            label: 'Back to sign in',
+            label: l10n.authBackToSignIn,
             variant: AppButtonVariant.quiet,
             onPressed: () => _openSignIn(),
           ),
@@ -445,6 +443,7 @@ class _PasswordResetFinalizeScreenState
   }
 
   Widget _buildForm(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     final continuation = _continuation!;
 
     return Form(
@@ -454,7 +453,7 @@ class _PasswordResetFinalizeScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Choose a new password',
+            l10n.authChooseNewPassword,
             style: AppTypography.screenHeading.copyWith(
               color: tokens.textPrimary,
             ),
@@ -462,13 +461,13 @@ class _PasswordResetFinalizeScreenState
           const SizedBox(height: AppMetrics.space1),
           Text(
             continuation.hasPasswordCredential
-                ? 'Choose a new password for ${continuation.email}.'
-                : 'Set a password for ${continuation.email}.',
+                ? l10n.authChooseNewPasswordForEmail(continuation.email)
+                : l10n.authSetPasswordForEmail(continuation.email),
             style: AppTypography.body.copyWith(color: tokens.textSecondary),
           ),
           const SizedBox(height: AppMetrics.space6),
           AppField(
-            label: 'New password',
+            label: l10n.authNewPasswordLabel,
             controller: _passwordController,
             enabled: !_submitting,
             obscureText: _obscurePassword,
@@ -478,7 +477,9 @@ class _PasswordResetFinalizeScreenState
               onPressed: _submitting
                   ? null
                   : () => setState(() => _obscurePassword = !_obscurePassword),
-              tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+              tooltip: _obscurePassword
+                  ? l10n.authShowPassword
+                  : l10n.authHidePassword,
               icon: Icon(
                 _obscurePassword
                     ? Icons.visibility_outlined
@@ -487,17 +488,17 @@ class _PasswordResetFinalizeScreenState
             ),
             validator: (value) {
               final password = value ?? '';
-              if (password.isEmpty) return 'Enter a new password.';
+              if (password.isEmpty) return l10n.authEnterNewPassword;
               final length = password.runes.length;
               if (length < 8 || length > 128) {
-                return 'Use between 8 and 128 characters.';
+                return l10n.authPasswordRange;
               }
               return null;
             },
           ),
           const SizedBox(height: AppMetrics.space4),
           AppField(
-            label: 'Confirm new password',
+            label: l10n.authConfirmNewPasswordLabel,
             controller: _confirmController,
             enabled: !_submitting,
             obscureText: _obscurePassword,
@@ -505,7 +506,7 @@ class _PasswordResetFinalizeScreenState
             onSubmitted: (_) => _submit(),
             validator: (value) {
               if ((value ?? '') != _passwordController.text) {
-                return 'The passwords do not match.';
+                return l10n.authPasswordsDoNotMatch;
               }
               return null;
             },
@@ -513,27 +514,27 @@ class _PasswordResetFinalizeScreenState
           if (_submitFailure case final failure?) ...[
             const SizedBox(height: AppMetrics.space4),
             AuthMessageBand(
-              message: _submitMessageFor(failure),
+              message: _submitMessageFor(failure, l10n),
               onDismiss: () => setState(() => _submitFailure = null),
               tone: AuthMessageTone.danger,
             ),
           ],
           const SizedBox(height: AppMetrics.space6),
           AppButton(
-            label: 'Reset password',
+            label: l10n.authResetPassword,
             variant: AppButtonVariant.primary,
             busy: _submitting,
             onPressed: _submitting ? null : _submit,
           ),
           const SizedBox(height: AppMetrics.space3),
           AppButton(
-            label: 'Use a different email',
+            label: l10n.authUseDifferentEmail,
             variant: AppButtonVariant.secondary,
             onPressed: _submitting ? null : _openEmailSelection,
           ),
           const SizedBox(height: AppMetrics.space3),
           AppButton(
-            label: 'Back to sign in',
+            label: l10n.authBackToSignIn,
             variant: AppButtonVariant.quiet,
             onPressed: _submitting
                 ? null
@@ -548,50 +549,41 @@ class _PasswordResetFinalizeScreenState
     );
   }
 
-  String _loadMessageFor(ApiFailure failure) {
+  String _loadMessageFor(ApiFailure failure, AppLocalizations localizations) {
     return switch (failure) {
-      ApiFailureTransport() =>
-        'No connection to the server. We could not check this reset. Try again.',
-      ApiFailureUnreadableResponse() =>
-        'We could not read the server\'s reply. Try again.',
+      ApiFailureTransport() => localizations.authResetLoadTransport,
+      ApiFailureUnreadableResponse() => localizations.genericReadUnreadable,
       ApiFailureRateLimited(:final retryAfter) =>
         retryAfter != null
-            ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
-            : 'Too many attempts. Try again shortly.',
-      ApiFailureServerUnavailable() =>
-        'Password reset is temporarily unavailable. Try again shortly.',
-      ApiFailureServerFault() =>
-        'We could not check this reset. Try again shortly.',
-      _ => 'We could not check this reset. Try again.',
+            ? localizations.authTooManyAttemptsWithWait(retryAfter.inSeconds)
+            : localizations.genericReadRateLimited,
+      ApiFailureServerUnavailable() => localizations.authResetUnavailableShort,
+      ApiFailureServerFault() => localizations.authResetLoadServerFault,
+      _ => localizations.authResetLoadGeneric,
     };
   }
 
-  String _submitMessageFor(ApiFailure failure) {
+  String _submitMessageFor(ApiFailure failure, AppLocalizations localizations) {
     return switch (failure) {
       // Capacity-neutral: this variant covers both a spent client budget and
       // exhausted password-work capacity, and the latter must not blame the
       // user for a server condition. The countdown comes from `Retry-After`.
       ApiFailureRateLimited(:final retryAfter) =>
         retryAfter != null
-            ? 'We can\'t reset your password right now. Try again in '
-                  '${retryAfter.inSeconds} seconds.'
-            : 'We can\'t reset your password right now. Try again shortly.',
-      ApiFailureServerUnavailable() =>
-        'Password reset is temporarily unavailable. Try again shortly.',
+            ? localizations.authResetSubmitRateLimitedWithWait(
+                retryAfter.inSeconds,
+              )
+            : localizations.authResetSubmitRateLimitedNoWait,
+      ApiFailureServerUnavailable() => localizations.authResetUnavailableShort,
       // A failed finalize transaction either commits with a receipt or rolls
       // back. A 500 does not establish that nothing changed, so it is
       // unconfirmed rather than presented as a known failure.
-      ApiFailureServerFault() =>
-        'We could not confirm whether the password reset completed. Try '
-            'signing in with your new password.',
-      ApiFailureTransport() =>
-        'We could not confirm whether the password reset completed. Try '
-            'signing in with your new password.',
+      ApiFailureServerFault() => localizations.authResetOutcomeUnconfirmed,
+      ApiFailureTransport() => localizations.authResetOutcomeUnconfirmed,
       ApiFailureUnreadableResponse() =>
-        'We could not confirm whether the password reset completed. Try '
-            'signing in with your new password.',
-      ApiFailureValidation() => 'Use between 8 and 128 characters.',
-      _ => 'We could not reset your password. Try again.',
+        localizations.authResetOutcomeUnconfirmed,
+      ApiFailureValidation() => localizations.authPasswordRange,
+      _ => localizations.authResetSubmitGeneric,
     };
   }
 }

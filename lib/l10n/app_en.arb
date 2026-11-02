@@ -156,6 +156,224 @@
   "shareStoredAfterUncertain": "Save not confirmed. Kept on this device.",
   "shareInvalid": "That's not a link, so nothing was saved.",
   "shareNotStored": "Couldn't save or keep this link.",
+  "authBackToWelcome": "Back to welcome",
+  "authEmailLabel": "Email",
+  "authPasswordLabel": "Password",
+  "authPinLabel": "PIN",
+  "authDisplayNameLabel": "Display name",
+  "authConfirmPasswordLabel": "Confirm password",
+  "authNewPasswordLabel": "New password",
+  "authConfirmNewPasswordLabel": "Confirm new password",
+  "authShowPassword": "Show password",
+  "authHidePassword": "Hide password",
+  "authSignIn": "Sign in",
+  "authSignInTitle": "Sign in to Stash It",
+  "authSignInDescription": "Use the email and password on your Stash It account.",
+  "authForgotPassword": "Forgot password?",
+  "authNoAccountPrompt": "Don't have an account?",
+  "authCreateAnAccount": "Create an account",
+  "authCreateAccount": "Create account",
+  "authSignUpTitle": "Create your account",
+  "authSignUpDescription": "Enter your email address. We will send you a PIN to confirm it.",
+  "authSendPin": "Send PIN",
+  "authAlreadyHaveAccount": "Already have an account?",
+  "authContinueWithGoogle": "Continue with Google",
+  "authRetry": "Retry",
+  "authTryAgain": "Try again",
+  "authBackToSignIn": "Back to sign in",
+  "authStartOver": "Start over",
+  "authStartNewRegistration": "Start a new registration",
+  "authStartNewReset": "Start a new reset",
+  "authUseDifferentEmail": "Use a different email",
+  "authContinue": "Continue",
+  "authCancel": "Cancel",
+  "authLinkAccount": "Link account",
+  "authVerifyPin": "Verify PIN",
+  "authResendPin": "Resend PIN",
+  "authResendPinIn": "Resend PIN in {seconds} s",
+  "authSending": "Sending…",
+  "authSendResetPin": "Send reset PIN",
+  "authResetPassword": "Reset password",
+  "authBackToPasswordReset": "Back to password reset",
+  "authReplaceSavedResetTitle": "Replace saved password reset?",
+  "authKeepSavedReset": "Keep saved reset",
+  "authReplaceAndVerify": "Replace and verify",
+  "authRecoverRegistration": "Recover this registration",
+  "authEntryHeadline": "A place for things you find on the internet.",
+  "authEntryDescription": "Save a link from any browser, then find it again here.",
+  "authCheckYourEmail": "Check your email",
+  "authEnterYourPin": "Enter your PIN",
+  "authCompleteYourAccount": "Complete your account",
+  "authRegistrationUnavailable": "Registration unavailable",
+  "authResetUnavailable": "Reset unavailable",
+  "authResetPasswordTitle": "Reset your password",
+  "authChooseNewPassword": "Choose a new password",
+  "authLinkYourGoogleAccount": "Link your Google account",
+  "authEnterEmail": "Enter your email address.",
+  "authInvalidEmail": "Enter a valid email address.",
+  "authEmailTooLong": "That email address is too long.",
+  "authEnterPassword": "Enter your password.",
+  "authPasswordMin8": "Your password is at least 8 characters.",
+  "authPasswordTooLong": "That password is too long.",
+  "authEnterNewPassword": "Enter a new password.",
+  "authPasswordRange": "Use between 8 and 128 characters.",
+  "authPasswordsDoNotMatch": "Passwords do not match.",
+  "authEnterDisplayName": "Enter a display name.",
+  "authDisplayNameMin2": "Display name is at least 2 characters.",
+  "authDisplayNameTooLong": "Display name is too long.",
+  "authEnterSixDigitPin": "Enter a 6-digit PIN.",
+  "authCheckEmailThenTryAgain": "Check your email address, then try again.",
+  "authCheckDetailsThenTryAgain": "Check your details, then try again.",
+  "authCheckDisplayNameThenTryAgain": "Check your display name, then try again.",
+  "authRegistrationSuccessSignIn": "Registration successful. Please sign in with your new account.",
+  "authRegistrationUncertainSignIn": "We could not confirm whether registration completed. Try signing in; if it fails, start again.",
+  "authPasswordResetSuccessSignIn": "Your password has been reset. Please sign in with your new password.",
+  "authPasswordResetUncertainSignIn": "We could not confirm whether the password reset completed. Try signing in with your new password.",
+  "authSignInGenericFailure": "Something went wrong signing in. Try again.",
+  "authSignInInvalidCredentials": "That doesn't look like a valid email or password.",
+  "authSignInValidation": "Check your email address and password, then try again.",
+  "authSignInUnavailable": "Sign in is temporarily unavailable. Try again shortly.",
+  "authSignInUnconfirmed": "No connection to the server. We could not confirm this sign-in.",
+  "authSessionUnconfirmed": "We could not confirm your session. Try again.",
+  "authSignInStorageFailed": "Your sign-in could not be saved securely. Try again.",
+  "authTooManyAttemptsWithWait": "Too many attempts. Try again in {seconds} seconds.",
+  "authSignUpGenericFailure": "Something went wrong starting your registration. Try again.",
+  "authRegistrationMismatch": "We could not match that registration to this email. Try again with the same address.",
+  "authRegistrationAlreadyCompletedSignIn": "This registration was already completed. Sign in instead.",
+  "authRecoveryCouldNotStart": "Recovery could not be started. Try again.",
+  "authRecoveryGenericFailure": "Something went wrong starting recovery. Try again.",
+  "authRegistrationCheckTransport": "No connection to the server. We could not check that registration. Try again.",
+  "authRegistrationCheckUnreadable": "We could not read the server's reply, so we could not check that registration. Try again.",
+  "authRegistrationCheckUnavailable": "We could not check that registration. Try again shortly.",
+  "authRegistrationCheckGeneric": "We could not check this registration. Try again.",
+  "authRecoveryTransport": "No connection to the server. We could not start recovery. Try again.",
+  "authRecoveryUnreadable": "We could not confirm whether recovery started. Try again.",
+  "authRecoveryUnavailable": "Recovery is temporarily unavailable. Try again shortly.",
+  "authRecoveryServerFault": "We could not start recovery. Try again shortly.",
+  "authPinSentToEmail": "We sent a PIN to {email}. You will need it to finish creating your account.",
+  "authVerificationComplete": "Verification already complete",
+  "authVerifiedSavedCodeUnconfirmed": "We could not check the code saved on this device for {email}. Try again, or recover the registration with a new PIN. Recovering replaces this device's saved code.",
+  "authVerifiedNoToken": "This email has already been verified, but this device does not have the code needed to finish it. Recover it with a new PIN sent to {email}.",
+  "authRegistrationAlreadyCompleted": "An account already exists for this email. Sign in instead.",
+  "authRegistrationAlreadyPending": "This registration is already waiting for a PIN. Continue with that step.",
+  "authRegistrationRetryable": "Another sign-up attempt was already in progress. Try again.",
+  "authRegistrationIdentityMismatch": "A sign-up for this email is already in progress with a different Google account. Try again after it expires.",
+  "authRegistrationRestartRequired": "That registration can no longer continue. Start a new one.",
+  "authPinRecentlySent": "A PIN was sent to this email recently. Try again shortly.",
+  "authPinEmailUnconfirmed": "We could not confirm the PIN email was sent. Check your inbox before trying again.",
+  "authPinEmailUnconfirmedShort": "We could not confirm the PIN email was sent. Check your inbox.",
+  "authRegistrationUnavailableShort": "Registration is temporarily unavailable. Try again shortly.",
+  "authRegistrationServerFault": "The server could not start your registration. Try again shortly.",
+  "authRegistrationStartUnconfirmed": "No connection to the server. We could not confirm whether your registration started.",
+  "authRegistrationStartUnreadable": "We could not read the server's reply, so we cannot confirm whether your registration started or a PIN was sent. Check your inbox before trying again.",
+  "authRegistrationStartGeneric": "We could not start your registration. Try again.",
+  "authRegistrationAlreadyCompletedTitle": "Registration already completed",
+  "authRegistrationAlreadyCompletedBody": "This registration was already completed. Sign in to continue.",
+  "authRegistrationCannotBeCompletedBody": "This registration can no longer be completed. Start a new registration.",
+  "authAccountForEmail": "Account for {email}",
+  "authRegistrationStepClosed": "This registration step is no longer open. Start over with the same email to continue.",
+  "authRegistrationNotFound": "We could not find that registration. Start a new one.",
+  "authRegistrationUnreadable": "We could not read that registration. Start a new one.",
+  "authPinInvalid": "That PIN is not correct. Try again.",
+  "authPinAttemptsExceededRegistration": "Too many incorrect PINs. Start a new registration.",
+  "authPinAttemptsExceededReset": "Too many incorrect PINs. Request a new reset.",
+  "authVerificationUnavailable": "Verification is temporarily unavailable. Try again shortly.",
+  "authPinVerifyServerFault": "We could not verify your PIN. Try again shortly.",
+  "authPinVerifyTransport": "No connection to the server. We could not confirm your PIN.",
+  "authPinVerifyGeneric": "We could not verify your PIN. Try again.",
+  "authRegistrationCompleteGeneric": "We could not complete your registration. Try again.",
+  "authPinInstructions": "We sent a PIN to your email address. Enter it below to continue.",
+  "authSocialVerifiedDescription": "Your Google account is verified. Choose the name to show in Stash-it for {email}.",
+  "authAccountAlreadyCreated": "Account already created",
+  "authSocialAlreadyCompletedBody": "This social registration was already completed. Continue with Google or sign in to use the account.",
+  "authSocialInactiveBody": "This social registration can no longer be completed. Start again with Google to create the account.",
+  "authAccountCreatedSignInNotSaved": "Account created, sign-in not saved",
+  "authSocialStorageFailureBody": "Your account is ready, but this device could not save the sign-in. Continue with Google or sign in to use it.",
+  "authSocialSubmitUnconfirmed": "We could not confirm whether registration completed. Continue with Google or sign in; if the account was not created, try again.",
+  "authLinkInvalidTitle": "Link unavailable",
+  "authLinkInvalidBody": "This account-link request is no longer active. It may have expired or already been used. Start again with Google to sign in.",
+  "authLinkDifferentAccountTitle": "Different Google account",
+  "authLinkDifferentAccountBody": "The Google account used here does not match the one this link was started with. Start again and choose the account you originally used.",
+  "authGoogleSignInExpiredTitle": "Google sign-in expired",
+  "authGoogleSignInExpiredBody": "Google no longer accepts the sign-in used for this link. Start again with Google to continue.",
+  "authAccountsLinkedTitle": "Accounts linked",
+  "authAccountsLinkedBody": "Your Google account is now linked, but signing in did not finish. Continue with Google again to sign in.",
+  "authGoogleAlreadyLinkedTitle": "Google account already linked",
+  "authGoogleAlreadyLinkedBody": "This Google account is already linked to a Stash-it account. Continue with Google to sign in.",
+  "authLinkExistingAccount": "Stash-it found an existing account for this email. Link the Google account you just verified to it?",
+  "authLinkExistingAccountForEmail": "Stash-it found an existing account for {email}. Link the Google account you just verified to it?",
+  "authGoogleProfile": "Google profile: {name}",
+  "authLinkUnavailableShort": "Account linking is temporarily unavailable. Try again shortly.",
+  "authLinkCheckTransport": "No connection to the server. We could not check this link.",
+  "authLinkCheckGeneric": "We could not check this link. Try again.",
+  "authLinkOutcomeUnconfirmed": "We could not confirm whether the link completed. Continue with Google to sign in; if it was not linked, start again.",
+  "authLinkFailed": "We could not link this account. Try again.",
+  "authGoogleNotConfigured": "Google sign-in is not configured for this build.",
+  "authGoogleCouldNotStart": "Google sign-in could not start. Try again.",
+  "authGoogleMissingToken": "Google did not return a sign-in token. Try again.",
+  "authGoogleInvalidToken": "Google could not verify that sign-in. Try again.",
+  "authGoogleRegistrationIdentityMismatch": "A registration for this email is already in progress under a different account. Try again after it expires.",
+  "authGoogleLinkSessionFailed": "Your accounts were linked, but sign-in did not finish. Continue with Google again.",
+  "authGoogleLinkIdentityMismatch": "That Google account does not match the account being linked.",
+  "authGoogleLinkConfirmationInactive": "This account-link request is no longer active. Start again.",
+  "authGoogleAccountExists": "This account already exists. Continue with Google or sign in.",
+  "authGoogleUnavailable": "Google sign-in is temporarily unavailable. Try again shortly.",
+  "authGoogleServerFault": "We could not start Google sign-in. Try again shortly.",
+  "authGoogleTransport": "No connection to the server. We could not start Google sign-in.",
+  "authGoogleUnreadable": "We could not read the server's reply, so we could not start Google sign-in. Try again.",
+  "authGoogleGenericFailure": "Google sign-in could not be completed. Try again.",
+  "authResetRequestDescription": "Enter your email address. If an account exists, we will send a PIN to confirm it.",
+  "authResetSavedCheckFailure": "We could not check for a saved password reset. You can request a new one.",
+  "authResetAlreadyCompletedNotice": "This password reset was already completed. Sign in with your new password, or request a new reset.",
+  "authResetPreviousInactive": "Your previous password reset is no longer active. Request a new one.",
+  "authResetSavedCheckGeneric": "We could not check your saved password reset. Try again.",
+  "authResetSavedContinueMessage": "A saved password reset for {email} is available on this device. Continue it, or use a different email.",
+  "authResetAlreadyInProgress": "A password reset is already in progress. Try again shortly.",
+  "authResetStartGeneric": "We could not start the password reset. Try again.",
+  "authResetStartTransport": "No connection to the server. We could not start the password reset.",
+  "authResetStartUnreadable": "We could not read the server's reply, so we could not start the password reset. Try again.",
+  "authResetStartServerFault": "We could not start the password reset. Try again shortly.",
+  "authResetUnavailableShort": "Password reset is temporarily unavailable. Try again shortly.",
+  "authResetSavedCheckTransport": "No connection to the server. We could not check your saved password reset. Try again.",
+  "authResetSavedCheckUnreadable": "We could not confirm whether your saved password reset is still active. Try again.",
+  "authResetSavedCheckServerFault": "We could not check your saved password reset. Try again shortly.",
+  "authResetContinueTitle": "Continue password reset",
+  "authResetInProgressFor": "A password reset is in progress for {email}.",
+  "authResetAlreadyVerifiedTitle": "Reset already verified",
+  "authResetAlreadyVerifiedWaitingBody": "This password reset was already verified, but this device does not have a usable saved reset for this email. Requesting another PIN is not possible. The reset expires within 15 minutes; after that you can request a new one.",
+  "authResetNeutralBody": "If an account exists for that address, we have sent a password reset PIN.",
+  "authResetPinSentBody": "We sent a password reset PIN to {email}.",
+  "authResetAlreadyVerifiedBody": "This reset's PIN step is already complete. If this device has the saved reset, continue from the password reset screen. Otherwise wait up to 15 minutes for it to expire and request a new one.",
+  "authResetNoLongerActiveTitle": "Reset no longer active",
+  "authResetNoLongerActiveBody": "This password reset is no longer active. Request a new one to continue.",
+  "authResetNotAvailableTitle": "Reset not available",
+  "authResetNotAvailableBody": "We could not find that password reset. Check the address or start again.",
+  "authResetVerifiedNotSavedTitle": "Reset verified, but not saved",
+  "authResetVerifiedNotSavedBody": "Your PIN was verified, but this device could not save the reset securely. The reset cannot continue here. Request a new one after this reset expires, which takes up to 15 minutes.",
+  "authResetSavedCheckLocalFailure": "We could not check the saved reset on this device. Try again.",
+  "authResetReplacementUnknownIncoming": "A saved password reset for {savedEmail} is on this device. If this PIN verifies, it may replace it; the saved reset for {savedEmail} may no longer be available on this device. This does not cancel it on the server.",
+  "authResetReplacementKnownIncoming": "A saved password reset for {savedEmail} is on this device. If this PIN verifies for {incoming}, it will replace it; the saved reset for {savedEmail} will no longer be available on this device. This does not cancel it on the server.",
+  "authResetPinSentToEmail": "We sent a PIN to {email}. Enter it below to choose a new password.",
+  "authResetPinSentToEmailIssued": "We sent a PIN to {email}. If you already have one, enter it below to choose a new password.",
+  "authResetPinSentGeneric": "We sent a PIN to your email address. Enter it below to choose a new password.",
+  "authResetPinSentGenericIssued": "We sent a PIN to your email address. If you already have one, enter it below to choose a new password.",
+  "authResetResendUnavailable": "PIN delivery is temporarily unavailable. Try again shortly.",
+  "authResetResendTransport": "No connection to the server. We could not request a new PIN.",
+  "authResetResendGeneric": "We could not request a new PIN. Try again.",
+  "authResetLoadTransport": "No connection to the server. We could not check this reset. Try again.",
+  "authResetLoadServerFault": "We could not check this reset. Try again shortly.",
+  "authResetLoadGeneric": "We could not check this reset. Try again.",
+  "authResetStorageReadFailure": "We could not read the saved password reset from this device. Try again.",
+  "authResetCompletedTitle": "Password reset completed",
+  "authResetCompletedBody": "This password reset was already completed. Sign in with your new password.",
+  "authNoResetInProgressTitle": "No reset in progress",
+  "authNoResetInProgressBody": "Start a password reset from sign-in to choose a new password.",
+  "authChooseNewPasswordForEmail": "Choose a new password for {email}.",
+  "authSetPasswordForEmail": "Set a password for {email}.",
+  "authResetSubmitRateLimitedWithWait": "We can't reset your password right now. Try again in {seconds} seconds.",
+  "authResetSubmitRateLimitedNoWait": "We can't reset your password right now. Try again shortly.",
+  "authResetOutcomeUnconfirmed": "We could not confirm whether the password reset completed. Try signing in with your new password.",
+  "authResetSubmitGeneric": "We could not reset your password. Try again.",
   "@settingsTitle": {
     "description": "Settings screen title."
   },
@@ -942,5 +1160,757 @@
   },
   "@shareNotStored": {
     "description": "Share intake could neither save remotely nor keep the URL locally."
+  },
+  "@authBackToWelcome": {
+    "description": "Tooltip for returning to the signed-out welcome screen."
+  },
+  "@authEmailLabel": {
+    "description": "Label for an email address field."
+  },
+  "@authPasswordLabel": {
+    "description": "Label for a password field."
+  },
+  "@authPinLabel": {
+    "description": "Label for a verification PIN field."
+  },
+  "@authDisplayNameLabel": {
+    "description": "Label for a display name field."
+  },
+  "@authConfirmPasswordLabel": {
+    "description": "Label for confirming a password during registration."
+  },
+  "@authNewPasswordLabel": {
+    "description": "Label for a new password field during reset."
+  },
+  "@authConfirmNewPasswordLabel": {
+    "description": "Label for confirming a new password during reset."
+  },
+  "@authShowPassword": {
+    "description": "Tooltip that reveals a masked password."
+  },
+  "@authHidePassword": {
+    "description": "Tooltip that masks a visible password."
+  },
+  "@authSignIn": {
+    "description": "Sign-in action label."
+  },
+  "@authSignInTitle": {
+    "description": "Heading on the sign-in screen."
+  },
+  "@authSignInDescription": {
+    "description": "Description below the sign-in heading."
+  },
+  "@authForgotPassword": {
+    "description": "Action opening the password-reset flow."
+  },
+  "@authNoAccountPrompt": {
+    "description": "Prompt before the create-account action on sign-in."
+  },
+  "@authCreateAnAccount": {
+    "description": "Create-account action on the welcome screen."
+  },
+  "@authCreateAccount": {
+    "description": "Create-account action on registration forms."
+  },
+  "@authSignUpTitle": {
+    "description": "Heading on the registration start screen."
+  },
+  "@authSignUpDescription": {
+    "description": "Description below the registration heading."
+  },
+  "@authSendPin": {
+    "description": "Action that starts registration and requests a PIN."
+  },
+  "@authAlreadyHaveAccount": {
+    "description": "Prompt before the sign-in action on registration."
+  },
+  "@authContinueWithGoogle": {
+    "description": "Google authentication action label."
+  },
+  "@authRetry": {
+    "description": "Retry action label on authentication screens."
+  },
+  "@authTryAgain": {
+    "description": "Try-again action label on authentication screens."
+  },
+  "@authBackToSignIn": {
+    "description": "Action returning to the sign-in screen."
+  },
+  "@authStartOver": {
+    "description": "Action restarting a registration from the beginning."
+  },
+  "@authStartNewRegistration": {
+    "description": "Action starting a new registration."
+  },
+  "@authStartNewReset": {
+    "description": "Action starting a new password reset."
+  },
+  "@authUseDifferentEmail": {
+    "description": "Action returning to the email form."
+  },
+  "@authContinue": {
+    "description": "Continue action label."
+  },
+  "@authCancel": {
+    "description": "Cancel action label on account linking."
+  },
+  "@authLinkAccount": {
+    "description": "Action confirming an account link."
+  },
+  "@authVerifyPin": {
+    "description": "Action verifying an entered PIN."
+  },
+  "@authResendPin": {
+    "description": "Action requesting another PIN."
+  },
+  "@authResendPinIn": {
+    "description": "Resend action showing the remaining cooldown in seconds.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "@authSending": {
+    "description": "Busy label while a PIN resend is in progress."
+  },
+  "@authSendResetPin": {
+    "description": "Action starting a password reset and requesting a PIN."
+  },
+  "@authResetPassword": {
+    "description": "Action submitting a new password."
+  },
+  "@authBackToPasswordReset": {
+    "description": "Action returning to the password-reset start."
+  },
+  "@authReplaceSavedResetTitle": {
+    "description": "Confirmation dialog title for replacing a saved password reset."
+  },
+  "@authKeepSavedReset": {
+    "description": "Safe action in the saved-reset replacement dialog."
+  },
+  "@authReplaceAndVerify": {
+    "description": "Destructive action in the saved-reset replacement dialog."
+  },
+  "@authRecoverRegistration": {
+    "description": "Action recovering a verified registration with a new PIN."
+  },
+  "@authEntryHeadline": {
+    "description": "Headline on the signed-out welcome screen."
+  },
+  "@authEntryDescription": {
+    "description": "Description on the signed-out welcome screen."
+  },
+  "@authCheckYourEmail": {
+    "description": "Heading shown after a PIN is sent."
+  },
+  "@authEnterYourPin": {
+    "description": "Heading for the PIN entry step."
+  },
+  "@authCompleteYourAccount": {
+    "description": "Heading for registration finalization."
+  },
+  "@authRegistrationUnavailable": {
+    "description": "Heading when a registration cannot continue."
+  },
+  "@authResetUnavailable": {
+    "description": "Heading when a password reset cannot continue."
+  },
+  "@authResetPasswordTitle": {
+    "description": "Heading on the password-reset request screen."
+  },
+  "@authChooseNewPassword": {
+    "description": "Heading for choosing a new password."
+  },
+  "@authLinkYourGoogleAccount": {
+    "description": "Heading for Google account linking."
+  },
+  "@authEnterEmail": {
+    "description": "Validation message for an empty email field."
+  },
+  "@authInvalidEmail": {
+    "description": "Validation message for a malformed email address."
+  },
+  "@authEmailTooLong": {
+    "description": "Validation message for an overlong email address."
+  },
+  "@authEnterPassword": {
+    "description": "Validation message for an empty password field."
+  },
+  "@authPasswordMin8": {
+    "description": "Validation message for a password shorter than eight characters."
+  },
+  "@authPasswordTooLong": {
+    "description": "Validation message for an overlong password."
+  },
+  "@authEnterNewPassword": {
+    "description": "Validation message for an empty new-password field."
+  },
+  "@authPasswordRange": {
+    "description": "Validation message requiring eight to 128 characters."
+  },
+  "@authPasswordsDoNotMatch": {
+    "description": "Validation message when password confirmation differs."
+  },
+  "@authEnterDisplayName": {
+    "description": "Validation message for an empty display name."
+  },
+  "@authDisplayNameMin2": {
+    "description": "Validation message for a display name shorter than two characters."
+  },
+  "@authDisplayNameTooLong": {
+    "description": "Validation message for an overlong display name."
+  },
+  "@authEnterSixDigitPin": {
+    "description": "Validation message requiring a six-digit PIN."
+  },
+  "@authCheckEmailThenTryAgain": {
+    "description": "Guidance after an email validation refusal."
+  },
+  "@authCheckDetailsThenTryAgain": {
+    "description": "Guidance after a general validation refusal."
+  },
+  "@authCheckDisplayNameThenTryAgain": {
+    "description": "Guidance after a display-name validation refusal."
+  },
+  "@authRegistrationSuccessSignIn": {
+    "description": "Message on sign-in after a confirmed registration."
+  },
+  "@authRegistrationUncertainSignIn": {
+    "description": "Message on sign-in when registration completion is unconfirmed."
+  },
+  "@authPasswordResetSuccessSignIn": {
+    "description": "Message on sign-in after a confirmed password reset."
+  },
+  "@authPasswordResetUncertainSignIn": {
+    "description": "Message on sign-in when password-reset completion is unconfirmed."
+  },
+  "@authSignInGenericFailure": {
+    "description": "Fallback copy for an unexpected sign-in failure."
+  },
+  "@authSignInInvalidCredentials": {
+    "description": "Sign-in refusal for an unknown email or incorrect password."
+  },
+  "@authSignInValidation": {
+    "description": "Sign-in refusal for invalid credentials."
+  },
+  "@authSignInUnavailable": {
+    "description": "Sign-in is temporarily unavailable."
+  },
+  "@authSignInUnconfirmed": {
+    "description": "Unconfirmed sign-in because the server could not be reached."
+  },
+  "@authSessionUnconfirmed": {
+    "description": "Session renewal outcome could not be confirmed."
+  },
+  "@authSignInStorageFailed": {
+    "description": "The sign-in could not be stored securely on this device."
+  },
+  "@authTooManyAttemptsWithWait": {
+    "description": "Authentication rate limit with the server-provided wait in seconds.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "@authSignUpGenericFailure": {
+    "description": "Fallback copy for an unexpected registration-start failure."
+  },
+  "@authRegistrationMismatch": {
+    "description": "Saved registration does not match the entered email."
+  },
+  "@authRegistrationAlreadyCompletedSignIn": {
+    "description": "The registration is already complete; direct the user to sign in."
+  },
+  "@authRecoveryCouldNotStart": {
+    "description": "Registration recovery could not be started."
+  },
+  "@authRecoveryGenericFailure": {
+    "description": "Fallback copy for an unexpected recovery-start failure."
+  },
+  "@authRegistrationCheckTransport": {
+    "description": "Unconfirmed registration check because the server could not be reached."
+  },
+  "@authRegistrationCheckUnreadable": {
+    "description": "Registration check failed because the reply was unreadable."
+  },
+  "@authRegistrationCheckUnavailable": {
+    "description": "Registration check is temporarily unavailable."
+  },
+  "@authRegistrationCheckGeneric": {
+    "description": "Fallback copy for a failed registration check."
+  },
+  "@authRecoveryTransport": {
+    "description": "Recovery start failed because the server could not be reached."
+  },
+  "@authRecoveryUnreadable": {
+    "description": "Recovery start outcome could not be confirmed."
+  },
+  "@authRecoveryUnavailable": {
+    "description": "Recovery is temporarily unavailable."
+  },
+  "@authRecoveryServerFault": {
+    "description": "Recovery could not start because of a server fault."
+  },
+  "@authPinSentToEmail": {
+    "description": "Confirms a registration PIN was sent to the given email.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "@authVerificationComplete": {
+    "description": "Heading for a registration that is already verified."
+  },
+  "@authVerifiedSavedCodeUnconfirmed": {
+    "description": "Explains that a saved registration code could not be checked.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "@authVerifiedNoToken": {
+    "description": "Explains that a verified registration has no saved code on this device.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "@authRegistrationAlreadyCompleted": {
+    "description": "The email already belongs to a completed account."
+  },
+  "@authRegistrationAlreadyPending": {
+    "description": "The registration is already waiting for PIN verification."
+  },
+  "@authRegistrationRetryable": {
+    "description": "Another registration attempt was already in progress."
+  },
+  "@authRegistrationIdentityMismatch": {
+    "description": "Registration is in progress with a different Google account."
+  },
+  "@authRegistrationRestartRequired": {
+    "description": "The registration can no longer continue."
+  },
+  "@authPinRecentlySent": {
+    "description": "A PIN was sent recently; wait before requesting another."
+  },
+  "@authPinEmailUnconfirmed": {
+    "description": "PIN email delivery could not be confirmed; ask the user to check their inbox."
+  },
+  "@authPinEmailUnconfirmedShort": {
+    "description": "Short PIN email delivery uncertainty message."
+  },
+  "@authRegistrationUnavailableShort": {
+    "description": "Registration is temporarily unavailable."
+  },
+  "@authRegistrationServerFault": {
+    "description": "A server fault prevented registration from starting."
+  },
+  "@authRegistrationStartUnconfirmed": {
+    "description": "Registration start could not be confirmed because the server was unreachable."
+  },
+  "@authRegistrationStartUnreadable": {
+    "description": "Registration start and PIN delivery could not be confirmed from an unreadable reply."
+  },
+  "@authRegistrationStartGeneric": {
+    "description": "Fallback copy for a failed registration start."
+  },
+  "@authRegistrationAlreadyCompletedTitle": {
+    "description": "Terminal heading when registration was already completed."
+  },
+  "@authRegistrationAlreadyCompletedBody": {
+    "description": "Terminal body when registration was already completed."
+  },
+  "@authRegistrationCannotBeCompletedBody": {
+    "description": "Terminal body when a registration can no longer be completed."
+  },
+  "@authAccountForEmail": {
+    "description": "Subheading naming the account email during finalization.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "@authRegistrationStepClosed": {
+    "description": "The current registration step is closed; restart with the same email."
+  },
+  "@authRegistrationNotFound": {
+    "description": "The registration could not be found."
+  },
+  "@authRegistrationUnreadable": {
+    "description": "The registration response could not be read."
+  },
+  "@authPinInvalid": {
+    "description": "The entered PIN is incorrect."
+  },
+  "@authPinAttemptsExceededRegistration": {
+    "description": "Too many incorrect PINs during registration."
+  },
+  "@authPinAttemptsExceededReset": {
+    "description": "Too many incorrect PINs during password reset."
+  },
+  "@authVerificationUnavailable": {
+    "description": "PIN verification is temporarily unavailable."
+  },
+  "@authPinVerifyServerFault": {
+    "description": "A server fault prevented PIN verification."
+  },
+  "@authPinVerifyTransport": {
+    "description": "PIN verification could not be confirmed because the server was unreachable."
+  },
+  "@authPinVerifyGeneric": {
+    "description": "Fallback copy for a failed PIN verification."
+  },
+  "@authRegistrationCompleteGeneric": {
+    "description": "Fallback copy for an incomplete registration."
+  },
+  "@authPinInstructions": {
+    "description": "Instructions for entering a registration PIN."
+  },
+  "@authSocialVerifiedDescription": {
+    "description": "Explains social registration and prompts for a display name.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "@authAccountAlreadyCreated": {
+    "description": "Heading when a social account was already created."
+  },
+  "@authSocialAlreadyCompletedBody": {
+    "description": "Terminal body for a completed social registration."
+  },
+  "@authSocialInactiveBody": {
+    "description": "Terminal body for an inactive social registration."
+  },
+  "@authAccountCreatedSignInNotSaved": {
+    "description": "Heading when the account exists but the sign-in was not saved."
+  },
+  "@authSocialStorageFailureBody": {
+    "description": "Terminal body when the social sign-in could not be stored."
+  },
+  "@authSocialSubmitUnconfirmed": {
+    "description": "Social registration completion could not be confirmed."
+  },
+  "@authLinkInvalidTitle": {
+    "description": "Heading for an inactive account-link request."
+  },
+  "@authLinkInvalidBody": {
+    "description": "Body for an inactive account-link request."
+  },
+  "@authLinkDifferentAccountTitle": {
+    "description": "Heading for a mismatched Google account during linking."
+  },
+  "@authLinkDifferentAccountBody": {
+    "description": "Body for a mismatched Google account during linking."
+  },
+  "@authGoogleSignInExpiredTitle": {
+    "description": "Heading for an expired Google sign-in during linking."
+  },
+  "@authGoogleSignInExpiredBody": {
+    "description": "Body for an expired Google sign-in during linking."
+  },
+  "@authAccountsLinkedTitle": {
+    "description": "Heading when accounts were linked but sign-in did not finish."
+  },
+  "@authAccountsLinkedBody": {
+    "description": "Body when accounts were linked but sign-in did not finish."
+  },
+  "@authGoogleAlreadyLinkedTitle": {
+    "description": "Heading when the Google account is already linked."
+  },
+  "@authGoogleAlreadyLinkedBody": {
+    "description": "Body when the Google account is already linked."
+  },
+  "@authLinkExistingAccount": {
+    "description": "Prompts to link a Google account to an existing account."
+  },
+  "@authLinkExistingAccountForEmail": {
+    "description": "Prompts to link a Google account to an existing account with a masked email.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "@authGoogleProfile": {
+    "description": "Shows the Google profile name used for the pending link.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@authLinkUnavailableShort": {
+    "description": "Account linking is temporarily unavailable."
+  },
+  "@authLinkCheckTransport": {
+    "description": "Account-link check failed because the server was unreachable."
+  },
+  "@authLinkCheckGeneric": {
+    "description": "Fallback copy for a failed account-link check."
+  },
+  "@authLinkOutcomeUnconfirmed": {
+    "description": "Account-link completion could not be confirmed."
+  },
+  "@authLinkFailed": {
+    "description": "Fallback copy for a failed account link."
+  },
+  "@authGoogleNotConfigured": {
+    "description": "Google sign-in is not configured for this build."
+  },
+  "@authGoogleCouldNotStart": {
+    "description": "Google sign-in could not start."
+  },
+  "@authGoogleMissingToken": {
+    "description": "Google did not return an ID token."
+  },
+  "@authGoogleInvalidToken": {
+    "description": "Google could not verify the returned token."
+  },
+  "@authGoogleRegistrationIdentityMismatch": {
+    "description": "A different account already owns the in-progress registration."
+  },
+  "@authGoogleLinkSessionFailed": {
+    "description": "Accounts were linked but Google sign-in did not finish."
+  },
+  "@authGoogleLinkIdentityMismatch": {
+    "description": "The Google identity does not match the link request."
+  },
+  "@authGoogleLinkConfirmationInactive": {
+    "description": "The account-link confirmation is no longer active."
+  },
+  "@authGoogleAccountExists": {
+    "description": "The account already exists; continue with Google or sign in."
+  },
+  "@authGoogleUnavailable": {
+    "description": "Google sign-in is temporarily unavailable."
+  },
+  "@authGoogleServerFault": {
+    "description": "A server fault prevented Google sign-in from starting."
+  },
+  "@authGoogleTransport": {
+    "description": "Google sign-in could not start because the server was unreachable."
+  },
+  "@authGoogleUnreadable": {
+    "description": "Google sign-in could not start because the reply was unreadable."
+  },
+  "@authGoogleGenericFailure": {
+    "description": "Fallback copy for a failed Google sign-in."
+  },
+  "@authResetRequestDescription": {
+    "description": "Description below the password-reset heading."
+  },
+  "@authResetSavedCheckFailure": {
+    "description": "The saved password reset could not be checked."
+  },
+  "@authResetAlreadyCompletedNotice": {
+    "description": "The saved password reset was already completed."
+  },
+  "@authResetPreviousInactive": {
+    "description": "The previous password reset is no longer active."
+  },
+  "@authResetSavedCheckGeneric": {
+    "description": "Fallback copy for a failed saved-reset check."
+  },
+  "@authResetSavedContinueMessage": {
+    "description": "Offers to continue a saved password reset for an email.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "@authResetAlreadyInProgress": {
+    "description": "A password reset is already in progress."
+  },
+  "@authResetStartGeneric": {
+    "description": "Fallback copy for a failed password-reset start."
+  },
+  "@authResetStartTransport": {
+    "description": "Password reset could not start because the server was unreachable."
+  },
+  "@authResetStartUnreadable": {
+    "description": "Password reset could not start because the reply was unreadable."
+  },
+  "@authResetStartServerFault": {
+    "description": "A server fault prevented the password reset from starting."
+  },
+  "@authResetUnavailableShort": {
+    "description": "Password reset is temporarily unavailable."
+  },
+  "@authResetSavedCheckTransport": {
+    "description": "Saved-reset check failed because the server was unreachable."
+  },
+  "@authResetSavedCheckUnreadable": {
+    "description": "Saved-reset activity could not be confirmed."
+  },
+  "@authResetSavedCheckServerFault": {
+    "description": "Saved-reset check failed because of a server fault."
+  },
+  "@authResetContinueTitle": {
+    "description": "Heading when continuing a saved password reset."
+  },
+  "@authResetInProgressFor": {
+    "description": "States that a password reset is in progress for an email.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "@authResetAlreadyVerifiedTitle": {
+    "description": "Heading when a password reset is already verified."
+  },
+  "@authResetAlreadyVerifiedWaitingBody": {
+    "description": "Explains that a verified reset cannot issue another PIN on this device."
+  },
+  "@authResetNeutralBody": {
+    "description": "Non-enumerating confirmation that a reset PIN may have been sent."
+  },
+  "@authResetPinSentBody": {
+    "description": "Confirms a password-reset PIN was sent to an email.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "@authResetAlreadyVerifiedBody": {
+    "description": "Explains that the PIN step is complete and how to continue."
+  },
+  "@authResetNoLongerActiveTitle": {
+    "description": "Heading when a password reset is no longer active."
+  },
+  "@authResetNoLongerActiveBody": {
+    "description": "Body when a password reset is no longer active."
+  },
+  "@authResetNotAvailableTitle": {
+    "description": "Heading when a password reset cannot be found."
+  },
+  "@authResetNotAvailableBody": {
+    "description": "Body when a password reset cannot be found."
+  },
+  "@authResetVerifiedNotSavedTitle": {
+    "description": "Heading when a verified reset could not be stored securely."
+  },
+  "@authResetVerifiedNotSavedBody": {
+    "description": "Body when a verified reset could not be stored securely."
+  },
+  "@authResetSavedCheckLocalFailure": {
+    "description": "The saved reset could not be checked on this device."
+  },
+  "@authResetReplacementUnknownIncoming": {
+    "description": "Warns that replacing a saved reset may remove it from this device.",
+    "placeholders": {
+      "savedEmail": {
+        "type": "String"
+      }
+    }
+  },
+  "@authResetReplacementKnownIncoming": {
+    "description": "Warns that verifying a reset for one email replaces another saved reset.",
+    "placeholders": {
+      "incoming": {
+        "type": "String"
+      },
+      "savedEmail": {
+        "type": "String"
+      }
+    }
+  },
+  "@authResetPinSentToEmail": {
+    "description": "Explains where the reset PIN was sent.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "@authResetPinSentToEmailIssued": {
+    "description": "Explains where a previously issued reset PIN was sent.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "@authResetPinSentGeneric": {
+    "description": "Explains that a reset PIN was sent to the account email."
+  },
+  "@authResetPinSentGenericIssued": {
+    "description": "Explains that a previously issued reset PIN was sent."
+  },
+  "@authResetResendUnavailable": {
+    "description": "PIN delivery is temporarily unavailable."
+  },
+  "@authResetResendTransport": {
+    "description": "A new PIN could not be requested because the server was unreachable."
+  },
+  "@authResetResendGeneric": {
+    "description": "Fallback copy for a failed PIN resend."
+  },
+  "@authResetLoadTransport": {
+    "description": "The reset could not be checked because the server was unreachable."
+  },
+  "@authResetLoadServerFault": {
+    "description": "The reset could not be checked because of a server fault."
+  },
+  "@authResetLoadGeneric": {
+    "description": "Fallback copy for a failed reset check."
+  },
+  "@authResetStorageReadFailure": {
+    "description": "The saved reset could not be read from this device."
+  },
+  "@authResetCompletedTitle": {
+    "description": "Heading when the password reset was already completed."
+  },
+  "@authResetCompletedBody": {
+    "description": "Body when the password reset was already completed."
+  },
+  "@authNoResetInProgressTitle": {
+    "description": "Heading when no password reset is in progress."
+  },
+  "@authNoResetInProgressBody": {
+    "description": "Body when no password reset is in progress."
+  },
+  "@authChooseNewPasswordForEmail": {
+    "description": "Prompts for a new password for an email.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "@authSetPasswordForEmail": {
+    "description": "Prompts to set a password for an email.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "@authResetSubmitRateLimitedWithWait": {
+    "description": "Password reset is capacity-limited with a server-provided wait.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "@authResetSubmitRateLimitedNoWait": {
+    "description": "Password reset is capacity-limited without a server wait."
+  },
+  "@authResetOutcomeUnconfirmed": {
+    "description": "Password-reset completion could not be confirmed."
+  },
+  "@authResetSubmitGeneric": {
+    "description": "Fallback copy for a failed password reset."
   }
 }

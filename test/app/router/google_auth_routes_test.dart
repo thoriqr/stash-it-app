@@ -15,6 +15,8 @@ import 'package:stash_it_app/features/auth/presentation/finalize_social_registra
 import 'package:stash_it_app/features/auth/presentation/google_account_link_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/pin_entry_screen.dart';
 import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
+import 'package:stash_it_app/features/settings/application/language_preference_controller.dart';
+import 'package:stash_it_app/features/settings/domain/language_preference.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../support/fake_http.dart';
@@ -41,12 +43,14 @@ void main() {
   late ProviderContainer container;
   late _FakeGoogleAuthService google;
   late PendingUrlStore pendingStore;
+  late LanguagePreference languagePreference;
 
   setUp(() async {
     backend = InMemorySecureStorage();
     adapter = FakeHttpAdapter();
     google = _FakeGoogleAuthService();
     pendingStore = await testPendingUrlStore();
+    languagePreference = LanguagePreference.system;
     container = ProviderContainer(
       overrides: [
         credentialStoreProvider.overrideWithValue(
@@ -58,6 +62,9 @@ void main() {
         restoredTokensProvider.overrideWithValue(null),
         googleAuthServiceProvider.overrideWithValue(google),
         pendingUrlStoreProvider.overrideWithValue(pendingStore),
+        initialLanguagePreferenceProvider.overrideWith(
+          (ref) => languagePreference,
+        ),
       ],
       retry: (_, _) => null,
     );
@@ -79,7 +86,9 @@ void main() {
     WidgetTester tester, {
     String location = AppRoutes.auth,
     Object? extra,
+    LanguagePreference language = LanguagePreference.system,
   }) async {
+    languagePreference = language;
     container.read(appDioProvider).httpClientAdapter = adapter;
     container.read(refreshDioProvider).httpClientAdapter = adapter;
 
@@ -196,6 +205,79 @@ void main() {
       );
     },
   );
+
+  testWidgets('account-link confirmation is localized in Indonesian', (
+    tester,
+  ) async {
+    adapter.onMethod(
+      'GET',
+      '/auth/login/google/account-link/confirmation-1',
+      body: {
+        'data': {
+          'id': 'confirmation-1',
+          'provider': 'google',
+          'display_name_snapshot': 'Google User',
+          'masked_user_email': maskedEmail,
+        },
+        'message': 'confirmation retrieved',
+      },
+    );
+
+    await pumpApp(
+      tester,
+      location: AppRoutes.googleAccountLinkFor('confirmation-1'),
+      extra: const GoogleAccountLinkArgs(idToken: 'google-id-token'),
+      language: LanguagePreference.indonesian,
+    );
+
+    expect(find.text('Tautkan akun Google Anda'), findsOneWidget);
+    expect(find.textContaining(maskedEmail), findsOneWidget);
+    expect(find.text('Profil Google: Google User'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Tautkan akun'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Batal'), findsOneWidget);
+  });
+
+  testWidgets('account-link failure is localized in Indonesian', (
+    tester,
+  ) async {
+    adapter.onMethod(
+      'GET',
+      '/auth/login/google/account-link/confirmation-1',
+      body: {
+        'data': {
+          'id': 'confirmation-1',
+          'provider': 'google',
+          'display_name_snapshot': 'Google User',
+          'masked_user_email': maskedEmail,
+        },
+        'message': 'confirmation retrieved',
+      },
+    );
+    adapter.onMethod(
+      'POST',
+      '/auth/login/google/account-link/confirmation-1/confirm',
+      status: 503,
+      body: errorBody(ApiErrorCode.accountLinkSessionFailed),
+    );
+
+    await pumpApp(
+      tester,
+      location: AppRoutes.googleAccountLinkFor('confirmation-1'),
+      extra: const GoogleAccountLinkArgs(idToken: 'google-id-token'),
+      language: LanguagePreference.indonesian,
+    );
+    await tester.tap(find.widgetWithText(AppButton, 'Tautkan akun'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Akun tertaut'), findsOneWidget);
+    expect(
+      find.text(
+        'Akun Google Anda sekarang tertaut, tetapi proses masuk belum selesai. '
+        'Lanjutkan dengan Google lagi untuk masuk.',
+      ),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('confirming the link adopts the session', (tester) async {
     adapter.onMethod(
@@ -385,6 +467,78 @@ void main() {
       );
     },
   );
+
+  testWidgets('social registration form is localized in Indonesian', (
+    tester,
+  ) async {
+    adapter.onMethod(
+      'GET',
+      '/auth/register/continuation',
+      body: {
+        'data': {
+          'email': 'google@example.com',
+          'registration_type': 'social',
+          'requires_password': false,
+        },
+        'message': 'continuation retrieved',
+      },
+    );
+
+    await pumpApp(
+      tester,
+      location: AppRoutes.finalizeSocialRegistration,
+      extra: const FinalizeSocialRegistrationArgs(
+        continuationToken: 'social-token',
+        suggestedDisplayName: 'Google User',
+      ),
+      language: LanguagePreference.indonesian,
+    );
+
+    expect(find.text('Lengkapi akun Anda'), findsOneWidget);
+    expect(
+      find.textContaining('Akun Google Anda sudah diverifikasi'),
+      findsOneWidget,
+    );
+    expect(find.text('Nama tampilan'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Buat akun'), findsOneWidget);
+    expect(
+      find.widgetWithText(AppButton, 'Kembali ke halaman masuk'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a completed social registration is localized in Indonesian', (
+    tester,
+  ) async {
+    adapter.onMethod(
+      'GET',
+      '/auth/register/continuation',
+      status: 409,
+      body: errorBody(ApiErrorCode.registrationContinuationConsumed),
+    );
+
+    await pumpApp(
+      tester,
+      location: AppRoutes.finalizeSocialRegistration,
+      extra: const FinalizeSocialRegistrationArgs(
+        continuationToken: 'consumed-token',
+      ),
+      language: LanguagePreference.indonesian,
+    );
+
+    expect(find.text('Akun sudah dibuat'), findsOneWidget);
+    expect(
+      find.text(
+        'Pendaftaran sosial ini sudah selesai. Lanjutkan dengan Google atau '
+        'masuk untuk menggunakan akun.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(AppButton, 'Kembali ke halaman masuk'),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('social finalize without an in-memory token is refused', (
     tester,

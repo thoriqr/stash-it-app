@@ -11,6 +11,7 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/registration_continuation_store.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_up_screen.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -52,7 +53,10 @@ void main() {
 
   /// Pumps the screen with the app's real themes, so the styling under test is
   /// the one that ships.
-  Future<void> pumpSignUp(WidgetTester tester) async {
+  Future<void> pumpSignUp(
+    WidgetTester tester, {
+    Locale locale = const Locale('en'),
+  }) async {
     container.read(appDioProvider).httpClientAdapter = adapter;
     container.read(refreshDioProvider).httpClientAdapter = adapter;
 
@@ -62,6 +66,9 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          locale: locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: const SignUpScreen(),
         ),
       ),
@@ -113,6 +120,8 @@ void main() {
         child: MaterialApp.router(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           routerConfig: router,
         ),
       ),
@@ -252,6 +261,62 @@ void main() {
         reason: 'a dark platform must not render light-token colours',
       );
     });
+  });
+
+  testWidgets('renders Indonesian labels, actions and validation', (
+    tester,
+  ) async {
+    await pumpSignUp(tester, locale: const Locale('id'));
+
+    expect(find.text('Buat akun Anda'), findsOneWidget);
+    expect(
+      find.text(
+        'Masukkan alamat email Anda. Kami akan mengirimkan PIN untuk '
+        'mengonfirmasinya.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Email'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Kirim PIN'), findsOneWidget);
+    expect(
+      find.widgetWithText(AppButton, 'Lanjutkan dengan Google'),
+      findsOneWidget,
+    );
+    expect(find.text('Sudah punya akun?'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Masuk'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(AppButton, 'Kirim PIN'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Masukkan alamat email Anda.'), findsOneWidget);
+  });
+
+  testWidgets('shows the Indonesian PIN-sent state', (tester) async {
+    await pumpSignUp(tester, locale: const Locale('id'));
+    scriptRegistration();
+    adapter.onMethod(
+      'POST',
+      '/verification/$verificationId/pin',
+      status: 201,
+      body: pinEnvelope(),
+    );
+
+    await tester.enterText(find.byType(TextFormField), email);
+    await tester.tap(find.widgetWithText(AppButton, 'Kirim PIN'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Periksa email Anda'), findsOneWidget);
+    expect(
+      find.text(
+        'Kami mengirim PIN ke $email. Anda memerlukannya untuk menyelesaikan '
+        'pembuatan akun.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(AppButton, 'Kembali ke halaman masuk'),
+      findsOneWidget,
+    );
   });
 
   group('client-side validation', () {
@@ -1430,7 +1495,7 @@ void main() {
         name: 'an unavailable limiter is not a spent budget',
         code: ApiErrorCode.pinRateLimitUnavailable,
         status: 503,
-        message: 'Sign-up is temporarily unavailable. Try again shortly.',
+        message: 'Registration is temporarily unavailable. Try again shortly.',
       ),
       (
         name: 'a server fault is its own outcome',

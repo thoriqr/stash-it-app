@@ -7,16 +7,16 @@
 
 The app has its core saved-link experience in place, including authentication, collections, search, profile and account settings, Google Sign-In, and Android link sharing for device-local saves.
 
-The latest completed milestone is **Localization Phase 1**: shared navigation labels, Settings and Clear tooltips, generic read-error copy, and locale-aware feedback presentation.
+The latest completed milestone is **Localization Phase 2**: the complete authentication experience, including validation, typed error mappings, Google Sign-In outcomes, account linking, social registration, and password reset.
 
-**Current focus:** continue app-wide localization with feature-specific feedback messages and screens, retry guidance, saved-time labels, and remaining app-owned copy.
+**Current focus:** complete localization for the remaining non-authentication feature areas and their feedback call sites, along with saved-time and retry copy.
 
 ## Verification
 
-- `flutter gen-l10n` — completed; 138 Indonesian messages still fall back to English.
+- `flutter gen-l10n` — completed; 134 Indonesian messages still fall back to English.
 - `dart format` on changed Dart files — completed.
 - `flutter analyze` — no issues found.
-- `flutter test` — 1571 tests passed.
+- `flutter test` — 1588 tests passed.
 
 ## Implemented
 
@@ -60,11 +60,13 @@ The latest completed milestone is **Localization Phase 1**: shared navigation la
 - An explicit language choice is applied even when it differs from the device locale; System default follows the ordered device locales and falls back to English.
 - Shared navigation labels, Settings and Clear tooltips, and generic read-error copy use the active localization.
 - Feedback accepts locale-aware messages and resolves them using the active locale when the notice is presented.
+- Authentication screens, form validation, typed API-error copy, Google Sign-In outcomes, account linking, social registration, PIN states, and password reset are localized in English and Indonesian.
+- Authentication feedback resolves its copy from the active locale while preserving its tone, identity, dismissal, and timer behavior.
 
 ## In Progress and Next Steps
 
-- [ ] Complete Localization Phase 2: feature-specific feedback messages, retry guidance, saved-time labels, profile dates and identity labels, local URL summaries, and share-result messages.
-- [ ] Localize feature-specific screens and remaining app-owned messages.
+- [ ] Complete localization for the remaining feature areas: Inbox, Saved Items, saved-time labels, Collections, Search, Profile, device-local URLs, and Android share intake.
+- [ ] Migrate the remaining non-authentication feedback call sites to locale-aware messages.
 - [ ] Review Indonesian translations with a native speaker.
 - [ ] Verify the app on a physical Android device.
 
@@ -76,7 +78,8 @@ The latest completed milestone is **Localization Phase 1**: shared navigation la
 - If a local-link submission is interrupted, its outcome may be uncertain. Retrying an operation with an uncertain outcome can create a duplicate.
 - A link rejected by the server may remain in the device-local list until it expires or the list is otherwise cleared.
 - Some operations started under a previous account may finish after the account changes. User-specific data must remain isolated across account changes.
-- Most existing feature feedback call sites still supply fixed English copy; those messages are migrated in later phases.
+- Non-authentication feature feedback call sites still supply fixed English copy; those messages are migrated in later phases.
+- 134 Indonesian messages for non-authentication feature areas still fall back to English.
 
 ## Project Constraints
 

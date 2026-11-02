@@ -10,6 +10,7 @@ import 'package:stash_it_app/features/auth/data/models/registration_continuation
 import 'package:stash_it_app/features/auth/data/registration_continuation_store.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -249,7 +250,7 @@ class _FinalizeSocialRegistrationScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Complete your account',
+          AppLocalizations.of(context).authCompleteYourAccount,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
@@ -261,30 +262,32 @@ class _FinalizeSocialRegistrationScreenState
   }
 
   Widget _buildLoadError(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Complete your account',
+          l10n.authCompleteYourAccount,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
         ),
         const SizedBox(height: AppMetrics.space4),
         AuthMessageBand(
-          message: _loadMessageFor(_loadFailure!),
+          message: _loadMessageFor(_loadFailure!, l10n),
           tone: AuthMessageTone.danger,
         ),
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Retry',
+          label: l10n.authRetry,
           variant: AppButtonVariant.primary,
           onPressed: _load,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.quiet,
           onPressed: _backToAuth,
         ),
@@ -293,24 +296,19 @@ class _FinalizeSocialRegistrationScreenState
   }
 
   Widget _buildTerminal(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     final copy = switch (_terminal!) {
       _SocialFinalizeTerminal.completed => (
-        title: 'Account already created',
-        body:
-            'This social registration was already completed. Continue with '
-            'Google or sign in to use the account.',
+        title: l10n.authAccountAlreadyCreated,
+        body: l10n.authSocialAlreadyCompletedBody,
       ),
       _SocialFinalizeTerminal.inactive => (
-        title: 'Registration unavailable',
-        body:
-            'This social registration can no longer be completed. Start again '
-            'with Google to create the account.',
+        title: l10n.authRegistrationUnavailable,
+        body: l10n.authSocialInactiveBody,
       ),
       _SocialFinalizeTerminal.storageFailure => (
-        title: 'Account created, sign-in not saved',
-        body:
-            'Your account is ready, but this device could not save the '
-            'sign-in. Continue with Google or sign in to use it.',
+        title: l10n.authAccountCreatedSignInNotSaved,
+        body: l10n.authSocialStorageFailureBody,
       ),
     };
 
@@ -331,7 +329,7 @@ class _FinalizeSocialRegistrationScreenState
         ),
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.primary,
           onPressed: _backToAuth,
         ),
@@ -340,6 +338,7 @@ class _FinalizeSocialRegistrationScreenState
   }
 
   Widget _buildForm(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     final continuation = _continuation!;
     return Form(
       key: _formKey,
@@ -348,32 +347,31 @@ class _FinalizeSocialRegistrationScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Complete your account',
+            l10n.authCompleteYourAccount,
             style: AppTypography.screenHeading.copyWith(
               color: tokens.textPrimary,
             ),
           ),
           const SizedBox(height: AppMetrics.space1),
           Text(
-            'Your Google account is verified. Choose the name to show in '
-            'Stash-it for ${continuation.email}.',
+            l10n.authSocialVerifiedDescription(continuation.email),
             style: AppTypography.body.copyWith(color: tokens.textSecondary),
           ),
           const SizedBox(height: AppMetrics.space6),
           AppField(
-            label: 'Display name',
+            label: l10n.authDisplayNameLabel,
             controller: _displayNameController,
             enabled: !_submitting,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
             validator: (value) {
               final name = value?.trim() ?? '';
-              if (name.isEmpty) return 'Enter a display name.';
+              if (name.isEmpty) return l10n.authEnterDisplayName;
               if (name.length < 2) {
-                return 'Display name is at least 2 characters.';
+                return l10n.authDisplayNameMin2;
               }
               if (name.length > 100) {
-                return 'Display name is too long.';
+                return l10n.authDisplayNameTooLong;
               }
               return null;
             },
@@ -381,21 +379,21 @@ class _FinalizeSocialRegistrationScreenState
           if (_submitFailure case final failure?) ...[
             const SizedBox(height: AppMetrics.space4),
             AuthMessageBand(
-              message: _submitMessageFor(failure),
+              message: _submitMessageFor(failure, l10n),
               onDismiss: () => setState(() => _submitFailure = null),
               tone: AuthMessageTone.danger,
             ),
           ],
           const SizedBox(height: AppMetrics.space6),
           AppButton(
-            label: 'Create account',
+            label: l10n.authCreateAccount,
             variant: AppButtonVariant.primary,
             busy: _submitting,
             onPressed: _submitting ? null : _submit,
           ),
           const SizedBox(height: AppMetrics.space3),
           AppButton(
-            label: 'Back to sign in',
+            label: l10n.authBackToSignIn,
             variant: AppButtonVariant.quiet,
             onPressed: _submitting ? null : _backToAuth,
           ),
@@ -404,38 +402,33 @@ class _FinalizeSocialRegistrationScreenState
     );
   }
 
-  String _loadMessageFor(ApiFailure failure) {
+  String _loadMessageFor(ApiFailure failure, AppLocalizations localizations) {
     return switch (failure) {
-      ApiFailureTransport() =>
-        'No connection to the server. We could not check this registration. '
-            'Try again.',
-      ApiFailureUnreadableResponse() =>
-        'We could not read the server\'s reply. Try again.',
+      ApiFailureTransport() => localizations.authRegistrationCheckTransport,
+      ApiFailureUnreadableResponse() => localizations.genericReadUnreadable,
       ApiFailureRateLimited(:final retryAfter) =>
         retryAfter != null
-            ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
-            : 'Too many attempts. Try again shortly.',
+            ? localizations.authTooManyAttemptsWithWait(retryAfter.inSeconds)
+            : localizations.genericReadRateLimited,
       ApiFailureServerUnavailable() =>
-        'Registration is temporarily unavailable. Try again shortly.',
-      _ => 'We could not check this registration. Try again.',
+        localizations.authRegistrationUnavailableShort,
+      _ => localizations.authRegistrationCheckGeneric,
     };
   }
 
-  String _submitMessageFor(ApiFailure failure) {
+  String _submitMessageFor(ApiFailure failure, AppLocalizations localizations) {
     return switch (failure) {
-      ApiFailureValidation() => 'Check your display name, then try again.',
+      ApiFailureValidation() => localizations.authCheckDisplayNameThenTryAgain,
       ApiFailureRateLimited(:final retryAfter) =>
         retryAfter != null
-            ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
-            : 'Too many attempts. Try again shortly.',
+            ? localizations.authTooManyAttemptsWithWait(retryAfter.inSeconds)
+            : localizations.genericReadRateLimited,
       ApiFailureServerUnavailable() =>
-        'Registration is temporarily unavailable. Try again shortly.',
+        localizations.authRegistrationUnavailableShort,
       ApiFailureTransport() ||
       ApiFailureUnreadableResponse() ||
-      ApiFailureServerFault() =>
-        'We could not confirm whether registration completed. Continue with '
-            'Google or sign in; if the account was not created, try again.',
-      _ => 'We could not complete your registration. Try again.',
+      ApiFailureServerFault() => localizations.authSocialSubmitUnconfirmed,
+      _ => localizations.authRegistrationCompleteGeneric,
     };
   }
 }

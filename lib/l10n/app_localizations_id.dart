@@ -57,11 +57,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get clearTooltip => 'Kosongkan';
 
   @override
-  String get dismissAction => 'Dismiss';
+  String get dismissAction => 'Tutup';
 
   @override
   String get sessionEnded =>
-      'Your session has ended. Sign in again to continue.';
+      'Sesi Anda telah berakhir. Masuk lagi untuk melanjutkan.';
 
   @override
   String get genericReadRateLimited =>
@@ -798,11 +798,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get passwordSetFailed => 'We couldn\'t set your password. Try again.';
 
   @override
-  String get newPinSent => 'A new PIN has been sent.';
+  String get newPinSent => 'PIN baru telah dikirim.';
 
   @override
   String get pinVerifiedProgressNotSaved =>
-      'PIN verified, but this device could not save your progress. Finish before closing the app.';
+      'PIN terverifikasi, tetapi perangkat ini tidak dapat menyimpan kemajuan Anda. Selesaikan sebelum menutup aplikasi.';
 
   @override
   String get shareSaved => 'Saved to your account.';
@@ -820,4 +820,822 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get shareNotStored => 'Couldn\'t save or keep this link.';
+
+  @override
+  String get authBackToWelcome => 'Kembali ke halaman awal';
+
+  @override
+  String get authEmailLabel => 'Email';
+
+  @override
+  String get authPasswordLabel => 'Kata sandi';
+
+  @override
+  String get authPinLabel => 'PIN';
+
+  @override
+  String get authDisplayNameLabel => 'Nama tampilan';
+
+  @override
+  String get authConfirmPasswordLabel => 'Konfirmasi kata sandi';
+
+  @override
+  String get authNewPasswordLabel => 'Kata sandi baru';
+
+  @override
+  String get authConfirmNewPasswordLabel => 'Konfirmasi kata sandi baru';
+
+  @override
+  String get authShowPassword => 'Tampilkan kata sandi';
+
+  @override
+  String get authHidePassword => 'Sembunyikan kata sandi';
+
+  @override
+  String get authSignIn => 'Masuk';
+
+  @override
+  String get authSignInTitle => 'Masuk ke Stash It';
+
+  @override
+  String get authSignInDescription =>
+      'Gunakan email dan kata sandi akun Stash It Anda.';
+
+  @override
+  String get authForgotPassword => 'Lupa kata sandi?';
+
+  @override
+  String get authNoAccountPrompt => 'Belum punya akun?';
+
+  @override
+  String get authCreateAnAccount => 'Buat akun';
+
+  @override
+  String get authCreateAccount => 'Buat akun';
+
+  @override
+  String get authSignUpTitle => 'Buat akun Anda';
+
+  @override
+  String get authSignUpDescription =>
+      'Masukkan alamat email Anda. Kami akan mengirimkan PIN untuk mengonfirmasinya.';
+
+  @override
+  String get authSendPin => 'Kirim PIN';
+
+  @override
+  String get authAlreadyHaveAccount => 'Sudah punya akun?';
+
+  @override
+  String get authContinueWithGoogle => 'Lanjutkan dengan Google';
+
+  @override
+  String get authRetry => 'Coba lagi';
+
+  @override
+  String get authTryAgain => 'Coba lagi';
+
+  @override
+  String get authBackToSignIn => 'Kembali ke halaman masuk';
+
+  @override
+  String get authStartOver => 'Mulai ulang';
+
+  @override
+  String get authStartNewRegistration => 'Mulai pendaftaran baru';
+
+  @override
+  String get authStartNewReset => 'Mulai reset baru';
+
+  @override
+  String get authUseDifferentEmail => 'Gunakan email lain';
+
+  @override
+  String get authContinue => 'Lanjutkan';
+
+  @override
+  String get authCancel => 'Batal';
+
+  @override
+  String get authLinkAccount => 'Tautkan akun';
+
+  @override
+  String get authVerifyPin => 'Verifikasi PIN';
+
+  @override
+  String get authResendPin => 'Kirim ulang PIN';
+
+  @override
+  String authResendPinIn(int seconds) {
+    return 'Kirim ulang PIN dalam $seconds dtk';
+  }
+
+  @override
+  String get authSending => 'Mengirim…';
+
+  @override
+  String get authSendResetPin => 'Kirim PIN reset';
+
+  @override
+  String get authResetPassword => 'Reset kata sandi';
+
+  @override
+  String get authBackToPasswordReset => 'Kembali ke reset kata sandi';
+
+  @override
+  String get authReplaceSavedResetTitle =>
+      'Ganti reset kata sandi yang tersimpan?';
+
+  @override
+  String get authKeepSavedReset => 'Pertahankan reset tersimpan';
+
+  @override
+  String get authReplaceAndVerify => 'Ganti dan verifikasi';
+
+  @override
+  String get authRecoverRegistration => 'Pulihkan pendaftaran ini';
+
+  @override
+  String get authEntryHeadline =>
+      'Tempat untuk hal-hal yang Anda temukan di internet.';
+
+  @override
+  String get authEntryDescription =>
+      'Simpan tautan dari browser apa pun, lalu temukan lagi di sini.';
+
+  @override
+  String get authCheckYourEmail => 'Periksa email Anda';
+
+  @override
+  String get authEnterYourPin => 'Masukkan PIN Anda';
+
+  @override
+  String get authCompleteYourAccount => 'Lengkapi akun Anda';
+
+  @override
+  String get authRegistrationUnavailable => 'Pendaftaran tidak tersedia';
+
+  @override
+  String get authResetUnavailable => 'Reset tidak tersedia';
+
+  @override
+  String get authResetPasswordTitle => 'Reset kata sandi Anda';
+
+  @override
+  String get authChooseNewPassword => 'Pilih kata sandi baru';
+
+  @override
+  String get authLinkYourGoogleAccount => 'Tautkan akun Google Anda';
+
+  @override
+  String get authEnterEmail => 'Masukkan alamat email Anda.';
+
+  @override
+  String get authInvalidEmail => 'Masukkan alamat email yang valid.';
+
+  @override
+  String get authEmailTooLong => 'Alamat email itu terlalu panjang.';
+
+  @override
+  String get authEnterPassword => 'Masukkan kata sandi Anda.';
+
+  @override
+  String get authPasswordMin8 => 'Kata sandi Anda minimal 8 karakter.';
+
+  @override
+  String get authPasswordTooLong => 'Kata sandi itu terlalu panjang.';
+
+  @override
+  String get authEnterNewPassword => 'Masukkan kata sandi baru.';
+
+  @override
+  String get authPasswordRange => 'Gunakan antara 8 dan 128 karakter.';
+
+  @override
+  String get authPasswordsDoNotMatch => 'Kata sandi tidak cocok.';
+
+  @override
+  String get authEnterDisplayName => 'Masukkan nama tampilan.';
+
+  @override
+  String get authDisplayNameMin2 => 'Nama tampilan minimal 2 karakter.';
+
+  @override
+  String get authDisplayNameTooLong => 'Nama tampilan terlalu panjang.';
+
+  @override
+  String get authEnterSixDigitPin => 'Masukkan PIN 6 digit.';
+
+  @override
+  String get authCheckEmailThenTryAgain =>
+      'Periksa alamat email Anda, lalu coba lagi.';
+
+  @override
+  String get authCheckDetailsThenTryAgain =>
+      'Periksa data Anda, lalu coba lagi.';
+
+  @override
+  String get authCheckDisplayNameThenTryAgain =>
+      'Periksa nama tampilan Anda, lalu coba lagi.';
+
+  @override
+  String get authRegistrationSuccessSignIn =>
+      'Pendaftaran berhasil. Silakan masuk dengan akun baru Anda.';
+
+  @override
+  String get authRegistrationUncertainSignIn =>
+      'Kami tidak dapat memastikan apakah pendaftaran selesai. Coba masuk; jika gagal, mulai lagi.';
+
+  @override
+  String get authPasswordResetSuccessSignIn =>
+      'Kata sandi Anda telah direset. Silakan masuk dengan kata sandi baru Anda.';
+
+  @override
+  String get authPasswordResetUncertainSignIn =>
+      'Kami tidak dapat memastikan apakah reset kata sandi selesai. Coba masuk dengan kata sandi baru Anda.';
+
+  @override
+  String get authSignInGenericFailure =>
+      'Terjadi kesalahan saat masuk. Coba lagi.';
+
+  @override
+  String get authSignInInvalidCredentials =>
+      'Email atau kata sandi itu tampaknya tidak valid.';
+
+  @override
+  String get authSignInValidation =>
+      'Periksa alamat email dan kata sandi Anda, lalu coba lagi.';
+
+  @override
+  String get authSignInUnavailable =>
+      'Masuk untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
+
+  @override
+  String get authSignInUnconfirmed =>
+      'Tidak ada koneksi ke server. Kami tidak dapat memastikan proses masuk ini.';
+
+  @override
+  String get authSessionUnconfirmed =>
+      'Kami tidak dapat memastikan sesi Anda. Coba lagi.';
+
+  @override
+  String get authSignInStorageFailed =>
+      'Proses masuk Anda tidak dapat disimpan dengan aman. Coba lagi.';
+
+  @override
+  String authTooManyAttemptsWithWait(int seconds) {
+    return 'Terlalu banyak percobaan. Coba lagi dalam $seconds detik.';
+  }
+
+  @override
+  String get authSignUpGenericFailure =>
+      'Terjadi kesalahan saat memulai pendaftaran. Coba lagi.';
+
+  @override
+  String get authRegistrationMismatch =>
+      'Kami tidak dapat mencocokkan pendaftaran itu dengan email ini. Coba lagi dengan alamat yang sama.';
+
+  @override
+  String get authRegistrationAlreadyCompletedSignIn =>
+      'Pendaftaran ini sudah selesai. Silakan masuk.';
+
+  @override
+  String get authRecoveryCouldNotStart =>
+      'Pemulihan tidak dapat dimulai. Coba lagi.';
+
+  @override
+  String get authRecoveryGenericFailure =>
+      'Terjadi kesalahan saat memulai pemulihan. Coba lagi.';
+
+  @override
+  String get authRegistrationCheckTransport =>
+      'Tidak ada koneksi ke server. Kami tidak dapat memeriksa pendaftaran itu. Coba lagi.';
+
+  @override
+  String get authRegistrationCheckUnreadable =>
+      'Kami tidak dapat membaca balasan server, sehingga tidak dapat memeriksa pendaftaran itu. Coba lagi.';
+
+  @override
+  String get authRegistrationCheckUnavailable =>
+      'Kami tidak dapat memeriksa pendaftaran itu. Coba lagi sebentar lagi.';
+
+  @override
+  String get authRegistrationCheckGeneric =>
+      'Kami tidak dapat memeriksa pendaftaran ini. Coba lagi.';
+
+  @override
+  String get authRecoveryTransport =>
+      'Tidak ada koneksi ke server. Kami tidak dapat memulai pemulihan. Coba lagi.';
+
+  @override
+  String get authRecoveryUnreadable =>
+      'Kami tidak dapat memastikan apakah pemulihan dimulai. Coba lagi.';
+
+  @override
+  String get authRecoveryUnavailable =>
+      'Pemulihan untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
+
+  @override
+  String get authRecoveryServerFault =>
+      'Kami tidak dapat memulai pemulihan. Coba lagi sebentar lagi.';
+
+  @override
+  String authPinSentToEmail(String email) {
+    return 'Kami mengirim PIN ke $email. Anda memerlukannya untuk menyelesaikan pembuatan akun.';
+  }
+
+  @override
+  String get authVerificationComplete => 'Verifikasi sudah selesai';
+
+  @override
+  String authVerifiedSavedCodeUnconfirmed(String email) {
+    return 'Kami tidak dapat memeriksa kode yang tersimpan di perangkat ini untuk $email. Coba lagi, atau pulihkan pendaftaran dengan PIN baru. Pemulihan akan menggantikan kode tersimpan di perangkat ini.';
+  }
+
+  @override
+  String authVerifiedNoToken(String email) {
+    return 'Email ini sudah diverifikasi, tetapi perangkat ini tidak memiliki kode yang diperlukan untuk menyelesaikannya. Pulihkan dengan PIN baru yang dikirim ke $email.';
+  }
+
+  @override
+  String get authRegistrationAlreadyCompleted =>
+      'Akun dengan email ini sudah ada. Silakan masuk.';
+
+  @override
+  String get authRegistrationAlreadyPending =>
+      'Pendaftaran ini sudah menunggu PIN. Lanjutkan dengan langkah tersebut.';
+
+  @override
+  String get authRegistrationRetryable =>
+      'Percobaan pendaftaran lain sedang berlangsung. Coba lagi.';
+
+  @override
+  String get authRegistrationIdentityMismatch =>
+      'Pendaftaran untuk email ini sedang berlangsung dengan akun Google yang berbeda. Coba lagi setelah kedaluwarsa.';
+
+  @override
+  String get authRegistrationRestartRequired =>
+      'Pendaftaran itu tidak dapat dilanjutkan lagi. Mulai pendaftaran baru.';
+
+  @override
+  String get authPinRecentlySent =>
+      'PIN baru saja dikirim ke email ini. Coba lagi sebentar lagi.';
+
+  @override
+  String get authPinEmailUnconfirmed =>
+      'Kami tidak dapat memastikan email PIN telah terkirim. Periksa kotak masuk Anda sebelum mencoba lagi.';
+
+  @override
+  String get authPinEmailUnconfirmedShort =>
+      'Kami tidak dapat memastikan email PIN telah terkirim. Periksa kotak masuk Anda.';
+
+  @override
+  String get authRegistrationUnavailableShort =>
+      'Pendaftaran untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
+
+  @override
+  String get authRegistrationServerFault =>
+      'Server tidak dapat memulai pendaftaran Anda. Coba lagi sebentar lagi.';
+
+  @override
+  String get authRegistrationStartUnconfirmed =>
+      'Tidak ada koneksi ke server. Kami tidak dapat memastikan apakah pendaftaran Anda dimulai.';
+
+  @override
+  String get authRegistrationStartUnreadable =>
+      'Kami tidak dapat membaca balasan server, sehingga tidak dapat memastikan apakah pendaftaran Anda dimulai atau PIN telah dikirim. Periksa kotak masuk Anda sebelum mencoba lagi.';
+
+  @override
+  String get authRegistrationStartGeneric =>
+      'Kami tidak dapat memulai pendaftaran Anda. Coba lagi.';
+
+  @override
+  String get authRegistrationAlreadyCompletedTitle =>
+      'Pendaftaran sudah selesai';
+
+  @override
+  String get authRegistrationAlreadyCompletedBody =>
+      'Pendaftaran ini sudah selesai. Masuk untuk melanjutkan.';
+
+  @override
+  String get authRegistrationCannotBeCompletedBody =>
+      'Pendaftaran ini tidak dapat diselesaikan lagi. Mulai pendaftaran baru.';
+
+  @override
+  String authAccountForEmail(String email) {
+    return 'Akun untuk $email';
+  }
+
+  @override
+  String get authRegistrationStepClosed =>
+      'Langkah pendaftaran ini sudah tidak terbuka. Mulai ulang dengan email yang sama untuk melanjutkan.';
+
+  @override
+  String get authRegistrationNotFound =>
+      'Kami tidak dapat menemukan pendaftaran itu. Mulai pendaftaran baru.';
+
+  @override
+  String get authRegistrationUnreadable =>
+      'Kami tidak dapat membaca pendaftaran itu. Mulai pendaftaran baru.';
+
+  @override
+  String get authPinInvalid => 'PIN itu tidak benar. Coba lagi.';
+
+  @override
+  String get authPinAttemptsExceededRegistration =>
+      'Terlalu banyak PIN yang salah. Mulai pendaftaran baru.';
+
+  @override
+  String get authPinAttemptsExceededReset =>
+      'Terlalu banyak PIN yang salah. Minta reset baru.';
+
+  @override
+  String get authVerificationUnavailable =>
+      'Verifikasi untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
+
+  @override
+  String get authPinVerifyServerFault =>
+      'Kami tidak dapat memverifikasi PIN Anda. Coba lagi sebentar lagi.';
+
+  @override
+  String get authPinVerifyTransport =>
+      'Tidak ada koneksi ke server. Kami tidak dapat memastikan PIN Anda.';
+
+  @override
+  String get authPinVerifyGeneric =>
+      'Kami tidak dapat memverifikasi PIN Anda. Coba lagi.';
+
+  @override
+  String get authRegistrationCompleteGeneric =>
+      'Kami tidak dapat menyelesaikan pendaftaran Anda. Coba lagi.';
+
+  @override
+  String get authPinInstructions =>
+      'Kami mengirim PIN ke alamat email Anda. Masukkan di bawah untuk melanjutkan.';
+
+  @override
+  String authSocialVerifiedDescription(String email) {
+    return 'Akun Google Anda sudah diverifikasi. Pilih nama yang akan ditampilkan di Stash-it untuk $email.';
+  }
+
+  @override
+  String get authAccountAlreadyCreated => 'Akun sudah dibuat';
+
+  @override
+  String get authSocialAlreadyCompletedBody =>
+      'Pendaftaran sosial ini sudah selesai. Lanjutkan dengan Google atau masuk untuk menggunakan akun.';
+
+  @override
+  String get authSocialInactiveBody =>
+      'Pendaftaran sosial ini tidak dapat diselesaikan lagi. Mulai lagi dengan Google untuk membuat akun.';
+
+  @override
+  String get authAccountCreatedSignInNotSaved =>
+      'Akun dibuat, proses masuk tidak tersimpan';
+
+  @override
+  String get authSocialStorageFailureBody =>
+      'Akun Anda sudah siap, tetapi perangkat ini tidak dapat menyimpan proses masuk. Lanjutkan dengan Google atau masuk untuk menggunakannya.';
+
+  @override
+  String get authSocialSubmitUnconfirmed =>
+      'Kami tidak dapat memastikan apakah pendaftaran selesai. Lanjutkan dengan Google atau masuk; jika akun belum dibuat, coba lagi.';
+
+  @override
+  String get authLinkInvalidTitle => 'Tautan tidak tersedia';
+
+  @override
+  String get authLinkInvalidBody =>
+      'Permintaan tautan akun ini sudah tidak aktif. Mungkin sudah kedaluwarsa atau digunakan. Mulai lagi dengan Google untuk masuk.';
+
+  @override
+  String get authLinkDifferentAccountTitle => 'Akun Google berbeda';
+
+  @override
+  String get authLinkDifferentAccountBody =>
+      'Akun Google yang digunakan di sini tidak cocok dengan akun saat tautan ini dimulai. Mulai lagi dan pilih akun yang Anda gunakan sebelumnya.';
+
+  @override
+  String get authGoogleSignInExpiredTitle => 'Proses masuk Google kedaluwarsa';
+
+  @override
+  String get authGoogleSignInExpiredBody =>
+      'Google tidak lagi menerima proses masuk yang digunakan untuk tautan ini. Mulai lagi dengan Google untuk melanjutkan.';
+
+  @override
+  String get authAccountsLinkedTitle => 'Akun tertaut';
+
+  @override
+  String get authAccountsLinkedBody =>
+      'Akun Google Anda sekarang tertaut, tetapi proses masuk belum selesai. Lanjutkan dengan Google lagi untuk masuk.';
+
+  @override
+  String get authGoogleAlreadyLinkedTitle => 'Akun Google sudah tertaut';
+
+  @override
+  String get authGoogleAlreadyLinkedBody =>
+      'Akun Google ini sudah tertaut ke akun Stash-it. Lanjutkan dengan Google untuk masuk.';
+
+  @override
+  String get authLinkExistingAccount =>
+      'Stash-it menemukan akun yang sudah ada untuk email ini. Tautkan akun Google yang baru saja Anda verifikasi ke akun tersebut?';
+
+  @override
+  String authLinkExistingAccountForEmail(String email) {
+    return 'Stash-it menemukan akun yang sudah ada untuk $email. Tautkan akun Google yang baru saja Anda verifikasi ke akun tersebut?';
+  }
+
+  @override
+  String authGoogleProfile(String name) {
+    return 'Profil Google: $name';
+  }
+
+  @override
+  String get authLinkUnavailableShort =>
+      'Penautan akun untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
+
+  @override
+  String get authLinkCheckTransport =>
+      'Tidak ada koneksi ke server. Kami tidak dapat memeriksa tautan ini.';
+
+  @override
+  String get authLinkCheckGeneric =>
+      'Kami tidak dapat memeriksa tautan ini. Coba lagi.';
+
+  @override
+  String get authLinkOutcomeUnconfirmed =>
+      'Kami tidak dapat memastikan apakah penautan selesai. Lanjutkan dengan Google untuk masuk; jika belum tertaut, mulai lagi.';
+
+  @override
+  String get authLinkFailed =>
+      'Kami tidak dapat menautkan akun ini. Coba lagi.';
+
+  @override
+  String get authGoogleNotConfigured =>
+      'Proses masuk Google belum dikonfigurasi untuk versi ini.';
+
+  @override
+  String get authGoogleCouldNotStart =>
+      'Proses masuk Google tidak dapat dimulai. Coba lagi.';
+
+  @override
+  String get authGoogleMissingToken =>
+      'Google tidak mengembalikan token masuk. Coba lagi.';
+
+  @override
+  String get authGoogleInvalidToken =>
+      'Google tidak dapat memverifikasi proses masuk itu. Coba lagi.';
+
+  @override
+  String get authGoogleRegistrationIdentityMismatch =>
+      'Pendaftaran untuk email ini sedang berlangsung dengan akun lain. Coba lagi setelah kedaluwarsa.';
+
+  @override
+  String get authGoogleLinkSessionFailed =>
+      'Akun Anda telah tertaut, tetapi proses masuk belum selesai. Lanjutkan dengan Google lagi.';
+
+  @override
+  String get authGoogleLinkIdentityMismatch =>
+      'Akun Google itu tidak cocok dengan akun yang sedang ditautkan.';
+
+  @override
+  String get authGoogleLinkConfirmationInactive =>
+      'Permintaan tautan akun ini sudah tidak aktif. Mulai lagi.';
+
+  @override
+  String get authGoogleAccountExists =>
+      'Akun ini sudah ada. Lanjutkan dengan Google atau masuk.';
+
+  @override
+  String get authGoogleUnavailable =>
+      'Proses masuk Google untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
+
+  @override
+  String get authGoogleServerFault =>
+      'Kami tidak dapat memulai proses masuk Google. Coba lagi sebentar lagi.';
+
+  @override
+  String get authGoogleTransport =>
+      'Tidak ada koneksi ke server. Kami tidak dapat memulai proses masuk Google.';
+
+  @override
+  String get authGoogleUnreadable =>
+      'Kami tidak dapat membaca balasan server, sehingga tidak dapat memulai proses masuk Google. Coba lagi.';
+
+  @override
+  String get authGoogleGenericFailure =>
+      'Proses masuk Google tidak dapat diselesaikan. Coba lagi.';
+
+  @override
+  String get authResetRequestDescription =>
+      'Masukkan alamat email Anda. Jika akun tersedia, kami akan mengirim PIN untuk mengonfirmasinya.';
+
+  @override
+  String get authResetSavedCheckFailure =>
+      'Kami tidak dapat memeriksa reset kata sandi yang tersimpan. Anda dapat meminta yang baru.';
+
+  @override
+  String get authResetAlreadyCompletedNotice =>
+      'Reset kata sandi ini sudah selesai. Masuk dengan kata sandi baru Anda, atau minta reset baru.';
+
+  @override
+  String get authResetPreviousInactive =>
+      'Reset kata sandi Anda sebelumnya sudah tidak aktif. Minta yang baru.';
+
+  @override
+  String get authResetSavedCheckGeneric =>
+      'Kami tidak dapat memeriksa reset kata sandi tersimpan Anda. Coba lagi.';
+
+  @override
+  String authResetSavedContinueMessage(String email) {
+    return 'Reset kata sandi tersimpan untuk $email tersedia di perangkat ini. Lanjutkan, atau gunakan email lain.';
+  }
+
+  @override
+  String get authResetAlreadyInProgress =>
+      'Reset kata sandi sedang berlangsung. Coba lagi sebentar lagi.';
+
+  @override
+  String get authResetStartGeneric =>
+      'Kami tidak dapat memulai reset kata sandi. Coba lagi.';
+
+  @override
+  String get authResetStartTransport =>
+      'Tidak ada koneksi ke server. Kami tidak dapat memulai reset kata sandi.';
+
+  @override
+  String get authResetStartUnreadable =>
+      'Kami tidak dapat membaca balasan server, sehingga tidak dapat memulai reset kata sandi. Coba lagi.';
+
+  @override
+  String get authResetStartServerFault =>
+      'Kami tidak dapat memulai reset kata sandi. Coba lagi sebentar lagi.';
+
+  @override
+  String get authResetUnavailableShort =>
+      'Reset kata sandi untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
+
+  @override
+  String get authResetSavedCheckTransport =>
+      'Tidak ada koneksi ke server. Kami tidak dapat memeriksa reset kata sandi tersimpan Anda. Coba lagi.';
+
+  @override
+  String get authResetSavedCheckUnreadable =>
+      'Kami tidak dapat memastikan apakah reset kata sandi tersimpan Anda masih aktif. Coba lagi.';
+
+  @override
+  String get authResetSavedCheckServerFault =>
+      'Kami tidak dapat memeriksa reset kata sandi tersimpan Anda. Coba lagi sebentar lagi.';
+
+  @override
+  String get authResetContinueTitle => 'Lanjutkan reset kata sandi';
+
+  @override
+  String authResetInProgressFor(String email) {
+    return 'Reset kata sandi sedang berlangsung untuk $email.';
+  }
+
+  @override
+  String get authResetAlreadyVerifiedTitle => 'Reset sudah diverifikasi';
+
+  @override
+  String get authResetAlreadyVerifiedWaitingBody =>
+      'Reset kata sandi ini sudah diverifikasi, tetapi perangkat ini tidak memiliki reset tersimpan yang dapat digunakan untuk email ini. Meminta PIN lain tidak dapat dilakukan. Reset akan kedaluwarsa dalam 15 menit; setelah itu Anda dapat meminta reset baru.';
+
+  @override
+  String get authResetNeutralBody =>
+      'Jika akun tersedia untuk alamat tersebut, kami telah mengirim PIN reset kata sandi.';
+
+  @override
+  String authResetPinSentBody(String email) {
+    return 'Kami mengirim PIN reset kata sandi ke $email.';
+  }
+
+  @override
+  String get authResetAlreadyVerifiedBody =>
+      'Langkah PIN reset ini sudah selesai. Jika perangkat ini memiliki reset tersimpan, lanjutkan dari layar reset kata sandi. Jika tidak, tunggu hingga 15 menit sampai kedaluwarsa lalu minta reset baru.';
+
+  @override
+  String get authResetNoLongerActiveTitle => 'Reset tidak lagi aktif';
+
+  @override
+  String get authResetNoLongerActiveBody =>
+      'Reset kata sandi ini sudah tidak aktif. Minta yang baru untuk melanjutkan.';
+
+  @override
+  String get authResetNotAvailableTitle => 'Reset tidak tersedia';
+
+  @override
+  String get authResetNotAvailableBody =>
+      'Kami tidak dapat menemukan reset kata sandi itu. Periksa alamatnya atau mulai lagi.';
+
+  @override
+  String get authResetVerifiedNotSavedTitle =>
+      'Reset terverifikasi, tetapi tidak tersimpan';
+
+  @override
+  String get authResetVerifiedNotSavedBody =>
+      'PIN Anda sudah diverifikasi, tetapi perangkat ini tidak dapat menyimpan reset dengan aman. Reset tidak dapat dilanjutkan di sini. Minta reset baru setelah reset ini kedaluwarsa, yang memerlukan waktu hingga 15 menit.';
+
+  @override
+  String get authResetSavedCheckLocalFailure =>
+      'Kami tidak dapat memeriksa reset tersimpan di perangkat ini. Coba lagi.';
+
+  @override
+  String authResetReplacementUnknownIncoming(String savedEmail) {
+    return 'Reset kata sandi tersimpan untuk $savedEmail ada di perangkat ini. Jika PIN ini terverifikasi, reset tersebut dapat tergantikan; reset tersimpan untuk $savedEmail mungkin tidak lagi tersedia di perangkat ini. Ini tidak membatalkannya di server.';
+  }
+
+  @override
+  String authResetReplacementKnownIncoming(String incoming, String savedEmail) {
+    return 'Reset kata sandi tersimpan untuk $savedEmail ada di perangkat ini. Jika PIN ini terverifikasi untuk $incoming, PIN tersebut akan menggantikannya; reset tersimpan untuk $savedEmail tidak akan lagi tersedia di perangkat ini. Ini tidak membatalkannya di server.';
+  }
+
+  @override
+  String authResetPinSentToEmail(String email) {
+    return 'Kami mengirim PIN ke $email. Masukkan di bawah untuk memilih kata sandi baru.';
+  }
+
+  @override
+  String authResetPinSentToEmailIssued(String email) {
+    return 'Kami mengirim PIN ke $email. Jika Anda sudah memilikinya, masukkan di bawah untuk memilih kata sandi baru.';
+  }
+
+  @override
+  String get authResetPinSentGeneric =>
+      'Kami mengirim PIN ke alamat email Anda. Masukkan di bawah untuk memilih kata sandi baru.';
+
+  @override
+  String get authResetPinSentGenericIssued =>
+      'Kami mengirim PIN ke alamat email Anda. Jika Anda sudah memilikinya, masukkan di bawah untuk memilih kata sandi baru.';
+
+  @override
+  String get authResetResendUnavailable =>
+      'Pengiriman PIN untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
+
+  @override
+  String get authResetResendTransport =>
+      'Tidak ada koneksi ke server. Kami tidak dapat meminta PIN baru.';
+
+  @override
+  String get authResetResendGeneric =>
+      'Kami tidak dapat meminta PIN baru. Coba lagi.';
+
+  @override
+  String get authResetLoadTransport =>
+      'Tidak ada koneksi ke server. Kami tidak dapat memeriksa reset ini. Coba lagi.';
+
+  @override
+  String get authResetLoadServerFault =>
+      'Kami tidak dapat memeriksa reset ini. Coba lagi sebentar lagi.';
+
+  @override
+  String get authResetLoadGeneric =>
+      'Kami tidak dapat memeriksa reset ini. Coba lagi.';
+
+  @override
+  String get authResetStorageReadFailure =>
+      'Kami tidak dapat membaca reset kata sandi tersimpan dari perangkat ini. Coba lagi.';
+
+  @override
+  String get authResetCompletedTitle => 'Reset kata sandi selesai';
+
+  @override
+  String get authResetCompletedBody =>
+      'Reset kata sandi ini sudah selesai. Masuk dengan kata sandi baru Anda.';
+
+  @override
+  String get authNoResetInProgressTitle =>
+      'Tidak ada reset yang sedang berlangsung';
+
+  @override
+  String get authNoResetInProgressBody =>
+      'Mulai reset kata sandi dari halaman masuk untuk memilih kata sandi baru.';
+
+  @override
+  String authChooseNewPasswordForEmail(String email) {
+    return 'Pilih kata sandi baru untuk $email.';
+  }
+
+  @override
+  String authSetPasswordForEmail(String email) {
+    return 'Atur kata sandi untuk $email.';
+  }
+
+  @override
+  String authResetSubmitRateLimitedWithWait(int seconds) {
+    return 'Kami tidak dapat mereset kata sandi Anda saat ini. Coba lagi dalam $seconds detik.';
+  }
+
+  @override
+  String get authResetSubmitRateLimitedNoWait =>
+      'Kami tidak dapat mereset kata sandi Anda saat ini. Coba lagi sebentar lagi.';
+
+  @override
+  String get authResetOutcomeUnconfirmed =>
+      'Kami tidak dapat memastikan apakah reset kata sandi selesai. Coba masuk dengan kata sandi baru Anda.';
+
+  @override
+  String get authResetSubmitGeneric =>
+      'Kami tidak dapat mereset kata sandi Anda. Coba lagi.';
 }

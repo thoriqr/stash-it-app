@@ -12,6 +12,7 @@ import 'package:stash_it_app/features/auth/data/models/registration_continuation
 import 'package:stash_it_app/features/auth/data/registration_continuation_store.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -290,7 +291,7 @@ class _FinalizeRegistrationScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Complete your account',
+          AppLocalizations.of(context).authCompleteYourAccount,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
@@ -302,20 +303,21 @@ class _FinalizeRegistrationScreenState
   }
 
   Widget _buildLoadError(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     final failure = _loadFailure!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Registration unavailable',
+          l10n.authRegistrationUnavailable,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
         ),
         const SizedBox(height: AppMetrics.space4),
         AuthMessageBand(
-          message: _loadMessageFor(failure),
+          message: _loadMessageFor(failure, l10n),
           onDismiss: () => setState(() => _loadFailure = null),
           tone: AuthMessageTone.danger,
         ),
@@ -323,13 +325,13 @@ class _FinalizeRegistrationScreenState
         // Only an unconfirmed read reaches this state. Retrying reads the token
         // again; it sends no finalization and does not spend or discard anything.
         AppButton(
-          label: 'Retry',
+          label: l10n.authRetry,
           variant: AppButtonVariant.primary,
           onPressed: _loadContinuation,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.quiet,
           onPressed: () => _openSignIn(),
         ),
@@ -344,6 +346,7 @@ class _FinalizeRegistrationScreenState
   /// unusable token means a new registration is required. Neither state offers
   /// Retry, because repeating the request cannot change the answer.
   Widget _buildTerminal(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     final completed = _terminalOutcome == ContinuationOutcome.consumed;
 
     return Column(
@@ -352,8 +355,8 @@ class _FinalizeRegistrationScreenState
       children: [
         Text(
           completed
-              ? 'Registration already completed'
-              : 'Registration unavailable',
+              ? l10n.authRegistrationAlreadyCompletedTitle
+              : l10n.authRegistrationUnavailable,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
@@ -361,34 +364,33 @@ class _FinalizeRegistrationScreenState
         const SizedBox(height: AppMetrics.space1),
         Text(
           completed
-              ? 'This registration was already completed. Sign in to continue.'
-              : 'This registration can no longer be completed. Start a new '
-                    'registration.',
+              ? l10n.authRegistrationAlreadyCompletedBody
+              : l10n.authRegistrationCannotBeCompletedBody,
           style: AppTypography.body.copyWith(color: tokens.textSecondary),
         ),
         const SizedBox(height: AppMetrics.space6),
         if (completed)
           AppButton(
-            label: 'Back to sign in',
+            label: l10n.authBackToSignIn,
             variant: AppButtonVariant.primary,
             onPressed: () => _openSignIn(),
           )
         else
           AppButton(
-            label: 'Start a new registration',
+            label: l10n.authStartNewRegistration,
             variant: AppButtonVariant.primary,
             onPressed: _openSignUp,
           ),
         const SizedBox(height: AppMetrics.space3),
         if (completed)
           AppButton(
-            label: 'Start a new registration',
+            label: l10n.authStartNewRegistration,
             variant: AppButtonVariant.secondary,
             onPressed: _openSignUp,
           )
         else
           AppButton(
-            label: 'Back to sign in',
+            label: l10n.authBackToSignIn,
             variant: AppButtonVariant.quiet,
             onPressed: () => _openSignIn(),
           ),
@@ -397,6 +399,7 @@ class _FinalizeRegistrationScreenState
   }
 
   Widget _buildForm(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     final continuation = _continuation!;
     return Form(
       key: _formKey,
@@ -405,37 +408,37 @@ class _FinalizeRegistrationScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Complete your account',
+            l10n.authCompleteYourAccount,
             style: AppTypography.screenHeading.copyWith(
               color: tokens.textPrimary,
             ),
           ),
           const SizedBox(height: AppMetrics.space1),
           Text(
-            'Account for ${continuation.email}',
+            l10n.authAccountForEmail(continuation.email),
             style: AppTypography.body.copyWith(color: tokens.textSecondary),
           ),
           const SizedBox(height: AppMetrics.space6),
           AppField(
-            label: 'Display name',
+            label: l10n.authDisplayNameLabel,
             controller: _displayNameController,
             enabled: !_submitting,
             textInputAction: TextInputAction.next,
             validator: (value) {
               final name = value?.trim() ?? '';
-              if (name.isEmpty) return 'Enter a display name.';
+              if (name.isEmpty) return l10n.authEnterDisplayName;
               if (name.length < 2) {
-                return 'Display name is at least 2 characters.';
+                return l10n.authDisplayNameMin2;
               }
               if (name.length > 100) {
-                return 'Display name is too long.';
+                return l10n.authDisplayNameTooLong;
               }
               return null;
             },
           ),
           const SizedBox(height: AppMetrics.space4),
           AppField(
-            label: 'Password',
+            label: l10n.authPasswordLabel,
             controller: _passwordController,
             enabled: !_submitting,
             obscureText: _obscurePassword,
@@ -444,7 +447,9 @@ class _FinalizeRegistrationScreenState
               onPressed: _submitting
                   ? null
                   : () => setState(() => _obscurePassword = !_obscurePassword),
-              tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+              tooltip: _obscurePassword
+                  ? l10n.authShowPassword
+                  : l10n.authHidePassword,
               icon: Icon(
                 _obscurePassword
                     ? Icons.visibility_outlined
@@ -453,16 +458,16 @@ class _FinalizeRegistrationScreenState
             ),
             validator: (value) {
               final password = value ?? '';
-              if (password.isEmpty) return 'Enter a password.';
+              if (password.isEmpty) return l10n.authEnterPassword;
               if (password.length < 8) {
-                return 'Password is at least 8 characters.';
+                return l10n.authPasswordMin8;
               }
               return null;
             },
           ),
           const SizedBox(height: AppMetrics.space4),
           AppField(
-            label: 'Confirm password',
+            label: l10n.authConfirmPasswordLabel,
             controller: _confirmPasswordController,
             enabled: !_submitting,
             obscureText: _obscurePassword,
@@ -470,7 +475,7 @@ class _FinalizeRegistrationScreenState
             onSubmitted: (_) => _submit(),
             validator: (value) {
               if (value != _passwordController.text) {
-                return 'Passwords do not match.';
+                return l10n.authPasswordsDoNotMatch;
               }
               return null;
             },
@@ -478,21 +483,21 @@ class _FinalizeRegistrationScreenState
           if (_submitFailure case final failure?) ...[
             const SizedBox(height: AppMetrics.space4),
             AuthMessageBand(
-              message: _messageFor(failure),
+              message: _messageFor(failure, l10n),
               onDismiss: () => setState(() => _submitFailure = null),
               tone: AuthMessageTone.danger,
             ),
           ],
           const SizedBox(height: AppMetrics.space6),
           AppButton(
-            label: 'Create account',
+            label: l10n.authCreateAccount,
             variant: AppButtonVariant.primary,
             busy: _submitting,
             onPressed: _submit,
           ),
           const SizedBox(height: AppMetrics.space3),
           AppButton(
-            label: 'Back to sign in',
+            label: l10n.authBackToSignIn,
             variant: AppButtonVariant.quiet,
             onPressed: _submitting
                 ? null
@@ -507,60 +512,51 @@ class _FinalizeRegistrationScreenState
     );
   }
 
-  String _loadMessageFor(ApiFailure failure) {
+  String _loadMessageFor(ApiFailure failure, AppLocalizations localizations) {
     return switch (failure) {
-      ApiFailureTransport() =>
-        'No connection to the server. We could not check this registration. '
-            'Try again.',
+      ApiFailureTransport() => localizations.authRegistrationCheckTransport,
       ApiFailureUnreadableResponse() =>
-        'We could not read the server\'s reply, so we could not check this '
-            'registration. Try again.',
-      _ => _messageFor(failure),
+        localizations.authRegistrationCheckUnreadable,
+      _ => _messageFor(failure, localizations),
     };
   }
 
-  String _messageFor(ApiFailure failure) {
+  String _messageFor(ApiFailure failure, AppLocalizations localizations) {
     return switch (failure) {
-      ApiFailureInvalidVerificationCode() => 'That PIN is not valid.',
+      ApiFailureInvalidVerificationCode() => localizations.authPinInvalid,
       ApiFailureVerificationCodeAttemptsExceeded() =>
-        'Too many incorrect PINs. Start a new registration.',
+        localizations.authPinAttemptsExceededRegistration,
       ApiFailureRegistrationRestartRequired() =>
-        'That registration can no longer continue. Start a new one.',
+        localizations.authRegistrationRestartRequired,
       ApiFailureRegistrationContinuationRequired() ||
       ApiFailureRegistrationContinuationExpired() ||
       ApiFailureInvalidRegistrationType() =>
-        'This registration can no longer be completed. Start a new '
-            'registration.',
+        localizations.authRegistrationCannotBeCompletedBody,
       // Finalization is the only consumer of a continuation, so a consumed token
       // means the account was created — including by an earlier attempt whose
       // reply was lost.
       ApiFailureRegistrationContinuationConsumed() =>
-        'This registration was already completed. Sign in instead.',
+        localizations.authRegistrationAlreadyCompletedSignIn,
       ApiFailureRegistrationAlreadyCompleted() =>
-        'An account already exists for this email. Sign in instead.',
-      ApiFailureValidation() => 'Check your details, then try again.',
+        localizations.authRegistrationAlreadyCompleted,
+      ApiFailureValidation() => localizations.authCheckDetailsThenTryAgain,
       ApiFailureRateLimited(:final retryAfter) =>
         retryAfter != null
-            ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
-            : 'Too many attempts. Try again shortly.',
+            ? localizations.authTooManyAttemptsWithWait(retryAfter.inSeconds)
+            : localizations.genericReadRateLimited,
       ApiFailureServerUnavailable() =>
-        'Registration is temporarily unavailable. Try again shortly.',
+        localizations.authRegistrationUnavailableShort,
       // A failed finalization transaction either commits with a representation
       // or loses its commit and rolls back. A 500 therefore does not establish
       // that nothing was written, so it is treated as unconfirmed rather than as
       // a known failure.
-      ApiFailureServerFault() =>
-        'We could not confirm whether registration completed. Try signing in; '
-            'if it fails, start again.',
-      ApiFailureTransport() =>
-        'We could not confirm whether registration completed. Try signing in; '
-            'if it fails, start again.',
+      ApiFailureServerFault() => localizations.authRegistrationUncertainSignIn,
+      ApiFailureTransport() => localizations.authRegistrationUncertainSignIn,
       ApiFailureUnreadableResponse() =>
-        'We could not confirm whether registration completed. Try signing in; '
-            'if it fails, start again.',
+        localizations.authRegistrationUncertainSignIn,
       ApiFailurePinEmailDeliveryFailed() =>
-        'We could not confirm the PIN email was sent. Check your inbox.',
-      _ => 'We could not complete your registration. Try again.',
+        localizations.authPinEmailUnconfirmedShort,
+      _ => localizations.authRegistrationCompleteGeneric,
     };
   }
 }

@@ -13,9 +13,9 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 import 'package:stash_it_app/features/auth/presentation/auth_entry_screen.dart';
-import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
 import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_http.dart';
@@ -43,6 +43,8 @@ import '../../../support/saved_items_fixtures.dart';
 /// that were true before the first transition; this file's subject *is* the
 /// transition.
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+
   /// The entry screen's heading, used as its stable on-screen identity.
   const entryHeading = 'A place for things you find on the internet.';
 
@@ -133,7 +135,7 @@ void main() {
           expect(find.text(entryHeading), findsOneWidget);
           expect(find.byType(NavigationBar), findsNothing);
           // ...and the reason came with it, exactly once.
-          expect(find.text(sessionEndedMessage), findsOneWidget);
+          expect(find.text(english.sessionEnded), findsOneWidget);
           expect(
             unannounced(container),
             isFalse,
@@ -148,13 +150,13 @@ void main() {
       scriptRenewal(401, 'SESSION_REVOKED');
 
       final container = await pumpApp(tester);
-      expect(find.text(sessionEndedMessage), findsOneWidget);
+      expect(find.text(english.sessionEnded), findsOneWidget);
 
       // Same widget, same position: the State survives, so initState does not
       // run again and nothing is re-derived.
       await tester.pump();
       await tester.pumpAndSettle();
-      expect(find.text(sessionEndedMessage), findsOneWidget);
+      expect(find.text(english.sessionEnded), findsOneWidget);
 
       // A fresh mount is the stronger case — a new State runs initState again,
       // and only the consumed flag stops the message coming back.
@@ -164,6 +166,8 @@ void main() {
           child: MaterialApp(
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             home: const AuthEntryScreen(),
           ),
         ),
@@ -171,7 +175,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text(sessionEndedMessage),
+        find.text(english.sessionEnded),
         findsNothing,
         reason:
             'the reason was consumed, so a later visit is a plain entry screen',
@@ -199,7 +203,7 @@ void main() {
         reason: 'an ambiguous failure must not sign the user out',
       );
       expect(find.text(entryHeading), findsNothing);
-      expect(find.text(sessionEndedMessage), findsNothing);
+      expect(find.text(english.sessionEnded), findsNothing);
       // The evidence is kept, which is the whole point of the policy.
       expect(backend.values[refreshKey], 'refresh-1');
     });
@@ -212,7 +216,7 @@ void main() {
 
       expect(unannounced(container), isFalse);
       expect(container.read(authStateProvider), AuthStatus.signedIn);
-      expect(find.text(sessionEndedMessage), findsNothing);
+      expect(find.text(english.sessionEnded), findsNothing);
     });
 
     testWidgets('a deliberate sign-out is not reported as an expiry', (
@@ -236,7 +240,7 @@ void main() {
         isFalse,
         reason: 'asking to be signed out is not an expiry',
       );
-      expect(find.text(sessionEndedMessage), findsNothing);
+      expect(find.text(english.sessionEnded), findsNothing);
     });
   });
 
@@ -320,6 +324,8 @@ void main() {
           child: MaterialApp(
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             home: const SignInScreen(),
           ),
         ),
@@ -338,11 +344,11 @@ void main() {
     ) async {
       await pumpExpiredSession(tester);
 
-      final band = bandFor(tester, sessionEndedMessage);
+      final band = bandFor(tester, english.sessionEnded);
       expect(band.fill, AppTokens.light.warningSoft);
       expect(band.border, AppTokens.light.warningBorder);
       expect(
-        markFor(tester, sessionEndedMessage),
+        markFor(tester, english.sessionEnded),
         AppTokens.light.warning,
         reason: 'the Warning row carries a filled `--warning` mark',
       );
@@ -370,7 +376,7 @@ void main() {
       tester,
     ) async {
       await pumpExpiredSession(tester);
-      final expiry = bandFor(tester, sessionEndedMessage);
+      final expiry = bandFor(tester, english.sessionEnded);
 
       // The same screen, a second run, now showing the other failure.
       backend = InMemorySecureStorage();
@@ -413,6 +419,8 @@ void main() {
           child: MaterialApp(
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             home: const SignInScreen(),
           ),
         ),
@@ -429,7 +437,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.text(sessionEndedMessage),
+        find.text(english.sessionEnded),
         findsNothing,
         reason: 'a wrong password is not an expired session',
       );

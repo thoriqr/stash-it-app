@@ -11,10 +11,10 @@ import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/data/models/verification_status_response.dart';
 import 'package:stash_it_app/features/auth/data/registration_continuation_store.dart';
-import 'package:stash_it_app/features/auth/presentation/sign_up_screen.dart'
-    show registrationMessageFor;
+import 'package:stash_it_app/features/auth/presentation/auth_messages.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -180,9 +180,9 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
       ref
           .read(feedbackProvider.notifier)
           .show(
-            const AppFeedback(
+            AppFeedback.localized(
               tone: FeedbackTone.success,
-              copy: 'A new PIN has been sent.',
+              message: (localizations) => localizations.newPinSent,
             ),
           );
       await _loadStatus();
@@ -258,7 +258,7 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Check your email',
+          AppLocalizations.of(context).authCheckYourEmail,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
@@ -270,8 +270,9 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
   }
 
   Widget _buildLoadError(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
     final failure = _loadFailure!;
-    final message = _loadMessage(failure);
+    final message = _loadMessage(failure, l10n);
     final canRetry =
         failure is! ApiFailureRegistrationRestartRequired &&
         failure is! ApiFailureNotFound &&
@@ -282,7 +283,7 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Check your email',
+          l10n.authCheckYourEmail,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
@@ -296,13 +297,13 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
         const SizedBox(height: AppMetrics.space6),
         if (canRetry)
           AppButton(
-            label: 'Retry',
+            label: l10n.authRetry,
             variant: AppButtonVariant.primary,
             onPressed: _loadStatus,
           ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: _recoveryLabel(failure),
+          label: _recoveryLabel(failure, l10n),
           variant: AppButtonVariant.secondary,
           onPressed: _recoveryAction(failure),
         ),
@@ -327,31 +328,32 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
   /// user continues by re-entering the same email at sign-up, where the
   /// `verified` response and the stored continuation take over.
   Widget _buildInvalid(AppTokens tokens) {
+    final l10n = AppLocalizations.of(context);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Registration unavailable',
+          l10n.authRegistrationUnavailable,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
         ),
         const SizedBox(height: AppMetrics.space1),
         Text(
-          'This registration step is no longer open. Start over with the same '
-          'email to continue.',
+          l10n.authRegistrationStepClosed,
           style: AppTypography.body.copyWith(color: tokens.textSecondary),
         ),
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Start over',
+          label: l10n.authStartOver,
           variant: AppButtonVariant.primary,
           onPressed: _openSignUp,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.quiet,
           onPressed: _verifying ? null : _openSignIn,
         ),
@@ -360,6 +362,7 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
   }
 
   Widget _buildPending(AppTokens tokens, VerificationStatusResponse status) {
+    final l10n = AppLocalizations.of(context);
     final resendEnabled =
         !_verifying &&
         !_resending &&
@@ -371,19 +374,19 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Enter your PIN',
+          l10n.authEnterYourPin,
           style: AppTypography.screenHeading.copyWith(
             color: tokens.textPrimary,
           ),
         ),
         const SizedBox(height: AppMetrics.space1),
         Text(
-          'We sent a PIN to your email address. Enter it below to continue.',
+          l10n.authPinInstructions,
           style: AppTypography.body.copyWith(color: tokens.textSecondary),
         ),
         const SizedBox(height: AppMetrics.space6),
         AppField(
-          label: 'PIN',
+          label: l10n.authPinLabel,
           controller: _pinController,
           enabled: !_verifying && !_resending,
           keyboardType: TextInputType.number,
@@ -391,7 +394,7 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
         if (_verifyFailure case final failure?) ...[
           const SizedBox(height: AppMetrics.space4),
           AuthMessageBand(
-            message: _verifyMessageFor(failure),
+            message: _verifyMessageFor(failure, l10n),
             onDismiss: () => setState(() => _verifyFailure = null),
             tone: AuthMessageTone.danger,
           ),
@@ -399,14 +402,14 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
         if (_resendFailure case final failure?) ...[
           const SizedBox(height: AppMetrics.space4),
           AuthMessageBand(
-            message: registrationMessageFor(failure),
+            message: authRegistrationMessageFor(failure, l10n),
             onDismiss: () => setState(() => _resendFailure = null),
             tone: AuthMessageTone.danger,
           ),
         ],
         const SizedBox(height: AppMetrics.space6),
         AppButton(
-          label: 'Verify PIN',
+          label: l10n.authVerifyPin,
           variant: AppButtonVariant.primary,
           busy: _verifying,
           onPressed: _verifying ? null : _verifyPin,
@@ -414,17 +417,17 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
         const SizedBox(height: AppMetrics.space6),
         AppButton(
           label: _resending
-              ? 'Sending...'
+              ? l10n.authSending
               : (_remainingSeconds > 0
-                    ? 'Resend PIN in $_remainingSeconds s'
-                    : 'Resend PIN'),
+                    ? l10n.authResendPinIn(_remainingSeconds)
+                    : l10n.authResendPin),
           variant: AppButtonVariant.secondary,
           busy: _resending,
           onPressed: resendEnabled ? _resend : null,
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Back to sign in',
+          label: l10n.authBackToSignIn,
           variant: AppButtonVariant.quiet,
           onPressed: _verifying ? null : _openSignIn,
         ),
@@ -469,11 +472,10 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
           ref
               .read(feedbackProvider.notifier)
               .show(
-                const AppFeedback(
+                AppFeedback.localized(
                   tone: FeedbackTone.warning,
-                  copy:
-                      'PIN verified, but this device could not save your '
-                      'progress. Finish before closing the app.',
+                  message: (localizations) =>
+                      localizations.pinVerifiedProgressNotSaved,
                 ),
               );
         }
@@ -521,59 +523,52 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen>
     }
   }
 
-  String _verifyMessageFor(ApiFailure failure) {
+  String _verifyMessageFor(ApiFailure failure, AppLocalizations localizations) {
     return switch (failure) {
-      ApiFailureInvalidVerificationCode() =>
-        'That PIN is not correct. Try again.',
+      ApiFailureInvalidVerificationCode() => localizations.authPinInvalid,
       ApiFailureVerificationCodeAttemptsExceeded() =>
-        'Too many incorrect PINs. Start a new registration.',
+        localizations.authPinAttemptsExceededRegistration,
       ApiFailureRegistrationRestartRequired() =>
-        'That registration can no longer continue. Start a new one.',
-      ApiFailureNotFound() =>
-        'We could not find that registration. Start a new one.',
-      ApiFailureMalformedRequest() =>
-        'We could not read that registration. Start a new one.',
+        localizations.authRegistrationRestartRequired,
+      ApiFailureNotFound() => localizations.authRegistrationNotFound,
+      ApiFailureMalformedRequest() => localizations.authRegistrationUnreadable,
       ApiFailureRateLimited(:final retryAfter) =>
         retryAfter != null
-            ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
-            : 'Too many attempts. Try again shortly.',
+            ? localizations.authTooManyAttemptsWithWait(retryAfter.inSeconds)
+            : localizations.genericReadRateLimited,
       ApiFailureServerUnavailable() =>
-        'Verification is temporarily unavailable. Try again shortly.',
-      ApiFailureServerFault() =>
-        'We could not verify your PIN. Try again shortly.',
-      ApiFailureTransport() =>
-        'No connection to the server. We could not confirm your PIN.',
-      ApiFailureUnreadableResponse() =>
-        'We could not read the server reply. Try again.',
-      ApiFailureValidation() => 'Enter a 6-digit PIN.',
-      _ => 'We could not verify your PIN. Try again.',
+        localizations.authVerificationUnavailable,
+      ApiFailureServerFault() => localizations.authPinVerifyServerFault,
+      ApiFailureTransport() => localizations.authPinVerifyTransport,
+      ApiFailureUnreadableResponse() => localizations.genericReadUnreadable,
+      ApiFailureValidation() => localizations.authEnterSixDigitPin,
+      _ => localizations.authPinVerifyGeneric,
     };
   }
 
-  String _loadMessage(ApiFailure failure) {
+  String _loadMessage(ApiFailure failure, AppLocalizations localizations) {
     if (failure is ApiFailureRegistrationRestartRequired) {
       // A verified request answers 409 VERIFICATION_NOT_PENDING here. "Start
       // over" is right, but the copy must not imply the registration was never
       // verified: re-entering the same email resumes from the verified state.
-      return 'This registration step is no longer open. Start over with the '
-          'same email to continue.';
+      return localizations.authRegistrationStepClosed;
     }
     if (failure is ApiFailureNotFound) {
-      return 'We could not find that registration. Start a new one.';
+      return localizations.authRegistrationNotFound;
     }
     if (failure is ApiFailureMalformedRequest) {
-      return 'We could not read that registration. Start a new one.';
+      return localizations.authRegistrationUnreadable;
     }
-    return registrationMessageFor(failure);
+    return authRegistrationMessageFor(failure, localizations);
   }
 
-  String _recoveryLabel(ApiFailure failure) {
+  String _recoveryLabel(ApiFailure failure, AppLocalizations localizations) {
     if (failure is ApiFailureRegistrationRestartRequired ||
         failure is ApiFailureNotFound ||
         failure is ApiFailureMalformedRequest) {
-      return 'Start over';
+      return localizations.authStartOver;
     }
-    return 'Back to sign in';
+    return localizations.authBackToSignIn;
   }
 
   VoidCallback _recoveryAction(ApiFailure failure) {

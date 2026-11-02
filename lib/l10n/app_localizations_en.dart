@@ -819,4 +819,816 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shareNotStored => 'Couldn\'t save or keep this link.';
+
+  @override
+  String get authBackToWelcome => 'Back to welcome';
+
+  @override
+  String get authEmailLabel => 'Email';
+
+  @override
+  String get authPasswordLabel => 'Password';
+
+  @override
+  String get authPinLabel => 'PIN';
+
+  @override
+  String get authDisplayNameLabel => 'Display name';
+
+  @override
+  String get authConfirmPasswordLabel => 'Confirm password';
+
+  @override
+  String get authNewPasswordLabel => 'New password';
+
+  @override
+  String get authConfirmNewPasswordLabel => 'Confirm new password';
+
+  @override
+  String get authShowPassword => 'Show password';
+
+  @override
+  String get authHidePassword => 'Hide password';
+
+  @override
+  String get authSignIn => 'Sign in';
+
+  @override
+  String get authSignInTitle => 'Sign in to Stash It';
+
+  @override
+  String get authSignInDescription =>
+      'Use the email and password on your Stash It account.';
+
+  @override
+  String get authForgotPassword => 'Forgot password?';
+
+  @override
+  String get authNoAccountPrompt => 'Don\'t have an account?';
+
+  @override
+  String get authCreateAnAccount => 'Create an account';
+
+  @override
+  String get authCreateAccount => 'Create account';
+
+  @override
+  String get authSignUpTitle => 'Create your account';
+
+  @override
+  String get authSignUpDescription =>
+      'Enter your email address. We will send you a PIN to confirm it.';
+
+  @override
+  String get authSendPin => 'Send PIN';
+
+  @override
+  String get authAlreadyHaveAccount => 'Already have an account?';
+
+  @override
+  String get authContinueWithGoogle => 'Continue with Google';
+
+  @override
+  String get authRetry => 'Retry';
+
+  @override
+  String get authTryAgain => 'Try again';
+
+  @override
+  String get authBackToSignIn => 'Back to sign in';
+
+  @override
+  String get authStartOver => 'Start over';
+
+  @override
+  String get authStartNewRegistration => 'Start a new registration';
+
+  @override
+  String get authStartNewReset => 'Start a new reset';
+
+  @override
+  String get authUseDifferentEmail => 'Use a different email';
+
+  @override
+  String get authContinue => 'Continue';
+
+  @override
+  String get authCancel => 'Cancel';
+
+  @override
+  String get authLinkAccount => 'Link account';
+
+  @override
+  String get authVerifyPin => 'Verify PIN';
+
+  @override
+  String get authResendPin => 'Resend PIN';
+
+  @override
+  String authResendPinIn(int seconds) {
+    return 'Resend PIN in $seconds s';
+  }
+
+  @override
+  String get authSending => 'Sending…';
+
+  @override
+  String get authSendResetPin => 'Send reset PIN';
+
+  @override
+  String get authResetPassword => 'Reset password';
+
+  @override
+  String get authBackToPasswordReset => 'Back to password reset';
+
+  @override
+  String get authReplaceSavedResetTitle => 'Replace saved password reset?';
+
+  @override
+  String get authKeepSavedReset => 'Keep saved reset';
+
+  @override
+  String get authReplaceAndVerify => 'Replace and verify';
+
+  @override
+  String get authRecoverRegistration => 'Recover this registration';
+
+  @override
+  String get authEntryHeadline =>
+      'A place for things you find on the internet.';
+
+  @override
+  String get authEntryDescription =>
+      'Save a link from any browser, then find it again here.';
+
+  @override
+  String get authCheckYourEmail => 'Check your email';
+
+  @override
+  String get authEnterYourPin => 'Enter your PIN';
+
+  @override
+  String get authCompleteYourAccount => 'Complete your account';
+
+  @override
+  String get authRegistrationUnavailable => 'Registration unavailable';
+
+  @override
+  String get authResetUnavailable => 'Reset unavailable';
+
+  @override
+  String get authResetPasswordTitle => 'Reset your password';
+
+  @override
+  String get authChooseNewPassword => 'Choose a new password';
+
+  @override
+  String get authLinkYourGoogleAccount => 'Link your Google account';
+
+  @override
+  String get authEnterEmail => 'Enter your email address.';
+
+  @override
+  String get authInvalidEmail => 'Enter a valid email address.';
+
+  @override
+  String get authEmailTooLong => 'That email address is too long.';
+
+  @override
+  String get authEnterPassword => 'Enter your password.';
+
+  @override
+  String get authPasswordMin8 => 'Your password is at least 8 characters.';
+
+  @override
+  String get authPasswordTooLong => 'That password is too long.';
+
+  @override
+  String get authEnterNewPassword => 'Enter a new password.';
+
+  @override
+  String get authPasswordRange => 'Use between 8 and 128 characters.';
+
+  @override
+  String get authPasswordsDoNotMatch => 'Passwords do not match.';
+
+  @override
+  String get authEnterDisplayName => 'Enter a display name.';
+
+  @override
+  String get authDisplayNameMin2 => 'Display name is at least 2 characters.';
+
+  @override
+  String get authDisplayNameTooLong => 'Display name is too long.';
+
+  @override
+  String get authEnterSixDigitPin => 'Enter a 6-digit PIN.';
+
+  @override
+  String get authCheckEmailThenTryAgain =>
+      'Check your email address, then try again.';
+
+  @override
+  String get authCheckDetailsThenTryAgain =>
+      'Check your details, then try again.';
+
+  @override
+  String get authCheckDisplayNameThenTryAgain =>
+      'Check your display name, then try again.';
+
+  @override
+  String get authRegistrationSuccessSignIn =>
+      'Registration successful. Please sign in with your new account.';
+
+  @override
+  String get authRegistrationUncertainSignIn =>
+      'We could not confirm whether registration completed. Try signing in; if it fails, start again.';
+
+  @override
+  String get authPasswordResetSuccessSignIn =>
+      'Your password has been reset. Please sign in with your new password.';
+
+  @override
+  String get authPasswordResetUncertainSignIn =>
+      'We could not confirm whether the password reset completed. Try signing in with your new password.';
+
+  @override
+  String get authSignInGenericFailure =>
+      'Something went wrong signing in. Try again.';
+
+  @override
+  String get authSignInInvalidCredentials =>
+      'That doesn\'t look like a valid email or password.';
+
+  @override
+  String get authSignInValidation =>
+      'Check your email address and password, then try again.';
+
+  @override
+  String get authSignInUnavailable =>
+      'Sign in is temporarily unavailable. Try again shortly.';
+
+  @override
+  String get authSignInUnconfirmed =>
+      'No connection to the server. We could not confirm this sign-in.';
+
+  @override
+  String get authSessionUnconfirmed =>
+      'We could not confirm your session. Try again.';
+
+  @override
+  String get authSignInStorageFailed =>
+      'Your sign-in could not be saved securely. Try again.';
+
+  @override
+  String authTooManyAttemptsWithWait(int seconds) {
+    return 'Too many attempts. Try again in $seconds seconds.';
+  }
+
+  @override
+  String get authSignUpGenericFailure =>
+      'Something went wrong starting your registration. Try again.';
+
+  @override
+  String get authRegistrationMismatch =>
+      'We could not match that registration to this email. Try again with the same address.';
+
+  @override
+  String get authRegistrationAlreadyCompletedSignIn =>
+      'This registration was already completed. Sign in instead.';
+
+  @override
+  String get authRecoveryCouldNotStart =>
+      'Recovery could not be started. Try again.';
+
+  @override
+  String get authRecoveryGenericFailure =>
+      'Something went wrong starting recovery. Try again.';
+
+  @override
+  String get authRegistrationCheckTransport =>
+      'No connection to the server. We could not check that registration. Try again.';
+
+  @override
+  String get authRegistrationCheckUnreadable =>
+      'We could not read the server\'s reply, so we could not check that registration. Try again.';
+
+  @override
+  String get authRegistrationCheckUnavailable =>
+      'We could not check that registration. Try again shortly.';
+
+  @override
+  String get authRegistrationCheckGeneric =>
+      'We could not check this registration. Try again.';
+
+  @override
+  String get authRecoveryTransport =>
+      'No connection to the server. We could not start recovery. Try again.';
+
+  @override
+  String get authRecoveryUnreadable =>
+      'We could not confirm whether recovery started. Try again.';
+
+  @override
+  String get authRecoveryUnavailable =>
+      'Recovery is temporarily unavailable. Try again shortly.';
+
+  @override
+  String get authRecoveryServerFault =>
+      'We could not start recovery. Try again shortly.';
+
+  @override
+  String authPinSentToEmail(String email) {
+    return 'We sent a PIN to $email. You will need it to finish creating your account.';
+  }
+
+  @override
+  String get authVerificationComplete => 'Verification already complete';
+
+  @override
+  String authVerifiedSavedCodeUnconfirmed(String email) {
+    return 'We could not check the code saved on this device for $email. Try again, or recover the registration with a new PIN. Recovering replaces this device\'s saved code.';
+  }
+
+  @override
+  String authVerifiedNoToken(String email) {
+    return 'This email has already been verified, but this device does not have the code needed to finish it. Recover it with a new PIN sent to $email.';
+  }
+
+  @override
+  String get authRegistrationAlreadyCompleted =>
+      'An account already exists for this email. Sign in instead.';
+
+  @override
+  String get authRegistrationAlreadyPending =>
+      'This registration is already waiting for a PIN. Continue with that step.';
+
+  @override
+  String get authRegistrationRetryable =>
+      'Another sign-up attempt was already in progress. Try again.';
+
+  @override
+  String get authRegistrationIdentityMismatch =>
+      'A sign-up for this email is already in progress with a different Google account. Try again after it expires.';
+
+  @override
+  String get authRegistrationRestartRequired =>
+      'That registration can no longer continue. Start a new one.';
+
+  @override
+  String get authPinRecentlySent =>
+      'A PIN was sent to this email recently. Try again shortly.';
+
+  @override
+  String get authPinEmailUnconfirmed =>
+      'We could not confirm the PIN email was sent. Check your inbox before trying again.';
+
+  @override
+  String get authPinEmailUnconfirmedShort =>
+      'We could not confirm the PIN email was sent. Check your inbox.';
+
+  @override
+  String get authRegistrationUnavailableShort =>
+      'Registration is temporarily unavailable. Try again shortly.';
+
+  @override
+  String get authRegistrationServerFault =>
+      'The server could not start your registration. Try again shortly.';
+
+  @override
+  String get authRegistrationStartUnconfirmed =>
+      'No connection to the server. We could not confirm whether your registration started.';
+
+  @override
+  String get authRegistrationStartUnreadable =>
+      'We could not read the server\'s reply, so we cannot confirm whether your registration started or a PIN was sent. Check your inbox before trying again.';
+
+  @override
+  String get authRegistrationStartGeneric =>
+      'We could not start your registration. Try again.';
+
+  @override
+  String get authRegistrationAlreadyCompletedTitle =>
+      'Registration already completed';
+
+  @override
+  String get authRegistrationAlreadyCompletedBody =>
+      'This registration was already completed. Sign in to continue.';
+
+  @override
+  String get authRegistrationCannotBeCompletedBody =>
+      'This registration can no longer be completed. Start a new registration.';
+
+  @override
+  String authAccountForEmail(String email) {
+    return 'Account for $email';
+  }
+
+  @override
+  String get authRegistrationStepClosed =>
+      'This registration step is no longer open. Start over with the same email to continue.';
+
+  @override
+  String get authRegistrationNotFound =>
+      'We could not find that registration. Start a new one.';
+
+  @override
+  String get authRegistrationUnreadable =>
+      'We could not read that registration. Start a new one.';
+
+  @override
+  String get authPinInvalid => 'That PIN is not correct. Try again.';
+
+  @override
+  String get authPinAttemptsExceededRegistration =>
+      'Too many incorrect PINs. Start a new registration.';
+
+  @override
+  String get authPinAttemptsExceededReset =>
+      'Too many incorrect PINs. Request a new reset.';
+
+  @override
+  String get authVerificationUnavailable =>
+      'Verification is temporarily unavailable. Try again shortly.';
+
+  @override
+  String get authPinVerifyServerFault =>
+      'We could not verify your PIN. Try again shortly.';
+
+  @override
+  String get authPinVerifyTransport =>
+      'No connection to the server. We could not confirm your PIN.';
+
+  @override
+  String get authPinVerifyGeneric => 'We could not verify your PIN. Try again.';
+
+  @override
+  String get authRegistrationCompleteGeneric =>
+      'We could not complete your registration. Try again.';
+
+  @override
+  String get authPinInstructions =>
+      'We sent a PIN to your email address. Enter it below to continue.';
+
+  @override
+  String authSocialVerifiedDescription(String email) {
+    return 'Your Google account is verified. Choose the name to show in Stash-it for $email.';
+  }
+
+  @override
+  String get authAccountAlreadyCreated => 'Account already created';
+
+  @override
+  String get authSocialAlreadyCompletedBody =>
+      'This social registration was already completed. Continue with Google or sign in to use the account.';
+
+  @override
+  String get authSocialInactiveBody =>
+      'This social registration can no longer be completed. Start again with Google to create the account.';
+
+  @override
+  String get authAccountCreatedSignInNotSaved =>
+      'Account created, sign-in not saved';
+
+  @override
+  String get authSocialStorageFailureBody =>
+      'Your account is ready, but this device could not save the sign-in. Continue with Google or sign in to use it.';
+
+  @override
+  String get authSocialSubmitUnconfirmed =>
+      'We could not confirm whether registration completed. Continue with Google or sign in; if the account was not created, try again.';
+
+  @override
+  String get authLinkInvalidTitle => 'Link unavailable';
+
+  @override
+  String get authLinkInvalidBody =>
+      'This account-link request is no longer active. It may have expired or already been used. Start again with Google to sign in.';
+
+  @override
+  String get authLinkDifferentAccountTitle => 'Different Google account';
+
+  @override
+  String get authLinkDifferentAccountBody =>
+      'The Google account used here does not match the one this link was started with. Start again and choose the account you originally used.';
+
+  @override
+  String get authGoogleSignInExpiredTitle => 'Google sign-in expired';
+
+  @override
+  String get authGoogleSignInExpiredBody =>
+      'Google no longer accepts the sign-in used for this link. Start again with Google to continue.';
+
+  @override
+  String get authAccountsLinkedTitle => 'Accounts linked';
+
+  @override
+  String get authAccountsLinkedBody =>
+      'Your Google account is now linked, but signing in did not finish. Continue with Google again to sign in.';
+
+  @override
+  String get authGoogleAlreadyLinkedTitle => 'Google account already linked';
+
+  @override
+  String get authGoogleAlreadyLinkedBody =>
+      'This Google account is already linked to a Stash-it account. Continue with Google to sign in.';
+
+  @override
+  String get authLinkExistingAccount =>
+      'Stash-it found an existing account for this email. Link the Google account you just verified to it?';
+
+  @override
+  String authLinkExistingAccountForEmail(String email) {
+    return 'Stash-it found an existing account for $email. Link the Google account you just verified to it?';
+  }
+
+  @override
+  String authGoogleProfile(String name) {
+    return 'Google profile: $name';
+  }
+
+  @override
+  String get authLinkUnavailableShort =>
+      'Account linking is temporarily unavailable. Try again shortly.';
+
+  @override
+  String get authLinkCheckTransport =>
+      'No connection to the server. We could not check this link.';
+
+  @override
+  String get authLinkCheckGeneric => 'We could not check this link. Try again.';
+
+  @override
+  String get authLinkOutcomeUnconfirmed =>
+      'We could not confirm whether the link completed. Continue with Google to sign in; if it was not linked, start again.';
+
+  @override
+  String get authLinkFailed => 'We could not link this account. Try again.';
+
+  @override
+  String get authGoogleNotConfigured =>
+      'Google sign-in is not configured for this build.';
+
+  @override
+  String get authGoogleCouldNotStart =>
+      'Google sign-in could not start. Try again.';
+
+  @override
+  String get authGoogleMissingToken =>
+      'Google did not return a sign-in token. Try again.';
+
+  @override
+  String get authGoogleInvalidToken =>
+      'Google could not verify that sign-in. Try again.';
+
+  @override
+  String get authGoogleRegistrationIdentityMismatch =>
+      'A registration for this email is already in progress under a different account. Try again after it expires.';
+
+  @override
+  String get authGoogleLinkSessionFailed =>
+      'Your accounts were linked, but sign-in did not finish. Continue with Google again.';
+
+  @override
+  String get authGoogleLinkIdentityMismatch =>
+      'That Google account does not match the account being linked.';
+
+  @override
+  String get authGoogleLinkConfirmationInactive =>
+      'This account-link request is no longer active. Start again.';
+
+  @override
+  String get authGoogleAccountExists =>
+      'This account already exists. Continue with Google or sign in.';
+
+  @override
+  String get authGoogleUnavailable =>
+      'Google sign-in is temporarily unavailable. Try again shortly.';
+
+  @override
+  String get authGoogleServerFault =>
+      'We could not start Google sign-in. Try again shortly.';
+
+  @override
+  String get authGoogleTransport =>
+      'No connection to the server. We could not start Google sign-in.';
+
+  @override
+  String get authGoogleUnreadable =>
+      'We could not read the server\'s reply, so we could not start Google sign-in. Try again.';
+
+  @override
+  String get authGoogleGenericFailure =>
+      'Google sign-in could not be completed. Try again.';
+
+  @override
+  String get authResetRequestDescription =>
+      'Enter your email address. If an account exists, we will send a PIN to confirm it.';
+
+  @override
+  String get authResetSavedCheckFailure =>
+      'We could not check for a saved password reset. You can request a new one.';
+
+  @override
+  String get authResetAlreadyCompletedNotice =>
+      'This password reset was already completed. Sign in with your new password, or request a new reset.';
+
+  @override
+  String get authResetPreviousInactive =>
+      'Your previous password reset is no longer active. Request a new one.';
+
+  @override
+  String get authResetSavedCheckGeneric =>
+      'We could not check your saved password reset. Try again.';
+
+  @override
+  String authResetSavedContinueMessage(String email) {
+    return 'A saved password reset for $email is available on this device. Continue it, or use a different email.';
+  }
+
+  @override
+  String get authResetAlreadyInProgress =>
+      'A password reset is already in progress. Try again shortly.';
+
+  @override
+  String get authResetStartGeneric =>
+      'We could not start the password reset. Try again.';
+
+  @override
+  String get authResetStartTransport =>
+      'No connection to the server. We could not start the password reset.';
+
+  @override
+  String get authResetStartUnreadable =>
+      'We could not read the server\'s reply, so we could not start the password reset. Try again.';
+
+  @override
+  String get authResetStartServerFault =>
+      'We could not start the password reset. Try again shortly.';
+
+  @override
+  String get authResetUnavailableShort =>
+      'Password reset is temporarily unavailable. Try again shortly.';
+
+  @override
+  String get authResetSavedCheckTransport =>
+      'No connection to the server. We could not check your saved password reset. Try again.';
+
+  @override
+  String get authResetSavedCheckUnreadable =>
+      'We could not confirm whether your saved password reset is still active. Try again.';
+
+  @override
+  String get authResetSavedCheckServerFault =>
+      'We could not check your saved password reset. Try again shortly.';
+
+  @override
+  String get authResetContinueTitle => 'Continue password reset';
+
+  @override
+  String authResetInProgressFor(String email) {
+    return 'A password reset is in progress for $email.';
+  }
+
+  @override
+  String get authResetAlreadyVerifiedTitle => 'Reset already verified';
+
+  @override
+  String get authResetAlreadyVerifiedWaitingBody =>
+      'This password reset was already verified, but this device does not have a usable saved reset for this email. Requesting another PIN is not possible. The reset expires within 15 minutes; after that you can request a new one.';
+
+  @override
+  String get authResetNeutralBody =>
+      'If an account exists for that address, we have sent a password reset PIN.';
+
+  @override
+  String authResetPinSentBody(String email) {
+    return 'We sent a password reset PIN to $email.';
+  }
+
+  @override
+  String get authResetAlreadyVerifiedBody =>
+      'This reset\'s PIN step is already complete. If this device has the saved reset, continue from the password reset screen. Otherwise wait up to 15 minutes for it to expire and request a new one.';
+
+  @override
+  String get authResetNoLongerActiveTitle => 'Reset no longer active';
+
+  @override
+  String get authResetNoLongerActiveBody =>
+      'This password reset is no longer active. Request a new one to continue.';
+
+  @override
+  String get authResetNotAvailableTitle => 'Reset not available';
+
+  @override
+  String get authResetNotAvailableBody =>
+      'We could not find that password reset. Check the address or start again.';
+
+  @override
+  String get authResetVerifiedNotSavedTitle => 'Reset verified, but not saved';
+
+  @override
+  String get authResetVerifiedNotSavedBody =>
+      'Your PIN was verified, but this device could not save the reset securely. The reset cannot continue here. Request a new one after this reset expires, which takes up to 15 minutes.';
+
+  @override
+  String get authResetSavedCheckLocalFailure =>
+      'We could not check the saved reset on this device. Try again.';
+
+  @override
+  String authResetReplacementUnknownIncoming(String savedEmail) {
+    return 'A saved password reset for $savedEmail is on this device. If this PIN verifies, it may replace it; the saved reset for $savedEmail may no longer be available on this device. This does not cancel it on the server.';
+  }
+
+  @override
+  String authResetReplacementKnownIncoming(String incoming, String savedEmail) {
+    return 'A saved password reset for $savedEmail is on this device. If this PIN verifies for $incoming, it will replace it; the saved reset for $savedEmail will no longer be available on this device. This does not cancel it on the server.';
+  }
+
+  @override
+  String authResetPinSentToEmail(String email) {
+    return 'We sent a PIN to $email. Enter it below to choose a new password.';
+  }
+
+  @override
+  String authResetPinSentToEmailIssued(String email) {
+    return 'We sent a PIN to $email. If you already have one, enter it below to choose a new password.';
+  }
+
+  @override
+  String get authResetPinSentGeneric =>
+      'We sent a PIN to your email address. Enter it below to choose a new password.';
+
+  @override
+  String get authResetPinSentGenericIssued =>
+      'We sent a PIN to your email address. If you already have one, enter it below to choose a new password.';
+
+  @override
+  String get authResetResendUnavailable =>
+      'PIN delivery is temporarily unavailable. Try again shortly.';
+
+  @override
+  String get authResetResendTransport =>
+      'No connection to the server. We could not request a new PIN.';
+
+  @override
+  String get authResetResendGeneric =>
+      'We could not request a new PIN. Try again.';
+
+  @override
+  String get authResetLoadTransport =>
+      'No connection to the server. We could not check this reset. Try again.';
+
+  @override
+  String get authResetLoadServerFault =>
+      'We could not check this reset. Try again shortly.';
+
+  @override
+  String get authResetLoadGeneric =>
+      'We could not check this reset. Try again.';
+
+  @override
+  String get authResetStorageReadFailure =>
+      'We could not read the saved password reset from this device. Try again.';
+
+  @override
+  String get authResetCompletedTitle => 'Password reset completed';
+
+  @override
+  String get authResetCompletedBody =>
+      'This password reset was already completed. Sign in with your new password.';
+
+  @override
+  String get authNoResetInProgressTitle => 'No reset in progress';
+
+  @override
+  String get authNoResetInProgressBody =>
+      'Start a password reset from sign-in to choose a new password.';
+
+  @override
+  String authChooseNewPasswordForEmail(String email) {
+    return 'Choose a new password for $email.';
+  }
+
+  @override
+  String authSetPasswordForEmail(String email) {
+    return 'Set a password for $email.';
+  }
+
+  @override
+  String authResetSubmitRateLimitedWithWait(int seconds) {
+    return 'We can\'t reset your password right now. Try again in $seconds seconds.';
+  }
+
+  @override
+  String get authResetSubmitRateLimitedNoWait =>
+      'We can\'t reset your password right now. Try again shortly.';
+
+  @override
+  String get authResetOutcomeUnconfirmed =>
+      'We could not confirm whether the password reset completed. Try signing in with your new password.';
+
+  @override
+  String get authResetSubmitGeneric =>
+      'We could not reset your password. Try again.';
 }

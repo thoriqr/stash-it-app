@@ -10,6 +10,7 @@ import 'package:stash_it_app/features/auth/presentation/widgets/auth_back_button
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_brand_row.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/auth_message_band.dart';
 import 'package:stash_it_app/features/auth/presentation/widgets/google_sign_in_button.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -37,24 +38,19 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     super.didChangeDependencies();
     if (_contextualMessageSet) return;
     _contextualMessageSet = true;
+    final l10n = AppLocalizations.of(context);
     final extra = widget.contextualMessage;
     if (extra == 'registration-success') {
-      _message =
-          'Registration successful. Please sign in with your new account.';
+      _message = l10n.authRegistrationSuccessSignIn;
       _messageTone = AuthMessageTone.warning;
     } else if (extra == 'registration-uncertain') {
-      _message =
-          'We could not confirm whether registration completed. '
-          'Try signing in; if it fails, start again.';
+      _message = l10n.authRegistrationUncertainSignIn;
       _messageTone = AuthMessageTone.warning;
     } else if (extra == 'password-reset-success') {
-      _message =
-          'Your password has been reset. Please sign in with your new password.';
+      _message = l10n.authPasswordResetSuccessSignIn;
       _messageTone = AuthMessageTone.warning;
     } else if (extra == 'password-reset-uncertain') {
-      _message =
-          'We could not confirm whether the password reset completed. '
-          'Try signing in with your new password.';
+      _message = l10n.authPasswordResetUncertainSignIn;
       _messageTone = AuthMessageTone.warning;
     }
   }
@@ -104,7 +100,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _message = messageFor(failure);
+        _message = authSignInMessageFor(failure, AppLocalizations.of(context));
 
         // Keep sign-in failures visually distinct from informational messages.
         _messageTone = AuthMessageTone.danger;
@@ -115,7 +111,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _message = 'Something went wrong signing in. Try again.';
+        _message = AppLocalizations.of(context).authSignInGenericFailure;
         _messageTone = AuthMessageTone.danger;
       });
     }
@@ -123,6 +119,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Scaffold(
@@ -159,21 +156,21 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           const AuthBrandRow(),
                           const SizedBox(height: AppMetrics.space5),
                           Text(
-                            'Sign in to Stash It',
+                            l10n.authSignInTitle,
                             style: AppTypography.screenHeading.copyWith(
                               color: tokens.textPrimary,
                             ),
                           ),
                           const SizedBox(height: AppMetrics.space1),
                           Text(
-                            'Use the email and password on your Stash It account.',
+                            l10n.authSignInDescription,
                             style: AppTypography.body.copyWith(
                               color: tokens.textSecondary,
                             ),
                           ),
                           const SizedBox(height: AppMetrics.space6),
                           AppField(
-                            label: 'Email',
+                            label: l10n.authEmailLabel,
                             controller: _emailController,
                             enabled: !_submitting && !_googleBusy,
                             keyboardType: TextInputType.emailAddress,
@@ -182,22 +179,22 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                             validator: (value) {
                               final email = value?.trim() ?? '';
                               if (email.isEmpty) {
-                                return 'Enter your email address.';
+                                return l10n.authEnterEmail;
                               }
                               if (!RegExp(
                                 r'^[^@\s]+@[^@\s]+$',
                               ).hasMatch(email)) {
-                                return 'Enter a valid email address.';
+                                return l10n.authInvalidEmail;
                               }
                               if (email.length > 254) {
-                                return 'That email address is too long.';
+                                return l10n.authEmailTooLong;
                               }
                               return null;
                             },
                           ),
                           const SizedBox(height: AppMetrics.space4),
                           AppField(
-                            label: 'Password',
+                            label: l10n.authPasswordLabel,
                             controller: _passwordController,
                             enabled: !_submitting && !_googleBusy,
                             obscureText: _obscurePassword,
@@ -211,8 +208,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                                   ? null
                                   : _togglePasswordVisibility,
                               tooltip: _obscurePassword
-                                  ? 'Show password'
-                                  : 'Hide password',
+                                  ? l10n.authShowPassword
+                                  : l10n.authHidePassword,
                               icon: Icon(
                                 _obscurePassword
                                     ? Icons.visibility_outlined
@@ -225,13 +222,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                             validator: (value) {
                               final password = value ?? '';
                               if (password.isEmpty) {
-                                return 'Enter your password.';
+                                return l10n.authEnterPassword;
                               }
                               if (password.length < 8) {
-                                return 'Your password is at least 8 characters.';
+                                return l10n.authPasswordMin8;
                               }
                               if (password.length > 128) {
-                                return 'That password is too long.';
+                                return l10n.authPasswordTooLong;
                               }
                               return null;
                             },
@@ -239,7 +236,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: AppButton(
-                              label: 'Forgot password?',
+                              label: l10n.authForgotPassword,
                               variant: AppButtonVariant.quiet,
                               small: true,
                               block: false,
@@ -258,7 +255,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           ],
                           const SizedBox(height: AppMetrics.space6),
                           AppButton(
-                            label: 'Sign in',
+                            label: l10n.authSignIn,
                             variant: AppButtonVariant.primary,
                             busy: _submitting,
                             onPressed: _googleBusy ? null : _submit,
@@ -317,70 +314,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   void _openForgotPassword() => context.go(AppRoutes.forgotPassword);
 }
 
-/// Returns client-owned copy for a sign-in failure.
-///
-/// Messages are selected by typed [ApiFailure] values rather than server-provided
-/// error text. Rate limits, server unavailability, and connection failures retain
-/// distinct messages because they represent different outcomes.
-String messageFor(ApiFailure failure) {
-  return switch (failure) {
-    // Use the same message for an incorrect password and an unknown email.
-    // This prevents the sign-in screen from revealing whether an account exists.
-    ApiFailureAuthRequired() =>
-      "That doesn't look like a valid email or password.",
-
-    ApiFailureValidation() =>
-      'Check your email address and password, then try again.',
-
-    ApiFailureRateLimited(:final retryAfter) =>
-      retryAfter != null
-          ? 'Too many attempts. Try again in ${retryAfter.inSeconds} seconds.'
-          : 'Too many attempts. Try again shortly.',
-
-    ApiFailureServerUnavailable() =>
-      'Sign in is temporarily unavailable. Try again shortly.',
-
-    // The server returned a failure response, so the request is known to have
-    // failed. Reserve unconfirmed wording for requests with an unknown outcome.
-    ApiFailureServerFault() =>
-      'We could not reach the server. Try again shortly.',
-
-    // These failures belong to other operations and are not expected during
-    // sign-in. Keep the mapping exhaustive and use the unreadable-reply fallback.
-    ApiFailureNotFound() ||
-    ApiFailureUserNotFound() ||
-    ApiFailureCurrentPasswordInvalid() ||
-    ApiFailureCurrentPasswordRequired() ||
-    ApiFailureUnexpectedCurrentPassword() ||
-    ApiFailurePasswordCredentialAlreadyExists() ||
-    ApiFailurePasswordAlreadyChanged() ||
-    ApiFailureCollectionNameAlreadyExists() ||
-    ApiFailureCollectionNotEmpty() ||
-    ApiFailureUnsortedCollectionProtected() ||
-    ApiFailureCollectionDeleteTargetNotFound() ||
-    ApiFailureMalformedRequest() ||
-    ApiFailurePinEmailDeliveryFailed() ||
-    ApiFailureRegistration() ||
-    ApiFailureGoogleAuth() ||
-    ApiFailurePasswordReset() ||
-    ApiFailureUnreadableResponse() =>
-      "We couldn't read the server's reply. Try again.",
-
-    // The request may have been applied even though no response arrived.
-    // Do not imply that the account was left unchanged.
-    ApiFailureTransport() =>
-      'No connection to the server. We could not confirm this sign-in.',
-
-    ApiFailureSessionEnded() => sessionEndedMessage,
-
-    ApiFailureRefreshUncertain() =>
-      'We could not confirm your session. Try again.',
-
-    ApiFailureCredentialStorage() =>
-      'Your sign-in could not be saved securely. Try again.',
-  };
-}
-
 /// Provides a route to registration from the sign-in screen.
 class _SignUpPrompt extends StatelessWidget {
   const _SignUpPrompt({required this.onPressed});
@@ -389,6 +322,7 @@ class _SignUpPrompt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Row(
@@ -396,12 +330,12 @@ class _SignUpPrompt extends StatelessWidget {
       children: [
         Flexible(
           child: Text(
-            "Don't have an account?",
+            l10n.authNoAccountPrompt,
             style: AppTypography.meta.copyWith(color: tokens.textSecondary),
           ),
         ),
         AppButton(
-          label: 'Create account',
+          label: l10n.authCreateAccount,
           variant: AppButtonVariant.quiet,
           small: true,
           block: false,

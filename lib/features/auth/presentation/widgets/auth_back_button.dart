@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 /// The top-left route back to the signed-out landing screen.
 ///
@@ -32,7 +33,7 @@ class AuthBackButton extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: IconButton(
         icon: const Icon(Icons.arrow_back, size: AppMetrics.iconSize),
-        tooltip: 'Back to welcome',
+        tooltip: AppLocalizations.of(context).authBackToWelcome,
         color: tokens.textSecondary,
         onPressed: onPressed,
         padding: EdgeInsets.zero,
