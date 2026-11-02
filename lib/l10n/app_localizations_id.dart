@@ -42,19 +42,19 @@ class AppLocalizationsId extends AppLocalizations {
   String get navInbox => 'Inbox';
 
   @override
-  String get navCollections => 'Collections';
+  String get navCollections => 'Koleksi';
 
   @override
-  String get navSearch => 'Search';
+  String get navSearch => 'Cari';
 
   @override
-  String get navProfile => 'Profile';
+  String get navProfile => 'Profil';
 
   @override
-  String get settingsTooltip => 'Settings';
+  String get settingsTooltip => 'Pengaturan';
 
   @override
-  String get clearTooltip => 'Clear';
+  String get clearTooltip => 'Kosongkan';
 
   @override
   String get dismissAction => 'Dismiss';
@@ -64,15 +64,16 @@ class AppLocalizationsId extends AppLocalizations {
       'Your session has ended. Sign in again to continue.';
 
   @override
-  String get genericReadRateLimited => 'Too many attempts. Try again shortly.';
+  String get genericReadRateLimited =>
+      'Terlalu banyak percobaan. Coba lagi sebentar lagi.';
 
   @override
   String get genericReadServerFault =>
-      'We could not reach the server. Try again shortly.';
+      'Kami tidak dapat menghubungi server. Coba lagi sebentar lagi.';
 
   @override
   String get genericReadUnreadable =>
-      'We couldn\'t read the server\'s reply. Try again.';
+      'Kami tidak dapat membaca balasan server. Coba lagi.';
 
   @override
   String get retryAfterSecond => 'a second';

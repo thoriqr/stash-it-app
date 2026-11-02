@@ -12,6 +12,7 @@ import 'package:stash_it_app/features/auth/data/password_reset_continuation_stor
 import 'package:stash_it_app/features/auth/presentation/password_reset_finalize_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/password_reset_pin_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/password_reset_request_screen.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../support/fake_http.dart';
 import '../../support/saved_items_fixtures.dart';
@@ -63,6 +64,8 @@ void main() {
         child: MaterialApp.router(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           routerConfig: router,
         ),
       ),

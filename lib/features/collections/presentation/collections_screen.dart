@@ -6,6 +6,7 @@ import '../../../app/router/routes.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/error/api_failure.dart';
 import '../../../core/error/api_failure_messages.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/destination_app_bar.dart';
 import '../application/collections_controller.dart';
@@ -231,7 +232,7 @@ class _CollectionsError extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              _messageFor(failure),
+              _messageFor(failure, AppLocalizations.of(context)),
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: tokens.textPrimary),
             ),
@@ -248,16 +249,17 @@ class _CollectionsError extends StatelessWidget {
     );
   }
 
-  static String _messageFor(Object failure) => switch (failure) {
-    ApiFailureSessionEnded() =>
-      'Your session has ended. Sign in again to see your collections.',
-    ApiFailureAuthRequired() => 'Sign in again to see your collections.',
-    ApiFailureServerUnavailable() =>
-      'Your collections are temporarily unavailable. Try again shortly.',
-    ApiFailureTransport() =>
-      'No connection to the server. We could not load your collections.',
-    _ =>
-      genericReadFailureMessage(failure) ??
-          'We could not load your collections. Try again.',
-  };
+  static String _messageFor(Object failure, AppLocalizations localizations) =>
+      switch (failure) {
+        ApiFailureSessionEnded() =>
+          'Your session has ended. Sign in again to see your collections.',
+        ApiFailureAuthRequired() => 'Sign in again to see your collections.',
+        ApiFailureServerUnavailable() =>
+          'Your collections are temporarily unavailable. Try again shortly.',
+        ApiFailureTransport() =>
+          'No connection to the server. We could not load your collections.',
+        _ =>
+          genericReadFailureMessage(failure, localizations) ??
+              'We could not load your collections. Try again.',
+      };
 }

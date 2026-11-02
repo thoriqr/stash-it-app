@@ -7,6 +7,7 @@ import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/core/error/api_failure_messages.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 import 'package:stash_it_app/shared/widgets/destination_app_bar.dart';
@@ -130,13 +131,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               },
             ),
           ),
-          Expanded(child: _content(state)),
+          Expanded(child: _content(state, AppLocalizations.of(context))),
         ],
       ),
     );
   }
 
-  Widget _content(SearchState state) {
+  Widget _content(SearchState state, AppLocalizations localizations) {
     return switch (state) {
       SearchInitial() => const _SearchMessage(
         title: 'Find something you saved',
@@ -155,7 +156,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             : _SearchResults(collections: collections, savedItems: savedItems),
       SearchFailure(:final failure) => _SearchMessage(
         title: 'Search did not run',
-        body: _failureCopy(failure),
+        body: _failureCopy(failure, localizations),
         action: AppButton(
           label: 'Retry',
           variant: AppButtonVariant.secondary,
@@ -178,7 +179,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   /// Messages are based on the typed failure rather than backend response
   /// text. Since search is a read operation, the copy describes the failed
   /// search without making claims about the state of any saved item.
-  static String _failureCopy(Object failure) => switch (failure) {
+  static String _failureCopy(
+    Object failure,
+    AppLocalizations localizations,
+  ) => switch (failure) {
     // Handle server-side validation explicitly. Although local validation
     // normally prevents this, the backend remains authoritative.
     ApiFailureValidation() =>
@@ -196,7 +200,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     ApiFailureTransport() =>
       'No connection to the server. We could not run your search.',
     _ =>
-      genericReadFailureMessage(failure) ??
+      genericReadFailureMessage(failure, localizations) ??
           'We could not run your search. Try again.',
   };
 }

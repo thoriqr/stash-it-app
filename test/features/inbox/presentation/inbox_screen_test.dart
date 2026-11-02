@@ -20,6 +20,7 @@ import 'package:stash_it_app/features/pending_urls/presentation/widgets/pending_
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_skeleton.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -90,6 +91,8 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: withFeedbackHost
               ? const FeedbackHost(child: InboxScreen())
               : const InboxScreen(),
@@ -1652,6 +1655,8 @@ void main() {
           container: container,
           child: MaterialApp.router(
             theme: AppTheme.light(),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             routerConfig: router,
           ),
         ),

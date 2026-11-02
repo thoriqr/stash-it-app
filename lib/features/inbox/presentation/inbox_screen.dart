@@ -12,6 +12,7 @@ import 'package:stash_it_app/features/saved_items/application/saved_items_contro
 import 'package:stash_it_app/features/saved_items/application/saved_items_state.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_skeleton.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/destination_app_bar.dart';
 
@@ -289,7 +290,7 @@ class _InboxError extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              _messageFor(failure),
+              _messageFor(failure, AppLocalizations.of(context)),
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: tokens.textPrimary),
             ),
@@ -311,7 +312,10 @@ class _InboxError extends StatelessWidget {
   /// Messages are selected from the typed [ApiFailure], not from
   /// `error.message`. A failed read does not change any saved item, so these
   /// messages describe the listing result rather than an item's save status.
-  static String _messageFor(Object failure) => switch (failure) {
+  static String _messageFor(
+    Object failure,
+    AppLocalizations localizations,
+  ) => switch (failure) {
     // The session ended or could not be renewed. The router handles the
     // redirect to sign-in; this message explains why the list is unavailable.
     ApiFailureSessionEnded() =>
@@ -329,7 +333,7 @@ class _InboxError extends StatelessWidget {
     // Uses shared client-side copy for other listing failures. Server-provided
     // messages are not displayed.
     _ =>
-      genericReadFailureMessage(failure) ??
+      genericReadFailureMessage(failure, localizations) ??
           'We could not load your saved items. Try again.',
   };
 }

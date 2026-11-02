@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
 import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 /// How long a notice stays visible before dismissing automatically.
 const Duration feedbackVisibleDuration = Duration(seconds: 4);
@@ -85,6 +86,12 @@ class FeedbackNotice extends StatelessWidget {
     final tokens = AppTheme.tokensOf(context);
     final treatment = feedbackTreatment(tokens, feedback.tone);
 
+    // Resolve localized copy when the notice is presented, so a language change
+    // is reflected for notices that are already showing.
+    final copy = feedback.message == null
+        ? feedback.copy
+        : feedback.resolve(AppLocalizations.of(context));
+
     final hairline = BorderSide(
       color: treatment.border,
       width: AppMetrics.borderWidth,
@@ -130,7 +137,7 @@ class FeedbackNotice extends StatelessWidget {
               const SizedBox(width: AppMetrics.space2),
               Expanded(
                 child: Text(
-                  feedback.copy,
+                  copy,
                   style: AppTypography.meta.copyWith(color: tokens.textPrimary),
                 ),
               ),

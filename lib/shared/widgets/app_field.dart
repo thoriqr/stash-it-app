@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 /// A shared text field with consistent styling, validation, and input states.
 ///
@@ -194,7 +195,7 @@ class _AppFieldState extends State<AppField> {
                     ? null
                     : IconButton(
                         onPressed: widget.onClear,
-                        tooltip: 'Clear',
+                        tooltip: AppLocalizations.of(context).clearTooltip,
                         icon: const Icon(Icons.close),
                         iconSize: AppMetrics.iconSize,
                         color: tokens.textTertiary,

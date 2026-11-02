@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
 /// The shared input's geometry.
@@ -15,10 +16,14 @@ void main() {
     bool mono = false,
     double width = 360,
     VoidCallback? onClear,
+    Locale locale = const Locale('en'),
   }) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light(),
+        locale: locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: Scaffold(
           body: Center(
             child: SizedBox(
@@ -133,12 +138,20 @@ void main() {
     expect(cleared, isTrue);
   });
 
+  testWidgets('the clear action is localized', (tester) async {
+    await pumpField(tester, onClear: () {}, locale: const Locale('id'));
+
+    expect(find.byTooltip('Kosongkan'), findsOneWidget);
+  });
+
   testWidgets('a label is optional, so a grouped field can omit it', (
     tester,
   ) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light(),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: Scaffold(
           body: Center(
             child: SizedBox(

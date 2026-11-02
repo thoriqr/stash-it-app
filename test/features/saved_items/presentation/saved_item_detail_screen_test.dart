@@ -19,6 +19,7 @@ import 'package:stash_it_app/features/saved_items/domain/saved_item_enrichment_r
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 import 'package:stash_it_app/features/saved_items/presentation/saved_item_detail_screen.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_preview.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_collections_repository.dart';
@@ -112,6 +113,8 @@ void main() {
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: const SavedItemDetailScreen(itemId: id),
         ),
       ),
@@ -717,6 +720,8 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.light(),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             home: const SavedItemDetailScreen(itemId: id),
           ),
         ),

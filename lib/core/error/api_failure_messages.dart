@@ -1,3 +1,5 @@
+import 'package:stash_it_app/l10n/app_localizations.dart';
+
 import 'api_failure.dart';
 
 /// Returns shared copy for read failures that do not need feature-specific
@@ -11,12 +13,14 @@ import 'api_failure.dart';
 /// Do not use for writes. [ApiFailureUnreadableResponse] and
 /// [ApiFailureTransport] do not establish whether a write succeeded, so
 /// mutation messages must communicate the uncertain outcome instead.
-String? genericReadFailureMessage(Object failure) => switch (failure) {
-  ApiFailureRateLimited() => 'Too many attempts. Try again shortly.',
-  ApiFailureServerFault() =>
-    'We could not reach the server. Try again shortly.',
+String? genericReadFailureMessage(
+  Object failure,
+  AppLocalizations localizations,
+) => switch (failure) {
+  ApiFailureRateLimited() => localizations.genericReadRateLimited,
+  ApiFailureServerFault() => localizations.genericReadServerFault,
   ApiFailureUnreadableResponse() ||
   ApiFailureMalformedRequest() ||
-  ApiFailureValidation() => "We couldn't read the server's reply. Try again.",
+  ApiFailureValidation() => localizations.genericReadUnreadable,
   _ => null,
 };

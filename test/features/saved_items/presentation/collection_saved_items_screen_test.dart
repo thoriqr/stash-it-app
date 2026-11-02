@@ -22,6 +22,7 @@ import 'package:stash_it_app/features/saved_items/presentation/widgets/collectio
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_collection_chip.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_skeleton.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_collections_repository.dart';
@@ -139,6 +140,8 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: const CollectionSavedItemsScreen(collectionId: collectionId),
         ),
       ),

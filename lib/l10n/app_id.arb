@@ -9,6 +9,15 @@
   "languageSystemDefault": "Bawaan sistem",
   "languageEnglish": "English",
   "languageIndonesian": "Bahasa Indonesia",
+  "navInbox": "Inbox",
+  "navCollections": "Koleksi",
+  "navSearch": "Cari",
+  "navProfile": "Profil",
+  "settingsTooltip": "Pengaturan",
+  "clearTooltip": "Kosongkan",
+  "genericReadRateLimited": "Terlalu banyak percobaan. Coba lagi sebentar lagi.",
+  "genericReadServerFault": "Kami tidak dapat menghubungi server. Coba lagi sebentar lagi.",
+  "genericReadUnreadable": "Kami tidak dapat membaca balasan server. Coba lagi.",
   "@settingsTitle": {
     "description": "Settings screen title."
   },

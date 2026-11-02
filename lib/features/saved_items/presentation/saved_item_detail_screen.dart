@@ -11,6 +11,7 @@ import 'package:stash_it_app/features/saved_items/application/enrich_saved_item_
 import 'package:stash_it_app/features/saved_items/application/open_saved_item_url.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_item_detail_provider.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_confirm_dialog.dart';
 
@@ -550,7 +551,7 @@ class _ReadError extends StatelessWidget {
             ),
             const SizedBox(height: AppMetrics.space2),
             Text(
-              _messageFor(failure),
+              _messageFor(failure, AppLocalizations.of(context)),
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: tokens.textSecondary),
             ),
@@ -569,18 +570,19 @@ class _ReadError extends StatelessWidget {
 
   /// Uses client-owned copy for each failure type. The API response message
   /// is not displayed; [genericReadFailureMessage] handles other failures.
-  static String _messageFor(Object failure) => switch (failure) {
-    ApiFailureSessionEnded() =>
-      'Your session has ended. Sign in again to see this item.',
-    ApiFailureAuthRequired() => 'Sign in again to see this item.',
-    ApiFailureServerUnavailable() =>
-      'This item is temporarily unavailable. Try again shortly.',
-    ApiFailureTransport() =>
-      "No connection to the server. We couldn't load this item.",
-    // Not-found failures are handled before this widget. The fallback also
-    // covers failures that do not establish that the session has ended.
-    _ =>
-      genericReadFailureMessage(failure) ??
-          "We couldn't load this item. Try again.",
-  };
+  static String _messageFor(Object failure, AppLocalizations localizations) =>
+      switch (failure) {
+        ApiFailureSessionEnded() =>
+          'Your session has ended. Sign in again to see this item.',
+        ApiFailureAuthRequired() => 'Sign in again to see this item.',
+        ApiFailureServerUnavailable() =>
+          'This item is temporarily unavailable. Try again shortly.',
+        ApiFailureTransport() =>
+          "No connection to the server. We couldn't load this item.",
+        // Not-found failures are handled before this widget. The fallback also
+        // covers failures that do not establish that the session has ended.
+        _ =>
+          genericReadFailureMessage(failure, localizations) ??
+              "We couldn't load this item. Try again.",
+      };
 }

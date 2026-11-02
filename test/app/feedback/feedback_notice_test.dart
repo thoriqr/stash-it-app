@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
 import 'package:stash_it_app/app/feedback/feedback_host.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 /// The feedback band's treatment: `design-system.md` §6.5, in both brightnesses.
 ///
@@ -300,6 +301,44 @@ void main() {
             .data,
         'Saved.',
       );
+    });
+
+    testWidgets('localized copy follows the active locale', (
+      WidgetTester tester,
+    ) async {
+      for (final (locale, expected) in <(Locale, String)>[
+        (const Locale('en'), 'Too many attempts. Try again shortly.'),
+        (
+          const Locale('id'),
+          'Terlalu banyak percobaan. Coba lagi sebentar lagi.',
+        ),
+      ]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.light(),
+            locale: locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(
+              body: Center(
+                child: FeedbackNotice(
+                  feedback: AppFeedback.localized(
+                    tone: FeedbackTone.warning,
+                    message: (localizations) =>
+                        localizations.genericReadRateLimited,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(
+          find.text(expected),
+          findsOneWidget,
+          reason: 'the notice resolved $locale at presentation time',
+        );
+      }
     });
 
     testWidgets('the mark is squared to the first line, not the band top', (

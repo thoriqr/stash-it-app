@@ -10,6 +10,7 @@ import 'package:stash_it_app/core/error/api_failure_messages.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/profile/application/profile_controller.dart';
 import 'package:stash_it_app/features/profile/domain/user_profile.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/destination_app_bar.dart';
 
@@ -224,7 +225,7 @@ class _HeaderError extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          _profileErrorMessage(error),
+          _profileErrorMessage(error, AppLocalizations.of(context)),
           style: AppTypography.body.copyWith(color: tokens.textPrimary),
         ),
         const SizedBox(height: AppMetrics.space3),
@@ -239,19 +240,20 @@ class _HeaderError extends StatelessWidget {
   }
 }
 
-String _profileErrorMessage(Object error) => switch (error) {
-  ApiFailureSessionEnded() => 'Your session has ended. Sign in again.',
-  ApiFailureAuthRequired() => 'Sign in again to view your profile.',
-  // The token is valid but the account it names is gone. No copy may offer
-  // signing in as a fix: a new session would name the same missing account.
-  ApiFailureUserNotFound() => 'This account is no longer available.',
-  ApiFailureServerUnavailable() =>
-    'Profile is temporarily unavailable. Try again shortly.',
-  ApiFailureTransport() => 'No connection. We could not load your profile.',
-  _ =>
-    genericReadFailureMessage(error) ??
-        'We could not load your profile. Try again.',
-};
+String _profileErrorMessage(Object error, AppLocalizations localizations) =>
+    switch (error) {
+      ApiFailureSessionEnded() => 'Your session has ended. Sign in again.',
+      ApiFailureAuthRequired() => 'Sign in again to view your profile.',
+      // The token is valid but the account it names is gone. No copy may offer
+      // signing in as a fix: a new session would name the same missing account.
+      ApiFailureUserNotFound() => 'This account is no longer available.',
+      ApiFailureServerUnavailable() =>
+        'Profile is temporarily unavailable. Try again shortly.',
+      ApiFailureTransport() => 'No connection. We could not load your profile.',
+      _ =>
+        genericReadFailureMessage(error, localizations) ??
+            'We could not load your profile. Try again.',
+    };
 
 /// A section heading with the reference's rule running to the right edge.
 class _SectionLabelRow extends StatelessWidget {

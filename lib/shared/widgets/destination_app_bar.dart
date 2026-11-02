@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_metrics.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 /// Shared app bar for the four primary destinations.
 ///
@@ -21,12 +22,14 @@ class DestinationAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return AppBar(
       title: Text(title),
       actions: [
         IconButton(
           icon: const Icon(Icons.settings_outlined, size: AppMetrics.iconSize),
-          tooltip: 'Settings',
+          tooltip: l10n.settingsTooltip,
           // Push Settings above the shell so popping it returns to the same
           // destination without resetting its branch state.
           onPressed: () => context.push(AppRoutes.settings),

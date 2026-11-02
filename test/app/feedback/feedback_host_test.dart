@@ -14,6 +14,7 @@ import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../support/fake_http.dart';
 import '../../support/pending_urls.dart';
@@ -409,6 +410,44 @@ void main() {
   });
 
   group('the copy it draws', () {
+    testWidgets('a localized notice uses the active locale', (
+      WidgetTester tester,
+    ) async {
+      final container = ProviderContainer(retry: (_, _) => null);
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            locale: const Locale('id'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: const FeedbackHost(child: Scaffold(body: SizedBox.shrink())),
+          ),
+        ),
+      );
+
+      container
+          .read(feedbackProvider.notifier)
+          .show(
+            AppFeedback.localized(
+              tone: FeedbackTone.warning,
+              message: (localizations) => localizations.genericReadRateLimited,
+            ),
+          );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Terlalu banyak percobaan. Coba lagi sebentar lagi.'),
+        findsOneWidget,
+        reason: 'the host resolves the message with the active locale',
+      );
+
+      await expireNotice(tester);
+    });
+
     testWidgets('carries no decoration from the ambient error text style', (
       WidgetTester tester,
     ) async {

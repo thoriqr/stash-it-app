@@ -10,6 +10,7 @@ import 'package:stash_it_app/features/search/data/search_providers.dart';
 import 'package:stash_it_app/features/search/data/search_repository.dart';
 import 'package:stash_it_app/features/search/presentation/search_screen.dart';
 import 'package:stash_it_app/features/search/presentation/widgets/search_collection_row.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../../support/fake_http.dart';
 import '../../../support/search_fixtures.dart';
@@ -41,7 +42,12 @@ void main() {
             SearchRepository(api: SearchApi(dio), now: () => now),
           ),
         ],
-        child: MaterialApp(theme: AppTheme.light(), home: const SearchScreen()),
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: const SearchScreen(),
+        ),
       ),
     );
     await tester.pump();

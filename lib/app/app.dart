@@ -114,12 +114,18 @@ class _StashItAppState extends ConsumerState<StashItApp>
       locale: languageLocale,
       supportedLocales: supportedAppLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      // Resolve the full ordered device locale list when no explicit locale
-      // is selected, rather than relying only on the first platform locale.
-      localeResolutionCallback: (locale, supported) => resolveAppLocale(
-        WidgetsBinding.instance.platformDispatcher.locales,
-        supported,
-      ),
+      // An explicit language choice takes precedence over the device locale.
+      // Only System default follows the full ordered device locale list, rather
+      // than relying on the single platform locale supplied to the callback.
+      localeResolutionCallback: (locale, supported) {
+        if (languageLocale != null) {
+          return resolveAppLocale([languageLocale], supported);
+        }
+        return resolveAppLocale(
+          WidgetsBinding.instance.platformDispatcher.locales,
+          supported,
+        );
+      },
       // Place shared presentation above the router so every route uses the
       // same skeleton configuration and feedback host.
       //

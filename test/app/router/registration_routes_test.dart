@@ -12,6 +12,7 @@ import 'package:stash_it_app/features/auth/data/registration_continuation_store.
 import 'package:stash_it_app/features/auth/presentation/finalize_registration_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/pin_entry_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_up_screen.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../support/fake_http.dart';
 import '../../support/saved_items_fixtures.dart';
@@ -70,6 +71,8 @@ void main() {
         child: MaterialApp.router(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           routerConfig: router,
         ),
       ),

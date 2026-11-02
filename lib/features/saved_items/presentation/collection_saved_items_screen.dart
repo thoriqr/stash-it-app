@@ -14,6 +14,7 @@ import 'package:stash_it_app/features/saved_items/application/delete_collection_
 import 'package:stash_it_app/features/saved_items/presentation/widgets/delete_collection_sheet.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_skeleton.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_confirm_dialog.dart';
 
@@ -596,7 +597,7 @@ class _LoadError extends StatelessWidget {
             ),
             const SizedBox(height: AppMetrics.space2),
             Text(
-              _messageFor(failure),
+              _messageFor(failure, AppLocalizations.of(context)),
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: tokens.textSecondary),
             ),
@@ -619,16 +620,17 @@ class _LoadError extends StatelessWidget {
   /// These are failed reads, not writes with an uncertain outcome. The UI
   /// therefore describes the page as unavailable rather than suggesting
   /// that an operation may or may not have completed.
-  static String _messageFor(Object failure) => switch (failure) {
-    ApiFailureSessionEnded() =>
-      'Your session has ended. Sign in again to see this collection.',
-    ApiFailureAuthRequired() => 'Sign in again to see this collection.',
-    ApiFailureServerUnavailable() =>
-      'This collection is temporarily unavailable. Try again shortly.',
-    ApiFailureTransport() =>
-      'No connection to the server. We could not load this collection.',
-    _ =>
-      genericReadFailureMessage(failure) ??
-          'We could not load this collection. Try again.',
-  };
+  static String _messageFor(Object failure, AppLocalizations localizations) =>
+      switch (failure) {
+        ApiFailureSessionEnded() =>
+          'Your session has ended. Sign in again to see this collection.',
+        ApiFailureAuthRequired() => 'Sign in again to see this collection.',
+        ApiFailureServerUnavailable() =>
+          'This collection is temporarily unavailable. Try again shortly.',
+        ApiFailureTransport() =>
+          'No connection to the server. We could not load this collection.',
+        _ =>
+          genericReadFailureMessage(failure, localizations) ??
+              'We could not load this collection. Try again.',
+      };
 }

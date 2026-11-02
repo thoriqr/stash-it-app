@@ -12,6 +12,7 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/profile/application/profile_controller.dart';
 import 'package:stash_it_app/features/profile/domain/user_profile.dart';
 import 'package:stash_it_app/features/profile/presentation/profile_screen.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 final DateTime _joined = DateTime(2026, 4, 12, 12);
@@ -68,6 +69,8 @@ void main() {
         container: container,
         child: MaterialApp(
           theme: AppTheme.light(),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: const ProfileScreen(),
         ),
       ),
@@ -349,6 +352,8 @@ void main() {
         container: container,
         child: MaterialApp.router(
           theme: AppTheme.light(),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           routerConfig: router,
         ),
       ),
