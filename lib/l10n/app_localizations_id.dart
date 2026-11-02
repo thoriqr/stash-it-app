@@ -76,15 +76,15 @@ class AppLocalizationsId extends AppLocalizations {
       'Kami tidak dapat membaca balasan server. Coba lagi.';
 
   @override
-  String get retryAfterSecond => 'a second';
+  String get retryAfterSecond => '1 detik';
 
   @override
   String retryAfterSeconds(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count seconds',
-      one: '1 second',
+      other: '$count detik',
+      one: '1 detik',
     );
     return '$_temp0';
   }
@@ -94,8 +94,8 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count minutes',
-      one: '1 minute',
+      other: '$count menit',
+      one: '1 menit',
     );
     return '$_temp0';
   }
@@ -105,8 +105,8 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count hours',
-      one: '1 hour',
+      other: '$count jam',
+      one: '1 jam',
     );
     return '$_temp0';
   }
@@ -410,51 +410,51 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get saved => 'Saved.';
+  String get saved => 'Tersimpan.';
 
   @override
   String get invalidUrlFull =>
-      'That doesn\'t look like a valid link. Enter a full http:// or https:// address.';
+      'Tautan itu tampaknya tidak valid. Masukkan alamat http:// atau https:// lengkap.';
 
   @override
   String get saveValidation =>
-      'That doesn\'t look like a valid link. Check the URL and try again.';
+      'Tautan itu tampaknya tidak valid. Periksa URL dan coba lagi.';
 
   @override
   String get saveMalformed =>
-      'Something went wrong sending that link. Try again.';
+      'Terjadi kesalahan saat mengirim tautan itu. Coba lagi.';
 
   @override
   String get saveRateLimitedNoWait =>
-      'You\'re saving too quickly. Try again shortly.';
+      'Anda menyimpan terlalu cepat. Coba lagi sebentar lagi.';
 
   @override
   String saveRateLimitedWithWait(String wait) {
-    return 'You\'re saving too quickly. Try again in $wait.';
+    return 'Anda menyimpan terlalu cepat. Coba lagi dalam $wait.';
   }
 
   @override
   String get saveServerUnavailable =>
-      'We couldn\'t save this link just now. Try again shortly.';
+      'Kami tidak dapat menyimpan tautan ini saat ini. Coba lagi sebentar lagi.';
 
   @override
   String get saveUnreadable =>
-      'We couldn\'t read the server\'s reply, so we can\'t confirm the save. Check your Inbox before trying again.';
+      'Kami tidak dapat membaca balasan server, sehingga tidak dapat memastikan penyimpanan. Periksa Inbox Anda sebelum mencoba lagi.';
 
   @override
   String get saveTransport =>
-      'We couldn\'t confirm this save. It may or may not have gone through — check your Inbox before trying again.';
+      'Kami tidak dapat memastikan penyimpanan ini. Mungkin berhasil atau tidak — periksa Inbox Anda sebelum mencoba lagi.';
 
   @override
   String get saveRefreshUncertain =>
-      'We couldn\'t renew your session, so that link wasn\'t saved. Try again.';
+      'Kami tidak dapat memperbarui sesi Anda, sehingga tautan itu tidak tersimpan. Coba lagi.';
 
   @override
   String get saveCredentialStorage =>
-      'This device couldn\'t refresh your session, so that link wasn\'t saved. Try again.';
+      'Perangkat ini tidak dapat memperbarui sesi Anda, sehingga tautan itu tidak tersimpan. Coba lagi.';
 
   @override
-  String get saveAuthRequired => 'Sign in again to save this link.';
+  String get saveAuthRequired => 'Masuk lagi untuk menyimpan tautan ini.';
 
   @override
   String get pageReRead => 'Page re-read.';
@@ -699,7 +699,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get linkLaunchFailed => 'We couldn\'t open this link. Try again.';
 
   @override
-  String get refreshFailed => 'Couldn\'t refresh. Check your connection.';
+  String get refreshFailed => 'Tidak dapat menyegarkan. Periksa koneksi Anda.';
 
   @override
   String get displayNameUpdated => 'Display name updated.';
@@ -820,6 +820,64 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get shareNotStored => 'Couldn\'t save or keep this link.';
+
+  @override
+  String get inboxTitle => 'INBOX';
+
+  @override
+  String get inboxRecentlySaved => 'BARU DISIMPAN';
+
+  @override
+  String get inboxLoadingMore => 'Memuat lagi…';
+
+  @override
+  String get inboxEmptyTitle => 'Belum ada yang disimpan';
+
+  @override
+  String get inboxEmptyBody =>
+      'Simpan tautan dan tautan itu akan muncul di sini, di koleksi tempatnya berada.';
+
+  @override
+  String get inboxRetry => 'Coba lagi';
+
+  @override
+  String get inboxSessionEnded =>
+      'Sesi Anda telah berakhir. Masuk lagi untuk melihat item tersimpan Anda.';
+
+  @override
+  String get inboxSignInRequired =>
+      'Masuk lagi untuk melihat item tersimpan Anda.';
+
+  @override
+  String get inboxUnavailable =>
+      'Item tersimpan Anda untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
+
+  @override
+  String get inboxLoadTransport =>
+      'Tidak ada koneksi ke server. Kami tidak dapat memuat item tersimpan Anda.';
+
+  @override
+  String get inboxLoadGeneric =>
+      'Kami tidak dapat memuat item tersimpan Anda. Coba lagi.';
+
+  @override
+  String get inboxSaveUrlSection => 'SIMPAN URL';
+
+  @override
+  String get inboxSaving => 'Menyimpan…';
+
+  @override
+  String get inboxIntakeReady => 'Periksa atau edit tautan sebelum menyimpan.';
+
+  @override
+  String get inboxIntakeHint =>
+      'Tempel mengisi kolom. Simpan URL mengirimkannya.';
+
+  @override
+  String get inboxPaste => 'Tempel';
+
+  @override
+  String get inboxSaveAction => 'Simpan URL';
 
   @override
   String get authBackToWelcome => 'Kembali ke halaman awal';

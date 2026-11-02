@@ -30,6 +30,8 @@ import '../../../support/saved_items_fixtures.dart';
 
 /// The Inbox against the real listing provider, driven by a scripted transport.
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
   late FakeHttpAdapter adapter;
 
   /// The default 800x600 surface hides the lower rows, so anything asserting on
@@ -78,6 +80,7 @@ void main() {
     AuthTokens? session,
     PendingUrlStore? pendingStore,
     bool withFeedbackHost = false,
+    Locale locale = const Locale('en'),
   }) async {
     final container = await makeContainer(
       session: session,
@@ -91,6 +94,7 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          locale: locale,
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: withFeedbackHost
@@ -700,7 +704,10 @@ void main() {
 
       final notice = container.read(feedbackProvider)!;
       expect(notice.tone, FeedbackTone.uncertain);
-      expect(notice.copy, "Couldn't refresh. Check your connection.");
+      expect(
+        notice.resolve(english),
+        "Couldn't refresh. Check your connection.",
+      );
       expect(
         find.text("Couldn't refresh. Check your connection."),
         findsOneWidget,
@@ -745,7 +752,7 @@ void main() {
       expect(find.text('Nothing saved yet'), findsNothing);
       expect(find.byType(SavedItemSkeletonList), findsNothing);
       expect(
-        container.read(feedbackProvider)?.copy,
+        container.read(feedbackProvider)?.resolve(english),
         "Couldn't refresh. Check your connection.",
         reason: 'this was still a manual refresh, even with no rows to keep',
       );
@@ -1252,7 +1259,7 @@ void main() {
       expect(fieldText(tester), 'not a url');
       final notice = container.read(feedbackProvider)!;
       expect(notice.tone, FeedbackTone.danger);
-      expect(notice.copy, contains('http:// or https://'));
+      expect(notice.resolve(english), contains('http:// or https://'));
     });
 
     testWidgets('Paste and clear are unavailable while a save is in flight', (
@@ -1299,7 +1306,7 @@ void main() {
 
       expect(postCount(), 1);
       expect(fieldText(tester), isEmpty);
-      expect(container.read(feedbackProvider)!.copy, 'Saved.');
+      expect(container.read(feedbackProvider)!.resolve(english), 'Saved.');
     });
 
     testWidgets(
@@ -1340,7 +1347,7 @@ void main() {
           reason:
               'the confirmation belongs to the submitted value, not this one',
         );
-        expect(container.read(feedbackProvider)!.copy, 'Saved.');
+        expect(container.read(feedbackProvider)!.resolve(english), 'Saved.');
       },
     );
 
@@ -1389,7 +1396,7 @@ void main() {
 
       final notice = container.read(feedbackProvider)!;
       expect(notice.tone, FeedbackTone.success);
-      expect(notice.copy, 'Saved.');
+      expect(notice.resolve(english), 'Saved.');
 
       // And the confirmation is only half of it: the list this screen is for has
       // to show the row, which the head refresh brings in without discarding the
@@ -1433,7 +1440,7 @@ void main() {
 
       final notice = container.read(feedbackProvider)!;
       expect(notice.tone, FeedbackTone.danger);
-      expect(notice.copy, contains('Check the URL'));
+      expect(notice.resolve(english), contains('Check the URL'));
     });
 
     testWidgets('a value that cannot be a URL is refused before any request', (
@@ -1466,7 +1473,7 @@ void main() {
 
       final notice = container.read(feedbackProvider)!;
       expect(notice.tone, FeedbackTone.danger);
-      expect(notice.copy, contains('http:// or https://'));
+      expect(notice.resolve(english), contains('http:// or https://'));
     });
 
     testWidgets('a corrected link is sent once after a local refusal', (
@@ -1513,7 +1520,7 @@ void main() {
 
       expect(postCount(), 1);
       expect(fieldText(tester), isEmpty);
-      expect(container.read(feedbackProvider)!.copy, 'Saved.');
+      expect(container.read(feedbackProvider)!.resolve(english), 'Saved.');
       expect(find.text('Saved from the intake'), findsOneWidget);
     });
 
@@ -1564,8 +1571,214 @@ void main() {
 
       expect(postCount(), 1);
       expect(fieldText(tester), isEmpty);
-      expect(container.read(feedbackProvider)!.copy, 'Saved.');
+      expect(container.read(feedbackProvider)!.resolve(english), 'Saved.');
     });
+  });
+
+  group('localized Inbox copy', () {
+    testWidgets('renders Indonesian headings, intake and empty state', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
+
+      await pumpInbox(tester, locale: const Locale('id'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('INBOX'), findsOneWidget);
+      expect(find.text('BARU DISIMPAN'), findsOneWidget);
+      expect(find.text('SIMPAN URL'), findsOneWidget);
+      expect(
+        find.text('Tempel mengisi kolom. Simpan URL mengirimkannya.'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(AppButton, 'Tempel'), findsOneWidget);
+      expect(find.widgetWithText(AppButton, 'Simpan URL'), findsOneWidget);
+      expect(
+        find.text('https://'),
+        findsOneWidget,
+        reason: 'the technical placeholder is not translated',
+      );
+      expect(find.text('Belum ada yang disimpan'), findsOneWidget);
+      expect(
+        find.text(
+          'Simpan tautan dan tautan itu akan muncul di sini, di koleksi '
+          'tempatnya berada.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('renders Indonesian loading-more copy', (tester) async {
+      useTallSurface(tester);
+      adapter.on(
+        '/saved-items',
+        body: SavedItemsFixtures.page(
+          items: List.generate(
+            20,
+            (index) => SavedItemsFixtures.item(id: 'item-$index'),
+          ),
+          nextCursor: 'next-page',
+          hasMore: true,
+        ),
+      );
+
+      final container = await pumpInbox(tester, locale: const Locale('id'));
+      await tester.pumpAndSettle();
+
+      adapter.onBlocking(
+        '/saved-items',
+        FakeReply(
+          200,
+          SavedItemsFixtures.page(items: [SavedItemsFixtures.item(id: 'last')]),
+        ),
+      );
+
+      await tester.drag(find.byType(ListView), const Offset(0, -4000));
+      await tester.pump();
+      await tester.pump(Duration.zero);
+
+      expect(find.text('Memuat lagi…'), findsOneWidget);
+      expect(container.read(feedbackProvider), isNull);
+
+      adapter.releaseBlocked();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('renders Indonesian retry and typed server-fault copy', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      adapter.on(
+        '/saved-items',
+        status: 500,
+        body: errorBody('INTERNAL_SERVER_ERROR'),
+      );
+
+      await pumpInbox(tester, locale: const Locale('id'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Kami tidak dapat menghubungi server. Coba lagi sebentar lagi.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(AppButton, 'Coba lagi'), findsOneWidget);
+      expect(find.textContaining('INTERNAL_SERVER_ERROR'), findsNothing);
+    });
+
+    testWidgets('renders Indonesian typed transport copy', (tester) async {
+      useTallSurface(tester);
+      adapter.onOffline('/saved-items');
+
+      await pumpInbox(tester, locale: const Locale('id'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Tidak ada koneksi ke server. Kami tidak dapat memuat item tersimpan '
+          'Anda.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(AppButton, 'Coba lagi'), findsOneWidget);
+    });
+
+    testWidgets('localizes saving state and local URL refusal feedback', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      adapter.onMethod(
+        'GET',
+        '/saved-items',
+        body: SavedItemsFixtures.emptyPage(),
+      );
+      adapter.onBlocking(
+        '/saved-items',
+        FakeReply(
+          201,
+          SavedItemsFixtures.created(url: 'https://example.com/x'),
+        ),
+      );
+
+      final container = await pumpInbox(tester, locale: const Locale('id'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'https://example.com/x');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(AppButton, 'Simpan URL'));
+      await tester.pump(Duration.zero);
+
+      expect(find.text('Menyimpan…'), findsOneWidget);
+      expect(saveButton(tester).busy, isTrue);
+      expect(find.widgetWithText(AppButton, 'Tempel'), findsOneWidget);
+
+      adapter.releaseBlocked();
+      await tester.pumpAndSettle();
+
+      expect(
+        container.read(feedbackProvider)!.resolve(indonesian),
+        'Tersimpan.',
+      );
+
+      await tester.enterText(find.byType(TextField), 'example');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(AppButton, 'Simpan URL'));
+      await tester.pumpAndSettle();
+
+      final notice = container.read(feedbackProvider)!;
+      expect(notice.tone, FeedbackTone.danger);
+      expect(notice.resolve(indonesian), contains('http:// atau https://'));
+      expect(postCount(), 1, reason: 'the second value was refused locally');
+    });
+
+    testWidgets(
+      'localizes a server refusal and preserves server item content',
+      (tester) async {
+        useTallSurface(tester);
+        const url = 'https://example.com/refused';
+        adapter.on(
+          '/saved-items',
+          body: SavedItemsFixtures.page(
+            items: [
+              SavedItemsFixtures.item(
+                id: 'server-item',
+                title: 'Server-provided title',
+              ),
+            ],
+          ),
+        );
+        adapter.onMethod(
+          'POST',
+          '/saved-items',
+          status: 400,
+          body: errorBody('INVALID_URL'),
+        );
+
+        final container = await pumpInbox(tester, locale: const Locale('id'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Server-provided title'),
+          findsOneWidget,
+          reason: 'server-provided content is never translated',
+        );
+
+        await tester.enterText(find.byType(TextField), url);
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(AppButton, 'Simpan URL'));
+        await tester.pumpAndSettle();
+
+        final notice = container.read(feedbackProvider)!;
+        expect(notice.tone, FeedbackTone.danger);
+        expect(
+          notice.resolve(indonesian),
+          'Tautan itu tampaknya tidak valid. Periksa URL dan coba lagi.',
+        );
+        expect(find.text('Server-provided title'), findsOneWidget);
+      },
+    );
   });
 
   group('device-local URLs', () {

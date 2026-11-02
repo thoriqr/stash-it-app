@@ -156,6 +156,23 @@
   "shareStoredAfterUncertain": "Save not confirmed. Kept on this device.",
   "shareInvalid": "That's not a link, so nothing was saved.",
   "shareNotStored": "Couldn't save or keep this link.",
+  "inboxTitle": "INBOX",
+  "inboxRecentlySaved": "RECENTLY SAVED",
+  "inboxLoadingMore": "Loading more…",
+  "inboxEmptyTitle": "Nothing saved yet",
+  "inboxEmptyBody": "Save a link and it will appear here, in the collection it belongs to.",
+  "inboxRetry": "Retry",
+  "inboxSessionEnded": "Your session has ended. Sign in again to see your saved items.",
+  "inboxSignInRequired": "Sign in again to see your saved items.",
+  "inboxUnavailable": "Your saved items are temporarily unavailable. Try again shortly.",
+  "inboxLoadTransport": "No connection to the server. We could not load your saved items.",
+  "inboxLoadGeneric": "We could not load your saved items. Try again.",
+  "inboxSaveUrlSection": "SAVE A URL",
+  "inboxSaving": "Saving…",
+  "inboxIntakeReady": "Check or edit the link before saving.",
+  "inboxIntakeHint": "Paste fills the field. Save URL sends it.",
+  "inboxPaste": "Paste",
+  "inboxSaveAction": "Save URL",
   "authBackToWelcome": "Back to welcome",
   "authEmailLabel": "Email",
   "authPasswordLabel": "Password",
@@ -1160,6 +1177,57 @@
   },
   "@shareNotStored": {
     "description": "Share intake could neither save remotely nor keep the URL locally."
+  },
+  "@inboxTitle": {
+    "description": "Title of the Inbox destination."
+  },
+  "@inboxRecentlySaved": {
+    "description": "Section label above the recently saved items list."
+  },
+  "@inboxLoadingMore": {
+    "description": "Label shown while the next page of saved items loads."
+  },
+  "@inboxEmptyTitle": {
+    "description": "Heading shown when the Inbox has no saved items."
+  },
+  "@inboxEmptyBody": {
+    "description": "Explanation shown when the Inbox has no saved items."
+  },
+  "@inboxRetry": {
+    "description": "Retry action for a failed Inbox listing request."
+  },
+  "@inboxSessionEnded": {
+    "description": "Inbox listing message when the session has ended."
+  },
+  "@inboxSignInRequired": {
+    "description": "Inbox listing message when authentication is required."
+  },
+  "@inboxUnavailable": {
+    "description": "Inbox listing message when saved items are temporarily unavailable."
+  },
+  "@inboxLoadTransport": {
+    "description": "Unconfirmed Inbox load because the server could not be reached."
+  },
+  "@inboxLoadGeneric": {
+    "description": "Fallback copy for a failed Inbox listing request."
+  },
+  "@inboxSaveUrlSection": {
+    "description": "Section label above the URL intake."
+  },
+  "@inboxSaving": {
+    "description": "Status label while a Save URL request is in progress."
+  },
+  "@inboxIntakeReady": {
+    "description": "Status label when the URL field has content."
+  },
+  "@inboxIntakeHint": {
+    "description": "Status hint when the URL field is empty."
+  },
+  "@inboxPaste": {
+    "description": "Action that fills the URL field from the clipboard."
+  },
+  "@inboxSaveAction": {
+    "description": "Action that submits the URL field."
   },
   "@authBackToWelcome": {
     "description": "Tooltip for returning to the signed-out welcome screen."

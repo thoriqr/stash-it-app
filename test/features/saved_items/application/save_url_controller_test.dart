@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
@@ -10,6 +11,7 @@ import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 import 'package:stash_it_app/features/saved_items/application/save_url_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../../support/fake_http.dart';
 import '../../../support/saved_items_fixtures.dart';
@@ -22,6 +24,8 @@ import '../../../support/saved_items_fixtures.dart';
 /// session controller, credential store) are driven end to end against a scripted
 /// transport. No socket is opened.
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
   late FakeHttpAdapter adapter;
 
   const session = AuthTokens(
@@ -181,7 +185,7 @@ void main() {
 
         expect(feedback, isNotNull);
         expect(feedback!.tone, tone);
-        expect(feedback.copy, copy);
+        expect(feedback.resolve(english), copy);
       });
     }
 
@@ -193,9 +197,12 @@ void main() {
 
       // Â§6.5: a 429 shows the countdown the server sent, and nothing shows a
       // fabricated one. A missing header is not a licence to guess.
-      expect(feedback.copy, "You're saving too quickly. Try again shortly.");
       expect(
-        feedback.copy,
+        feedback.resolve(english),
+        "You're saving too quickly. Try again shortly.",
+      );
+      expect(
+        feedback.resolve(english),
         isNot(matches(RegExp(r'\d'))),
         reason: 'a countdown needs a number, and there is no number to give',
       );
@@ -224,7 +231,7 @@ void main() {
         )!;
 
         expect(
-          feedback.copy,
+          feedback.resolve(english),
           "You're saving too quickly. Try again in $phrase.",
           reason: 'for ${wait.inSeconds}s',
         );
@@ -240,7 +247,7 @@ void main() {
         const ApiFailureUnreadableResponse(),
       ]) {
         final feedback = saveFeedbackFor(failure, sessionEnded: false)!;
-        final copy = feedback.copy.toLowerCase();
+        final copy = feedback.resolve(english).toLowerCase();
 
         expect(feedback.tone, FeedbackTone.uncertain);
         expect(copy, isNot(contains("wasn't saved")));
@@ -264,9 +271,9 @@ void main() {
       ]) {
         final feedback = saveFeedbackFor(failure, sessionEnded: false)!;
 
-        expect(feedback.copy, contains("wasn't saved"));
+        expect(feedback.resolve(english), contains("wasn't saved"));
         expect(
-          feedback.copy.toLowerCase(),
+          feedback.resolve(english).toLowerCase(),
           isNot(contains('sign in')),
           reason: 'the session is still held; only the renewal failed',
         );
@@ -300,6 +307,72 @@ void main() {
     });
   });
 
+  test('every mapped failure resolves in Indonesian', () {
+    final cases = <(ApiFailure, FeedbackTone, String)>[
+      (
+        const ApiFailureValidation([]),
+        FeedbackTone.danger,
+        'Tautan itu tampaknya tidak valid. Periksa URL dan coba lagi.',
+      ),
+      (
+        const ApiFailureMalformedRequest(),
+        FeedbackTone.danger,
+        'Terjadi kesalahan saat mengirim tautan itu. Coba lagi.',
+      ),
+      (
+        const ApiFailureRateLimited(
+          code: 'USER_RATE_LIMIT_EXCEEDED',
+          retryAfter: Duration(seconds: 120),
+        ),
+        FeedbackTone.warning,
+        'Anda menyimpan terlalu cepat. Coba lagi dalam 2 menit.',
+      ),
+      (
+        const ApiFailureServerUnavailable(code: 'SERVICE_UNAVAILABLE'),
+        FeedbackTone.danger,
+        'Kami tidak dapat menyimpan tautan ini saat ini. Coba lagi sebentar '
+            'lagi.',
+      ),
+      (
+        const ApiFailureUnreadableResponse(),
+        FeedbackTone.uncertain,
+        'Kami tidak dapat membaca balasan server, sehingga tidak dapat '
+            'memastikan penyimpanan. Periksa Inbox Anda sebelum mencoba lagi.',
+      ),
+      (
+        const ApiFailureTransport(),
+        FeedbackTone.uncertain,
+        'Kami tidak dapat memastikan penyimpanan ini. Mungkin berhasil atau '
+            'tidak — periksa Inbox Anda sebelum mencoba lagi.',
+      ),
+      (
+        const ApiFailureRefreshUncertain(cause: ApiFailureTransport()),
+        FeedbackTone.warning,
+        'Kami tidak dapat memperbarui sesi Anda, sehingga tautan itu tidak '
+            'tersimpan. Coba lagi.',
+      ),
+      (
+        const ApiFailureCredentialStorage(cause: 'keystore'),
+        FeedbackTone.warning,
+        'Perangkat ini tidak dapat memperbarui sesi Anda, sehingga tautan itu '
+            'tidak tersimpan. Coba lagi.',
+      ),
+      (
+        const ApiFailureAuthRequired(code: 'INVALID_ACCESS_TOKEN'),
+        FeedbackTone.danger,
+        'Masuk lagi untuk menyimpan tautan ini.',
+      ),
+    ];
+
+    for (final (failure, tone, copy) in cases) {
+      final feedback = saveFeedbackFor(failure, sessionEnded: false);
+
+      expect(feedback, isNotNull);
+      expect(feedback!.tone, tone);
+      expect(feedback.resolve(indonesian), copy);
+    }
+  });
+
   group('a submission', () {
     test('sends exactly one POST and reports the confirmed create', () async {
       final container = await makeContainer();
@@ -322,7 +395,7 @@ void main() {
       final notice = noticeOf(container)!;
       expect(notice.tone, FeedbackTone.success);
       expect(
-        notice.copy,
+        notice.resolve(english),
         'Saved.',
         reason: '[D26] it confirms the create and nothing beyond it',
       );
@@ -416,7 +489,7 @@ void main() {
 
         final notice = noticeOf(container)!;
         expect(notice.tone, FeedbackTone.danger);
-        expect(notice.copy, contains('Check the URL'));
+        expect(notice.resolve(english), contains('Check the URL'));
       },
     );
 
@@ -440,16 +513,33 @@ void main() {
       final notice = noticeOf(container)!;
       expect(notice.tone, FeedbackTone.danger);
       expect(
-        notice.copy,
+        notice.resolve(english),
         "That doesn't look like a valid link. Enter a full http:// or https:// "
         'address.',
       );
       expect(
-        notice.copy,
+        notice.resolve(english),
         isNot(contains('server')),
         reason: 'nothing was sent, so nothing can have been rejected',
       );
     });
+
+    test(
+      'repeated identical local refusals keep one feedback identity',
+      () async {
+        final container = await makeContainer();
+        addTearDown(container.dispose);
+
+        expect(await submit(container, 'example'), isFalse);
+        final first = noticeOf(container);
+
+        expect(await submit(container, 'example'), isFalse);
+        final second = noticeOf(container);
+
+        expect(second, same(first));
+        expect(adapter.requests, isEmpty);
+      },
+    );
 
     test('a corrected value goes through after a local refusal', () async {
       final container = await makeContainer();
@@ -463,7 +553,7 @@ void main() {
 
       expect(await submit(container, 'https://example.com/new'), isTrue);
       expect(savePosts(), 1);
-      expect(noticeOf(container)!.copy, 'Saved.');
+      expect(noticeOf(container)!.resolve(english), 'Saved.');
     });
 
     test('a spent budget reports the wait the server sent', () async {
@@ -484,7 +574,10 @@ void main() {
 
       final notice = noticeOf(container)!;
       expect(notice.tone, FeedbackTone.warning);
-      expect(notice.copy, "You're saving too quickly. Try again in 2 minutes.");
+      expect(
+        notice.resolve(english),
+        "You're saving too quickly. Try again in 2 minutes.",
+      );
     });
 
     test('a 201 this client cannot read is not reported as a save', () async {
@@ -505,7 +598,7 @@ void main() {
 
       final notice = noticeOf(container)!;
       expect(notice.tone, FeedbackTone.uncertain);
-      expect(notice.copy, contains("can't confirm"));
+      expect(notice.resolve(english), contains("can't confirm"));
     });
 
     test('a request that never arrives is reported as uncertain', () async {
@@ -518,7 +611,10 @@ void main() {
 
       final notice = noticeOf(container)!;
       expect(notice.tone, FeedbackTone.uncertain);
-      expect(notice.copy, contains('may or may not have gone through'));
+      expect(
+        notice.resolve(english),
+        contains('may or may not have gone through'),
+      );
     });
   });
 
@@ -591,7 +687,7 @@ void main() {
       await container.read(savedItemsProvider.notifier).refreshHead();
 
       expect(
-        noticeOf(container)!.copy,
+        noticeOf(container)!.resolve(english),
         'Saved.',
         reason: 'the save is confirmed; a stale list is a separate problem',
       );
@@ -676,14 +772,17 @@ void main() {
 
         final notice = noticeOf(container)!;
         expect(notice.tone, FeedbackTone.warning);
-        expect(notice.copy, contains("couldn't renew your session"));
         expect(
-          notice.copy,
+          notice.resolve(english),
+          contains("couldn't renew your session"),
+        );
+        expect(
+          notice.resolve(english),
           contains("wasn't saved"),
           reason: 'the save itself *is* known not to have happened',
         );
         expect(
-          notice.copy.toLowerCase(),
+          notice.resolve(english).toLowerCase(),
           isNot(contains('sign in')),
           reason: 'the credentials were kept; asking to sign in would be wrong',
         );

@@ -34,9 +34,9 @@ Duration? _neverRetry(int retryCount, Object error) => null;
 ///
 /// Published only by [SavedItems.refresh]. An initial load, [SavedItems.retry],
 /// [SavedItems.loadMore] and [SavedItems.refreshHead] all stay silent.
-AppFeedback _refreshFailedFeedback() => AppFeedback(
+AppFeedback _refreshFailedFeedback() => AppFeedback.localized(
   tone: FeedbackTone.uncertain,
-  copy: "Couldn't refresh. Check your connection.",
+  message: (localizations) => localizations.refreshFailed,
 );
 
 /// The Inbox listing: the first page, and any page after it.

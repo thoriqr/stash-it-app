@@ -100,12 +100,13 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final listing = ref.watch(savedItemsProvider);
     final pendingCount = ref.watch(pendingUrlCountProvider);
 
     return Scaffold(
-      appBar: const DestinationAppBar(title: 'INBOX'),
+      appBar: DestinationAppBar(title: l10n.inboxTitle),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -131,7 +132,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
               0,
             ),
             child: Text(
-              'RECENTLY SAVED',
+              l10n.inboxRecentlySaved,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AppTypography.sectionLabel.copyWith(
@@ -211,6 +212,7 @@ class _LoadingMoreRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Padding(
@@ -228,7 +230,7 @@ class _LoadingMoreRow extends StatelessWidget {
           ),
           const SizedBox(width: AppMetrics.space2),
           Text(
-            'Loading more…',
+            l10n.inboxLoadingMore,
             style: AppTypography.meta.copyWith(color: tokens.textTertiary),
           ),
         ],
@@ -243,6 +245,7 @@ class _InboxEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Center(
@@ -252,7 +255,7 @@ class _InboxEmpty extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Nothing saved yet',
+              l10n.inboxEmptyTitle,
               textAlign: TextAlign.center,
               style: AppTypography.screenHeading.copyWith(
                 fontSize: 15,
@@ -261,7 +264,7 @@ class _InboxEmpty extends StatelessWidget {
             ),
             const SizedBox(height: AppMetrics.space2),
             Text(
-              'Save a link and it will appear here, in the collection it belongs to.',
+              l10n.inboxEmptyBody,
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: tokens.textSecondary),
             ),
@@ -281,6 +284,7 @@ class _InboxError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Center(
@@ -290,13 +294,13 @@ class _InboxError extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              _messageFor(failure, AppLocalizations.of(context)),
+              _messageFor(failure, l10n),
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: tokens.textPrimary),
             ),
             const SizedBox(height: AppMetrics.space4),
             AppButton(
-              label: 'Retry',
+              label: l10n.inboxRetry,
               variant: AppButtonVariant.secondary,
               block: false,
               onPressed: onRetry,
@@ -318,22 +322,19 @@ class _InboxError extends StatelessWidget {
   ) => switch (failure) {
     // The session ended or could not be renewed. The router handles the
     // redirect to sign-in; this message explains why the list is unavailable.
-    ApiFailureSessionEnded() =>
-      'Your session has ended. Sign in again to see your saved items.',
-    ApiFailureAuthRequired() => 'Sign in again to see your saved items.',
+    ApiFailureSessionEnded() => localizations.inboxSessionEnded,
+    ApiFailureAuthRequired() => localizations.inboxSignInRequired,
 
-    ApiFailureServerUnavailable() =>
-      'Your saved items are temporarily unavailable. Try again shortly.',
+    ApiFailureServerUnavailable() => localizations.inboxUnavailable,
 
     // The read could not be completed because the server response was not
     // received. This does not indicate that any saved item was changed.
-    ApiFailureTransport() =>
-      'No connection to the server. We could not load your saved items.',
+    ApiFailureTransport() => localizations.inboxLoadTransport,
 
     // Uses shared client-side copy for other listing failures. Server-provided
     // messages are not displayed.
     _ =>
       genericReadFailureMessage(failure, localizations) ??
-          'We could not load your saved items. Try again.',
+          localizations.inboxLoadGeneric,
   };
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/saved_items/application/save_url_controller.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -103,6 +104,7 @@ class _InboxIntakeState extends ConsumerState<InboxIntake> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final isSaving = ref.watch(saveUrlProvider);
     final hasValue = _controller.text.trim().isNotEmpty;
@@ -126,7 +128,7 @@ class _InboxIntakeState extends ConsumerState<InboxIntake> {
             children: [
               // Uppercase section label using the shared typography style.
               Text(
-                'SAVE A URL',
+                l10n.inboxSaveUrlSection,
                 style: AppTypography.sectionLabel.copyWith(
                   color: tokens.textSecondary,
                 ),
@@ -135,10 +137,9 @@ class _InboxIntakeState extends ConsumerState<InboxIntake> {
               Expanded(
                 child: Text(
                   switch ((isSaving, hasValue)) {
-                    (true, _) => 'Saving…',
-                    (false, true) => 'Check or edit the link before saving.',
-                    (false, false) =>
-                      'Paste fills the field. Save URL sends it.',
+                    (true, _) => l10n.inboxSaving,
+                    (false, true) => l10n.inboxIntakeReady,
+                    (false, false) => l10n.inboxIntakeHint,
                   },
                   textAlign: TextAlign.right,
                   style: AppTypography.label.copyWith(
@@ -165,7 +166,7 @@ class _InboxIntakeState extends ConsumerState<InboxIntake> {
               // Paste only fills the field. Both actions are disabled while
               // saving to prevent overlapping interactions.
               AppButton(
-                label: 'Paste',
+                label: l10n.inboxPaste,
                 variant: AppButtonVariant.secondary,
                 block: false,
                 onPressed: isSaving ? null : _paste,
@@ -173,7 +174,7 @@ class _InboxIntakeState extends ConsumerState<InboxIntake> {
               const SizedBox(width: AppMetrics.space2),
               Expanded(
                 child: AppButton(
-                  label: 'Save URL',
+                  label: l10n.inboxSaveAction,
                   variant: AppButtonVariant.primary,
                   busy: isSaving,
                   onPressed: hasValue && !isSaving ? _save : null,

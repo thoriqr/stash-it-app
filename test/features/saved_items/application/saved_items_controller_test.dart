@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
@@ -10,6 +11,7 @@ import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_state.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../../support/fake_http.dart';
 import '../../../support/saved_items_fixtures.dart';
@@ -19,6 +21,8 @@ import '../../../support/saved_items_fixtures.dart';
 /// Drives the **real** provider graph � repository, Retrofit client and
 /// `appDio` � against a scripted transport. No socket is opened.
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
   late FakeHttpAdapter adapter;
 
   /// A container with a scripted transport and no automatic provider retry.
@@ -952,7 +956,10 @@ void main() {
         hasLength(1),
         reason: 'two gestures shared one request, so they share one notice',
       );
-      expect(notices.single.copy, "Couldn't refresh. Check your connection.");
+      expect(
+        notices.single.resolve(english),
+        "Couldn't refresh. Check your connection.",
+      );
 
       final state = stateOf(container);
       expect(state.items.map((i) => i.id), ['a']);
@@ -1143,7 +1150,10 @@ void main() {
 
       final notice = noticeOf(container)!;
       expect(notice.tone, FeedbackTone.uncertain);
-      expect(notice.copy, "Couldn't refresh. Check your connection.");
+      expect(
+        notice.resolve(english),
+        "Couldn't refresh. Check your connection.",
+      );
     });
 
     test(
@@ -1168,11 +1178,35 @@ void main() {
         expect(listing.isLoading, isFalse);
         expect(adapter.countFor('/saved-items'), 2);
         expect(
-          noticeOf(container)?.copy,
+          noticeOf(container)?.resolve(english),
           "Couldn't refresh. Check your connection.",
         );
       },
     );
+
+    test('a failed refresh resolves in Indonesian', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      scriptPages([
+        SavedItemsFixtures.page(items: [SavedItemsFixtures.item(id: 'a')]),
+      ]);
+      await container.read(savedItemsProvider.future);
+
+      adapter.on(
+        '/saved-items',
+        status: 500,
+        body: errorBody('INTERNAL_SERVER_ERROR'),
+      );
+      await container.read(savedItemsProvider.notifier).refresh();
+
+      final notice = noticeOf(container)!;
+      expect(notice.tone, FeedbackTone.uncertain);
+      expect(
+        notice.resolve(indonesian),
+        'Tidak dapat menyegarkan. Periksa koneksi Anda.',
+      );
+    });
 
     test('a failed refresh from an error state leaves it retryable', () async {
       final container = await makeContainer();
@@ -1193,7 +1227,7 @@ void main() {
       expect(container.read(savedItemsProvider), isA<AsyncError>());
       expect(adapter.countFor('/saved-items'), 2);
       expect(
-        noticeOf(container)?.copy,
+        noticeOf(container)?.resolve(english),
         "Couldn't refresh. Check your connection.",
       );
     });

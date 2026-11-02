@@ -821,6 +821,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shareNotStored => 'Couldn\'t save or keep this link.';
 
   @override
+  String get inboxTitle => 'INBOX';
+
+  @override
+  String get inboxRecentlySaved => 'RECENTLY SAVED';
+
+  @override
+  String get inboxLoadingMore => 'Loading more…';
+
+  @override
+  String get inboxEmptyTitle => 'Nothing saved yet';
+
+  @override
+  String get inboxEmptyBody =>
+      'Save a link and it will appear here, in the collection it belongs to.';
+
+  @override
+  String get inboxRetry => 'Retry';
+
+  @override
+  String get inboxSessionEnded =>
+      'Your session has ended. Sign in again to see your saved items.';
+
+  @override
+  String get inboxSignInRequired => 'Sign in again to see your saved items.';
+
+  @override
+  String get inboxUnavailable =>
+      'Your saved items are temporarily unavailable. Try again shortly.';
+
+  @override
+  String get inboxLoadTransport =>
+      'No connection to the server. We could not load your saved items.';
+
+  @override
+  String get inboxLoadGeneric =>
+      'We could not load your saved items. Try again.';
+
+  @override
+  String get inboxSaveUrlSection => 'SAVE A URL';
+
+  @override
+  String get inboxSaving => 'Saving…';
+
+  @override
+  String get inboxIntakeReady => 'Check or edit the link before saving.';
+
+  @override
+  String get inboxIntakeHint => 'Paste fills the field. Save URL sends it.';
+
+  @override
+  String get inboxPaste => 'Paste';
+
+  @override
+  String get inboxSaveAction => 'Save URL';
+
+  @override
   String get authBackToWelcome => 'Back to welcome';
 
   @override

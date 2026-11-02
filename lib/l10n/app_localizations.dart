@@ -1057,6 +1057,108 @@ abstract class AppLocalizations {
   /// **'Couldn\'t save or keep this link.'**
   String get shareNotStored;
 
+  /// Title of the Inbox destination.
+  ///
+  /// In en, this message translates to:
+  /// **'INBOX'**
+  String get inboxTitle;
+
+  /// Section label above the recently saved items list.
+  ///
+  /// In en, this message translates to:
+  /// **'RECENTLY SAVED'**
+  String get inboxRecentlySaved;
+
+  /// Label shown while the next page of saved items loads.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading more…'**
+  String get inboxLoadingMore;
+
+  /// Heading shown when the Inbox has no saved items.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing saved yet'**
+  String get inboxEmptyTitle;
+
+  /// Explanation shown when the Inbox has no saved items.
+  ///
+  /// In en, this message translates to:
+  /// **'Save a link and it will appear here, in the collection it belongs to.'**
+  String get inboxEmptyBody;
+
+  /// Retry action for a failed Inbox listing request.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get inboxRetry;
+
+  /// Inbox listing message when the session has ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session has ended. Sign in again to see your saved items.'**
+  String get inboxSessionEnded;
+
+  /// Inbox listing message when authentication is required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to see your saved items.'**
+  String get inboxSignInRequired;
+
+  /// Inbox listing message when saved items are temporarily unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Your saved items are temporarily unavailable. Try again shortly.'**
+  String get inboxUnavailable;
+
+  /// Unconfirmed Inbox load because the server could not be reached.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection to the server. We could not load your saved items.'**
+  String get inboxLoadTransport;
+
+  /// Fallback copy for a failed Inbox listing request.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not load your saved items. Try again.'**
+  String get inboxLoadGeneric;
+
+  /// Section label above the URL intake.
+  ///
+  /// In en, this message translates to:
+  /// **'SAVE A URL'**
+  String get inboxSaveUrlSection;
+
+  /// Status label while a Save URL request is in progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get inboxSaving;
+
+  /// Status label when the URL field has content.
+  ///
+  /// In en, this message translates to:
+  /// **'Check or edit the link before saving.'**
+  String get inboxIntakeReady;
+
+  /// Status hint when the URL field is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste fills the field. Save URL sends it.'**
+  String get inboxIntakeHint;
+
+  /// Action that fills the URL field from the clipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get inboxPaste;
+
+  /// Action that submits the URL field.
+  ///
+  /// In en, this message translates to:
+  /// **'Save URL'**
+  String get inboxSaveAction;
+
   /// Tooltip for returning to the signed-out welcome screen.
   ///
   /// In en, this message translates to:
