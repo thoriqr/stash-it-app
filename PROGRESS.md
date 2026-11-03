@@ -9,6 +9,8 @@ The app has its core saved-link experience in place, including authentication, c
 
 The latest completed milestone is **Localization Phase 8**: Pending URLs UI, Dart share-intake outcomes, headless share localization, and the native Android fallback are localized in English and Indonesian.
 
+The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
+
 **Current focus:** localize the remaining theme/language preference warnings and complete native-speaker/device review.
 
 ## Verification
@@ -22,6 +24,16 @@ The latest completed milestone is **Localization Phase 8**: Pending URLs UI, Dar
 - Android Kotlin compilation — `:app:compileDebugKotlin` succeeded.
 - `git diff --check` — no whitespace errors.
 - The full test suite was not rerun for Phase 8; broader regression testing remains with the project owner.
+
+### Test suite reduction (2026-11-03)
+
+- Removed 57 presentation, trivial model, and duplicate test/support files.
+- Approximately 720 test cases removed; about 890 retained.
+- Targeted critical suites run in batches — 887 tests passed across authentication/security, saved items, search, collections, profile, settings, pending URLs, app routing/shell, and localization/feedback.
+- `dart format --output=none --set-exit-if-changed test` — clean.
+- `flutter analyze` — no issues found.
+- `git diff --check` — no whitespace errors.
+- No single full-suite run was performed; broader regression remains with the project owner.
 
 ## Implemented
 
@@ -75,11 +87,18 @@ The latest completed milestone is **Localization Phase 8**: Pending URLs UI, Dar
 - Profile headings, account fields, localized identity labels, joined and linked dates, display-name editing, password forms, validation, typed failures, and update feedback are localized in English and Indonesian. Dates use the active locale explicitly, while provider identifiers remain unchanged.
 - Pending URLs titles, introductions, empty/loading/error states, kept-time labels, progress, expiry feedback, bulk-save summaries, entry semantics, and share-intake outcomes are localized in English and Indonesian. The headless share path resolves the restored language preference without a widget tree; the native fallback uses Android string resources.
 
+### Test suite
+
+- Tests focus on authentication and session security, saved-item and collection behavior, search request handling, profile updates, pending-URL persistence and share intake, localization mechanisms, preference persistence, routing, and app-shell flows.
+- Presentation-only copy and static rendering tests, trivial DTO model tests, and redundant mapper/provider tests were removed.
+- Critical error mapping, malformed-data handling, pagination, account isolation, and typed failure behavior remain covered.
+
 ## In Progress and Next Steps
 
 - [ ] Localize the remaining theme/language preference warnings.
 - [ ] Review Indonesian translations with a native speaker, including native share fallback wording.
 - [ ] Verify the app on a physical Android device.
+- [ ] Run the full test suite once after the test-suite reduction.
 
 ## Known Limitations
 
@@ -93,6 +112,9 @@ The latest completed milestone is **Localization Phase 8**: Pending URLs UI, Dar
 - 2 Indonesian preference-warning messages still fall back to English.
 - The native Android share fallback uses Android device-locale resource resolution. It cannot read the app's persisted language preference without a preference bridge, which was not introduced.
 - Skeleton placeholder text is layout-only and excluded from accessibility; it is not localized copy.
+- Presentation copy, layout, and localization rendering no longer have dedicated automated tests; UI changes require manual or visual review.
+- Authentication screen flows are covered indirectly through application, data, routing, and redirect tests rather than screen-level widget tests.
+- DTO-level parsing tests were removed; repository and mapper tests retain the main conversion and malformed-data coverage.
 
 ## Project Constraints
 
