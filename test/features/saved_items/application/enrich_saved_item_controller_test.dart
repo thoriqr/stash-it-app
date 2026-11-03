@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
@@ -22,6 +23,8 @@ import 'package:stash_it_app/features/saved_items/domain/collection_saved_items_
 import 'package:stash_it_app/features/saved_items/domain/saved_item_enrichment_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_time.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../../support/fake_collections_repository.dart';
 import '../../../support/fake_http.dart';
@@ -35,6 +38,8 @@ import '../../../support/fake_saved_items_repository.dart';
 /// test already pins to the payload. No provider is read unless a test seeds it,
 /// so the "does this create a listing?" assertions are real.
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
   const itemId = 'item-1';
   const collectionId = 'collection-1';
 
@@ -54,7 +59,7 @@ void main() {
     title: title,
     description: description,
     imageUrl: imageUrl,
-    savedTimeLabel: 'Saved 2 hr ago',
+    savedTime: const SavedTime.hours(2),
   );
 
   SavedItemEnrichmentResult enriched({
@@ -209,7 +214,7 @@ void main() {
       await Future.wait([first, second]);
 
       expect(harness.saved.enrichCalls, 1);
-      expect(noticeOf(harness.container)?.copy, 'Page re-read.');
+      expect(noticeOf(harness.container)?.resolve(english), 'Page re-read.');
     });
 
     test('the in-flight flag is true only while the request is open', () async {
@@ -559,7 +564,7 @@ void main() {
         inboxOf(harness.container).items.single.title,
         'Understanding CRDTs',
       );
-      expect(noticeOf(harness.container)?.copy, 'Page re-read.');
+      expect(noticeOf(harness.container)?.resolve(english), 'Page re-read.');
     });
 
     test('the collections list is not invalidated', () async {
@@ -592,7 +597,8 @@ void main() {
           .enrich(summary());
 
       final notice = noticeOf(harness.container)!;
-      expect(notice.copy, 'Page re-read.');
+      expect(notice.resolve(english), 'Page re-read.');
+      expect(notice.resolve(indonesian), 'Halaman dibaca ulang.');
       expect(notice.tone, FeedbackTone.success);
     });
 
@@ -609,7 +615,14 @@ void main() {
           .enrich(summary());
 
       final notice = noticeOf(harness.container)!;
-      expect(notice.copy, 'Page re-read. This page shows no details.');
+      expect(
+        notice.resolve(english),
+        'Page re-read. This page shows no details.',
+      );
+      expect(
+        notice.resolve(indonesian),
+        'Halaman dibaca ulang. Halaman ini tidak menampilkan detail.',
+      );
       expect(notice.tone, FeedbackTone.success);
     });
 
@@ -624,7 +637,8 @@ void main() {
           .enrich(summary());
 
       final notice = noticeOf(harness.container)!;
-      expect(notice.copy, "Couldn't read this page.");
+      expect(notice.resolve(english), "Couldn't read this page.");
+      expect(notice.resolve(indonesian), 'Tidak dapat membaca halaman ini.');
       expect(notice.tone, FeedbackTone.danger);
     });
 
@@ -639,7 +653,14 @@ void main() {
           .enrich(summary());
 
       final notice = noticeOf(harness.container)!;
-      expect(notice.copy, "We couldn't confirm the re-read. Try again.");
+      expect(
+        notice.resolve(english),
+        "We couldn't confirm the re-read. Try again.",
+      );
+      expect(
+        notice.resolve(indonesian),
+        'Kami tidak dapat memastikan pembacaan ulang. Coba lagi.',
+      );
       expect(notice.tone, FeedbackTone.uncertain);
     });
   });
@@ -662,8 +683,12 @@ void main() {
 
       final notice = noticeOf(harness.container)!;
       expect(
-        notice.copy,
+        notice.resolve(english),
         "You've re-read too many pages. Try again in 2 minutes.",
+      );
+      expect(
+        notice.resolve(indonesian),
+        'Anda terlalu sering membaca ulang halaman. Coba lagi dalam 2 menit.',
       );
       expect(notice.tone, FeedbackTone.warning);
     });
@@ -681,7 +706,7 @@ void main() {
           .enrich(summary());
 
       expect(
-        noticeOf(harness.container)!.copy,
+        noticeOf(harness.container)!.resolve(english),
         "You've re-read too many pages. Try again shortly.",
       );
     });
@@ -702,7 +727,7 @@ void main() {
 
       final notice = noticeOf(harness.container)!;
       expect(
-        notice.copy,
+        notice.resolve(english),
         'Re-reading is temporarily unavailable. Try again shortly.',
       );
       expect(notice.tone, FeedbackTone.warning);
@@ -720,7 +745,7 @@ void main() {
 
       final notice = noticeOf(harness.container)!;
       expect(
-        notice.copy,
+        notice.resolve(english),
         "Something went wrong re-reading this page. Try again.",
       );
       expect(notice.tone, FeedbackTone.danger);
@@ -737,7 +762,10 @@ void main() {
           .enrich(summary());
 
       final notice = noticeOf(harness.container)!;
-      expect(notice.copy, "We couldn't re-read this page. Try again.");
+      expect(
+        notice.resolve(english),
+        "We couldn't re-read this page. Try again.",
+      );
       expect(notice.tone, FeedbackTone.danger);
     });
 
@@ -752,7 +780,7 @@ void main() {
           .enrich(summary());
 
       expect(
-        noticeOf(harness.container)!.copy,
+        noticeOf(harness.container)!.resolve(english),
         "We couldn't re-read this page. Try again.",
       );
     });
@@ -770,7 +798,7 @@ void main() {
           .enrich(summary());
 
       expect(
-        noticeOf(harness.container)!.copy,
+        noticeOf(harness.container)!.resolve(english),
         "We couldn't re-read this page. Try again.",
       );
     });
@@ -793,7 +821,7 @@ void main() {
           .enrich(summary());
 
       final notice = noticeOf(harness.container)!;
-      expect(notice.copy, 'This item is no longer available.');
+      expect(notice.resolve(english), 'This item is no longer available.');
       expect(notice.tone, FeedbackTone.danger);
 
       await untilCalled(() => harness.saved.detailCalls == 2);
@@ -814,7 +842,7 @@ void main() {
           .read(enrichSavedItemProvider.notifier)
           .enrich(summary());
 
-      final copy = noticeOf(harness.container)!.copy.toLowerCase();
+      final copy = noticeOf(harness.container)!.resolve(english).toLowerCase();
       expect(copy.contains('deleted'), isFalse);
       expect(copy.contains('another'), isFalse);
       expect(copy.contains('account'), isFalse);
@@ -831,7 +859,10 @@ void main() {
           .enrich(summary());
 
       final notice = noticeOf(harness.container)!;
-      expect(notice.copy, "We couldn't confirm the re-read. Try again.");
+      expect(
+        notice.resolve(english),
+        "We couldn't confirm the re-read. Try again.",
+      );
       expect(notice.tone, FeedbackTone.uncertain);
     });
 
@@ -846,7 +877,7 @@ void main() {
           .enrich(summary());
 
       expect(
-        noticeOf(harness.container)!.copy,
+        noticeOf(harness.container)!.resolve(english),
         "We couldn't confirm the re-read. Try again.",
       );
       expect(noticeOf(harness.container)!.tone, FeedbackTone.uncertain);
@@ -919,7 +950,7 @@ void main() {
           .enrich(summary());
 
       final notice = noticeOf(harness.container)!;
-      expect(notice.copy, 'Sign in again to re-read this page.');
+      expect(notice.resolve(english), 'Sign in again to re-read this page.');
       expect(notice.tone, FeedbackTone.danger);
     });
 
@@ -970,7 +1001,7 @@ void main() {
 
       final notice = noticeOf(harness.container)!;
       expect(
-        notice.copy,
+        notice.resolve(english),
         "We couldn't renew your session, so the page wasn't re-read. "
         'Try again.',
       );
@@ -990,7 +1021,7 @@ void main() {
 
       final notice = noticeOf(harness.container)!;
       expect(
-        notice.copy,
+        notice.resolve(english),
         "This device couldn't refresh your session, so the page wasn't "
         're-read. Try again.',
       );

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_time.dart';
 
 /// The presentation model's image and re-read rules.
 ///
@@ -24,7 +25,7 @@ void main() {
     title: title,
     description: description,
     imageUrl: imageUrl,
-    savedTimeLabel: 'Saved 1 hour ago',
+    savedTime: const SavedTime.hours(1),
   );
 
   group('hasPreviewImage', () {
@@ -133,7 +134,7 @@ void main() {
       expect(reRead.url, original.url);
       expect(reRead.collectionId, original.collectionId);
       expect(reRead.collectionName, original.collectionName);
-      expect(reRead.savedTimeLabel, original.savedTimeLabel);
+      expect(reRead.savedTime, original.savedTime);
     });
 
     test('an explicit null clears the previous value', () {
@@ -227,7 +228,7 @@ void main() {
       expect(moved.title, original.title);
       expect(moved.description, original.description);
       expect(moved.enrichmentStatus, original.enrichmentStatus);
-      expect(moved.savedTimeLabel, original.savedTimeLabel);
+      expect(moved.savedTime, original.savedTime);
     });
 
     test('a null URL stays null across the move', () {

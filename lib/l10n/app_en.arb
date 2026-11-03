@@ -26,11 +26,11 @@
   "retryAfterHours": "{count, plural, =1{1 hour} other{{count} hours}}",
   "themePreferenceNotSaved": "Theme changed, but the preference could not be saved.",
   "languagePreferenceNotSaved": "Language changed, but the preference could not be saved.",
-  "savedJustNow": "Saved just now",
-  "savedMinutesAgo": "{count, plural, =1{Saved 1 min ago} other{Saved {count} min ago}}",
-  "savedHoursAgo": "{count, plural, =1{Saved 1 hour ago} other{Saved {count} hours ago}}",
-  "savedYesterday": "Saved yesterday",
-  "savedDaysAgo": "{count, plural, =1{Saved 1 day ago} other{Saved {count} days ago}}",
+  "savedTimeJustNow": "Saved just now",
+  "savedTimeMinutesAgo": "{count, plural, =1{Saved 1 min ago} other{Saved {count} min ago}}",
+  "savedTimeHoursAgo": "{count, plural, =1{Saved 1 hour ago} other{Saved {count} hours ago}}",
+  "savedTimeYesterday": "Saved yesterday",
+  "savedTimeDaysAgo": "{count, plural, =1{Saved 1 day ago} other{Saved {count} days ago}}",
   "profileIdentityEmailPassword": "Email & password",
   "profileIdentityUnknown": "Unknown",
   "pendingUrlsExpired": "Some links saved on this device expired after seven days.",
@@ -173,6 +173,87 @@
   "inboxIntakeHint": "Paste fills the field. Save URL sends it.",
   "inboxPaste": "Paste",
   "inboxSaveAction": "Save URL",
+  "savedItemDetailTitle": "ITEM",
+  "savedItemCollectionDetailTitle": "COLLECTION",
+  "savedItemBackToInbox": "Back to Inbox",
+  "savedItemActionsSection": "ACTIONS",
+  "savedItemMoveAction": "Move to a collection",
+  "savedItemOpenAction": "Open the original page",
+  "savedItemDeleteAction": "Delete this item",
+  "savedItemEnrichmentSection": "ENRICHMENT",
+  "savedItemReReadAction": "Re-read page",
+  "savedItemReadingPage": "Reading the page…",
+  "savedItemDeleteDialogTitle": "Delete this item?",
+  "savedItemDeleteDialogMessage": "This removes the saved item. It cannot be undone.",
+  "savedItemKeepAction": "Keep",
+  "savedItemDeleteConfirmAction": "Delete",
+  "savedItemCollectionEmptyTitle": "{name} is now empty",
+  "savedItemCollectionEmptyMessage": "This was the last item in {name}. You can keep this empty collection or delete it.",
+  "savedItemKeepCollectionAction": "Keep it",
+  "savedItemDeleteCollectionAction": "Delete collection",
+  "savedItemCancelAction": "Cancel",
+  "savedItemKeepCollectionDismissAction": "Keep collection",
+  "savedItemCloseAction": "Close",
+  "savedItemNotFoundTitle": "This item is no longer available",
+  "savedItemNotFoundBody": "It may have been deleted, or it may belong to another account.",
+  "savedItemLoadErrorTitle": "We could not load this item",
+  "savedItemRetry": "Retry",
+  "savedItemSessionEnded": "Your session has ended. Sign in again to see this item.",
+  "savedItemSignInRequired": "Sign in again to see this item.",
+  "savedItemUnavailable": "This item is temporarily unavailable. Try again shortly.",
+  "savedItemLoadTransport": "No connection to the server. We couldn't load this item.",
+  "savedItemLoadGeneric": "We couldn't load this item. Try again.",
+  "savedItemEnrichmentReading": "Reading page…",
+  "savedItemEnrichmentNoDetails": "No details on this page",
+  "savedItemEnrichmentFailed": "Couldn't read this page",
+  "savedItemBackToCollections": "Back to Collections",
+  "savedItemCollectionActionsTooltip": "Collection actions",
+  "savedItemLoadingMore": "Loading more…",
+  "savedItemLoadMoreFailed": "Couldn't load more items.",
+  "savedItemEmptyCollectionTitle": "Nothing saved here yet",
+  "savedItemEmptyCollectionBody": "Items saved to this collection will appear here.",
+  "savedItemCollectionUnavailableTitle": "This collection is no longer available",
+  "savedItemCollectionUnavailableBody": "It may have been deleted, or it may belong to another account.",
+  "savedItemCollectionLoadErrorTitle": "We could not load this collection",
+  "savedItemCollectionSessionEnded": "Your session has ended. Sign in again to see this collection.",
+  "savedItemCollectionSignInRequired": "Sign in again to see this collection.",
+  "savedItemCollectionUnavailable": "This collection is temporarily unavailable. Try again shortly.",
+  "savedItemCollectionLoadTransport": "No connection to the server. We could not load this collection.",
+  "savedItemCollectionLoadGeneric": "We could not load this collection. Try again.",
+  "savedItemEmptyCollectionDeleteTitle": "Delete this collection?",
+  "savedItemDeleteCollectionNamedTitle": "Delete {name}?",
+  "savedItemEmptyCollectionDeleteMessage": "This collection is empty. There are no items to keep or discard. This cannot be undone.",
+  "savedItemCurrentlyIn": "Currently in {name}",
+  "savedItemYourCollections": "YOUR COLLECTIONS",
+  "savedItemBrowseAllCollections": "Browse all collections",
+  "savedItemNewCollection": "New collection",
+  "savedItemNewCollectionPlaceholder": "e.g. Reading list",
+  "savedItemLoadingCollections": "Loading collections…",
+  "savedItemLoadCollectionsFailed": "We couldn't load your collections.",
+  "savedItemBrowseAllHint": "Browse all collections to find a destination.",
+  "savedItemNoOtherCollectionsCreate": "No other collections yet. Create one below.",
+  "savedItemAlreadyIn": "Already in {name}",
+  "savedItemMoveTo": "Move to {name}",
+  "savedItemCreate": "Create {name}",
+  "savedItemMoveHelperError": "You can still create a collection by name, or browse all collections.",
+  "savedItemMoveHelper": "Choose an existing collection, or enter a name to create a new one.",
+  "savedItemCollectionNameTaken": "That collection name is already taken. Choose a different name.",
+  "savedItemCollectionNameRequired": "Enter a collection name.",
+  "savedItemCollectionNameTooLong": "Use 100 characters or fewer.",
+  "savedItemCollectionNameRange": "Enter a collection name between 1 and 100 characters.",
+  "savedItemAllCollections": "All collections",
+  "savedItemPickerDescription": "Choose a collection to move this item into.",
+  "savedItemNoOtherCollections": "No other collections yet.",
+  "savedItemLoadMoreCollectionsFailed": "We couldn't load more collections.",
+  "savedItemThisCollection": "This collection",
+  "savedItemTheCollection": "the collection",
+  "savedItemDeleteCollectionCannotUndo": "Deleting the collection cannot be undone, and items you choose to delete cannot be recovered.",
+  "savedItemMoveItemsAction": "Move items to another collection",
+  "savedItemDeleteItemsAction": "Delete collection and items",
+  "savedItemCollectionHasItemsUnknown": "This collection has saved items. Choose what happens to them.",
+  "savedItemCollectionHasItems": "This collection has {count, plural, =1{1 saved item. Choose what happens to it.} other{{count} saved items. Choose what happens to them.}}",
+  "savedItemBulkMoveThisItem": "Choose where this item should go. {name} will be deleted.",
+  "savedItemBulkMoveTheseItems": "Choose where these items should go. {name} will be deleted.",
   "authBackToWelcome": "Back to welcome",
   "authEmailLabel": "Email",
   "authPasswordLabel": "Password",
@@ -487,10 +568,10 @@
   "@languagePreferenceNotSaved": {
     "description": "Warning shown when the language changed but could not be persisted."
   },
-  "@savedJustNow": {
+  "@savedTimeJustNow": {
     "description": "Saved-time label for an item saved less than a minute ago."
   },
-  "@savedMinutesAgo": {
+  "@savedTimeMinutesAgo": {
     "description": "Saved-time label for an item saved less than an hour ago.",
     "placeholders": {
       "count": {
@@ -498,7 +579,7 @@
       }
     }
   },
-  "@savedHoursAgo": {
+  "@savedTimeHoursAgo": {
     "description": "Saved-time label for an item saved less than a day ago.",
     "placeholders": {
       "count": {
@@ -506,10 +587,10 @@
       }
     }
   },
-  "@savedYesterday": {
+  "@savedTimeYesterday": {
     "description": "Saved-time label for an item saved between 24 and 48 hours ago."
   },
-  "@savedDaysAgo": {
+  "@savedTimeDaysAgo": {
     "description": "Saved-time label for an item saved two or more days ago.",
     "placeholders": {
       "count": {
@@ -1228,6 +1309,299 @@
   },
   "@inboxSaveAction": {
     "description": "Action that submits the URL field."
+  },
+  "@savedItemDetailTitle": {
+    "description": "Title of the saved-item detail app bar."
+  },
+  "@savedItemCollectionDetailTitle": {
+    "description": "Title of the saved-items collection app bar."
+  },
+  "@savedItemBackToInbox": {
+    "description": "Back action or tooltip returning to the Inbox."
+  },
+  "@savedItemActionsSection": {
+    "description": "Section label for item actions."
+  },
+  "@savedItemMoveAction": {
+    "description": "Action opening collection selection for the item."
+  },
+  "@savedItemOpenAction": {
+    "description": "Action opening the original saved URL."
+  },
+  "@savedItemDeleteAction": {
+    "description": "Action starting saved-item deletion."
+  },
+  "@savedItemEnrichmentSection": {
+    "description": "Section label for enrichment actions."
+  },
+  "@savedItemReReadAction": {
+    "description": "Action requesting a fresh read of the saved page."
+  },
+  "@savedItemReadingPage": {
+    "description": "Caption shown while a re-read is in progress."
+  },
+  "@savedItemDeleteDialogTitle": {
+    "description": "Title of the saved-item deletion confirmation."
+  },
+  "@savedItemDeleteDialogMessage": {
+    "description": "Body of the saved-item deletion confirmation."
+  },
+  "@savedItemKeepAction": {
+    "description": "Safe action in the saved-item deletion confirmation."
+  },
+  "@savedItemDeleteConfirmAction": {
+    "description": "Destructive confirmation action."
+  },
+  "@savedItemCollectionEmptyTitle": {
+    "description": "Confirmation title when deleting the last item empties a collection.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@savedItemCollectionEmptyMessage": {
+    "description": "Offers to keep or delete a collection emptied by item deletion.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@savedItemKeepCollectionAction": {
+    "description": "Action keeping an emptied collection."
+  },
+  "@savedItemDeleteCollectionAction": {
+    "description": "Action deleting a collection."
+  },
+  "@savedItemCancelAction": {
+    "description": "Cancel action in saved-item dialogs."
+  },
+  "@savedItemKeepCollectionDismissAction": {
+    "description": "Dismissal label that explicitly keeps the collection."
+  },
+  "@savedItemCloseAction": {
+    "description": "Dismissal label when an outcome is uncertain."
+  },
+  "@savedItemNotFoundTitle": {
+    "description": "Title when a saved item no longer exists."
+  },
+  "@savedItemNotFoundBody": {
+    "description": "Body when a saved item no longer exists."
+  },
+  "@savedItemLoadErrorTitle": {
+    "description": "Title for a retryable saved-item read failure."
+  },
+  "@savedItemRetry": {
+    "description": "Retry action for saved-item reads and enrichment."
+  },
+  "@savedItemSessionEnded": {
+    "description": "Saved-item read message when the session ended."
+  },
+  "@savedItemSignInRequired": {
+    "description": "Saved-item read message when authentication is required."
+  },
+  "@savedItemUnavailable": {
+    "description": "Saved item is temporarily unavailable."
+  },
+  "@savedItemLoadTransport": {
+    "description": "Saved-item read failed because the server was unreachable."
+  },
+  "@savedItemLoadGeneric": {
+    "description": "Fallback copy for a failed saved-item read."
+  },
+  "@savedItemEnrichmentReading": {
+    "description": "Enrichment status while the page is being read."
+  },
+  "@savedItemEnrichmentNoDetails": {
+    "description": "Completed enrichment with no usable metadata."
+  },
+  "@savedItemEnrichmentFailed": {
+    "description": "Enrichment could not read the page."
+  },
+  "@savedItemBackToCollections": {
+    "description": "Back action or tooltip returning to Collections."
+  },
+  "@savedItemCollectionActionsTooltip": {
+    "description": "Tooltip for the collection actions menu."
+  },
+  "@savedItemLoadingMore": {
+    "description": "Footer label while another page loads."
+  },
+  "@savedItemLoadMoreFailed": {
+    "description": "Footer copy when loading another page failed."
+  },
+  "@savedItemEmptyCollectionTitle": {
+    "description": "Empty state title for a saved-items collection."
+  },
+  "@savedItemEmptyCollectionBody": {
+    "description": "Empty state body for a saved-items collection."
+  },
+  "@savedItemCollectionUnavailableTitle": {
+    "description": "Title when a collection is no longer available."
+  },
+  "@savedItemCollectionUnavailableBody": {
+    "description": "Body when a collection is no longer available."
+  },
+  "@savedItemCollectionLoadErrorTitle": {
+    "description": "Title for a retryable collection read failure."
+  },
+  "@savedItemCollectionSessionEnded": {
+    "description": "Collection read message when the session ended."
+  },
+  "@savedItemCollectionSignInRequired": {
+    "description": "Collection read message when authentication is required."
+  },
+  "@savedItemCollectionUnavailable": {
+    "description": "Collection is temporarily unavailable."
+  },
+  "@savedItemCollectionLoadTransport": {
+    "description": "Collection read failed because the server was unreachable."
+  },
+  "@savedItemCollectionLoadGeneric": {
+    "description": "Fallback copy for a failed collection read."
+  },
+  "@savedItemEmptyCollectionDeleteTitle": {
+    "description": "Deletion title for an empty collection."
+  },
+  "@savedItemDeleteCollectionNamedTitle": {
+    "description": "Deletion title naming a collection.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@savedItemEmptyCollectionDeleteMessage": {
+    "description": "Deletion confirmation for an empty collection."
+  },
+  "@savedItemCurrentlyIn": {
+    "description": "Shows the item's current collection in the move sheet.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@savedItemYourCollections": {
+    "description": "Heading above loaded collection destinations."
+  },
+  "@savedItemBrowseAllCollections": {
+    "description": "Action opening the full collection picker."
+  },
+  "@savedItemNewCollection": {
+    "description": "Label for the new-collection name field."
+  },
+  "@savedItemNewCollectionPlaceholder": {
+    "description": "Placeholder example for a new collection name."
+  },
+  "@savedItemLoadingCollections": {
+    "description": "Loading label for collection destinations."
+  },
+  "@savedItemLoadCollectionsFailed": {
+    "description": "Copy when collection destinations fail to load."
+  },
+  "@savedItemBrowseAllHint": {
+    "description": "Hint to browse all collections when the preview is empty."
+  },
+  "@savedItemNoOtherCollectionsCreate": {
+    "description": "Hint when no other collections exist."
+  },
+  "@savedItemAlreadyIn": {
+    "description": "Primary action label when the typed name is the current collection.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@savedItemMoveTo": {
+    "description": "Primary action label for moving to a loaded collection.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@savedItemCreate": {
+    "description": "Primary action label for creating a collection by name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@savedItemMoveHelperError": {
+    "description": "Helper copy when destinations failed to load."
+  },
+  "@savedItemMoveHelper": {
+    "description": "Default helper copy for collection selection."
+  },
+  "@savedItemCollectionNameTaken": {
+    "description": "Inline error for a duplicate collection name."
+  },
+  "@savedItemCollectionNameRequired": {
+    "description": "Inline error for a blank collection name."
+  },
+  "@savedItemCollectionNameTooLong": {
+    "description": "Inline error for a collection name over 100 characters."
+  },
+  "@savedItemCollectionNameRange": {
+    "description": "Fallback collection-name length error."
+  },
+  "@savedItemAllCollections": {
+    "description": "Title of the full collection picker."
+  },
+  "@savedItemPickerDescription": {
+    "description": "Default picker description for a single-item move."
+  },
+  "@savedItemNoOtherCollections": {
+    "description": "Empty state in the full collection picker."
+  },
+  "@savedItemLoadMoreCollectionsFailed": {
+    "description": "Footer copy when loading more collections failed."
+  },
+  "@savedItemThisCollection": {
+    "description": "Fallback name for an unnamed current collection."
+  },
+  "@savedItemTheCollection": {
+    "description": "Neutral fallback name used in feedback copy."
+  },
+  "@savedItemDeleteCollectionCannotUndo": {
+    "description": "Irreversibility warning in the collection deletion sheet."
+  },
+  "@savedItemMoveItemsAction": {
+    "description": "Bulk action moving items before deleting their collection."
+  },
+  "@savedItemDeleteItemsAction": {
+    "description": "Bulk action deleting a collection together with its items."
+  },
+  "@savedItemCollectionHasItemsUnknown": {
+    "description": "Collection item-count copy when the exact total is unknown."
+  },
+  "@savedItemCollectionHasItems": {
+    "description": "Collection item-count copy with an exact plural count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@savedItemBulkMoveThisItem": {
+    "description": "Destination picker description for one item.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@savedItemBulkMoveTheseItems": {
+    "description": "Destination picker description for multiple items.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "@authBackToWelcome": {
     "description": "Tooltip for returning to the signed-out welcome screen."

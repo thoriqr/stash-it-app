@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
@@ -8,6 +9,8 @@ import 'package:stash_it_app/features/saved_items/application/saved_item_detail_
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_time.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../../support/fake_saved_item_url_launcher.dart';
 import '../../../support/fake_saved_items_repository.dart';
@@ -20,6 +23,9 @@ import '../../../support/fake_saved_items_repository.dart';
 /// are handed over), the two failure notices, the silence of an accepted handoff,
 /// and that opening writes nothing anywhere.
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
+
   SavedItemSummary item({
     String url = 'https://example.com/articles/crdts-explained',
   }) => SavedItemSummary(
@@ -31,7 +37,7 @@ void main() {
     title: 'Understanding CRDTs',
     description: 'Conflict-free replicated data types converge.',
     imageUrl: 'https://example.com/og.png',
-    savedTimeLabel: 'Saved 1 hour ago',
+    savedTime: const SavedTime.hours(1),
   );
 
   ({
@@ -141,10 +147,11 @@ void main() {
 
         expect(h.launcher.launched, isEmpty);
         final notice = noticeOf(h.container)!;
-        expect(notice.copy, "This link can't be opened.");
+        expect(notice.resolve(english), "This link can't be opened.");
+        expect(notice.resolve(indonesian), 'Tautan ini tidak dapat dibuka.');
         expect(notice.tone, FeedbackTone.danger);
         expect(
-          notice.copy.toLowerCase().contains('page'),
+          notice.resolve(english).toLowerCase().contains('page'),
           isFalse,
           reason:
               'a value the client will not open says nothing about the page',
@@ -178,7 +185,11 @@ void main() {
       await h.container.read(openSavedItemUrlProvider).open(item());
 
       final notice = noticeOf(h.container)!;
-      expect(notice.copy, "We couldn't open this link. Try again.");
+      expect(notice.resolve(english), "We couldn't open this link. Try again.");
+      expect(
+        notice.resolve(indonesian),
+        'Kami tidak dapat membuka tautan ini. Coba lagi.',
+      );
       expect(notice.tone, FeedbackTone.danger);
       expect(h.launcher.calls, 1, reason: 'one tap, one attempt');
     });
@@ -194,7 +205,7 @@ void main() {
       await h.container.read(openSavedItemUrlProvider).open(item());
 
       expect(
-        noticeOf(h.container)!.copy,
+        noticeOf(h.container)!.resolve(english),
         "We couldn't open this link. Try again.",
       );
     });
@@ -205,7 +216,7 @@ void main() {
       await h.container.read(openSavedItemUrlProvider).open(item());
 
       expect(
-        noticeOf(h.container)!.copy,
+        noticeOf(h.container)!.resolve(english),
         "We couldn't open this link. Try again.",
       );
       expect(noticeOf(h.container)!.tone, FeedbackTone.danger);
@@ -220,7 +231,7 @@ void main() {
 
       await opener.open(item());
       expect(
-        noticeOf(h.container)!.copy,
+        noticeOf(h.container)!.resolve(english),
         "We couldn't open this link. Try again.",
         reason: 'an accepted handoff publishes nothing to replace it with',
       );

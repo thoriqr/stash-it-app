@@ -8,6 +8,7 @@ import 'package:stash_it_app/features/saved_items/application/move_destinations_
 import 'package:stash_it_app/features/saved_items/application/move_to_collection_controller.dart';
 import 'package:stash_it_app/features/saved_items/domain/move_to_collection_intent.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -88,6 +89,7 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final destinations = ref.watch(moveDestinationsProvider);
     final busy = ref.watch(moveToCollectionProvider);
@@ -126,7 +128,7 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
     final visibleNameError =
         _nameError ??
         (shapeProblem == CollectionNameProblem.tooLong
-            ? 'Use 100 characters or fewer.'
+            ? l10n.savedItemCollectionNameTooLong
             : null);
 
     return PopScope(
@@ -151,27 +153,28 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Move to a collection',
+                    l10n.savedItemMoveAction,
                     style: AppTypography.screenHeading.copyWith(
                       color: tokens.textPrimary,
                     ),
                   ),
                   const SizedBox(height: AppMetrics.space2),
                   Text(
-                    'Currently in ${widget.item.collectionName}',
+                    l10n.savedItemCurrentlyIn(widget.item.collectionName),
                     style: AppTypography.body.copyWith(
                       color: tokens.textSecondary,
                     ),
                   ),
                   const SizedBox(height: AppMetrics.space5),
                   Text(
-                    'YOUR COLLECTIONS',
+                    l10n.savedItemYourCollections,
                     style: AppTypography.sectionLabel.copyWith(
                       color: tokens.textTertiary,
                     ),
                   ),
                   const SizedBox(height: AppMetrics.space3),
                   _destinations(
+                    l10n,
                     destinations,
                     visible,
                     hasMoreDestinations,
@@ -180,7 +183,7 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
                   if (showBrowse) ...[
                     const SizedBox(height: AppMetrics.space3),
                     AppButton(
-                      label: 'Browse all collections',
+                      label: l10n.savedItemBrowseAllCollections,
                       variant: AppButtonVariant.quiet,
                       small: true,
                       onPressed: busy ? null : _browseAll,
@@ -188,9 +191,9 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
                   ],
                   const SizedBox(height: AppMetrics.space5),
                   AppField(
-                    label: 'New collection',
+                    label: l10n.savedItemNewCollection,
                     controller: _nameController,
-                    placeholder: 'e.g. Reading list',
+                    placeholder: l10n.savedItemNewCollectionPlaceholder,
                     enabled: !busy,
                     textInputAction: TextInputAction.done,
                     errorText: visibleNameError,
@@ -200,14 +203,15 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
                         _submit(intent: submitIntent);
                       } else if (shapeProblem != null) {
                         setState(
-                          () => _nameError = _invalidNameCopy(shapeProblem),
+                          () =>
+                              _nameError = _invalidNameCopy(l10n, shapeProblem),
                         );
                       }
                     },
                   ),
                   const SizedBox(height: AppMetrics.space3),
                   Text(
-                    _helperCopy(destinations),
+                    _helperCopy(l10n, destinations),
                     style: AppTypography.meta.copyWith(
                       color: destinations.hasError && !destinations.isLoading
                           ? tokens.danger
@@ -217,6 +221,7 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
                   const SizedBox(height: AppMetrics.space4),
                   AppButton(
                     label: _primaryLabel(
+                      l10n: l10n,
                       typed: typed,
                       isCurrent: isCurrent,
                       match: match,
@@ -237,6 +242,7 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
   }
 
   Widget _destinations(
+    AppLocalizations l10n,
     AsyncValue<CollectionPage> destinations,
     List<CollectionSummary> visible,
     bool hasMoreDestinations,
@@ -256,7 +262,7 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
             const SizedBox(width: AppMetrics.space2),
           ],
           Text(
-            'Loading collections…',
+            l10n.savedItemLoadingCollections,
             style: AppTypography.meta.copyWith(color: tokens.textTertiary),
           ),
         ],
@@ -268,12 +274,12 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "We couldn't load your collections.",
+            l10n.savedItemLoadCollectionsFailed,
             style: AppTypography.body.copyWith(color: tokens.textSecondary),
           ),
           const SizedBox(height: AppMetrics.space2),
           AppButton(
-            label: 'Retry',
+            label: l10n.savedItemRetry,
             variant: AppButtonVariant.secondary,
             small: true,
             block: false,
@@ -288,8 +294,8 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
     if (visible.isEmpty) {
       return Text(
         hasMoreDestinations
-            ? 'Browse all collections to find a destination.'
-            : 'No other collections yet. Create one below.',
+            ? l10n.savedItemBrowseAllHint
+            : l10n.savedItemNoOtherCollectionsCreate,
         style: AppTypography.body.copyWith(color: tokens.textTertiary),
       );
     }
@@ -329,22 +335,25 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
   }
 
   String _primaryLabel({
+    required AppLocalizations l10n,
     required String typed,
     required bool isCurrent,
     required CollectionSummary? match,
   }) {
-    if (typed.isEmpty) return 'Move to a collection';
-    if (isCurrent) return 'Already in ${widget.item.collectionName}';
-    if (match != null) return 'Move to ${match.name}';
-    return 'Create $typed';
+    if (typed.isEmpty) return l10n.savedItemMoveAction;
+    if (isCurrent) return l10n.savedItemAlreadyIn(widget.item.collectionName);
+    if (match != null) return l10n.savedItemMoveTo(match.name);
+    return l10n.savedItemCreate(typed);
   }
 
-  String _helperCopy(AsyncValue<CollectionPage> destinations) {
+  String _helperCopy(
+    AppLocalizations l10n,
+    AsyncValue<CollectionPage> destinations,
+  ) {
     if (destinations.hasError && !destinations.isLoading) {
-      return 'You can still create a collection by name, or browse all '
-          'collections.';
+      return l10n.savedItemMoveHelperError;
     }
-    return 'Choose an existing collection, or enter a name to create a new one.';
+    return l10n.savedItemMoveHelper;
   }
 
   /// Determines whether a typed name targets an existing collection
@@ -404,19 +413,28 @@ class _MoveToCollectionSheetState extends ConsumerState<MoveToCollectionSheet> {
         // disabled while busy, so this guard does not need a visible state.
         break;
       case MoveToCollectionNameInvalid(:final problem):
-        setState(() => _nameError = _invalidNameCopy(problem));
+        setState(
+          () => _nameError = _invalidNameCopy(
+            AppLocalizations.of(context),
+            problem,
+          ),
+        );
       case MoveToCollectionNameAlreadyExists():
         setState(
-          () => _nameError =
-              'That collection name is already taken. Choose a different name.',
+          () => _nameError = AppLocalizations.of(
+            context,
+          ).savedItemCollectionNameTaken,
         );
     }
   }
 
-  String _invalidNameCopy(CollectionNameProblem? problem) => switch (problem) {
-    CollectionNameProblem.blank => 'Enter a collection name.',
-    CollectionNameProblem.tooLong => 'Use 100 characters or fewer.',
-    null => 'Enter a collection name between 1 and 100 characters.',
+  String _invalidNameCopy(
+    AppLocalizations l10n,
+    CollectionNameProblem? problem,
+  ) => switch (problem) {
+    CollectionNameProblem.blank => l10n.savedItemCollectionNameRequired,
+    CollectionNameProblem.tooLong => l10n.savedItemCollectionNameTooLong,
+    null => l10n.savedItemCollectionNameRange,
   };
 
   void _close() {

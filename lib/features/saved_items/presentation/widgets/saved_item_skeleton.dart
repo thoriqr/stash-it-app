@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_time.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
 
@@ -64,7 +65,7 @@ const SavedItemSummary _placeholder = SavedItemSummary(
   description:
       'A description long enough to fill the two-line clamp, so the placeholder '
       'keeps the height a real row occupies.',
-  savedTimeLabel: 'Saved just now',
+  savedTime: SavedTime.justNow(),
 );
 
 /// A block of skeleton rows, for the Inbox's loading state.

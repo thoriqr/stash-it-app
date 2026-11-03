@@ -27,6 +27,6 @@ SavedItemSummary savedItemFrom(
     // Preserve the image URL or null as received. SavedItemSummary derives
     // hasPreviewImage from this value, and the preview handles image loading.
     imageUrl: dto.imageUrl,
-    savedTimeLabel: savedTimeLabelFrom(dto.createdAt, now),
+    savedTime: savedTimeFrom(dto.createdAt, now),
   );
 }

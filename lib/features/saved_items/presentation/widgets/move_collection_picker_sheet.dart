@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/collections/domain/collection_summary.dart';
 import 'package:stash_it_app/features/saved_items/application/move_collection_picker_controller.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import 'collection_destination_row.dart';
@@ -62,6 +63,7 @@ class MoveCollectionPickerSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final picker = ref.watch(moveCollectionPickerProvider);
 
@@ -83,14 +85,14 @@ class MoveCollectionPickerSheet extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'All collections',
+                l10n.savedItemAllCollections,
                 style: AppTypography.screenHeading.copyWith(
                   color: tokens.textPrimary,
                 ),
               ),
               const SizedBox(height: AppMetrics.space2),
               Text(
-                description ?? 'Choose a collection to move this item into.',
+                description ?? l10n.savedItemPickerDescription,
                 style: AppTypography.body.copyWith(color: tokens.textSecondary),
               ),
               const SizedBox(height: AppMetrics.space4),
@@ -107,6 +109,7 @@ class MoveCollectionPickerSheet extends ConsumerWidget {
     WidgetRef ref,
     AsyncValue<MoveCollectionPickerState> picker,
   ) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return switch (picker) {
@@ -118,12 +121,12 @@ class MoveCollectionPickerSheet extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "We couldn't load your collections.",
+            l10n.savedItemLoadCollectionsFailed,
             style: AppTypography.body.copyWith(color: tokens.textSecondary),
           ),
           const SizedBox(height: AppMetrics.space2),
           AppButton(
-            label: 'Retry',
+            label: l10n.savedItemRetry,
             variant: AppButtonVariant.secondary,
             small: true,
             block: false,
@@ -184,6 +187,7 @@ class _LoadedPickerState extends ConsumerState<_LoadedPicker> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final collections = widget.state.items
         .where((collection) => collection.id != widget.currentCollectionId)
@@ -197,7 +201,7 @@ class _LoadedPickerState extends ConsumerState<_LoadedPicker> {
 
     if (collections.isEmpty && !showFooter) {
       return Text(
-        'No other collections yet.',
+        l10n.savedItemNoOtherCollections,
         style: AppTypography.body.copyWith(color: tokens.textTertiary),
       );
     }
@@ -210,7 +214,7 @@ class _LoadedPickerState extends ConsumerState<_LoadedPicker> {
       separatorBuilder: (_, _) => const SizedBox(height: AppMetrics.space2),
       itemBuilder: (context, index) {
         if (index == collections.length) {
-          return _footer(tokens);
+          return _footer(l10n, tokens);
         }
 
         final collection = collections[index];
@@ -223,7 +227,7 @@ class _LoadedPickerState extends ConsumerState<_LoadedPicker> {
     );
   }
 
-  Widget _footer(AppTokens tokens) {
+  Widget _footer(AppLocalizations l10n, AppTokens tokens) {
     if (widget.state.loadMoreFailed) {
       // The only manual pagination control, and the only path that may resume a
       // failed cursor: `loadMore` refuses one by design.
@@ -231,12 +235,12 @@ class _LoadedPickerState extends ConsumerState<_LoadedPicker> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "We couldn't load more collections.",
+            l10n.savedItemLoadMoreCollectionsFailed,
             style: AppTypography.body.copyWith(color: tokens.textSecondary),
           ),
           const SizedBox(height: AppMetrics.space2),
           AppButton(
-            label: 'Retry',
+            label: l10n.savedItemRetry,
             variant: AppButtonVariant.secondary,
             small: true,
             block: false,
@@ -259,7 +263,7 @@ class _LoadedPickerState extends ConsumerState<_LoadedPicker> {
           ),
           const SizedBox(width: AppMetrics.space2),
           Text(
-            'Loading more…',
+            l10n.savedItemLoadingMore,
             style: AppTypography.meta.copyWith(color: tokens.textTertiary),
           ),
         ],

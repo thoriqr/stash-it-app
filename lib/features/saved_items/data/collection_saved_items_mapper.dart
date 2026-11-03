@@ -38,7 +38,7 @@ List<SavedItemSummary> collectionSavedItemsFrom(
         // Preserve the URL or null as received. SavedItemSummary derives
         // hasPreviewImage from this value, and the preview handles image loading.
         imageUrl: item.imageUrl,
-        savedTimeLabel: savedTimeLabelFrom(item.createdAt, now),
+        savedTime: savedTimeFrom(item.createdAt, now),
       ),
   ];
 }

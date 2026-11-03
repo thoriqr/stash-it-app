@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/features/saved_items/data/models/listed_saved_item.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_item_mapper.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_time.dart';
 
 import '../../../support/saved_items_fixtures.dart';
 
@@ -157,29 +158,29 @@ void main() {
     });
   });
 
-  group('saved-time label', () {
-    String? labelFor(String createdAt) =>
-        savedItemFrom(dto(createdAt: createdAt), now: now).savedTimeLabel;
+  group('saved time', () {
+    SavedTime? timeFor(String createdAt) =>
+        savedItemFrom(dto(createdAt: createdAt), now: now).savedTime;
 
-    test('words each range the way the approved prototype does', () {
-      expect(labelFor('2026-10-02T11:59:30Z'), 'Saved just now');
-      expect(labelFor('2026-10-02T11:59:00Z'), 'Saved 1 min ago');
-      expect(labelFor('2026-10-02T11:12:00Z'), 'Saved 48 min ago');
-      expect(labelFor('2026-10-02T11:00:00Z'), 'Saved 1 hour ago');
-      expect(labelFor('2026-10-02T09:00:00Z'), 'Saved 3 hours ago');
+    test('keeps each time bucket and count', () {
+      expect(timeFor('2026-10-02T11:59:30Z'), const SavedTime.justNow());
+      expect(timeFor('2026-10-02T11:59:00Z'), const SavedTime.minutes(1));
+      expect(timeFor('2026-10-02T11:12:00Z'), const SavedTime.minutes(48));
+      expect(timeFor('2026-10-02T11:00:00Z'), const SavedTime.hours(1));
+      expect(timeFor('2026-10-02T09:00:00Z'), const SavedTime.hours(3));
       // 30 hours back: past a day but inside the "yesterday" window.
-      expect(labelFor('2026-10-01T06:00:00Z'), 'Saved yesterday');
-      expect(labelFor('2026-09-30T12:00:00Z'), 'Saved 2 days ago');
+      expect(timeFor('2026-10-01T06:00:00Z'), const SavedTime.yesterday());
+      expect(timeFor('2026-09-30T12:00:00Z'), const SavedTime.days(2));
     });
 
     test('is null for an unparseable timestamp, rather than invented', () {
-      expect(labelFor('not a date'), isNull);
-      expect(labelFor(''), isNull);
+      expect(timeFor('not a date'), isNull);
+      expect(timeFor(''), isNull);
     });
 
     test('is null when the timestamp is in the future', () {
       // Clock skew is not evidence about the item.
-      expect(labelFor('2026-10-03T12:00:00Z'), isNull);
+      expect(timeFor('2026-10-03T12:00:00Z'), isNull);
     });
   });
 }

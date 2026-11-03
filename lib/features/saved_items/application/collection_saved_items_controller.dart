@@ -1,5 +1,4 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:stash_it_app/app/feedback/app_feedback.dart';
 import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
@@ -8,6 +7,7 @@ import 'package:stash_it_app/features/saved_items/domain/saved_item_enrichment_r
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 
 import 'collection_saved_items_state.dart';
+import 'saved_item_feedback.dart';
 
 part 'collection_saved_items_controller.g.dart';
 
@@ -23,17 +23,6 @@ part 'collection_saved_items_controller.g.dart';
 /// A top-level tear-off rather than a static member so it is a compile-time
 /// constant, which is what the annotation argument requires.
 Duration? _neverRetry(int retryCount, Object error) => null;
-
-/// What a failed manual pull-to-refresh says.
-///
-/// A refresh is a **read**: the rows already on screen remain valid, so the notice
-/// must not suggest that anything was lost or never saved.
-/// [FeedbackTone.uncertain] is the tone for a request whose refreshed page did not
-/// arrive.
-AppFeedback _refreshFailedFeedback() => AppFeedback(
-  tone: FeedbackTone.uncertain,
-  copy: "Couldn't refresh. Check your connection.",
-);
 
 /// One collection's saved items, with cursor pagination.
 ///
@@ -174,7 +163,7 @@ class CollectionSavedItems extends _$CollectionSavedItems {
       // Published after the version guard, so a stale response cannot raise a
       // notice, and coalesced gestures share this one `_refresh` and therefore
       // one notice.
-      ref.read(feedbackProvider.notifier).show(_refreshFailedFeedback());
+      ref.read(feedbackProvider.notifier).show(refreshFailedFeedback());
     }
   }
 

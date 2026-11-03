@@ -120,40 +120,37 @@ class AppLocalizationsId extends AppLocalizations {
       'Language changed, but the preference could not be saved.';
 
   @override
-  String get savedJustNow => 'Saved just now';
+  String get savedTimeJustNow => 'Baru saja disimpan';
 
   @override
-  String savedMinutesAgo(int count) {
+  String savedTimeMinutesAgo(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Saved $count min ago',
-      one: 'Saved 1 min ago',
+      other: 'Disimpan $count menit lalu',
     );
     return '$_temp0';
   }
 
   @override
-  String savedHoursAgo(int count) {
+  String savedTimeHoursAgo(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Saved $count hours ago',
-      one: 'Saved 1 hour ago',
+      other: 'Disimpan $count jam lalu',
     );
     return '$_temp0';
   }
 
   @override
-  String get savedYesterday => 'Saved yesterday';
+  String get savedTimeYesterday => 'Disimpan kemarin';
 
   @override
-  String savedDaysAgo(int count) {
+  String savedTimeDaysAgo(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Saved $count days ago',
-      one: 'Saved 1 day ago',
+      other: 'Disimpan $count hari lalu',
     );
     return '$_temp0';
   }
@@ -457,246 +454,249 @@ class AppLocalizationsId extends AppLocalizations {
   String get saveAuthRequired => 'Masuk lagi untuk menyimpan tautan ini.';
 
   @override
-  String get pageReRead => 'Page re-read.';
+  String get pageReRead => 'Halaman dibaca ulang.';
 
   @override
-  String get pageReReadNoDetails => 'Page re-read. This page shows no details.';
+  String get pageReReadNoDetails =>
+      'Halaman dibaca ulang. Halaman ini tidak menampilkan detail.';
 
   @override
-  String get pageReadFailed => 'Couldn\'t read this page.';
+  String get pageReadFailed => 'Tidak dapat membaca halaman ini.';
 
   @override
   String get enrichUnconfirmed =>
-      'We couldn\'t confirm the re-read. Try again.';
+      'Kami tidak dapat memastikan pembacaan ulang. Coba lagi.';
 
   @override
   String get enrichRateLimitedNoWait =>
-      'You\'ve re-read too many pages. Try again shortly.';
+      'Anda terlalu sering membaca ulang halaman. Coba lagi sebentar lagi.';
 
   @override
   String enrichRateLimitedWithWait(String wait) {
-    return 'You\'ve re-read too many pages. Try again in $wait.';
+    return 'Anda terlalu sering membaca ulang halaman. Coba lagi dalam $wait.';
   }
 
   @override
   String get enrichUnavailable =>
-      'Re-reading is temporarily unavailable. Try again shortly.';
+      'Pembacaan ulang untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
 
   @override
-  String get itemUnavailable => 'This item is no longer available.';
+  String get itemUnavailable => 'Item ini sudah tidak tersedia.';
 
   @override
-  String get enrichAuthRequired => 'Sign in again to re-read this page.';
+  String get enrichAuthRequired =>
+      'Masuk lagi untuk membaca ulang halaman ini.';
 
   @override
   String get enrichRefreshUncertain =>
-      'We couldn\'t renew your session, so the page wasn\'t re-read. Try again.';
+      'Kami tidak dapat memperbarui sesi Anda, sehingga halaman tidak dibaca ulang. Coba lagi.';
 
   @override
   String get enrichCredentialStorage =>
-      'This device couldn\'t refresh your session, so the page wasn\'t re-read. Try again.';
+      'Perangkat ini tidak dapat memperbarui sesi Anda, sehingga halaman tidak dibaca ulang. Coba lagi.';
 
   @override
-  String get enrichFailed => 'We couldn\'t re-read this page. Try again.';
+  String get enrichFailed =>
+      'Kami tidak dapat membaca ulang halaman ini. Coba lagi.';
 
   @override
   String get enrichServerFault =>
-      'Something went wrong re-reading this page. Try again.';
+      'Terjadi kesalahan saat membaca ulang halaman ini. Coba lagi.';
 
   @override
   String get moveServerError =>
-      'Something went wrong moving this item. Try again.';
+      'Terjadi kesalahan saat memindahkan item ini. Coba lagi.';
 
   @override
   String get moveUnconfirmed =>
-      'We couldn\'t confirm the move. Check the item\'s collection.';
+      'Kami tidak dapat memastikan pemindahan. Periksa koleksi item ini.';
 
   @override
-  String get moveAuthRequired => 'Sign in again to move this item.';
+  String get moveAuthRequired => 'Masuk lagi untuk memindahkan item ini.';
 
   @override
   String get moveRefreshUncertain =>
-      'We couldn\'t renew your session, so the item wasn\'t moved. Try again.';
+      'Kami tidak dapat memperbarui sesi Anda, sehingga item tidak dipindahkan. Coba lagi.';
 
   @override
   String get moveCredentialStorage =>
-      'This device couldn\'t refresh your session, so the item wasn\'t moved. Try again.';
+      'Perangkat ini tidak dapat memperbarui sesi Anda, sehingga item tidak dipindahkan. Coba lagi.';
 
   @override
   String get moveMalformed =>
-      'Something went wrong sending that name. Try again.';
+      'Terjadi kesalahan saat mengirim nama itu. Coba lagi.';
 
   @override
   String get moveRateLimitedNoWait =>
-      'You\'re moving too quickly. Try again shortly.';
+      'Anda memindahkan terlalu cepat. Coba lagi sebentar lagi.';
 
   @override
   String moveRateLimitedWithWait(String wait) {
-    return 'You\'re moving too quickly. Try again in $wait.';
+    return 'Anda memindahkan terlalu cepat. Coba lagi dalam $wait.';
   }
 
   @override
   String alreadyInCollection(String name) {
-    return 'Already in $name.';
+    return 'Sudah ada di $name.';
   }
 
   @override
   String createdCollectionAndMoved(String name) {
-    return 'Created $name and moved the item.';
+    return '$name dibuat dan item dipindahkan.';
   }
 
   @override
   String movedToCollection(String name) {
-    return 'Moved to $name.';
+    return 'Dipindahkan ke $name.';
   }
 
   @override
-  String get itemDeleted => 'Item deleted.';
+  String get itemDeleted => 'Item dihapus.';
 
   @override
   String itemDeletedAndCollectionDeleted(String name) {
-    return 'Item deleted, and $name was deleted.';
+    return 'Item dihapus, dan $name juga dihapus.';
   }
 
   @override
   String get deleteItemUnconfirmed =>
-      'We couldn\'t confirm whether the item was deleted. Check the Inbox before trying again.';
+      'Kami tidak dapat memastikan apakah item dihapus. Periksa Inbox sebelum mencoba lagi.';
 
   @override
-  String get deleteItemAuthRequired => 'Sign in again to delete this item.';
+  String get deleteItemAuthRequired => 'Masuk lagi untuk menghapus item ini.';
 
   @override
   String get deleteItemRefreshUncertain =>
-      'We couldn\'t renew your session, so the item wasn\'t deleted. Try again.';
+      'Kami tidak dapat memperbarui sesi Anda, sehingga item tidak dihapus. Coba lagi.';
 
   @override
   String get deleteItemCredentialStorage =>
-      'This device couldn\'t refresh your session, so the item wasn\'t deleted. Try again.';
+      'Perangkat ini tidak dapat memperbarui sesi Anda, sehingga item tidak dihapus. Coba lagi.';
 
   @override
-  String get itemNotDeleted => 'The item wasn\'t deleted. Try again.';
+  String get itemNotDeleted => 'Item tidak dihapus. Coba lagi.';
 
   @override
   String get deleteItemRateLimited =>
-      'You\'re going too quickly. The item wasn\'t deleted. Try again shortly.';
+      'Anda terlalu cepat. Item tidak dihapus. Coba lagi sebentar lagi.';
 
   @override
   String collectionUnavailableAfterItemDeleted(String name) {
-    return 'Item deleted. $name is no longer available.';
+    return 'Item dihapus. $name sudah tidak tersedia.';
   }
 
   @override
   String collectionNotEmptyAfterItemDeleted(String name) {
-    return 'Item deleted. $name now has items, so it was not deleted.';
+    return 'Item dihapus. $name sekarang memiliki item, sehingga tidak dihapus.';
   }
 
   @override
   String collectionProtectedAfterItemDeleted(String name) {
-    return 'Item deleted. $name cannot be deleted.';
+    return 'Item dihapus. $name tidak dapat dihapus.';
   }
 
   @override
   String collectionDeleteUnconfirmedAfterItemDeleted(String name) {
-    return 'Item deleted, but we couldn\'t confirm whether $name was deleted. Check Collections.';
+    return 'Item dihapus, tetapi kami tidak dapat memastikan apakah $name dihapus. Periksa Koleksi.';
   }
 
   @override
   String collectionDeleteAuthRequiredAfterItemDeleted(String name) {
-    return 'Item deleted. Sign in again to delete $name.';
+    return 'Item dihapus. Masuk lagi untuk menghapus $name.';
   }
 
   @override
   String collectionDeleteSessionEndedAfterItemDeleted(String name) {
-    return 'Item deleted. Your session ended before $name could be deleted.';
+    return 'Item dihapus. Sesi Anda berakhir sebelum $name dapat dihapus.';
   }
 
   @override
   String collectionDeleteRefreshUncertainAfterItemDeleted(String name) {
-    return 'Item deleted. We couldn\'t renew your session, so $name was not deleted. Try again.';
+    return 'Item dihapus. Kami tidak dapat memperbarui sesi Anda, sehingga $name tidak dihapus. Coba lagi.';
   }
 
   @override
   String collectionDeleteCredentialStorageAfterItemDeleted(String name) {
-    return 'Item deleted. This device couldn\'t refresh your session, so $name was not deleted. Try again.';
+    return 'Item dihapus. Perangkat ini tidak dapat memperbarui sesi Anda, sehingga $name tidak dihapus. Coba lagi.';
   }
 
   @override
   String collectionDeleteRateLimitedAfterItemDeleted(String name) {
-    return 'Item deleted. You\'re going too quickly, so $name was not deleted. Try again shortly.';
+    return 'Item dihapus. Anda terlalu cepat, sehingga $name tidak dihapus. Coba lagi sebentar lagi.';
   }
 
   @override
   String collectionDeleteFailedAfterItemDeleted(String name) {
-    return 'Item deleted, but $name could not be deleted. Try again from Collections.';
+    return 'Item dihapus, tetapi $name tidak dapat dihapus. Coba lagi dari Koleksi.';
   }
 
   @override
   String collectionDeleted(String name) {
-    return '$name was deleted.';
+    return '$name dihapus.';
   }
 
   @override
   String collectionDeletedItemsMoved(String name, String target) {
-    return '$name was deleted, and its items were moved to $target.';
+    return '$name dihapus, dan item-itemnya dipindahkan ke $target.';
   }
 
   @override
-  String get collectionDeleteFailed =>
-      'The collection wasn\'t deleted. Try again.';
+  String get collectionDeleteFailed => 'Koleksi tidak dihapus. Coba lagi.';
 
   @override
   String collectionDeleteTargetUnavailable(String name) {
-    return '$name is no longer available. Nothing was changed. Choose another destination.';
+    return '$name sudah tidak tersedia. Tidak ada yang diubah. Pilih tujuan lain.';
   }
 
   @override
   String collectionUnavailable(String name) {
-    return '$name is no longer available.';
+    return '$name sudah tidak tersedia.';
   }
 
   @override
   String collectionNotEmpty(String name) {
-    return '$name now has items, so nothing was changed. Its current contents are being refreshed.';
+    return '$name sekarang memiliki item, sehingga tidak ada yang diubah. Isinya sedang disegarkan.';
   }
 
   @override
   String collectionProtected(String name) {
-    return '$name cannot be deleted.';
+    return '$name tidak dapat dihapus.';
   }
 
   @override
   String collectionDeleteUnconfirmed(String name) {
-    return 'We couldn\'t confirm whether $name was deleted. Check Collections before trying again.';
+    return 'Kami tidak dapat memastikan apakah $name dihapus. Periksa Koleksi sebelum mencoba lagi.';
   }
 
   @override
   String get collectionDeleteAuthRequired =>
-      'Sign in again to delete this collection.';
+      'Masuk lagi untuk menghapus koleksi ini.';
 
   @override
   String collectionDeleteRefreshUncertain(String name) {
-    return 'We couldn\'t renew your session, so $name wasn\'t deleted. Try again.';
+    return 'Kami tidak dapat memperbarui sesi Anda, sehingga $name tidak dihapus. Coba lagi.';
   }
 
   @override
   String collectionDeleteCredentialStorage(String name) {
-    return 'This device couldn\'t refresh your session, so $name wasn\'t deleted. Try again.';
+    return 'Perangkat ini tidak dapat memperbarui sesi Anda, sehingga $name tidak dihapus. Coba lagi.';
   }
 
   @override
   String get collectionDeleteRateLimitedNoWait =>
-      'You\'re going too quickly. The collection wasn\'t deleted. Try again shortly.';
+      'Anda terlalu cepat. Koleksi tidak dihapus. Coba lagi sebentar lagi.';
 
   @override
   String collectionDeleteRateLimitedWithWait(String wait) {
-    return 'You\'re going too quickly. The collection wasn\'t deleted. Try again in $wait.';
+    return 'Anda terlalu cepat. Koleksi tidak dihapus. Coba lagi dalam $wait.';
   }
 
   @override
-  String get linkCannotOpen => 'This link can\'t be opened.';
+  String get linkCannotOpen => 'Tautan ini tidak dapat dibuka.';
 
   @override
-  String get linkLaunchFailed => 'We couldn\'t open this link. Try again.';
+  String get linkLaunchFailed =>
+      'Kami tidak dapat membuka tautan ini. Coba lagi.';
 
   @override
   String get refreshFailed => 'Tidak dapat menyegarkan. Periksa koneksi Anda.';
@@ -878,6 +878,303 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get inboxSaveAction => 'Simpan URL';
+
+  @override
+  String get savedItemDetailTitle => 'ITEM';
+
+  @override
+  String get savedItemCollectionDetailTitle => 'KOLEKSI';
+
+  @override
+  String get savedItemBackToInbox => 'Kembali ke Inbox';
+
+  @override
+  String get savedItemActionsSection => 'TINDAKAN';
+
+  @override
+  String get savedItemMoveAction => 'Pindahkan ke koleksi';
+
+  @override
+  String get savedItemOpenAction => 'Buka halaman asli';
+
+  @override
+  String get savedItemDeleteAction => 'Hapus item ini';
+
+  @override
+  String get savedItemEnrichmentSection => 'PENGAYAAN';
+
+  @override
+  String get savedItemReReadAction => 'Baca ulang halaman';
+
+  @override
+  String get savedItemReadingPage => 'Membaca halaman…';
+
+  @override
+  String get savedItemDeleteDialogTitle => 'Hapus item ini?';
+
+  @override
+  String get savedItemDeleteDialogMessage =>
+      'Tindakan ini menghapus item tersimpan. Tidak dapat dibatalkan.';
+
+  @override
+  String get savedItemKeepAction => 'Pertahankan';
+
+  @override
+  String get savedItemDeleteConfirmAction => 'Hapus';
+
+  @override
+  String savedItemCollectionEmptyTitle(String name) {
+    return '$name sekarang kosong';
+  }
+
+  @override
+  String savedItemCollectionEmptyMessage(String name) {
+    return 'Ini adalah item terakhir di $name. Anda dapat mempertahankan koleksi kosong ini atau menghapusnya.';
+  }
+
+  @override
+  String get savedItemKeepCollectionAction => 'Pertahankan';
+
+  @override
+  String get savedItemDeleteCollectionAction => 'Hapus koleksi';
+
+  @override
+  String get savedItemCancelAction => 'Batal';
+
+  @override
+  String get savedItemKeepCollectionDismissAction => 'Pertahankan koleksi';
+
+  @override
+  String get savedItemCloseAction => 'Tutup';
+
+  @override
+  String get savedItemNotFoundTitle => 'Item ini sudah tidak tersedia';
+
+  @override
+  String get savedItemNotFoundBody =>
+      'Item ini mungkin sudah dihapus, atau mungkin milik akun lain.';
+
+  @override
+  String get savedItemLoadErrorTitle => 'Kami tidak dapat memuat item ini';
+
+  @override
+  String get savedItemRetry => 'Coba lagi';
+
+  @override
+  String get savedItemSessionEnded =>
+      'Sesi Anda telah berakhir. Masuk lagi untuk melihat item ini.';
+
+  @override
+  String get savedItemSignInRequired => 'Masuk lagi untuk melihat item ini.';
+
+  @override
+  String get savedItemUnavailable =>
+      'Item ini untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
+
+  @override
+  String get savedItemLoadTransport =>
+      'Tidak ada koneksi ke server. Kami tidak dapat memuat item ini.';
+
+  @override
+  String get savedItemLoadGeneric =>
+      'Kami tidak dapat memuat item ini. Coba lagi.';
+
+  @override
+  String get savedItemEnrichmentReading => 'Membaca halaman…';
+
+  @override
+  String get savedItemEnrichmentNoDetails => 'Tidak ada detail di halaman ini';
+
+  @override
+  String get savedItemEnrichmentFailed => 'Tidak dapat membaca halaman ini';
+
+  @override
+  String get savedItemBackToCollections => 'Kembali ke Koleksi';
+
+  @override
+  String get savedItemCollectionActionsTooltip => 'Tindakan koleksi';
+
+  @override
+  String get savedItemLoadingMore => 'Memuat lagi…';
+
+  @override
+  String get savedItemLoadMoreFailed => 'Tidak dapat memuat item lainnya.';
+
+  @override
+  String get savedItemEmptyCollectionTitle => 'Belum ada yang disimpan di sini';
+
+  @override
+  String get savedItemEmptyCollectionBody =>
+      'Item yang disimpan ke koleksi ini akan muncul di sini.';
+
+  @override
+  String get savedItemCollectionUnavailableTitle =>
+      'Koleksi ini sudah tidak tersedia';
+
+  @override
+  String get savedItemCollectionUnavailableBody =>
+      'Koleksi ini mungkin sudah dihapus, atau mungkin milik akun lain.';
+
+  @override
+  String get savedItemCollectionLoadErrorTitle =>
+      'Kami tidak dapat memuat koleksi ini';
+
+  @override
+  String get savedItemCollectionSessionEnded =>
+      'Sesi Anda telah berakhir. Masuk lagi untuk melihat koleksi ini.';
+
+  @override
+  String get savedItemCollectionSignInRequired =>
+      'Masuk lagi untuk melihat koleksi ini.';
+
+  @override
+  String get savedItemCollectionUnavailable =>
+      'Koleksi ini untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
+
+  @override
+  String get savedItemCollectionLoadTransport =>
+      'Tidak ada koneksi ke server. Kami tidak dapat memuat koleksi ini.';
+
+  @override
+  String get savedItemCollectionLoadGeneric =>
+      'Kami tidak dapat memuat koleksi ini. Coba lagi.';
+
+  @override
+  String get savedItemEmptyCollectionDeleteTitle => 'Hapus koleksi ini?';
+
+  @override
+  String savedItemDeleteCollectionNamedTitle(String name) {
+    return 'Hapus $name?';
+  }
+
+  @override
+  String get savedItemEmptyCollectionDeleteMessage =>
+      'Koleksi ini kosong. Tidak ada item untuk dipertahankan atau dibuang. Tindakan ini tidak dapat dibatalkan.';
+
+  @override
+  String savedItemCurrentlyIn(String name) {
+    return 'Saat ini di $name';
+  }
+
+  @override
+  String get savedItemYourCollections => 'KOLEKSI ANDA';
+
+  @override
+  String get savedItemBrowseAllCollections => 'Jelajahi semua koleksi';
+
+  @override
+  String get savedItemNewCollection => 'Koleksi baru';
+
+  @override
+  String get savedItemNewCollectionPlaceholder => 'mis. Daftar bacaan';
+
+  @override
+  String get savedItemLoadingCollections => 'Memuat koleksi…';
+
+  @override
+  String get savedItemLoadCollectionsFailed =>
+      'Kami tidak dapat memuat koleksi Anda.';
+
+  @override
+  String get savedItemBrowseAllHint =>
+      'Jelajahi semua koleksi untuk menemukan tujuan.';
+
+  @override
+  String get savedItemNoOtherCollectionsCreate =>
+      'Belum ada koleksi lain. Buat satu di bawah.';
+
+  @override
+  String savedItemAlreadyIn(String name) {
+    return 'Sudah ada di $name';
+  }
+
+  @override
+  String savedItemMoveTo(String name) {
+    return 'Pindahkan ke $name';
+  }
+
+  @override
+  String savedItemCreate(String name) {
+    return 'Buat $name';
+  }
+
+  @override
+  String get savedItemMoveHelperError =>
+      'Anda tetap dapat membuat koleksi berdasarkan nama, atau menjelajahi semua koleksi.';
+
+  @override
+  String get savedItemMoveHelper =>
+      'Pilih koleksi yang ada, atau masukkan nama untuk membuat koleksi baru.';
+
+  @override
+  String get savedItemCollectionNameTaken =>
+      'Nama koleksi itu sudah digunakan. Pilih nama lain.';
+
+  @override
+  String get savedItemCollectionNameRequired => 'Masukkan nama koleksi.';
+
+  @override
+  String get savedItemCollectionNameTooLong =>
+      'Gunakan 100 karakter atau kurang.';
+
+  @override
+  String get savedItemCollectionNameRange =>
+      'Masukkan nama koleksi antara 1 dan 100 karakter.';
+
+  @override
+  String get savedItemAllCollections => 'Semua koleksi';
+
+  @override
+  String get savedItemPickerDescription =>
+      'Pilih koleksi untuk memindahkan item ini.';
+
+  @override
+  String get savedItemNoOtherCollections => 'Belum ada koleksi lain.';
+
+  @override
+  String get savedItemLoadMoreCollectionsFailed =>
+      'Kami tidak dapat memuat koleksi lainnya.';
+
+  @override
+  String get savedItemThisCollection => 'Koleksi ini';
+
+  @override
+  String get savedItemTheCollection => 'koleksi';
+
+  @override
+  String get savedItemDeleteCollectionCannotUndo =>
+      'Menghapus koleksi tidak dapat dibatalkan, dan item yang Anda pilih untuk dihapus tidak dapat dipulihkan.';
+
+  @override
+  String get savedItemMoveItemsAction => 'Pindahkan item ke koleksi lain';
+
+  @override
+  String get savedItemDeleteItemsAction => 'Hapus koleksi dan item';
+
+  @override
+  String get savedItemCollectionHasItemsUnknown =>
+      'Koleksi ini memiliki item tersimpan. Pilih yang terjadi pada item tersebut.';
+
+  @override
+  String savedItemCollectionHasItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Koleksi ini memiliki $count item tersimpan. Pilih yang terjadi pada item tersebut.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String savedItemBulkMoveThisItem(String name) {
+    return 'Pilih tujuan item ini. $name akan dihapus.';
+  }
+
+  @override
+  String savedItemBulkMoveTheseItems(String name) {
+    return 'Pilih tujuan item-item ini. $name akan dihapus.';
+  }
 
   @override
   String get authBackToWelcome => 'Kembali ke halaman awal';

@@ -6,6 +6,7 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/collections/application/collections_controller.dart';
 import 'package:stash_it_app/features/collections/data/collections_providers.dart';
 import 'package:stash_it_app/features/saved_items/application/collection_saved_items_controller.dart';
+import 'package:stash_it_app/features/saved_items/application/saved_item_feedback.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_delete_result.dart';
@@ -146,9 +147,7 @@ class DeleteSavedItem extends _$DeleteSavedItem {
         return DeleteSavedItemCollectionOffered(result);
       }
 
-      _publish(
-        const AppFeedback(tone: FeedbackTone.success, copy: 'Item deleted.'),
-      );
+      _publish(savedItemDeletedFeedback);
       return const DeleteSavedItemSucceeded();
     } on ApiFailure catch (failure) {
       if (!ref.mounted) return const DeleteSavedItemUnconfirmed();
@@ -164,9 +163,7 @@ class DeleteSavedItem extends _$DeleteSavedItem {
   /// request and does not touch any cache: the item was already removed when the
   /// delete succeeded.
   void keepCollection() {
-    _publish(
-      const AppFeedback(tone: FeedbackTone.success, copy: 'Item deleted.'),
-    );
+    _publish(savedItemDeletedFeedback);
   }
 
   /// Deletes the collection the item delete left empty.
@@ -186,7 +183,7 @@ class DeleteSavedItem extends _$DeleteSavedItem {
     if (state) return const DeleteCollectionIgnored();
     state = true;
 
-    final name = _collectionLabel(collectionName);
+    final name = collectionName;
 
     try {
       await ref
@@ -197,12 +194,7 @@ class DeleteSavedItem extends _$DeleteSavedItem {
 
       _removeCollection(collectionId);
       if (invalidateContents) _invalidateCollectionContents(collectionId);
-      _publish(
-        AppFeedback(
-          tone: FeedbackTone.success,
-          copy: 'Item deleted, and $name was deleted.',
-        ),
-      );
+      _publish(itemDeletedAndCollectionDeletedFeedback(name));
       return const DeleteCollectionSucceeded();
     } on ApiFailure catch (failure) {
       if (!ref.mounted) return const DeleteCollectionUnconfirmed();
@@ -228,12 +220,7 @@ class DeleteSavedItem extends _$DeleteSavedItem {
         // copy never says this request deleted it: another account or an earlier
         // delete is indistinguishable here.
         _removeFromLoadedListings(item);
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.danger,
-            copy: 'This item is no longer available.',
-          ),
-        );
+        _publish(savedItemUnavailableFeedback);
         return const DeleteSavedItemNotFound();
 
       // The delete's three statements are not a transaction, and a 500 can be
@@ -243,14 +230,7 @@ class DeleteSavedItem extends _$DeleteSavedItem {
           ApiFailureUnreadableResponse() ||
           ApiFailureServerFault() ||
           ApiFailureServerUnavailable():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.uncertain,
-            copy:
-                "We couldn't confirm whether the item was deleted. "
-                'Check the Inbox before trying again.',
-          ),
-        );
+        _publish(deleteItemUnconfirmedFeedback);
         return const DeleteSavedItemUnconfirmed();
 
       // The guard refused before the handler ran, so the item was not deleted.
@@ -258,12 +238,7 @@ class DeleteSavedItem extends _$DeleteSavedItem {
       // screen explain the expiry once.
       case ApiFailureAuthRequired():
         if (!ref.read(authStateProvider).isSignedOut) {
-          _publish(
-            const AppFeedback(
-              tone: FeedbackTone.danger,
-              copy: 'Sign in again to delete this item.',
-            ),
-          );
+          _publish(deleteItemAuthRequiredFeedback);
         }
         return const DeleteSavedItemFailed();
 
@@ -276,49 +251,23 @@ class DeleteSavedItem extends _$DeleteSavedItem {
       // came from the guard. The item is known not deleted; the session is the
       // uncertain part.
       case ApiFailureRefreshUncertain():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                "We couldn't renew your session, so the item wasn't deleted. "
-                'Try again.',
-          ),
-        );
+        _publish(deleteItemRefreshUncertainFeedback);
         return const DeleteSavedItemFailed();
 
       case ApiFailureCredentialStorage():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                "This device couldn't refresh your session, so the item wasn't "
-                'deleted. Try again.',
-          ),
-        );
+        _publish(deleteItemCredentialStorageFeedback);
         return const DeleteSavedItemFailed();
 
       // A well-formed client never produces these. Known not deleted, and
       // nothing the user can correct from this screen.
       case ApiFailureValidation() || ApiFailureMalformedRequest():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.danger,
-            copy: "The item wasn't deleted. Try again.",
-          ),
-        );
+        _publish(deleteItemFailedFeedback);
         return const DeleteSavedItemFailed();
 
       // The route has no limiter, but a proxy can still refuse before the
       // handler. Known not deleted.
       case ApiFailureRateLimited():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                "You're going too quickly. The item wasn't deleted. "
-                'Try again shortly.',
-          ),
-        );
+        _publish(deleteItemRateLimitedFeedback);
         return const DeleteSavedItemFailed();
 
       // Unreachable on this route: the collection-write codes belong to
@@ -338,12 +287,7 @@ class DeleteSavedItem extends _$DeleteSavedItem {
           ApiFailureGoogleAuth() ||
           ApiFailurePasswordReset() ||
           ApiFailureCollectionDeleteTargetNotFound():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.danger,
-            copy: "The item wasn't deleted. Try again.",
-          ),
-        );
+        _publish(deleteItemFailedFeedback);
         return const DeleteSavedItemFailed();
     }
   }
@@ -361,32 +305,17 @@ class DeleteSavedItem extends _$DeleteSavedItem {
         // existing not-found state take over.
         _removeCollection(collectionId);
         if (invalidateContents) _invalidateCollectionContents(collectionId);
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy: 'Item deleted. $name is no longer available.',
-          ),
-        );
+        _publish(collectionUnavailableAfterItemDeletedFeedback(name));
         return const DeleteCollectionNotFound();
 
       // A concurrent insert caused the backend to roll the whole transaction
       // back. The collection and its items are exactly as they were.
       case ApiFailureCollectionNotEmpty():
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy: 'Item deleted. $name now has items, so it was not deleted.',
-          ),
-        );
+        _publish(collectionNotEmptyAfterItemDeletedFeedback(name));
         return const DeleteCollectionNotEmpty();
 
       case ApiFailureUnsortedCollectionProtected():
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy: 'Item deleted. $name cannot be deleted.',
-          ),
-        );
+        _publish(collectionProtectedAfterItemDeletedFeedback(name));
         return const DeleteCollectionProtected();
 
       // The collection delete is a transaction, but the client still has no
@@ -395,82 +324,40 @@ class DeleteSavedItem extends _$DeleteSavedItem {
           ApiFailureUnreadableResponse() ||
           ApiFailureServerFault() ||
           ApiFailureServerUnavailable():
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.uncertain,
-            copy:
-                "Item deleted, but we couldn't confirm whether $name was "
-                'deleted. Check Collections.',
-          ),
-        );
+        _publish(collectionDeleteUnconfirmedAfterItemDeletedFeedback(name));
         return const DeleteCollectionUnconfirmed();
 
       // The item deletion already stands. These copy lines report it while
       // explaining why the collection was not deleted.
       case ApiFailureAuthRequired():
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy: 'Item deleted. Sign in again to delete $name.',
-          ),
-        );
+        _publish(collectionDeleteAuthRequiredAfterItemDeletedFeedback(name));
         return const DeleteCollectionFailed();
 
       case ApiFailureSessionEnded():
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                'Item deleted. Your session ended before $name could be deleted.',
-          ),
-        );
+        _publish(collectionDeleteSessionEndedAfterItemDeletedFeedback(name));
         return const DeleteCollectionFailed();
 
       case ApiFailureRefreshUncertain():
         _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                "Item deleted. We couldn't renew your session, so $name was not "
-                'deleted. Try again.',
-          ),
+          collectionDeleteRefreshUncertainAfterItemDeletedFeedback(name),
         );
         return const DeleteCollectionFailed();
 
       case ApiFailureCredentialStorage():
         _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                "Item deleted. This device couldn't refresh your session, so "
-                '$name was not deleted. Try again.',
-          ),
+          collectionDeleteCredentialStorageAfterItemDeletedFeedback(name),
         );
         return const DeleteCollectionFailed();
 
       case ApiFailureRateLimited():
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                "Item deleted. You're going too quickly, so $name was not "
-                'deleted. Try again shortly.',
-          ),
-        );
+        _publish(collectionDeleteRateLimitedAfterItemDeletedFeedback(name));
         return const DeleteCollectionFailed();
 
       // A well-formed client sends `delete` with a null target, so either shape
       // code means this client sent an incoherent request. The item delete is
       // still complete.
       case ApiFailureValidation() || ApiFailureMalformedRequest():
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.danger,
-            copy:
-                'Item deleted, but $name could not be deleted. '
-                'Try again from Collections.',
-          ),
-        );
+        _publish(collectionDeleteFailedAfterItemDeletedFeedback(name));
         return const DeleteCollectionFailed();
 
       // Unreachable on a collection delete: only the move endpoint emits the
@@ -489,14 +376,7 @@ class DeleteSavedItem extends _$DeleteSavedItem {
           ApiFailureGoogleAuth() ||
           ApiFailurePasswordReset() ||
           ApiFailureCollectionDeleteTargetNotFound():
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.danger,
-            copy:
-                'Item deleted, but $name could not be deleted. '
-                'Try again from Collections.',
-          ),
-        );
+        _publish(collectionDeleteFailedAfterItemDeletedFeedback(name));
         return const DeleteCollectionFailed();
     }
   }
@@ -525,10 +405,4 @@ class DeleteSavedItem extends _$DeleteSavedItem {
 
   void _publish(AppFeedback feedback) =>
       ref.read(feedbackProvider.notifier).show(feedback);
-}
-
-/// A non-empty name for copy, or a neutral fallback the screen never needs.
-String _collectionLabel(String collectionName) {
-  final trimmed = collectionName.trim();
-  return trimmed.isEmpty ? 'the collection' : trimmed;
 }

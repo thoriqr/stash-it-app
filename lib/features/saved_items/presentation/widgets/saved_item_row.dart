@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/presentation/saved_time_label.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import 'saved_item_collection_chip.dart';
@@ -19,9 +21,6 @@ import 'saved_item_preview.dart';
 ///
 /// A missing or unavailable preview is a normal state. Its space remains
 /// reserved and uses a neutral dashed placeholder rather than error styling.
-///
-/// The displayed state wording and retry label are user-facing copy and may
-/// need further language review.
 class SavedItemRow extends StatelessWidget {
   const SavedItemRow({
     super.key,
@@ -50,6 +49,7 @@ class SavedItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return DecoratedBox(
@@ -106,12 +106,12 @@ class SavedItemRow extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (item.savedTimeLabel case final savedAt?) ...[
+                          if (item.savedTime case final savedAt?) ...[
                             const SizedBox(width: AppMetrics.space2),
                             Padding(
                               padding: const EdgeInsets.only(top: 2),
                               child: Text(
-                                savedAt,
+                                savedTimeLabel(l10n, savedAt),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppTypography.monoSmall.copyWith(
@@ -188,7 +188,7 @@ class _MetadataLine extends StatelessWidget {
         if (_showsRetry) ...[
           const SizedBox(width: AppMetrics.space1),
           AppButton(
-            label: 'Retry',
+            label: AppLocalizations.of(context).savedItemRetry,
             variant: AppButtonVariant.quiet,
             small: true,
             block: false,

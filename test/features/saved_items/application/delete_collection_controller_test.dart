@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
@@ -18,6 +19,7 @@ import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dar
 import 'package:stash_it_app/features/saved_items/domain/collection_saved_items_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../../support/fake_collections_repository.dart';
 import '../../../support/fake_saved_items_repository.dart';
@@ -26,6 +28,8 @@ import '../../../support/fake_saved_items_repository.dart';
 /// in-place reconciliation of both loaded listings, and the outcomes that must
 /// stay distinguishable.
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
   const collectionId = 'collection-1';
   const collectionName = 'Camera Gear';
   const targetId = 'collection-2';
@@ -173,7 +177,14 @@ void main() {
         ]);
         expect(inboxOf(h.container).items.map((i) => i.id), ['elsewhere']);
         expect(noticeOf(h.container)?.tone, FeedbackTone.success);
-        expect(noticeOf(h.container)?.copy, 'Camera Gear was deleted.');
+        expect(
+          noticeOf(h.container)?.resolve(english),
+          'Camera Gear was deleted.',
+        );
+        expect(
+          noticeOf(h.container)?.resolve(indonesian),
+          'Camera Gear dihapus.',
+        );
       },
     );
 
@@ -227,8 +238,12 @@ void main() {
         expect(collectionsOf(h.container).items, isEmpty);
         expect(inboxOf(h.container).items, isEmpty);
         expect(
-          noticeOf(h.container)?.copy,
+          noticeOf(h.container)?.resolve(english),
           'Camera Gear is no longer available.',
+        );
+        expect(
+          noticeOf(h.container)?.resolve(indonesian),
+          'Camera Gear sudah tidak tersedia.',
         );
       },
     );
@@ -315,7 +330,10 @@ void main() {
       expect(inboxOf(h.container).items, hasLength(1));
       expect(collectionsOf(h.container).items, hasLength(1));
       expect(noticeOf(h.container)?.tone, FeedbackTone.uncertain);
-      expect(noticeOf(h.container)?.copy, contains("couldn't confirm"));
+      expect(
+        noticeOf(h.container)?.resolve(english),
+        contains("couldn't confirm"),
+      );
     });
 
     test('Unsorted is refused by the server, not by name', () async {
@@ -408,7 +426,14 @@ void main() {
         expect(h.collections.listCalls, 2);
         expect(h.collections.sorts, ['newest', 'newest']);
         expect(collectionsOf(h.container).items.map((c) => c.id), [targetId]);
-        expect(noticeOf(h.container)?.copy, contains('moved to Reading list'));
+        expect(
+          noticeOf(h.container)?.resolve(english),
+          contains('moved to Reading list'),
+        );
+        expect(
+          noticeOf(h.container)?.resolve(indonesian),
+          'Camera Gear dihapus, dan item-itemnya dipindahkan ke Reading list.',
+        );
       },
     );
 
@@ -445,7 +470,7 @@ void main() {
         );
         expect(noticeOf(h.container)?.tone, FeedbackTone.warning);
         expect(
-          noticeOf(h.container)?.copy,
+          noticeOf(h.container)?.resolve(english),
           contains('Choose another destination'),
         );
       },

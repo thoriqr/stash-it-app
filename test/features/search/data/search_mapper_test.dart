@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_time.dart';
 import 'package:stash_it_app/features/search/data/models/search_response.dart';
 import 'package:stash_it_app/features/search/data/search_mapper.dart';
 
@@ -47,7 +48,7 @@ void main() {
       expect(mapped.enrichmentStatus, EnrichmentStatus.completed);
       expect(mapped.imageUrl, 'https://example.com/og.png');
       expect(mapped.hasPreviewImage, isTrue);
-      expect(mapped.savedTimeLabel, 'Saved 1 hour ago');
+      expect(mapped.savedTime, const SavedTime.hours(1));
     });
 
     test('a missing description stays absent instead of being invented', () {
@@ -122,18 +123,16 @@ void main() {
       );
     });
 
-    test('the saved-time label follows the shared Inbox wording', () {
-      String? labelFor(String createdAt) => searchSavedItemFrom(
-        item(createdAt: createdAt),
-        now: now,
-      ).savedTimeLabel;
+    test('uses the shared typed saved-time buckets', () {
+      SavedTime? timeFor(String createdAt) =>
+          searchSavedItemFrom(item(createdAt: createdAt), now: now).savedTime;
 
-      expect(labelFor('2026-10-02T11:59:30Z'), 'Saved just now');
-      expect(labelFor('2026-10-02T11:00:00Z'), 'Saved 1 hour ago');
-      expect(labelFor('2026-10-01T06:00:00Z'), 'Saved yesterday');
-      expect(labelFor('2026-09-30T12:00:00Z'), 'Saved 2 days ago');
-      expect(labelFor('not a date'), isNull);
-      expect(labelFor('2026-10-03T12:00:00Z'), isNull);
+      expect(timeFor('2026-10-02T11:59:30Z'), const SavedTime.justNow());
+      expect(timeFor('2026-10-02T11:00:00Z'), const SavedTime.hours(1));
+      expect(timeFor('2026-10-01T06:00:00Z'), const SavedTime.yesterday());
+      expect(timeFor('2026-09-30T12:00:00Z'), const SavedTime.days(2));
+      expect(timeFor('not a date'), isNull);
+      expect(timeFor('2026-10-03T12:00:00Z'), isNull);
     });
   });
 

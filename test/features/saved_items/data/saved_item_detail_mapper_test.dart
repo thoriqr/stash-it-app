@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/features/saved_items/data/models/get_saved_item_response.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_item_detail_mapper.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_time.dart';
 
 import '../../../support/saved_items_fixtures.dart';
 
@@ -54,7 +55,7 @@ void main() {
       expect(item.description, 'Conflict-free replicated data types converge.');
       expect(item.hasPreviewImage, isTrue);
       expect(item.enrichmentStatus, EnrichmentStatus.completed);
-      expect(item.savedTimeLabel, 'Saved 1 hour ago');
+      expect(item.savedTime, const SavedTime.hours(1));
     });
 
     test('a detail and a listing row can never disagree on the collection', () {
@@ -191,20 +192,20 @@ void main() {
     });
   });
 
-  group('saved-time label', () {
+  group('saved time', () {
     test('is derived from created_at against the injected clock', () {
       expect(
-        detail(createdAt: '2026-10-02T11:59:30Z').savedTimeLabel,
-        'Saved just now',
+        detail(createdAt: '2026-10-02T11:59:30Z').savedTime,
+        const SavedTime.justNow(),
       );
       expect(
-        detail(createdAt: '2026-10-02T11:00:00Z').savedTimeLabel,
-        'Saved 1 hour ago',
+        detail(createdAt: '2026-10-02T11:00:00Z').savedTime,
+        const SavedTime.hours(1),
       );
     });
 
     test('is null when the timestamp cannot be parsed', () {
-      expect(detail(createdAt: 'not a date').savedTimeLabel, isNull);
+      expect(detail(createdAt: 'not a date').savedTime, isNull);
     });
   });
 }

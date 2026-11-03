@@ -9,6 +9,7 @@ import 'package:stash_it_app/features/collections/application/collections_contro
 import 'package:stash_it_app/features/collections/data/collections_providers.dart';
 import 'package:stash_it_app/features/collections/domain/collection_summary.dart';
 import 'package:stash_it_app/features/saved_items/application/collection_saved_items_controller.dart';
+import 'package:stash_it_app/features/saved_items/application/saved_item_feedback.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 
 part 'delete_collection_controller.g.dart';
@@ -106,7 +107,7 @@ class CollectionDeletion extends _$CollectionDeletion {
     if (state) return const CollectionDeletionIgnored();
     state = true;
 
-    final name = _collectionLabel(collectionName);
+    final name = collectionName;
 
     try {
       await ref
@@ -117,9 +118,7 @@ class CollectionDeletion extends _$CollectionDeletion {
 
       _removeCollection(collectionId);
       _removeInboxRows(collectionId);
-      _publish(
-        AppFeedback(tone: FeedbackTone.success, copy: '$name was deleted.'),
-      );
+      _publish(collectionDeletedFeedback(name));
       return const CollectionDeletionSucceeded();
     } on ApiFailure catch (failure) {
       if (!ref.mounted) return const CollectionDeletionUnconfirmed();
@@ -147,7 +146,7 @@ class CollectionDeletion extends _$CollectionDeletion {
     if (state) return const CollectionDeletionIgnored();
     state = true;
 
-    final name = _collectionLabel(collectionName);
+    final name = collectionName;
 
     try {
       await ref
@@ -162,13 +161,7 @@ class CollectionDeletion extends _$CollectionDeletion {
       _applyInboxMove(collectionId: collectionId, target: target);
       _removeCollection(collectionId);
       _refreshCollections();
-      _publish(
-        AppFeedback(
-          tone: FeedbackTone.success,
-          copy:
-              '$name was deleted, and its items were moved to ${target.name}.',
-        ),
-      );
+      _publish(collectionDeletedItemsMovedFeedback(name, target.name));
       return const CollectionDeletionSucceeded();
     } on ApiFailure catch (failure) {
       if (!ref.mounted) return const CollectionDeletionUnconfirmed();
@@ -195,23 +188,11 @@ class CollectionDeletion extends _$CollectionDeletion {
         // `delete`. Treat an impossible target on that path as a known refusal
         // rather than inventing a destination the user can change.
         if (movingTo == null) {
-          _publish(
-            const AppFeedback(
-              tone: FeedbackTone.danger,
-              copy: "The collection wasn't deleted. Try again.",
-            ),
-          );
+          _publish(collectionDeleteFailedFeedback);
           return const CollectionDeletionFailed();
         }
 
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                '${movingTo.name} is no longer available. Nothing was changed. '
-                'Choose another destination.',
-          ),
-        );
+        _publish(collectionDeleteTargetUnavailableFeedback(movingTo.name));
         return const CollectionDeletionTargetNotFound();
 
       case ApiFailureNotFound():
@@ -220,36 +201,19 @@ class CollectionDeletion extends _$CollectionDeletion {
         // account or an earlier delete is indistinguishable here.
         _removeCollection(collectionId);
         _removeInboxRows(collectionId);
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy: '$name is no longer available.',
-          ),
-        );
+        _publish(collectionUnavailableFeedback(name));
         return const CollectionDeletionSourceNotFound();
 
       // A concurrent insert caused the backend to roll the whole transaction
       // back. The collection and its items are exactly as they were; refreshing
       // shows the rows that arrived rather than retrying the delete.
       case ApiFailureCollectionNotEmpty():
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                '$name now has items, so nothing was changed. '
-                'Its current contents are being refreshed.',
-          ),
-        );
+        _publish(collectionNotEmptyFeedback(name));
         _refreshContents(collectionId);
         return const CollectionDeletionNotEmpty();
 
       case ApiFailureUnsortedCollectionProtected():
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy: '$name cannot be deleted.',
-          ),
-        );
+        _publish(collectionProtectedFeedback(name));
         return const CollectionDeletionProtected();
 
       // The collection delete is a transaction, but the client still has no
@@ -258,14 +222,7 @@ class CollectionDeletion extends _$CollectionDeletion {
           ApiFailureUnreadableResponse() ||
           ApiFailureServerFault() ||
           ApiFailureServerUnavailable():
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.uncertain,
-            copy:
-                "We couldn't confirm whether $name was deleted. "
-                'Check Collections before trying again.',
-          ),
-        );
+        _publish(collectionDeleteUnconfirmedFeedback(name));
         return const CollectionDeletionUnconfirmed();
 
       // The guard refused before the handler ran, so nothing was deleted. If the
@@ -273,12 +230,7 @@ class CollectionDeletion extends _$CollectionDeletion {
       // explain the expiry once.
       case ApiFailureAuthRequired():
         if (!ref.read(authStateProvider).isSignedOut) {
-          _publish(
-            const AppFeedback(
-              tone: FeedbackTone.danger,
-              copy: 'Sign in again to delete this collection.',
-            ),
-          );
+          _publish(collectionDeleteAuthRequiredFeedback);
         }
         return const CollectionDeletionFailed();
 
@@ -291,25 +243,11 @@ class CollectionDeletion extends _$CollectionDeletion {
       // came from the guard. The collection is known not deleted; the session is
       // the uncertain part.
       case ApiFailureRefreshUncertain():
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                "We couldn't renew your session, so $name wasn't deleted. "
-                'Try again.',
-          ),
-        );
+        _publish(collectionDeleteRefreshUncertainFeedback(name));
         return const CollectionDeletionFailed();
 
       case ApiFailureCredentialStorage():
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                "This device couldn't refresh your session, so $name wasn't "
-                'deleted. Try again.',
-          ),
-        );
+        _publish(collectionDeleteCredentialStorageFeedback(name));
         return const CollectionDeletionFailed();
 
       // A well-formed client never produces these, and none belongs to a
@@ -328,28 +266,14 @@ class CollectionDeletion extends _$CollectionDeletion {
           ApiFailureGoogleAuth() ||
           ApiFailurePasswordReset() ||
           ApiFailureCollectionNameAlreadyExists():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.danger,
-            copy: "The collection wasn't deleted. Try again.",
-          ),
-        );
+        _publish(collectionDeleteFailedFeedback);
         return const CollectionDeletionFailed();
 
       // The route has no limiter, but a proxy or a renewal can still spend a
       // budget before the handler. Refused before any write, so the collection
       // is known not deleted. No countdown is fabricated when none arrived.
       case ApiFailureRateLimited(:final retryAfter):
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy: retryAfter == null
-                ? "You're going too quickly. The collection wasn't deleted. "
-                      'Try again shortly.'
-                : "You're going too quickly. The collection wasn't deleted. "
-                      'Try again in ${_waitPhrase(retryAfter)}.',
-          ),
-        );
+        _publish(collectionDeleteRateLimitedFeedback(retryAfter));
         return const CollectionDeletionFailed();
     }
   }
@@ -404,28 +328,4 @@ class CollectionDeletion extends _$CollectionDeletion {
 
   void _publish(AppFeedback feedback) =>
       ref.read(feedbackProvider.notifier).show(feedback);
-}
-
-/// A non-empty name for copy, or a neutral fallback the screen never needs.
-String _collectionLabel(String collectionName) {
-  final trimmed = collectionName.trim();
-  return trimmed.isEmpty ? 'The collection' : trimmed;
-}
-
-/// How long the server said to wait, in the coarsest unit that does not
-/// understate it.
-///
-/// Mirrors the helper in `save_url_controller.dart` rather than sharing it: it
-/// is two branches of English pluralisation, not a policy module, and
-/// `flutter_localizations` is not a dependency yet (**D20**).
-String _waitPhrase(Duration wait) {
-  final seconds = wait.inSeconds;
-  if (seconds <= 1) return 'a second';
-  if (seconds < 60) return '$seconds seconds';
-
-  final minutes = (seconds / 60).ceil();
-  if (minutes < 60) return minutes == 1 ? '1 minute' : '$minutes minutes';
-
-  final hours = (minutes / 60).ceil();
-  return hours == 1 ? '1 hour' : '$hours hours';
 }

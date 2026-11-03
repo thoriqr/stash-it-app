@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_preview.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_skeleton.dart';
 
 import '../../../support/fake_image_http.dart';
@@ -379,6 +380,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: const Scaffold(body: SavedItemSkeleton()),
       ),
     );

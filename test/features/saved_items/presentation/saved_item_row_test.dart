@@ -2,16 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_time.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_preview.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 /// Wraps [SavedItemRow] in the minimum Material host it needs.
 Widget host(
   SavedItemSummary item, {
   VoidCallback? onRetry,
   double width = 360,
+  Locale? locale,
 }) {
   return MaterialApp(
+    locale: locale,
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
     home: Scaffold(
       body: SizedBox(
         width: width,
@@ -27,7 +33,7 @@ SavedItemSummary itemWith({
   String? imageUrl,
   EnrichmentStatus status = EnrichmentStatus.completed,
   String collection = 'Unsorted',
-  String? savedTimeLabel,
+  SavedTime? savedTime,
   String url = 'https://example.com/articles/crdts-explained',
 }) {
   return SavedItemSummary(
@@ -39,7 +45,7 @@ SavedItemSummary itemWith({
     title: title,
     description: description,
     imageUrl: imageUrl,
-    savedTimeLabel: savedTimeLabel,
+    savedTime: savedTime,
   );
 }
 
@@ -275,7 +281,7 @@ void main() {
         host(
           itemWith(
             title: 'Notes on reading',
-            savedTimeLabel: 'Saved 12 min ago',
+            savedTime: const SavedTime.minutes(12),
           ),
         ),
       );
@@ -295,7 +301,7 @@ void main() {
             url:
                 'https://engineering.example.dev/posts/'
                 'a-very-long-path-segment-that-keeps-going-and-going',
-            savedTimeLabel: 'Saved 2 days ago',
+            savedTime: const SavedTime.days(2),
           ),
           width: 320,
         ),
@@ -303,6 +309,25 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('Saved 2 days ago'), findsOneWidget);
+    });
+
+    testWidgets('resolves saved-time copy in the active locale', (
+      tester,
+    ) async {
+      final item = itemWith(
+        title: 'Catatan bacaan',
+        savedTime: const SavedTime.minutes(12),
+      );
+
+      await tester.pumpWidget(host(item, locale: const Locale('en')));
+      expect(find.text('Saved 12 min ago'), findsOneWidget);
+      expect(find.text('Catatan bacaan'), findsOneWidget);
+
+      await tester.pumpWidget(host(item, locale: const Locale('id')));
+      await tester.pumpAndSettle();
+      expect(find.text('Disimpan 12 menit lalu'), findsOneWidget);
+      expect(find.text('Catatan bacaan'), findsOneWidget);
+      expect(find.text('Saved 12 min ago'), findsNothing);
     });
   });
 }

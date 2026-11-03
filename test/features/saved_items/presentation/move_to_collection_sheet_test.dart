@@ -14,8 +14,10 @@ import 'package:stash_it_app/features/saved_items/domain/move_to_collection_inte
 import 'package:stash_it_app/features/saved_items/domain/move_to_collection_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_time.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/collection_destination_row.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/move_to_collection_sheet.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_collections_repository.dart';
@@ -39,7 +41,7 @@ void main() {
     enrichmentStatus: EnrichmentStatus.completed,
     title: 'Understanding CRDTs',
     description: 'Conflict-free replicated data types converge.',
-    savedTimeLabel: 'Saved 1 hour ago',
+    savedTime: const SavedTime.hours(1),
   );
 
   CollectionSummary collection({
@@ -105,6 +107,7 @@ void main() {
     WidgetTester tester,
     _Harness harness, {
     SavedItemSummary? hostItem,
+    Locale? locale,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -115,6 +118,9 @@ void main() {
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
+          locale: locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: _PickerHost(item: hostItem ?? item()),
         ),
       ),
@@ -420,6 +426,36 @@ void main() {
       ),
     ]);
     expect(find.byType(MoveToCollectionSheet), findsNothing);
+  });
+
+  testWidgets('renders the move sheet in Indonesian', (tester) async {
+    final harness = makeHarness(
+      pages: [
+        page([
+          collection(id: currentId, name: 'Camera Gear'),
+          collection(id: 'collection-wishlist', name: 'Wishlist'),
+        ]),
+      ],
+    );
+    await pumpHost(tester, harness, locale: const Locale('id'));
+    await openPicker(tester);
+
+    expect(find.text('Pindahkan ke koleksi'), findsNWidgets(2));
+    expect(find.text('Saat ini di Camera Gear'), findsOneWidget);
+    expect(find.text('KOLEKSI ANDA'), findsOneWidget);
+    expect(find.text('Koleksi baru'), findsOneWidget);
+    expect(find.text('mis. Daftar bacaan'), findsOneWidget);
+    expect(
+      find.text(
+        'Pilih koleksi yang ada, atau masukkan nama untuk membuat koleksi baru.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Wishlist'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextFormField), 'x' * 101);
+    await tester.pumpAndSettle();
+    expect(find.text('Gunakan 100 karakter atau kurang.'), findsOneWidget);
   });
 
   testWidgets('resolves the primary label from the typed name', (tester) async {

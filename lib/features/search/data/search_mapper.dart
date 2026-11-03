@@ -39,7 +39,7 @@ SavedItemSummary searchSavedItemFrom(
     // but the value is carried through untouched: `SavedItemSummary` derives
     // `hasPreviewImage` from it and the preview decides whether to load it.
     imageUrl: dto.imageUrl,
-    savedTimeLabel: savedTimeLabelFrom(dto.createdAt, now),
+    savedTime: savedTimeFrom(dto.createdAt, now),
   );
 }
 

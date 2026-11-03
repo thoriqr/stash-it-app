@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
@@ -20,6 +21,7 @@ import 'package:stash_it_app/features/saved_items/domain/collection_saved_items_
 import 'package:stash_it_app/features/saved_items/domain/saved_item_delete_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../../support/fake_collections_repository.dart';
 import '../../../support/fake_http.dart';
@@ -28,6 +30,8 @@ import '../../../support/fake_saved_items_repository.dart';
 /// The destructive flow's controller: one request per action, the item delete's
 /// ambiguous outcomes, and in-place cache reconciliation.
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
   const itemId = 'item-1';
   const collectionId = 'collection-1';
   const collectionName = 'Camera Gear';
@@ -180,7 +184,11 @@ void main() {
         notifier.keepCollection();
 
         expect(noticeOf(harness.container)?.tone, FeedbackTone.success);
-        expect(noticeOf(harness.container)?.copy, 'Item deleted.');
+        expect(noticeOf(harness.container)?.resolve(english), 'Item deleted.');
+        expect(
+          noticeOf(harness.container)?.resolve(indonesian),
+          'Item dihapus.',
+        );
         expect(
           harness.collections.deleteCalls,
           0,
@@ -207,7 +215,7 @@ void main() {
 
         expect(outcome, isA<DeleteSavedItemSucceeded>());
         expect(inboxOf(harness.container).items, isEmpty);
-        expect(noticeOf(harness.container)?.copy, 'Item deleted.');
+        expect(noticeOf(harness.container)?.resolve(english), 'Item deleted.');
       },
     );
 
@@ -228,7 +236,7 @@ void main() {
             .deleteItem(item);
 
         expect(outcome, isA<DeleteSavedItemSucceeded>());
-        expect(noticeOf(harness.container)?.copy, 'Item deleted.');
+        expect(noticeOf(harness.container)?.resolve(english), 'Item deleted.');
         expect(harness.collections.deleteCalls, 0);
       },
     );
@@ -254,7 +262,14 @@ void main() {
           itemId,
         ], reason: 'an ambiguous write must not remove the row');
         expect(noticeOf(harness.container)?.tone, FeedbackTone.uncertain);
-        expect(noticeOf(harness.container)?.copy, contains("couldn't confirm"));
+        expect(
+          noticeOf(harness.container)?.resolve(english),
+          contains("couldn't confirm"),
+        );
+        expect(
+          noticeOf(harness.container)?.resolve(indonesian),
+          contains('tidak dapat memastikan apakah item dihapus'),
+        );
         expect(harness.collections.deleteCalls, 0);
       },
     );
@@ -278,10 +293,17 @@ void main() {
         expect(outcome, isA<DeleteSavedItemNotFound>());
         expect(inboxOf(harness.container).items, isEmpty);
         expect(
-          noticeOf(harness.container)?.copy,
+          noticeOf(harness.container)?.resolve(english),
           'This item is no longer available.',
         );
-        expect(noticeOf(harness.container)?.copy, isNot('Item deleted.'));
+        expect(
+          noticeOf(harness.container)?.resolve(indonesian),
+          'Item ini sudah tidak tersedia.',
+        );
+        expect(
+          noticeOf(harness.container)?.resolve(english),
+          isNot('Item deleted.'),
+        );
       },
     );
 
@@ -354,7 +376,7 @@ void main() {
         'collection-2',
       ]);
       expect(
-        noticeOf(harness.container)?.copy,
+        noticeOf(harness.container)?.resolve(english),
         'Item deleted, and Camera Gear was deleted.',
       );
 
@@ -412,7 +434,7 @@ void main() {
       expect(contentsOf(harness.container, collectionId).items, isEmpty);
       expect(collectionsOf(harness.container).items.map((c) => c.id), isEmpty);
       expect(
-        noticeOf(harness.container)?.copy,
+        noticeOf(harness.container)?.resolve(english),
         'Item deleted, and Camera Gear was deleted.',
       );
     });
@@ -449,7 +471,10 @@ void main() {
           collectionId,
         ]);
         expect(noticeOf(harness.container)?.tone, FeedbackTone.warning);
-        expect(noticeOf(harness.container)?.copy, contains('now has items'));
+        expect(
+          noticeOf(harness.container)?.resolve(english),
+          contains('now has items'),
+        );
         expect(harness.saved.deleteCalls, 1);
       },
     );
@@ -484,7 +509,10 @@ void main() {
           collectionId,
         ]);
         expect(noticeOf(harness.container)?.tone, FeedbackTone.uncertain);
-        expect(noticeOf(harness.container)?.copy, contains("couldn't confirm"));
+        expect(
+          noticeOf(harness.container)?.resolve(english),
+          contains("couldn't confirm"),
+        );
         expect(harness.saved.deleteCalls, 1);
       },
     );

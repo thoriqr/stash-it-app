@@ -60,6 +60,7 @@ class SavedItemDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final detail = ref.watch(savedItemDetailProvider(itemId));
     final deleting = ref.watch(deleteSavedItemProvider);
     final enriching = ref.watch(enrichSavedItemProvider);
@@ -67,14 +68,14 @@ class SavedItemDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ITEM'),
+        title: Text(l10n.savedItemDetailTitle),
         // Use a normal pop when a previous page exists. Direct entries fall
         // back to the Inbox instead.
         leading: canPop
             ? const BackButton()
             : IconButton(
                 icon: const Icon(Icons.arrow_back, size: AppMetrics.iconSize),
-                tooltip: 'Back to Inbox',
+                tooltip: l10n.savedItemBackToInbox,
                 onPressed: () => context.go(AppRoutes.inbox),
               ),
       ),
@@ -118,12 +119,13 @@ class SavedItemDetailScreen extends ConsumerWidget {
   ) async {
     if (ref.read(deleteSavedItemProvider)) return;
 
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showAppConfirmDialog(
       context: context,
-      title: 'Delete this item?',
-      message: 'This removes the saved item. It cannot be undone.',
-      cancelLabel: 'Keep',
-      confirmLabel: 'Delete',
+      title: l10n.savedItemDeleteDialogTitle,
+      message: l10n.savedItemDeleteDialogMessage,
+      cancelLabel: l10n.savedItemKeepAction,
+      confirmLabel: l10n.savedItemDeleteConfirmAction,
       destructive: true,
     );
     if (confirmed != true || !context.mounted) return;
@@ -141,12 +143,10 @@ class SavedItemDetailScreen extends ConsumerWidget {
         final name = item.collectionName.trim();
         final deleteCollection = await showAppConfirmDialog(
           context: context,
-          title: '$name is now empty',
-          message:
-              'This was the last item in $name. You can keep this empty '
-              'collection or delete it.',
-          cancelLabel: 'Keep it',
-          confirmLabel: 'Delete collection',
+          title: l10n.savedItemCollectionEmptyTitle(name),
+          message: l10n.savedItemCollectionEmptyMessage(name),
+          cancelLabel: l10n.savedItemKeepCollectionAction,
+          confirmLabel: l10n.savedItemDeleteCollectionAction,
           destructive: true,
         );
 
@@ -254,6 +254,7 @@ class _DetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final description = _descriptionOf(item);
 
@@ -330,7 +331,7 @@ class _DetailBody extends StatelessWidget {
               onOpenUrl != null ||
               onDelete != null) ...[
             Text(
-              'ACTIONS',
+              l10n.savedItemActionsSection,
               style: AppTypography.sectionLabel.copyWith(
                 color: tokens.textTertiary,
               ),
@@ -338,7 +339,7 @@ class _DetailBody extends StatelessWidget {
             const SizedBox(height: AppMetrics.space3),
             if (onMoveToCollection != null) ...[
               AppButton(
-                label: 'Move to a collection',
+                label: l10n.savedItemMoveAction,
                 variant: AppButtonVariant.secondary,
                 onPressed: deleting || enriching ? null : onMoveToCollection,
               ),
@@ -349,7 +350,7 @@ class _DetailBody extends StatelessWidget {
             // mutation. It remains separate from the write actions.
             if (onOpenUrl != null) ...[
               AppButton(
-                label: 'Open the original page',
+                label: l10n.savedItemOpenAction,
                 variant: AppButtonVariant.secondary,
                 onPressed: onOpenUrl,
               ),
@@ -357,7 +358,7 @@ class _DetailBody extends StatelessWidget {
             ],
             if (onDelete != null)
               AppButton(
-                label: 'Delete this item',
+                label: l10n.savedItemDeleteAction,
                 variant: AppButtonVariant.danger,
                 busy: deleting,
                 onPressed: deleting || enriching ? null : onDelete,
@@ -412,18 +413,20 @@ class _EnrichmentAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ENRICHMENT',
+          l10n.savedItemEnrichmentSection,
           style: AppTypography.sectionLabel.copyWith(
             color: tokens.textTertiary,
           ),
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Re-read page',
+          label: l10n.savedItemReReadAction,
           variant: AppButtonVariant.secondary,
           busy: enriching,
           onPressed: enriching ? null : onReRead,
@@ -431,7 +434,7 @@ class _EnrichmentAction extends StatelessWidget {
         if (enriching) ...[
           const SizedBox(height: AppMetrics.space2),
           Text(
-            'Reading the page…',
+            l10n.savedItemReadingPage,
             style: AppTypography.meta.copyWith(color: tokens.textTertiary),
           ),
         ],
@@ -485,6 +488,7 @@ class _NotFound extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Center(
@@ -494,7 +498,7 @@ class _NotFound extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'This item is no longer available',
+              l10n.savedItemNotFoundTitle,
               textAlign: TextAlign.center,
               style: AppTypography.screenHeading.copyWith(
                 color: tokens.textPrimary,
@@ -502,13 +506,13 @@ class _NotFound extends StatelessWidget {
             ),
             const SizedBox(height: AppMetrics.space2),
             Text(
-              'It may have been deleted, or it may belong to another account.',
+              l10n.savedItemNotFoundBody,
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: tokens.textSecondary),
             ),
             const SizedBox(height: AppMetrics.space5),
             AppButton(
-              label: 'Back to Inbox',
+              label: l10n.savedItemBackToInbox,
               variant: AppButtonVariant.secondary,
               block: false,
               onPressed: onBack,
@@ -534,6 +538,7 @@ class _ReadError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Center(
@@ -543,7 +548,7 @@ class _ReadError extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'We could not load this item',
+              l10n.savedItemLoadErrorTitle,
               textAlign: TextAlign.center,
               style: AppTypography.screenHeading.copyWith(
                 color: tokens.textPrimary,
@@ -551,13 +556,13 @@ class _ReadError extends StatelessWidget {
             ),
             const SizedBox(height: AppMetrics.space2),
             Text(
-              _messageFor(failure, AppLocalizations.of(context)),
+              _messageFor(failure, l10n),
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: tokens.textSecondary),
             ),
             const SizedBox(height: AppMetrics.space5),
             AppButton(
-              label: 'Retry',
+              label: l10n.savedItemRetry,
               variant: AppButtonVariant.secondary,
               block: false,
               onPressed: onRetry,
@@ -572,17 +577,14 @@ class _ReadError extends StatelessWidget {
   /// is not displayed; [genericReadFailureMessage] handles other failures.
   static String _messageFor(Object failure, AppLocalizations localizations) =>
       switch (failure) {
-        ApiFailureSessionEnded() =>
-          'Your session has ended. Sign in again to see this item.',
-        ApiFailureAuthRequired() => 'Sign in again to see this item.',
-        ApiFailureServerUnavailable() =>
-          'This item is temporarily unavailable. Try again shortly.',
-        ApiFailureTransport() =>
-          "No connection to the server. We couldn't load this item.",
+        ApiFailureSessionEnded() => localizations.savedItemSessionEnded,
+        ApiFailureAuthRequired() => localizations.savedItemSignInRequired,
+        ApiFailureServerUnavailable() => localizations.savedItemUnavailable,
+        ApiFailureTransport() => localizations.savedItemLoadTransport,
         // Not-found failures are handled before this widget. The fallback also
         // covers failures that do not establish that the session has ended.
         _ =>
           genericReadFailureMessage(failure, localizations) ??
-              "We couldn't load this item. Try again.",
+              localizations.savedItemLoadGeneric,
       };
 }

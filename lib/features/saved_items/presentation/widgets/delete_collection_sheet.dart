@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/collections/domain/collection_summary.dart';
 import 'package:stash_it_app/features/saved_items/application/delete_collection_controller.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import 'move_collection_picker_sheet.dart';
@@ -69,29 +70,27 @@ class _DeleteCollectionSheetState extends ConsumerState<DeleteCollectionSheet> {
   /// was kept.
   bool _uncertain = false;
 
-  String get _name {
+  String _name(AppLocalizations l10n) {
     final trimmed = widget.collectionName.trim();
-    return trimmed.isEmpty ? 'This collection' : trimmed;
+    return trimmed.isEmpty ? l10n.savedItemThisCollection : trimmed;
   }
 
-  String get _countCopy {
+  String _countCopy(AppLocalizations l10n) {
     final count = widget.itemCount;
-    if (count == null) {
-      return 'This collection has saved items. Choose what happens to them.';
-    }
-    if (count == 1) {
-      return 'This collection has 1 saved item. Choose what happens to it.';
-    }
-    return 'This collection has $count saved items. '
-        'Choose what happens to them.';
+    if (count == null) return l10n.savedItemCollectionHasItemsUnknown;
+    return l10n.savedItemCollectionHasItems(count);
   }
 
-  String get _pickCopy => widget.itemCount == 1
-      ? 'Choose where this item should go. $_name will be deleted.'
-      : 'Choose where these items should go. $_name will be deleted.';
+  String _pickCopy(AppLocalizations l10n) {
+    final name = _name(l10n);
+    return widget.itemCount == 1
+        ? l10n.savedItemBulkMoveThisItem(name)
+        : l10n.savedItemBulkMoveTheseItems(name);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final busy = ref.watch(collectionDeletionProvider);
 
@@ -111,39 +110,40 @@ class _DeleteCollectionSheetState extends ConsumerState<DeleteCollectionSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Delete $_name?',
+                l10n.savedItemDeleteCollectionNamedTitle(_name(l10n)),
                 style: AppTypography.screenHeading.copyWith(
                   color: tokens.textPrimary,
                 ),
               ),
               const SizedBox(height: AppMetrics.space2),
               Text(
-                _countCopy,
+                _countCopy(l10n),
                 style: AppTypography.body.copyWith(color: tokens.textSecondary),
               ),
               const SizedBox(height: AppMetrics.space3),
               Text(
-                'Deleting the collection cannot be undone, and items you choose '
-                'to delete cannot be recovered.',
+                l10n.savedItemDeleteCollectionCannotUndo,
                 style: AppTypography.body.copyWith(color: tokens.textSecondary),
               ),
               const SizedBox(height: AppMetrics.space5),
               AppButton(
-                label: 'Move items to another collection',
+                label: l10n.savedItemMoveItemsAction,
                 variant: AppButtonVariant.secondary,
                 busy: _pending == _PendingAction.move,
                 onPressed: busy ? null : _pickDestination,
               ),
               const SizedBox(height: AppMetrics.space2),
               AppButton(
-                label: 'Delete collection and items',
+                label: l10n.savedItemDeleteItemsAction,
                 variant: AppButtonVariant.danger,
                 busy: _pending == _PendingAction.delete,
                 onPressed: busy ? null : _deleteItems,
               ),
               const SizedBox(height: AppMetrics.space3),
               AppButton(
-                label: _uncertain ? 'Close' : 'Keep collection',
+                label: _uncertain
+                    ? l10n.savedItemCloseAction
+                    : l10n.savedItemKeepCollectionDismissAction,
                 variant: AppButtonVariant.quiet,
                 onPressed: busy
                     ? null
@@ -168,7 +168,7 @@ class _DeleteCollectionSheetState extends ConsumerState<DeleteCollectionSheet> {
     final target = await showMoveCollectionPickerSheet(
       context,
       currentCollectionId: widget.collectionId,
-      description: _pickCopy,
+      description: _pickCopy(AppLocalizations.of(context)),
     );
     if (!mounted || target == null) return;
 

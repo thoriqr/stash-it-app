@@ -8,6 +8,7 @@ import 'package:stash_it_app/features/collections/domain/collection_page.dart';
 import 'package:stash_it_app/features/collections/domain/collection_summary.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/collection_destination_row.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/move_collection_picker_sheet.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_collections_repository.dart';
@@ -52,6 +53,8 @@ void main() {
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: const _PickerHost(currentCollectionId: currentId),
         ),
       ),

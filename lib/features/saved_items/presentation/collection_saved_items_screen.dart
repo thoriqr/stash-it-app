@@ -132,6 +132,7 @@ class _CollectionSavedItemsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final listing = ref.watch(
       collectionSavedItemsProvider(widget.collectionId),
     );
@@ -154,14 +155,14 @@ class _CollectionSavedItemsScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('COLLECTION'),
+        title: Text(l10n.savedItemCollectionDetailTitle),
         // Always provide a way back. Direct entry has no previous route,
         // so its back action navigates to Collections instead.
         leading: canPop
             ? const BackButton()
             : IconButton(
                 icon: const Icon(Icons.arrow_back, size: AppMetrics.iconSize),
-                tooltip: 'Back to Collections',
+                tooltip: l10n.savedItemBackToCollections,
                 onPressed: () => context.go(AppRoutes.collections),
               ),
         actions: [
@@ -170,7 +171,7 @@ class _CollectionSavedItemsScreenState
           // hides the action rather than assuming deletion is allowed.
           if (loaded != null && identity != null && !identity.isUnsorted)
             PopupMenuButton<_CollectionAction>(
-              tooltip: 'Collection actions',
+              tooltip: l10n.savedItemCollectionActionsTooltip,
               enabled: !deleting,
               onSelected: (action) {
                 switch (action) {
@@ -182,7 +183,7 @@ class _CollectionSavedItemsScreenState
                 PopupMenuItem(
                   value: _CollectionAction.delete,
                   child: Text(
-                    'Delete collection',
+                    l10n.savedItemDeleteCollectionAction,
                     style: TextStyle(color: AppTheme.tokensOf(context).danger),
                   ),
                 ),
@@ -236,6 +237,7 @@ class _CollectionSavedItemsScreenState
   Future<void> _startDeletion(CollectionSavedItemsState listing) async {
     if (ref.read(collectionDeletionProvider)) return;
 
+    final l10n = AppLocalizations.of(context);
     final name = listing.collectionName;
     // A count is exact only when the listing has no additional pages.
     final itemCount = listing.hasMore ? null : listing.items.length;
@@ -244,13 +246,11 @@ class _CollectionSavedItemsScreenState
       final confirmed = await showAppConfirmDialog(
         context: context,
         title: name.trim().isEmpty
-            ? 'Delete this collection?'
-            : 'Delete $name?',
-        message:
-            'This collection is empty. There are no items to keep or discard. '
-            'This cannot be undone.',
-        cancelLabel: 'Cancel',
-        confirmLabel: 'Delete',
+            ? l10n.savedItemEmptyCollectionDeleteTitle
+            : l10n.savedItemDeleteCollectionNamedTitle(name),
+        message: l10n.savedItemEmptyCollectionDeleteMessage,
+        cancelLabel: l10n.savedItemCancelAction,
+        confirmLabel: l10n.savedItemDeleteConfirmAction,
         destructive: true,
       );
       if (confirmed != true || !mounted) return;
@@ -417,6 +417,7 @@ class _LoadingMoreRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Padding(
@@ -434,7 +435,7 @@ class _LoadingMoreRow extends StatelessWidget {
           ),
           const SizedBox(width: AppMetrics.space2),
           Text(
-            'Loading more…',
+            l10n.savedItemLoadingMore,
             style: AppTypography.meta.copyWith(color: tokens.textTertiary),
           ),
         ],
@@ -455,6 +456,7 @@ class _LoadMoreFailed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Padding(
@@ -464,13 +466,13 @@ class _LoadMoreFailed extends StatelessWidget {
         children: [
           Flexible(
             child: Text(
-              "Couldn't load more items.",
+              l10n.savedItemLoadMoreFailed,
               style: AppTypography.meta.copyWith(color: tokens.textSecondary),
             ),
           ),
           const SizedBox(width: AppMetrics.space2),
           AppButton(
-            label: 'Retry',
+            label: l10n.savedItemRetry,
             variant: AppButtonVariant.quiet,
             small: true,
             block: false,
@@ -491,6 +493,7 @@ class _Empty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Center(
@@ -500,7 +503,7 @@ class _Empty extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Nothing saved here yet',
+              l10n.savedItemEmptyCollectionTitle,
               textAlign: TextAlign.center,
               style: AppTypography.screenHeading.copyWith(
                 fontSize: 15,
@@ -509,7 +512,7 @@ class _Empty extends StatelessWidget {
             ),
             const SizedBox(height: AppMetrics.space2),
             Text(
-              'Items saved to this collection will appear here.',
+              l10n.savedItemEmptyCollectionBody,
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: tokens.textSecondary),
             ),
@@ -532,6 +535,7 @@ class _NotFound extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Center(
@@ -541,7 +545,7 @@ class _NotFound extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'This collection is no longer available',
+              l10n.savedItemCollectionUnavailableTitle,
               textAlign: TextAlign.center,
               style: AppTypography.screenHeading.copyWith(
                 color: tokens.textPrimary,
@@ -549,13 +553,13 @@ class _NotFound extends StatelessWidget {
             ),
             const SizedBox(height: AppMetrics.space2),
             Text(
-              'It may have been deleted, or it may belong to another account.',
+              l10n.savedItemCollectionUnavailableBody,
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: tokens.textSecondary),
             ),
             const SizedBox(height: AppMetrics.space5),
             AppButton(
-              label: 'Back to Collections',
+              label: l10n.savedItemBackToCollections,
               variant: AppButtonVariant.secondary,
               block: false,
               onPressed: onBack,
@@ -579,6 +583,7 @@ class _LoadError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Center(
@@ -588,7 +593,7 @@ class _LoadError extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'We could not load this collection',
+              l10n.savedItemCollectionLoadErrorTitle,
               textAlign: TextAlign.center,
               style: AppTypography.screenHeading.copyWith(
                 fontSize: 15,
@@ -597,13 +602,13 @@ class _LoadError extends StatelessWidget {
             ),
             const SizedBox(height: AppMetrics.space2),
             Text(
-              _messageFor(failure, AppLocalizations.of(context)),
+              _messageFor(failure, l10n),
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: tokens.textSecondary),
             ),
             const SizedBox(height: AppMetrics.space5),
             AppButton(
-              label: 'Retry',
+              label: l10n.savedItemRetry,
               variant: AppButtonVariant.secondary,
               block: false,
               onPressed: onRetry,
@@ -620,17 +625,17 @@ class _LoadError extends StatelessWidget {
   /// These are failed reads, not writes with an uncertain outcome. The UI
   /// therefore describes the page as unavailable rather than suggesting
   /// that an operation may or may not have completed.
-  static String _messageFor(Object failure, AppLocalizations localizations) =>
-      switch (failure) {
-        ApiFailureSessionEnded() =>
-          'Your session has ended. Sign in again to see this collection.',
-        ApiFailureAuthRequired() => 'Sign in again to see this collection.',
-        ApiFailureServerUnavailable() =>
-          'This collection is temporarily unavailable. Try again shortly.',
-        ApiFailureTransport() =>
-          'No connection to the server. We could not load this collection.',
-        _ =>
-          genericReadFailureMessage(failure, localizations) ??
-              'We could not load this collection. Try again.',
-      };
+  static String _messageFor(
+    Object failure,
+    AppLocalizations localizations,
+  ) => switch (failure) {
+    ApiFailureSessionEnded() => localizations.savedItemCollectionSessionEnded,
+    ApiFailureAuthRequired() => localizations.savedItemCollectionSignInRequired,
+    ApiFailureServerUnavailable() =>
+      localizations.savedItemCollectionUnavailable,
+    ApiFailureTransport() => localizations.savedItemCollectionLoadTransport,
+    _ =>
+      genericReadFailureMessage(failure, localizations) ??
+          localizations.savedItemCollectionLoadGeneric,
+  };
 }

@@ -1,3 +1,5 @@
+import 'saved_time.dart';
+
 /// Enrichment state of a saved item.
 ///
 /// The API defines exactly three values: `pending`, `completed` and `failed`.
@@ -26,7 +28,7 @@ class SavedItemSummary {
     this.title,
     this.description,
     this.imageUrl,
-    this.savedTimeLabel,
+    this.savedTime,
   });
 
   /// The item's ID as reported by the API.
@@ -78,15 +80,15 @@ class SavedItemSummary {
     return value != null && value.isNotEmpty;
   }
 
-  /// A preformatted saved-time label, such as `Saved 12 min ago`.
+  /// The locale-independent elapsed time since the item was saved.
   ///
-  /// Derived from the API's `created_at` value by the mapper. This is display
-  /// text rather than a timestamp, so the presentation layer does not perform
-  /// time calculations using this field.
+  /// Derived from the API's `created_at` value by the mapper. Presentation
+  /// converts this value into localized copy; it does not perform time
+  /// calculations using this field.
   ///
-  /// Null when the timestamp cannot be parsed. This field does not determine
-  /// the ordering of items.
-  final String? savedTimeLabel;
+  /// Null when the timestamp cannot be parsed or is in the future. This field
+  /// does not determine the ordering of items.
+  final SavedTime? savedTime;
 
   /// Returns this item with its collection information replaced.
   ///
@@ -107,7 +109,7 @@ class SavedItemSummary {
       title: title,
       description: description,
       imageUrl: imageUrl,
-      savedTimeLabel: savedTimeLabel,
+      savedTime: savedTime,
     );
   }
 
@@ -135,7 +137,7 @@ class SavedItemSummary {
       title: title,
       description: description,
       imageUrl: imageUrl,
-      savedTimeLabel: savedTimeLabel,
+      savedTime: savedTime,
     );
   }
 

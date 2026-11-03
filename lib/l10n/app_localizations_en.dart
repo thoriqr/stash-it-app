@@ -119,10 +119,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Language changed, but the preference could not be saved.';
 
   @override
-  String get savedJustNow => 'Saved just now';
+  String get savedTimeJustNow => 'Saved just now';
 
   @override
-  String savedMinutesAgo(int count) {
+  String savedTimeMinutesAgo(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
@@ -133,7 +133,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String savedHoursAgo(int count) {
+  String savedTimeHoursAgo(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
@@ -144,10 +144,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get savedYesterday => 'Saved yesterday';
+  String get savedTimeYesterday => 'Saved yesterday';
 
   @override
-  String savedDaysAgo(int count) {
+  String savedTimeDaysAgo(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
@@ -875,6 +875,301 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inboxSaveAction => 'Save URL';
+
+  @override
+  String get savedItemDetailTitle => 'ITEM';
+
+  @override
+  String get savedItemCollectionDetailTitle => 'COLLECTION';
+
+  @override
+  String get savedItemBackToInbox => 'Back to Inbox';
+
+  @override
+  String get savedItemActionsSection => 'ACTIONS';
+
+  @override
+  String get savedItemMoveAction => 'Move to a collection';
+
+  @override
+  String get savedItemOpenAction => 'Open the original page';
+
+  @override
+  String get savedItemDeleteAction => 'Delete this item';
+
+  @override
+  String get savedItemEnrichmentSection => 'ENRICHMENT';
+
+  @override
+  String get savedItemReReadAction => 'Re-read page';
+
+  @override
+  String get savedItemReadingPage => 'Reading the page…';
+
+  @override
+  String get savedItemDeleteDialogTitle => 'Delete this item?';
+
+  @override
+  String get savedItemDeleteDialogMessage =>
+      'This removes the saved item. It cannot be undone.';
+
+  @override
+  String get savedItemKeepAction => 'Keep';
+
+  @override
+  String get savedItemDeleteConfirmAction => 'Delete';
+
+  @override
+  String savedItemCollectionEmptyTitle(String name) {
+    return '$name is now empty';
+  }
+
+  @override
+  String savedItemCollectionEmptyMessage(String name) {
+    return 'This was the last item in $name. You can keep this empty collection or delete it.';
+  }
+
+  @override
+  String get savedItemKeepCollectionAction => 'Keep it';
+
+  @override
+  String get savedItemDeleteCollectionAction => 'Delete collection';
+
+  @override
+  String get savedItemCancelAction => 'Cancel';
+
+  @override
+  String get savedItemKeepCollectionDismissAction => 'Keep collection';
+
+  @override
+  String get savedItemCloseAction => 'Close';
+
+  @override
+  String get savedItemNotFoundTitle => 'This item is no longer available';
+
+  @override
+  String get savedItemNotFoundBody =>
+      'It may have been deleted, or it may belong to another account.';
+
+  @override
+  String get savedItemLoadErrorTitle => 'We could not load this item';
+
+  @override
+  String get savedItemRetry => 'Retry';
+
+  @override
+  String get savedItemSessionEnded =>
+      'Your session has ended. Sign in again to see this item.';
+
+  @override
+  String get savedItemSignInRequired => 'Sign in again to see this item.';
+
+  @override
+  String get savedItemUnavailable =>
+      'This item is temporarily unavailable. Try again shortly.';
+
+  @override
+  String get savedItemLoadTransport =>
+      'No connection to the server. We couldn\'t load this item.';
+
+  @override
+  String get savedItemLoadGeneric => 'We couldn\'t load this item. Try again.';
+
+  @override
+  String get savedItemEnrichmentReading => 'Reading page…';
+
+  @override
+  String get savedItemEnrichmentNoDetails => 'No details on this page';
+
+  @override
+  String get savedItemEnrichmentFailed => 'Couldn\'t read this page';
+
+  @override
+  String get savedItemBackToCollections => 'Back to Collections';
+
+  @override
+  String get savedItemCollectionActionsTooltip => 'Collection actions';
+
+  @override
+  String get savedItemLoadingMore => 'Loading more…';
+
+  @override
+  String get savedItemLoadMoreFailed => 'Couldn\'t load more items.';
+
+  @override
+  String get savedItemEmptyCollectionTitle => 'Nothing saved here yet';
+
+  @override
+  String get savedItemEmptyCollectionBody =>
+      'Items saved to this collection will appear here.';
+
+  @override
+  String get savedItemCollectionUnavailableTitle =>
+      'This collection is no longer available';
+
+  @override
+  String get savedItemCollectionUnavailableBody =>
+      'It may have been deleted, or it may belong to another account.';
+
+  @override
+  String get savedItemCollectionLoadErrorTitle =>
+      'We could not load this collection';
+
+  @override
+  String get savedItemCollectionSessionEnded =>
+      'Your session has ended. Sign in again to see this collection.';
+
+  @override
+  String get savedItemCollectionSignInRequired =>
+      'Sign in again to see this collection.';
+
+  @override
+  String get savedItemCollectionUnavailable =>
+      'This collection is temporarily unavailable. Try again shortly.';
+
+  @override
+  String get savedItemCollectionLoadTransport =>
+      'No connection to the server. We could not load this collection.';
+
+  @override
+  String get savedItemCollectionLoadGeneric =>
+      'We could not load this collection. Try again.';
+
+  @override
+  String get savedItemEmptyCollectionDeleteTitle => 'Delete this collection?';
+
+  @override
+  String savedItemDeleteCollectionNamedTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get savedItemEmptyCollectionDeleteMessage =>
+      'This collection is empty. There are no items to keep or discard. This cannot be undone.';
+
+  @override
+  String savedItemCurrentlyIn(String name) {
+    return 'Currently in $name';
+  }
+
+  @override
+  String get savedItemYourCollections => 'YOUR COLLECTIONS';
+
+  @override
+  String get savedItemBrowseAllCollections => 'Browse all collections';
+
+  @override
+  String get savedItemNewCollection => 'New collection';
+
+  @override
+  String get savedItemNewCollectionPlaceholder => 'e.g. Reading list';
+
+  @override
+  String get savedItemLoadingCollections => 'Loading collections…';
+
+  @override
+  String get savedItemLoadCollectionsFailed =>
+      'We couldn\'t load your collections.';
+
+  @override
+  String get savedItemBrowseAllHint =>
+      'Browse all collections to find a destination.';
+
+  @override
+  String get savedItemNoOtherCollectionsCreate =>
+      'No other collections yet. Create one below.';
+
+  @override
+  String savedItemAlreadyIn(String name) {
+    return 'Already in $name';
+  }
+
+  @override
+  String savedItemMoveTo(String name) {
+    return 'Move to $name';
+  }
+
+  @override
+  String savedItemCreate(String name) {
+    return 'Create $name';
+  }
+
+  @override
+  String get savedItemMoveHelperError =>
+      'You can still create a collection by name, or browse all collections.';
+
+  @override
+  String get savedItemMoveHelper =>
+      'Choose an existing collection, or enter a name to create a new one.';
+
+  @override
+  String get savedItemCollectionNameTaken =>
+      'That collection name is already taken. Choose a different name.';
+
+  @override
+  String get savedItemCollectionNameRequired => 'Enter a collection name.';
+
+  @override
+  String get savedItemCollectionNameTooLong => 'Use 100 characters or fewer.';
+
+  @override
+  String get savedItemCollectionNameRange =>
+      'Enter a collection name between 1 and 100 characters.';
+
+  @override
+  String get savedItemAllCollections => 'All collections';
+
+  @override
+  String get savedItemPickerDescription =>
+      'Choose a collection to move this item into.';
+
+  @override
+  String get savedItemNoOtherCollections => 'No other collections yet.';
+
+  @override
+  String get savedItemLoadMoreCollectionsFailed =>
+      'We couldn\'t load more collections.';
+
+  @override
+  String get savedItemThisCollection => 'This collection';
+
+  @override
+  String get savedItemTheCollection => 'the collection';
+
+  @override
+  String get savedItemDeleteCollectionCannotUndo =>
+      'Deleting the collection cannot be undone, and items you choose to delete cannot be recovered.';
+
+  @override
+  String get savedItemMoveItemsAction => 'Move items to another collection';
+
+  @override
+  String get savedItemDeleteItemsAction => 'Delete collection and items';
+
+  @override
+  String get savedItemCollectionHasItemsUnknown =>
+      'This collection has saved items. Choose what happens to them.';
+
+  @override
+  String savedItemCollectionHasItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count saved items. Choose what happens to them.',
+      one: '1 saved item. Choose what happens to it.',
+    );
+    return 'This collection has $_temp0';
+  }
+
+  @override
+  String savedItemBulkMoveThisItem(String name) {
+    return 'Choose where this item should go. $name will be deleted.';
+  }
+
+  @override
+  String savedItemBulkMoveTheseItems(String name) {
+    return 'Choose where these items should go. $name will be deleted.';
+  }
 
   @override
   String get authBackToWelcome => 'Back to welcome';

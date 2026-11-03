@@ -35,6 +35,7 @@ import '../../../support/fake_saved_items_repository.dart';
 /// route tree. Everything here is about what the screen renders for a given
 /// listing state.
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
   const collectionId = 'collection-1';
   final provider = collectionSavedItemsProvider(collectionId);
 
@@ -104,6 +105,7 @@ void main() {
     bool settle = true,
     List<CollectionSummary>? collections,
     FakeCollectionsRepository? collectionsRepository,
+    Locale? locale,
   }) async {
     final collectionsUnderTest =
         collectionsRepository ??
@@ -140,6 +142,7 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
+          locale: locale,
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: const CollectionSavedItemsScreen(collectionId: collectionId),
@@ -156,6 +159,114 @@ void main() {
         AsyncData(:final value) => value,
         final other => throw StateError('expected data, got $other'),
       };
+
+  Future<void> openIndonesianDeleteSheet(WidgetTester tester) async {
+    await tester.tap(find.byTooltip('Tindakan koleksi'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hapus koleksi'));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('renders the collection states in Indonesian', (tester) async {
+    await pumpScreen(
+      tester,
+      repository(
+        collectionResults: [
+          pageOf(collectionName: 'Nama Server', ids: const []),
+        ],
+      ),
+      locale: const Locale('id'),
+    );
+
+    expect(find.widgetWithText(AppBar, 'KOLEKSI'), findsOneWidget);
+    expect(find.text('Nama Server'), findsOneWidget);
+    expect(find.text('Belum ada yang disimpan di sini'), findsOneWidget);
+    expect(
+      find.text('Item yang disimpan ke koleksi ini akan muncul di sini.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('renders the collection deletion dialog in Indonesian', (
+    tester,
+  ) async {
+    final collectionsRepository = FakeCollectionsRepository(
+      results: [
+        CollectionPage(items: [collection()], nextCursor: null, hasMore: false),
+      ],
+    );
+    await pumpScreen(
+      tester,
+      repository(collectionResults: [pageOf(ids: const [])]),
+      collectionsRepository: collectionsRepository,
+      locale: const Locale('id'),
+    );
+
+    await openIndonesianDeleteSheet(tester);
+
+    expect(find.text('Hapus Camera Gear?'), findsOneWidget);
+    expect(
+      find.text(
+        'Koleksi ini kosong. Tidak ada item untuk dipertahankan atau dibuang. '
+        'Tindakan ini tidak dapat dibatalkan.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Batal'), findsOneWidget);
+    expect(find.text('Hapus'), findsOneWidget);
+  });
+
+  testWidgets('renders the singular collection count in Indonesian', (
+    tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      repository(
+        collectionResults: [
+          pageOf(ids: ['a']),
+        ],
+      ),
+      collections: [collection()],
+      locale: const Locale('id'),
+    );
+
+    await openIndonesianDeleteSheet(tester);
+
+    expect(
+      find.text(
+        'Koleksi ini memiliki 1 item tersimpan. Pilih yang terjadi pada item tersebut.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('renders the non-empty collection decision in Indonesian', (
+    tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      repository(
+        collectionResults: [
+          pageOf(ids: ['a', 'b']),
+        ],
+      ),
+      collections: [collection()],
+      locale: const Locale('id'),
+    );
+
+    await openIndonesianDeleteSheet(tester);
+
+    expect(find.text('Hapus Camera Gear?'), findsOneWidget);
+    expect(
+      find.text(
+        'Koleksi ini memiliki 2 item tersimpan. Pilih yang terjadi pada item tersebut.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Pindahkan item ke koleksi lain'), findsOneWidget);
+    expect(find.text('Hapus koleksi dan item'), findsOneWidget);
+    expect(find.text('Pertahankan koleksi'), findsOneWidget);
+  });
 
   testWidgets('renders the collection name from the response', (tester) async {
     await pumpScreen(
@@ -683,7 +794,7 @@ void main() {
       expect(find.text('Delete Camera Gear?'), findsOneWidget);
       expect(find.text('Move items to another collection'), findsOneWidget);
       expect(
-        container.read(feedbackProvider)?.copy,
+        container.read(feedbackProvider)?.resolve(english),
         contains('Choose another destination'),
       );
     });

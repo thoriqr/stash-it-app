@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
@@ -21,6 +22,8 @@ import 'package:stash_it_app/features/saved_items/domain/move_to_collection_inte
 import 'package:stash_it_app/features/saved_items/domain/move_to_collection_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_time.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../../support/fake_collections_repository.dart';
 import '../../../support/fake_http.dart';
@@ -30,6 +33,8 @@ import '../../../support/fake_saved_items_repository.dart';
 /// messages, and the reconciliation that follows a confirmed or unestablished
 /// write.
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
   const itemId = 'item-1';
   const oldCollectionId = 'collection-old';
   const oldCollectionName = 'Camera Gear';
@@ -48,7 +53,7 @@ void main() {
     title: title,
     description: 'Conflict-free replicated data types converge.',
     imageUrl: 'https://example.com/og.png',
-    savedTimeLabel: 'Saved 2 hr ago',
+    savedTime: const SavedTime.hours(2),
   );
 
   MoveToCollectionResult movedResult({
@@ -152,9 +157,13 @@ void main() {
           ),
         ]);
         expect(
-          noticeOf(harness.container)?.copy,
+          noticeOf(harness.container)?.resolve(english),
           'Moved to Wishlist.',
           reason: 'the stored name from the response, not the typed casing',
+        );
+        expect(
+          noticeOf(harness.container)?.resolve(indonesian),
+          'Dipindahkan ke Wishlist.',
         );
         expect(noticeOf(harness.container)?.tone, FeedbackTone.success);
         expect(
@@ -220,7 +229,7 @@ void main() {
         MoveToCollectionIntent.create,
       );
       expect(
-        noticeOf(harness.container)?.copy,
+        noticeOf(harness.container)?.resolve(english),
         'Created Reading List and moved the item.',
       );
       await untilCalled(() => harness.saved.detailCalls == 1);
@@ -289,7 +298,10 @@ void main() {
             );
 
         expect(outcome, isA<MoveToCollectionSucceeded>());
-        expect(noticeOf(harness.container)?.copy, 'Already in Wishlist.');
+        expect(
+          noticeOf(harness.container)?.resolve(english),
+          'Already in Wishlist.',
+        );
         expect(noticeOf(harness.container)?.tone, FeedbackTone.success);
         expect(
           harness.saved.detailCalls,
@@ -331,7 +343,10 @@ void main() {
               intent: MoveToCollectionIntent.existing,
             );
 
-        expect(noticeOf(harness.container)?.copy, 'Already in Wishlist.');
+        expect(
+          noticeOf(harness.container)?.resolve(english),
+          'Already in Wishlist.',
+        );
         expect(harness.saved.detailCalls, 0);
       },
     );
@@ -495,7 +510,7 @@ void main() {
 
         expect(outcome, isA<MoveToCollectionFailed>());
         expect(
-          noticeOf(harness.container)?.copy,
+          noticeOf(harness.container)?.resolve(english),
           'Something went wrong sending that name. Try again.',
         );
         expect(noticeOf(harness.container)?.tone, FeedbackTone.danger);
@@ -535,7 +550,7 @@ void main() {
 
       expect(outcome, isA<MoveToCollectionItemNotFound>());
       expect(
-        noticeOf(harness.container)?.copy,
+        noticeOf(harness.container)?.resolve(english),
         'This item is no longer available.',
       );
       expect(noticeOf(harness.container)?.tone, FeedbackTone.danger);
@@ -580,7 +595,7 @@ void main() {
 
         expect(outcome, isA<MoveToCollectionUnconfirmed>());
         expect(
-          noticeOf(harness.container)?.copy,
+          noticeOf(harness.container)?.resolve(english),
           "We couldn't confirm the move. Check the item's collection.",
         );
         expect(noticeOf(harness.container)?.tone, FeedbackTone.uncertain);
@@ -627,7 +642,14 @@ void main() {
           );
 
       expect(outcome, isA<MoveToCollectionFailed>());
-      expect(noticeOf(harness.container)?.copy, contains('30 seconds'));
+      expect(
+        noticeOf(harness.container)?.resolve(english),
+        contains('30 seconds'),
+      );
+      expect(
+        noticeOf(harness.container)?.resolve(indonesian),
+        'Anda memindahkan terlalu cepat. Coba lagi dalam 30 detik.',
+      );
       expect(noticeOf(harness.container)?.tone, FeedbackTone.warning);
       expect(harness.saved.detailCalls, 0);
       expect(

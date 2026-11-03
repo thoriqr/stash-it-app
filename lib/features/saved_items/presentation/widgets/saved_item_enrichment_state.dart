@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 /// Restrained enrichment status, shared by the saved-item row and detail screen.
 ///
@@ -25,6 +26,7 @@ class SavedItemEnrichmentState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     final lineStyle = AppTypography.meta.copyWith(color: tokens.textTertiary);
@@ -37,7 +39,7 @@ class SavedItemEnrichmentState extends StatelessWidget {
             const SizedBox(width: 6),
             Flexible(
               child: Text(
-                'Reading page…',
+                l10n.savedItemEnrichmentReading,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: lineStyle.copyWith(color: tokens.accent),
@@ -51,7 +53,7 @@ class SavedItemEnrichmentState extends StatelessWidget {
 
         // Success with nothing to show. Deliberately not styled as a problem.
         return Text(
-          'No details on this page',
+          l10n.savedItemEnrichmentNoDetails,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: lineStyle,
@@ -64,7 +66,7 @@ class SavedItemEnrichmentState extends StatelessWidget {
             const SizedBox(width: 6),
             Flexible(
               child: Text(
-                "Couldn't read this page",
+                l10n.savedItemEnrichmentFailed,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: lineStyle.copyWith(color: tokens.danger),

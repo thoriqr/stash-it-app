@@ -252,7 +252,7 @@ void main() {
         'Wishlist',
         reason: 'the enrich response carries no collection name to replace it',
       );
-      expect(after.savedTimeLabel, before.savedTimeLabel);
+      expect(after.savedTime, before.savedTime);
     });
 
     test('an explicit null clears the previous value', () async {

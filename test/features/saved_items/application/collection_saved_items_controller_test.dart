@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
@@ -8,6 +9,7 @@ import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/collection_saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/collection_saved_items_state.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../../support/collection_saved_items_fixtures.dart';
 import '../../../support/fake_http.dart';
@@ -18,6 +20,8 @@ import '../../../support/fake_http.dart';
 /// — against a scripted transport. No socket is opened, and the endpoint's path is
 /// distinctive enough that no other route can answer for it.
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
   const collectionId = 'collection-1';
   const path = '/collections/collection-1/saved-items';
 
@@ -682,7 +686,8 @@ void main() {
 
       final notice = noticeOf(container);
       expect(notice, isNotNull);
-      expect(notice!.copy, contains("Couldn't refresh"));
+      expect(notice!.resolve(english), contains("Couldn't refresh"));
+      expect(notice.resolve(indonesian), contains('Tidak dapat menyegarkan'));
     });
 
     test(

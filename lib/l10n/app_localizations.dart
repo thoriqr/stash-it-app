@@ -264,31 +264,31 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Saved just now'**
-  String get savedJustNow;
+  String get savedTimeJustNow;
 
   /// Saved-time label for an item saved less than an hour ago.
   ///
   /// In en, this message translates to:
   /// **'{count, plural, =1{Saved 1 min ago} other{Saved {count} min ago}}'**
-  String savedMinutesAgo(int count);
+  String savedTimeMinutesAgo(int count);
 
   /// Saved-time label for an item saved less than a day ago.
   ///
   /// In en, this message translates to:
   /// **'{count, plural, =1{Saved 1 hour ago} other{Saved {count} hours ago}}'**
-  String savedHoursAgo(int count);
+  String savedTimeHoursAgo(int count);
 
   /// Saved-time label for an item saved between 24 and 48 hours ago.
   ///
   /// In en, this message translates to:
   /// **'Saved yesterday'**
-  String get savedYesterday;
+  String get savedTimeYesterday;
 
   /// Saved-time label for an item saved two or more days ago.
   ///
   /// In en, this message translates to:
   /// **'{count, plural, =1{Saved 1 day ago} other{Saved {count} days ago}}'**
-  String savedDaysAgo(int count);
+  String savedTimeDaysAgo(int count);
 
   /// Label for an email and password identity.
   ///
@@ -1158,6 +1158,492 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save URL'**
   String get inboxSaveAction;
+
+  /// Title of the saved-item detail app bar.
+  ///
+  /// In en, this message translates to:
+  /// **'ITEM'**
+  String get savedItemDetailTitle;
+
+  /// Title of the saved-items collection app bar.
+  ///
+  /// In en, this message translates to:
+  /// **'COLLECTION'**
+  String get savedItemCollectionDetailTitle;
+
+  /// Back action or tooltip returning to the Inbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Inbox'**
+  String get savedItemBackToInbox;
+
+  /// Section label for item actions.
+  ///
+  /// In en, this message translates to:
+  /// **'ACTIONS'**
+  String get savedItemActionsSection;
+
+  /// Action opening collection selection for the item.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to a collection'**
+  String get savedItemMoveAction;
+
+  /// Action opening the original saved URL.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the original page'**
+  String get savedItemOpenAction;
+
+  /// Action starting saved-item deletion.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this item'**
+  String get savedItemDeleteAction;
+
+  /// Section label for enrichment actions.
+  ///
+  /// In en, this message translates to:
+  /// **'ENRICHMENT'**
+  String get savedItemEnrichmentSection;
+
+  /// Action requesting a fresh read of the saved page.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-read page'**
+  String get savedItemReReadAction;
+
+  /// Caption shown while a re-read is in progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the page…'**
+  String get savedItemReadingPage;
+
+  /// Title of the saved-item deletion confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this item?'**
+  String get savedItemDeleteDialogTitle;
+
+  /// Body of the saved-item deletion confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the saved item. It cannot be undone.'**
+  String get savedItemDeleteDialogMessage;
+
+  /// Safe action in the saved-item deletion confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep'**
+  String get savedItemKeepAction;
+
+  /// Destructive confirmation action.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get savedItemDeleteConfirmAction;
+
+  /// Confirmation title when deleting the last item empties a collection.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is now empty'**
+  String savedItemCollectionEmptyTitle(String name);
+
+  /// Offers to keep or delete a collection emptied by item deletion.
+  ///
+  /// In en, this message translates to:
+  /// **'This was the last item in {name}. You can keep this empty collection or delete it.'**
+  String savedItemCollectionEmptyMessage(String name);
+
+  /// Action keeping an emptied collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it'**
+  String get savedItemKeepCollectionAction;
+
+  /// Action deleting a collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete collection'**
+  String get savedItemDeleteCollectionAction;
+
+  /// Cancel action in saved-item dialogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get savedItemCancelAction;
+
+  /// Dismissal label that explicitly keeps the collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep collection'**
+  String get savedItemKeepCollectionDismissAction;
+
+  /// Dismissal label when an outcome is uncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get savedItemCloseAction;
+
+  /// Title when a saved item no longer exists.
+  ///
+  /// In en, this message translates to:
+  /// **'This item is no longer available'**
+  String get savedItemNotFoundTitle;
+
+  /// Body when a saved item no longer exists.
+  ///
+  /// In en, this message translates to:
+  /// **'It may have been deleted, or it may belong to another account.'**
+  String get savedItemNotFoundBody;
+
+  /// Title for a retryable saved-item read failure.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not load this item'**
+  String get savedItemLoadErrorTitle;
+
+  /// Retry action for saved-item reads and enrichment.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get savedItemRetry;
+
+  /// Saved-item read message when the session ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session has ended. Sign in again to see this item.'**
+  String get savedItemSessionEnded;
+
+  /// Saved-item read message when authentication is required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to see this item.'**
+  String get savedItemSignInRequired;
+
+  /// Saved item is temporarily unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This item is temporarily unavailable. Try again shortly.'**
+  String get savedItemUnavailable;
+
+  /// Saved-item read failed because the server was unreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection to the server. We couldn\'t load this item.'**
+  String get savedItemLoadTransport;
+
+  /// Fallback copy for a failed saved-item read.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t load this item. Try again.'**
+  String get savedItemLoadGeneric;
+
+  /// Enrichment status while the page is being read.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading page…'**
+  String get savedItemEnrichmentReading;
+
+  /// Completed enrichment with no usable metadata.
+  ///
+  /// In en, this message translates to:
+  /// **'No details on this page'**
+  String get savedItemEnrichmentNoDetails;
+
+  /// Enrichment could not read the page.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read this page'**
+  String get savedItemEnrichmentFailed;
+
+  /// Back action or tooltip returning to Collections.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Collections'**
+  String get savedItemBackToCollections;
+
+  /// Tooltip for the collection actions menu.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection actions'**
+  String get savedItemCollectionActionsTooltip;
+
+  /// Footer label while another page loads.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading more…'**
+  String get savedItemLoadingMore;
+
+  /// Footer copy when loading another page failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load more items.'**
+  String get savedItemLoadMoreFailed;
+
+  /// Empty state title for a saved-items collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing saved here yet'**
+  String get savedItemEmptyCollectionTitle;
+
+  /// Empty state body for a saved-items collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Items saved to this collection will appear here.'**
+  String get savedItemEmptyCollectionBody;
+
+  /// Title when a collection is no longer available.
+  ///
+  /// In en, this message translates to:
+  /// **'This collection is no longer available'**
+  String get savedItemCollectionUnavailableTitle;
+
+  /// Body when a collection is no longer available.
+  ///
+  /// In en, this message translates to:
+  /// **'It may have been deleted, or it may belong to another account.'**
+  String get savedItemCollectionUnavailableBody;
+
+  /// Title for a retryable collection read failure.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not load this collection'**
+  String get savedItemCollectionLoadErrorTitle;
+
+  /// Collection read message when the session ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session has ended. Sign in again to see this collection.'**
+  String get savedItemCollectionSessionEnded;
+
+  /// Collection read message when authentication is required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to see this collection.'**
+  String get savedItemCollectionSignInRequired;
+
+  /// Collection is temporarily unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This collection is temporarily unavailable. Try again shortly.'**
+  String get savedItemCollectionUnavailable;
+
+  /// Collection read failed because the server was unreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection to the server. We could not load this collection.'**
+  String get savedItemCollectionLoadTransport;
+
+  /// Fallback copy for a failed collection read.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not load this collection. Try again.'**
+  String get savedItemCollectionLoadGeneric;
+
+  /// Deletion title for an empty collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this collection?'**
+  String get savedItemEmptyCollectionDeleteTitle;
+
+  /// Deletion title naming a collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String savedItemDeleteCollectionNamedTitle(String name);
+
+  /// Deletion confirmation for an empty collection.
+  ///
+  /// In en, this message translates to:
+  /// **'This collection is empty. There are no items to keep or discard. This cannot be undone.'**
+  String get savedItemEmptyCollectionDeleteMessage;
+
+  /// Shows the item's current collection in the move sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Currently in {name}'**
+  String savedItemCurrentlyIn(String name);
+
+  /// Heading above loaded collection destinations.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR COLLECTIONS'**
+  String get savedItemYourCollections;
+
+  /// Action opening the full collection picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse all collections'**
+  String get savedItemBrowseAllCollections;
+
+  /// Label for the new-collection name field.
+  ///
+  /// In en, this message translates to:
+  /// **'New collection'**
+  String get savedItemNewCollection;
+
+  /// Placeholder example for a new collection name.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Reading list'**
+  String get savedItemNewCollectionPlaceholder;
+
+  /// Loading label for collection destinations.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading collections…'**
+  String get savedItemLoadingCollections;
+
+  /// Copy when collection destinations fail to load.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t load your collections.'**
+  String get savedItemLoadCollectionsFailed;
+
+  /// Hint to browse all collections when the preview is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse all collections to find a destination.'**
+  String get savedItemBrowseAllHint;
+
+  /// Hint when no other collections exist.
+  ///
+  /// In en, this message translates to:
+  /// **'No other collections yet. Create one below.'**
+  String get savedItemNoOtherCollectionsCreate;
+
+  /// Primary action label when the typed name is the current collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in {name}'**
+  String savedItemAlreadyIn(String name);
+
+  /// Primary action label for moving to a loaded collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to {name}'**
+  String savedItemMoveTo(String name);
+
+  /// Primary action label for creating a collection by name.
+  ///
+  /// In en, this message translates to:
+  /// **'Create {name}'**
+  String savedItemCreate(String name);
+
+  /// Helper copy when destinations failed to load.
+  ///
+  /// In en, this message translates to:
+  /// **'You can still create a collection by name, or browse all collections.'**
+  String get savedItemMoveHelperError;
+
+  /// Default helper copy for collection selection.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an existing collection, or enter a name to create a new one.'**
+  String get savedItemMoveHelper;
+
+  /// Inline error for a duplicate collection name.
+  ///
+  /// In en, this message translates to:
+  /// **'That collection name is already taken. Choose a different name.'**
+  String get savedItemCollectionNameTaken;
+
+  /// Inline error for a blank collection name.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a collection name.'**
+  String get savedItemCollectionNameRequired;
+
+  /// Inline error for a collection name over 100 characters.
+  ///
+  /// In en, this message translates to:
+  /// **'Use 100 characters or fewer.'**
+  String get savedItemCollectionNameTooLong;
+
+  /// Fallback collection-name length error.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a collection name between 1 and 100 characters.'**
+  String get savedItemCollectionNameRange;
+
+  /// Title of the full collection picker.
+  ///
+  /// In en, this message translates to:
+  /// **'All collections'**
+  String get savedItemAllCollections;
+
+  /// Default picker description for a single-item move.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a collection to move this item into.'**
+  String get savedItemPickerDescription;
+
+  /// Empty state in the full collection picker.
+  ///
+  /// In en, this message translates to:
+  /// **'No other collections yet.'**
+  String get savedItemNoOtherCollections;
+
+  /// Footer copy when loading more collections failed.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t load more collections.'**
+  String get savedItemLoadMoreCollectionsFailed;
+
+  /// Fallback name for an unnamed current collection.
+  ///
+  /// In en, this message translates to:
+  /// **'This collection'**
+  String get savedItemThisCollection;
+
+  /// Neutral fallback name used in feedback copy.
+  ///
+  /// In en, this message translates to:
+  /// **'the collection'**
+  String get savedItemTheCollection;
+
+  /// Irreversibility warning in the collection deletion sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting the collection cannot be undone, and items you choose to delete cannot be recovered.'**
+  String get savedItemDeleteCollectionCannotUndo;
+
+  /// Bulk action moving items before deleting their collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Move items to another collection'**
+  String get savedItemMoveItemsAction;
+
+  /// Bulk action deleting a collection together with its items.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete collection and items'**
+  String get savedItemDeleteItemsAction;
+
+  /// Collection item-count copy when the exact total is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'This collection has saved items. Choose what happens to them.'**
+  String get savedItemCollectionHasItemsUnknown;
+
+  /// Collection item-count copy with an exact plural count.
+  ///
+  /// In en, this message translates to:
+  /// **'This collection has {count, plural, =1{1 saved item. Choose what happens to it.} other{{count} saved items. Choose what happens to them.}}'**
+  String savedItemCollectionHasItems(int count);
+
+  /// Destination picker description for one item.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose where this item should go. {name} will be deleted.'**
+  String savedItemBulkMoveThisItem(String name);
+
+  /// Destination picker description for multiple items.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose where these items should go. {name} will be deleted.'**
+  String savedItemBulkMoveTheseItems(String name);
 
   /// Tooltip for returning to the signed-out welcome screen.
   ///

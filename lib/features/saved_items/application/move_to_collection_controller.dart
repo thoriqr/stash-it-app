@@ -8,6 +8,7 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/collections/application/collections_controller.dart';
 import 'package:stash_it_app/features/collections/domain/collection_name.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_item_detail_provider.dart';
+import 'package:stash_it_app/features/saved_items/application/saved_item_feedback.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/move_to_collection_intent.dart';
@@ -254,21 +255,11 @@ class MoveToCollection extends _$MoveToCollection {
           ApiFailureGoogleAuth() ||
           ApiFailurePasswordReset() ||
           ApiFailureCollectionDeleteTargetNotFound():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.danger,
-            copy: "Something went wrong moving this item. Try again.",
-          ),
-        );
+        _publish(moveServerErrorFeedback);
         return const MoveToCollectionFailed();
 
       case ApiFailureNotFound():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.danger,
-            copy: 'This item is no longer available.',
-          ),
-        );
+        _publish(savedItemUnavailableFeedback);
         ref.invalidate(savedItemDetailProvider(savedItemId));
         return const MoveToCollectionItemNotFound();
 
@@ -279,12 +270,7 @@ class MoveToCollection extends _$MoveToCollection {
           ApiFailureUnreadableResponse() ||
           ApiFailureServerFault() ||
           ApiFailureServerUnavailable():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.uncertain,
-            copy: "We couldn't confirm the move. Check the item's collection.",
-          ),
-        );
+        _publish(moveUnconfirmedFeedback);
         unawaited(_reconcileUnconfirmedMove(savedItemId));
         return const MoveToCollectionUnconfirmed();
 
@@ -293,12 +279,7 @@ class MoveToCollection extends _$MoveToCollection {
       // explain the expiry once; a second notice would be noise.
       case ApiFailureAuthRequired():
         if (!ref.read(authStateProvider).isSignedOut) {
-          _publish(
-            const AppFeedback(
-              tone: FeedbackTone.danger,
-              copy: 'Sign in again to move this item.',
-            ),
-          );
+          _publish(moveAuthRequiredFeedback);
         }
         return const MoveToCollectionFailed();
 
@@ -314,53 +295,26 @@ class MoveToCollection extends _$MoveToCollection {
       // happened; the session is the uncertain part, and the copy must not say
       // it ended.
       case ApiFailureRefreshUncertain():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                "We couldn't renew your session, so the item wasn't moved. "
-                'Try again.',
-          ),
-        );
+        _publish(moveRefreshUncertainFeedback);
         return const MoveToCollectionFailed();
 
       // The local credential layer could not produce a session, so the request
       // was never replayed. Known not moved; the session did not end.
       case ApiFailureCredentialStorage():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                "This device couldn't refresh your session, so the item wasn't "
-                'moved. Try again.',
-          ),
-        );
+        _publish(moveCredentialStorageFeedback);
         return const MoveToCollectionFailed();
 
       // A well-formed client never sends an unparseable body. Known not moved,
       // and nothing the user can correct in the name field.
       case ApiFailureMalformedRequest():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.danger,
-            copy: 'Something went wrong sending that name. Try again.',
-          ),
-        );
+        _publish(moveMalformedFeedback);
         return const MoveToCollectionFailed();
 
       // The route has no limiter of its own, but a proxy or a renewal can still
       // spend a budget before the handler. Refused before any write, so the item
       // did not move. No countdown is fabricated when no Retry-After arrived.
       case ApiFailureRateLimited(:final retryAfter):
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.warning,
-            copy: retryAfter == null
-                ? "You're moving too quickly. Try again shortly."
-                : "You're moving too quickly. Try again in "
-                      '${_waitPhrase(retryAfter)}.',
-          ),
-        );
+        _publish(moveRateLimitedFeedback(retryAfter));
         return const MoveToCollectionFailed();
     }
   }
@@ -376,39 +330,12 @@ class MoveToCollection extends _$MoveToCollection {
 /// contradictory pair can never claim a create.
 AppFeedback _successFeedback(MoveToCollectionResult result) {
   if (result.alreadyInCollection) {
-    return AppFeedback(
-      tone: FeedbackTone.success,
-      copy: 'Already in ${result.collectionName}.',
-    );
+    return alreadyInCollectionFeedback(result.collectionName);
   }
 
   if (result.collectionCreated) {
-    return AppFeedback(
-      tone: FeedbackTone.success,
-      copy: 'Created ${result.collectionName} and moved the item.',
-    );
+    return createdCollectionAndMovedFeedback(result.collectionName);
   }
 
-  return AppFeedback(
-    tone: FeedbackTone.success,
-    copy: 'Moved to ${result.collectionName}.',
-  );
-}
-
-/// How long the server said to wait, in the coarsest unit that does not
-/// understate it.
-///
-/// This mirrors the helper in `save_url_controller.dart` rather than sharing it:
-/// it is two branches of English pluralisation, not a policy module, and
-/// `flutter_localizations` is not a dependency yet (**D20**).
-String _waitPhrase(Duration wait) {
-  final seconds = wait.inSeconds;
-  if (seconds <= 1) return 'a second';
-  if (seconds < 60) return '$seconds seconds';
-
-  final minutes = (seconds / 60).ceil();
-  if (minutes < 60) return minutes == 1 ? '1 minute' : '$minutes minutes';
-
-  final hours = (minutes / 60).ceil();
-  return hours == 1 ? '1 hour' : '$hours hours';
+  return movedToCollectionFeedback(result.collectionName);
 }

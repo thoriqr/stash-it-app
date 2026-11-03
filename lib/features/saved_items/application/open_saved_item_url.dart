@@ -5,27 +5,7 @@ import '../../../app/feedback/app_feedback.dart';
 import '../../../app/feedback/feedback_controller.dart';
 import '../domain/saved_item_summary.dart';
 import '../domain/saved_item_url.dart';
-
-/// What a refused link says.
-///
-/// **The link is the subject, not the page.** This client will not hand the value
-/// over, and that is all it knows: the stored URL may point at a page that exists
-/// perfectly well and simply was not saved as an absolute `http(s)` address. No
-/// copy here may say the item is gone or that the page cannot be reached.
-const AppFeedback _linkRejectedFeedback = AppFeedback(
-  tone: FeedbackTone.danger,
-  copy: "This link can't be opened.",
-);
-
-/// What a launch the platform refused says.
-///
-/// The client asked the OS to open a link it had already accepted, and the OS did
-/// not take it. Nothing was opened, and nothing about the page is known either
-/// way — so the sentence reports the handoff, not the destination.
-const AppFeedback _launchFailedFeedback = AppFeedback(
-  tone: FeedbackTone.danger,
-  copy: "We couldn't open this link. Try again.",
-);
+import 'saved_item_feedback.dart';
 
 /// The handoff to the operating system, behind one method.
 ///
@@ -93,7 +73,7 @@ class OpenSavedItemUrl {
   Future<void> open(SavedItemSummary item) async {
     final url = launchableSavedItemUrl(item.url);
     if (url == null) {
-      _publish(_linkRejectedFeedback);
+      _publish(linkCannotOpenFeedback);
       return;
     }
 
@@ -104,11 +84,11 @@ class OpenSavedItemUrl {
       // Android reports a refused intent by throwing; iOS reports it by returning
       // `false`. A missing plugin in a stripped build arrives the same way. All of
       // them mean one thing here: nothing was handed over.
-      _publish(_launchFailedFeedback);
+      _publish(linkLaunchFailedFeedback);
       return;
     }
 
-    if (!accepted) _publish(_launchFailedFeedback);
+    if (!accepted) _publish(linkLaunchFailedFeedback);
   }
 
   void _publish(AppFeedback feedback) =>

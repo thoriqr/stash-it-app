@@ -17,6 +17,7 @@ import 'package:stash_it_app/features/saved_items/application/saved_item_detail_
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_enrichment_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_time.dart';
 import 'package:stash_it_app/features/saved_items/presentation/saved_item_detail_screen.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_preview.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
@@ -34,6 +35,7 @@ import '../../../support/fake_saved_items_repository.dart';
 /// wiring while keeping every outcome deterministic. No socket is opened and no
 /// browser is ever started: the launcher is a fake too.
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
   const id = 'item-1';
 
   SavedItemSummary itemWith({
@@ -52,7 +54,7 @@ void main() {
     title: title,
     description: description,
     imageUrl: imageUrl,
-    savedTimeLabel: 'Saved 1 hour ago',
+    savedTime: const SavedTime.hours(1),
   );
 
   CollectionSummary collection({
@@ -83,6 +85,7 @@ void main() {
     Future<SavedItemEnrichmentResult> Function(String id)? onEnrich,
     FakeCollectionsRepository? collections,
     FakeSavedItemUrlLauncher? launcher,
+    Locale? locale,
   }) async {
     final repository = FakeSavedItemsRepository(
       detailResults: results,
@@ -113,6 +116,7 @@ void main() {
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
+          locale: locale,
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: const SavedItemDetailScreen(itemId: id),
@@ -427,7 +431,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final notice = containerOf(tester).read(feedbackProvider)!;
-      expect(notice.copy, 'Page re-read.');
+      expect(notice.resolve(english), 'Page re-read.');
       expect(notice.tone, FeedbackTone.success);
     });
 
@@ -450,7 +454,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final notice = containerOf(tester).read(feedbackProvider)!;
-      expect(notice.copy, "Couldn't read this page.");
+      expect(notice.resolve(english), "Couldn't read this page.");
       expect(notice.tone, FeedbackTone.danger);
       expect(
         find.text('Old title'),
@@ -528,7 +532,7 @@ void main() {
 
       expect(launcher.launched, isEmpty);
       final notice = containerOf(tester).read(feedbackProvider)!;
-      expect(notice.copy, "This link can't be opened.");
+      expect(notice.resolve(english), "This link can't be opened.");
       expect(notice.tone, FeedbackTone.danger);
       // The screen stays exactly as it was.
       expect(find.text('Understanding CRDTs'), findsOneWidget);
@@ -548,7 +552,7 @@ void main() {
       await openPage(tester);
 
       final notice = containerOf(tester).read(feedbackProvider)!;
-      expect(notice.copy, "We couldn't open this link. Try again.");
+      expect(notice.resolve(english), "We couldn't open this link. Try again.");
       expect(notice.tone, FeedbackTone.danger);
 
       // No enrichment, metadata or amount-of-data change came out of a failed
@@ -581,7 +585,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(
-        containerOf(tester).read(feedbackProvider)!.copy,
+        containerOf(tester).read(feedbackProvider)!.resolve(english),
         "We couldn't open this link. Try again.",
       );
       expect(find.text('Understanding CRDTs'), findsOneWidget);
@@ -865,6 +869,65 @@ void main() {
 
       expect(find.text('Retry'), findsOneWidget);
       expect(find.text('This item is no longer available'), findsNothing);
+    });
+  });
+
+  group('Indonesian localization', () {
+    testWidgets('renders detail actions, enrichment state and delete dialog', (
+      tester,
+    ) async {
+      await pumpScreen(
+        tester,
+        results: [itemWith(status: EnrichmentStatus.pending)],
+        locale: const Locale('id'),
+      );
+
+      expect(find.widgetWithText(AppBar, 'ITEM'), findsOneWidget);
+      expect(find.text('Understanding CRDTs'), findsOneWidget);
+      expect(find.text('Camera Gear'), findsOneWidget);
+      expect(find.text('TINDAKAN'), findsOneWidget);
+      expect(find.text('Pindahkan ke koleksi'), findsOneWidget);
+      expect(find.text('Buka halaman asli'), findsOneWidget);
+      expect(find.text('Hapus item ini'), findsOneWidget);
+      expect(find.text('PENGAYAAN'), findsOneWidget);
+      expect(find.text('Baca ulang halaman'), findsOneWidget);
+      expect(find.text('Membaca halaman…'), findsOneWidget);
+
+      await tester.tap(find.text('Hapus item ini'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hapus item ini?'), findsOneWidget);
+      expect(
+        find.text(
+          'Tindakan ini menghapus item tersimpan. Tidak dapat dibatalkan.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Pertahankan'), findsOneWidget);
+      expect(find.text('Hapus'), findsOneWidget);
+
+      await tester.tap(find.text('Pertahankan'));
+      await tester.pumpAndSettle();
+      expect(find.text('Hapus item ini?'), findsNothing);
+    });
+
+    testWidgets('renders read-failure copy and retry in Indonesian', (
+      tester,
+    ) async {
+      await pumpScreen(
+        tester,
+        results: [const ApiFailureTransport()],
+        locale: const Locale('id'),
+      );
+
+      expect(find.text('Kami tidak dapat memuat item ini'), findsOneWidget);
+      expect(
+        find.text(
+          'Tidak ada koneksi ke server. Kami tidak dapat memuat item ini.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Coba lagi'), findsOneWidget);
     });
   });
 }
