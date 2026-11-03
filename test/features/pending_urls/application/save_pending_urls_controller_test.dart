@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +19,7 @@ import 'package:stash_it_app/features/pending_urls/application/save_pending_urls
 import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
 import 'package:stash_it_app/features/pending_urls/domain/pending_url.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../../support/fake_http.dart';
 import '../../../support/fake_saved_items_repository.dart';
@@ -39,6 +41,8 @@ class _FailingRemovalStore extends PendingUrlStore {
 }
 
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
   const urlA = 'https://example.com/a';
   const urlB = 'https://example.com/b';
   const urlC = 'https://example.com/c';
@@ -384,9 +388,13 @@ void main() {
     expect((await store.readAll()).entries, isEmpty);
     expect(container.read(pendingUrlCountProvider), 0);
     expect(
-      container.read(feedbackProvider)?.copy,
+      container.read(feedbackProvider)?.resolve(english),
       'Some links saved on this device expired after seven days.',
       reason: 'the prune is still a notified event',
+    );
+    expect(
+      container.read(feedbackProvider)?.resolve(indonesian),
+      'Beberapa tautan yang disimpan di perangkat ini kedaluwarsa setelah tujuh hari.',
     );
 
     final summary = container.read(savePendingUrlsProvider).lastSummary!;

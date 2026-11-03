@@ -6,6 +6,8 @@ import 'package:stash_it_app/app/bootstrap.dart';
 import 'package:stash_it_app/features/pending_urls/application/pending_urls_controller.dart';
 import 'package:stash_it_app/features/pending_urls/application/shared_url_intake.dart';
 import 'package:stash_it_app/features/pending_urls/presentation/share_intake_channel.dart';
+import 'package:stash_it_app/features/pending_urls/presentation/share_intake_localization.dart';
+import 'package:stash_it_app/features/settings/domain/language_preference.dart';
 
 Future<void> main() async {
   // Complete startup initialization before the first frame. Bootstrap
@@ -42,9 +44,18 @@ Future<void> shareIntakeMain() async {
     }
   }
 
+  String messageFor(ShareSaveOutcome outcome) {
+    final current = container;
+    final localizations = current == null
+        ? shareIntakeLocalizations(LanguagePreference.system)
+        : shareIntakeLocalizationsForContainer(current);
+    return shareOutcomeMessage(outcome, localizations);
+  }
+
   bindShareIntakeChannel(
     channel,
     handle,
+    messageFor: messageFor,
     onOutcome: (outcome) {
       // Refresh the pending URL state only when the outcome indicates that
       // the store was touched and the container is still available.

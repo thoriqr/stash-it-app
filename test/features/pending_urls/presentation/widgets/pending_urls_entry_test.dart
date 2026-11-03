@@ -3,6 +3,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/pending_urls/presentation/widgets/pending_urls_entry.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 void main() {
   Future<void> pumpEntry(
@@ -10,10 +11,14 @@ void main() {
     required int count,
     VoidCallback? onTap,
     ThemeData? theme,
+    Locale? locale,
   }) {
     return tester.pumpWidget(
       MaterialApp(
         theme: theme ?? AppTheme.light(),
+        locale: locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: Scaffold(
           body: Padding(
             padding: const EdgeInsets.all(AppMetrics.space4),
@@ -140,5 +145,40 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('Saved on this device'), findsOneWidget);
+  });
+
+  testWidgets('renders Indonesian copy and count semantics', (tester) async {
+    await pumpEntry(tester, count: 3, locale: const Locale('id'));
+
+    expect(find.text('Disimpan di perangkat ini'), findsOneWidget);
+    expect(
+      find.text('Disimpan di perangkat ini. Buka untuk meninjaunya.'),
+      findsOneWidget,
+    );
+
+    final data = tester
+        .getSemantics(find.byType(PendingUrlsEntry))
+        .getSemanticsData();
+    expect(data.label, contains('Disimpan di perangkat ini, 3 tautan'));
+  });
+
+  testWidgets('renders the Indonesian empty and overflow states', (
+    tester,
+  ) async {
+    await pumpEntry(tester, count: 0, locale: const Locale('id'));
+
+    expect(find.text('Disimpan di perangkat ini'), findsOneWidget);
+    expect(
+      find.text('Tautan yang tidak dapat disimpan akan muncul di sini.'),
+      findsOneWidget,
+    );
+
+    await pumpEntry(tester, count: 100, locale: const Locale('id'));
+    await tester.pumpAndSettle();
+
+    final data = tester
+        .getSemantics(find.byType(PendingUrlsEntry))
+        .getSemanticsData();
+    expect(data.label, 'Disimpan di perangkat ini, lebih dari 99 tautan');
   });
 }

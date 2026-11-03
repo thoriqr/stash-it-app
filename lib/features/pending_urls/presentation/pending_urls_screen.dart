@@ -10,6 +10,7 @@ import 'package:stash_it_app/features/pending_urls/application/pending_urls_cont
 import 'package:stash_it_app/features/pending_urls/application/save_pending_urls_controller.dart';
 import 'package:stash_it_app/features/pending_urls/domain/pending_url.dart';
 import 'package:stash_it_app/features/pending_urls/presentation/pending_url_save_summary_copy.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 /// The device-local fallback list.
@@ -29,6 +30,7 @@ class PendingUrlsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final pending = ref.watch(pendingUrlsProvider);
     final auth = ref.watch(authStateProvider);
@@ -37,12 +39,14 @@ class PendingUrlsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SAVED ON THIS DEVICE'),
+        title: Text(l10n.pendingUrlsTitle),
         leading: canPop
             ? null
             : IconButton(
                 icon: const Icon(Icons.arrow_back, size: AppMetrics.iconSize),
-                tooltip: auth.isSignedIn ? 'Back to Inbox' : 'Back to sign in',
+                tooltip: auth.isSignedIn
+                    ? l10n.pendingUrlsBackToInbox
+                    : l10n.pendingUrlsBackToSignIn,
                 onPressed: () => context.go(
                   auth.isSignedIn ? AppRoutes.inbox : AppRoutes.auth,
                 ),
@@ -78,7 +82,7 @@ class PendingUrlsScreen extends ConsumerWidget {
                 const SizedBox(width: AppMetrics.space2),
                 Flexible(
                   child: Text(
-                    'Loading links…',
+                    l10n.pendingUrlsLoading,
                     style: AppTypography.body.copyWith(
                       color: tokens.textSecondary,
                     ),
@@ -139,14 +143,12 @@ class _Intro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     final explanation = isSignedIn
-        ? "Links you shared are kept here for seven days when a save didn't "
-              'finish. They are stored on this device until you save them to '
-              'your account.'
-        : "Links you shared are kept here for seven days when a save didn't "
-              'finish. They are stored on this device, not in your account.';
+        ? l10n.pendingUrlsSignedInIntro
+        : l10n.pendingUrlsSignedOutIntro;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -185,6 +187,7 @@ class _SavePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final summary = saveState.lastSummary;
 
@@ -201,26 +204,26 @@ class _SavePanel extends StatelessWidget {
           if (hasEntries)
             saveState.isRunning
                 ? AppButton(
-                    label: 'Save all to my account',
+                    label: l10n.pendingUrlsSaveAllAction,
                     variant: AppButtonVariant.primary,
                     busy: true,
                     onPressed: onSave,
                   )
                 : isSignedIn
                 ? AppButton(
-                    label: 'Save all to my account',
+                    label: l10n.pendingUrlsSaveAllAction,
                     variant: AppButtonVariant.primary,
                     onPressed: onSave,
                   )
                 : AppButton(
-                    label: 'Sign in to save these links',
+                    label: l10n.pendingUrlsSignInAction,
                     variant: AppButtonVariant.primary,
                     onPressed: onSignIn,
                   ),
           if (hasEntries && saveState.isRunning) ...[
             const SizedBox(height: AppMetrics.space2),
             Text(
-              _progressLabel(saveState),
+              _progressLabel(saveState, l10n),
               textAlign: TextAlign.center,
               style: AppTypography.meta.copyWith(color: tokens.textSecondary),
             ),
@@ -241,12 +244,15 @@ class _SavePanel extends StatelessWidget {
   }
 }
 
-String _progressLabel(PendingUrlSaveState state) {
+String _progressLabel(
+  PendingUrlSaveState state,
+  AppLocalizations localizations,
+) {
   final total = state.total;
-  if (total <= 1) return 'Saving…';
+  if (total <= 1) return localizations.pendingUrlsSaving;
 
   final current = state.processed + 1 < total ? state.processed + 1 : total;
-  return 'Saving $current of $total…';
+  return localizations.pendingUrlsSavingProgress(current, total);
 }
 
 class _PendingUrlList extends StatelessWidget {
@@ -277,6 +283,7 @@ class _PendingUrlRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Container(
@@ -303,12 +310,12 @@ class _PendingUrlRow extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
-                _keptLabel(entry.addedAt, DateTime.now().toUtc()),
+                _keptLabel(entry.addedAt, DateTime.now().toUtc(), l10n),
                 style: AppTypography.meta.copyWith(color: tokens.textTertiary),
               ),
               if (entry.uncertain)
                 Text(
-                  'Save not confirmed',
+                  l10n.pendingUrlsSaveNotConfirmed,
                   style: AppTypography.label.copyWith(color: tokens.warning),
                 ),
             ],
@@ -324,6 +331,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Center(
@@ -333,7 +341,7 @@ class _EmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Nothing saved on this device',
+              l10n.pendingUrlsEmptyTitle,
               textAlign: TextAlign.center,
               style: AppTypography.screenHeading.copyWith(
                 fontSize: 15,
@@ -342,8 +350,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: AppMetrics.space2),
             Text(
-              "Links that didn't finish saving will appear here for seven "
-              'days.',
+              l10n.pendingUrlsEmptyBody,
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: tokens.textSecondary),
             ),
@@ -361,6 +368,7 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Center(
@@ -370,13 +378,13 @@ class _ErrorState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              "We couldn't read the links saved on this device.",
+              l10n.pendingUrlsReadError,
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: tokens.textPrimary),
             ),
             const SizedBox(height: AppMetrics.space4),
             AppButton(
-              label: 'Retry',
+              label: l10n.pendingUrlsRetry,
               variant: AppButtonVariant.secondary,
               block: false,
               onPressed: onRetry,
@@ -390,18 +398,20 @@ class _ErrorState extends StatelessWidget {
 
 /// The relative age shown under a locally kept URL.
 ///
-/// Kept deliberately simple and English-only, like the rest of the app until
-/// the ARB layer lands. The seven-day retention means the largest value is
-/// `6 days ago`.
-String _keptLabel(DateTime addedAt, DateTime now) {
+/// The seven-day retention means the largest value is `6 days ago`.
+String _keptLabel(
+  DateTime addedAt,
+  DateTime now,
+  AppLocalizations localizations,
+) {
   final age = now.difference(addedAt);
-  if (age.inMinutes < 1) return 'Kept just now';
-  if (age.inMinutes < 60) return 'Kept ${age.inMinutes} min ago';
-  if (age.inHours < 24) {
-    return age.inHours == 1
-        ? 'Kept 1 hour ago'
-        : 'Kept ${age.inHours} hours ago';
+  if (age.inMinutes < 1) return localizations.pendingUrlsKeptJustNow;
+  if (age.inMinutes < 60) {
+    return localizations.pendingUrlsKeptMinutesAgo(age.inMinutes);
   }
-  if (age.inDays == 1) return 'Kept yesterday';
-  return 'Kept ${age.inDays} days ago';
+  if (age.inHours < 24) {
+    return localizations.pendingUrlsKeptHoursAgo(age.inHours);
+  }
+  if (age.inDays == 1) return localizations.pendingUrlsKeptYesterday;
+  return localizations.pendingUrlsKeptDaysAgo(age.inDays);
 }

@@ -7,19 +7,21 @@
 
 The app has its core saved-link experience in place, including authentication, collections, search, profile and account settings, Google Sign-In, and Android link sharing for device-local saves.
 
-The latest completed milestone is **Localization Phase 7**: Profile headings, account and identity rows, joined and linked dates, display-name editing, password forms, validation, typed failures, and update feedback are localized in English and Indonesian.
+The latest completed milestone is **Localization Phase 8**: Pending URLs UI, Dart share-intake outcomes, headless share localization, and the native Android fallback are localized in English and Indonesian.
 
-**Current focus:** complete localization for device-local URLs, Android share intake, and the remaining preference warnings, including their feedback call sites.
+**Current focus:** localize the remaining theme/language preference warnings and complete native-speaker/device review.
 
 ## Verification
 
-- `flutter gen-l10n` — completed; 28 Indonesian messages for remaining feature areas still fall back to English.
+- `flutter gen-l10n` — completed; 2 Indonesian preference-warning messages still fall back to English.
 - `dart format` on changed Dart files — completed.
-- Targeted Profile tests — 96 tests passed.
-- Profile date and identity-label tests — 9 tests passed.
+- Targeted Pending URLs and share-intake tests — 118 tests passed.
+- App-shell regression — 6 tests passed.
 - `flutter analyze` — no issues found.
+- Android resource processing — `:app:processDebugResources` succeeded.
+- Android Kotlin compilation — `:app:compileDebugKotlin` succeeded.
 - `git diff --check` — no whitespace errors.
-- The full test suite was not rerun for Phase 7; broader regression testing remains with the project owner.
+- The full test suite was not rerun for Phase 8; broader regression testing remains with the project owner.
 
 ## Implemented
 
@@ -71,12 +73,12 @@ The latest completed milestone is **Localization Phase 7**: Profile headings, ac
 - Collections headings, localized sort labels, empty and error states, retry copy, system badges, and saved-item count accessibility labels are localized in English and Indonesian; technical sort values remain unchanged.
 - Search title, placeholder, initial and zero-result states, validation messages, loading semantics, result-group headings, typed failure copy, and retry are localized in English and Indonesian; queries and server-provided result content remain unchanged.
 - Profile headings, account fields, localized identity labels, joined and linked dates, display-name editing, password forms, validation, typed failures, and update feedback are localized in English and Indonesian. Dates use the active locale explicitly, while provider identifiers remain unchanged.
+- Pending URLs titles, introductions, empty/loading/error states, kept-time labels, progress, expiry feedback, bulk-save summaries, entry semantics, and share-intake outcomes are localized in English and Indonesian. The headless share path resolves the restored language preference without a widget tree; the native fallback uses Android string resources.
 
 ## In Progress and Next Steps
 
-- [ ] Complete localization for the remaining feature areas: device-local URLs, Android share intake, and preference warnings.
-- [ ] Migrate the remaining feature feedback call sites outside Inbox, Saved Items, and Profile to locale-aware messages.
-- [ ] Review Indonesian translations with a native speaker.
+- [ ] Localize the remaining theme/language preference warnings.
+- [ ] Review Indonesian translations with a native speaker, including native share fallback wording.
 - [ ] Verify the app on a physical Android device.
 
 ## Known Limitations
@@ -87,8 +89,9 @@ The latest completed milestone is **Localization Phase 7**: Profile headings, ac
 - If a local-link submission is interrupted, its outcome may be uncertain. Retrying an operation with an uncertain outcome can create a duplicate.
 - A link rejected by the server may remain in the device-local list until it expires or the list is otherwise cleared.
 - Some operations started under a previous account may finish after the account changes. User-specific data must remain isolated across account changes.
-- Feedback call sites outside Inbox, Saved Items, and Profile still supply fixed English copy; those messages are migrated in later phases.
-- 28 Indonesian messages for device-local URLs, Android share intake, and theme/language preference warnings still fall back to English.
+- Theme and language preference warnings still use fixed English copy.
+- 2 Indonesian preference-warning messages still fall back to English.
+- The native Android share fallback uses Android device-locale resource resolution. It cannot read the app's persisted language preference without a preference bridge, which was not introduced.
 - Skeleton placeholder text is layout-only and excluded from accessibility; it is not localized copy.
 
 ## Project Constraints

@@ -8,6 +8,9 @@ const String shareIntakeChannelName = 'stash_it/share_intake';
 /// Handles one raw share string and returns the typed outcome.
 typedef ShareIntakeHandler = Future<ShareSaveOutcome> Function(String rawText);
 
+/// Resolves the localized Toast message for an outcome.
+typedef ShareIntakeMessageResolver = String Function(ShareSaveOutcome outcome);
+
 /// Binds the share-intake protocol to [channel].
 ///
 /// The live app and the headless entrypoint use the same three methods, so the
@@ -20,6 +23,7 @@ typedef ShareIntakeHandler = Future<ShareSaveOutcome> Function(String rawText);
 void bindShareIntakeChannel(
   MethodChannel channel,
   ShareIntakeHandler handle, {
+  required ShareIntakeMessageResolver messageFor,
   void Function(ShareSaveOutcome outcome)? onOutcome,
   void Function()? onShutdown,
 }) {
@@ -32,7 +36,7 @@ void bindShareIntakeChannel(
         final raw = call.arguments is String ? call.arguments as String : '';
         final outcome = await handle(raw);
         onOutcome?.call(outcome);
-        return outcome.toChannelMap();
+        return outcome.toChannelMap(messageFor(outcome));
 
       case 'shutdown':
         onShutdown?.call();

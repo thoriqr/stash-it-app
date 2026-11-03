@@ -19,6 +19,7 @@ import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
 import 'package:stash_it_app/features/pending_urls/domain/pending_url.dart';
 import 'package:stash_it_app/features/pending_urls/presentation/pending_urls_screen.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import '../../../support/fake_http.dart';
@@ -37,6 +38,18 @@ class _FailingReadStore extends PendingUrlStore {
       throw StateError('simulated read failure');
     }
     return PendingUrlSnapshot.empty;
+  }
+}
+
+class _BlockingReadStore extends PendingUrlStore {
+  _BlockingReadStore(super.preferences);
+
+  final gate = Completer<void>();
+
+  @override
+  Future<PendingUrlSnapshot> readAll() async {
+    await gate.future;
+    return super.readAll();
   }
 }
 
@@ -74,16 +87,23 @@ void main() {
     WidgetTester tester,
     ProviderContainer container, {
     GoRouter? router,
+    Locale? locale,
   }) async {
     final app = router == null
         ? MaterialApp(
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
+            locale: locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             home: const PendingUrlsScreen(),
           )
         : MaterialApp.router(
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
+            locale: locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             routerConfig: router,
           );
 
@@ -384,5 +404,149 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('INBOX STUB'), findsOneWidget);
+  });
+
+  testWidgets('renders the Indonesian loading state', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final store = _BlockingReadStore(preferences);
+    final container = await makeContainer(store);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          locale: const Locale('id'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: const PendingUrlsScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Memuat tautan…'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    store.gate.complete();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Memuat tautan…'), findsNothing);
+    expect(
+      find.text('Tidak ada yang disimpan di perangkat ini'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('renders the Indonesian empty state', (tester) async {
+    final store = await testPendingUrlStore();
+    final container = await makeContainer(store);
+
+    await pumpScreen(tester, container, locale: const Locale('id'));
+
+    expect(find.text('DISIMPAN DI PERANGKAT INI'), findsOneWidget);
+    expect(
+      find.text('Tidak ada yang disimpan di perangkat ini'),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Tautan yang penyimpanannya tidak selesai akan muncul di sini selama tujuh hari.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('renders the Indonesian signed-out introduction and labels', (
+    tester,
+  ) async {
+    final twoDaysAgo = DateTime.now().toUtc().subtract(const Duration(days: 2));
+    final store = await testPendingUrlStore(now: () => twoDaysAgo);
+    await store.upsert(url: url, uncertain: true);
+    final container = await makeContainer(store);
+
+    await pumpScreen(tester, container, locale: const Locale('id'));
+
+    expect(
+      find.text(
+        'Tautan yang Anda bagikan disimpan di sini selama tujuh hari jika penyimpanan tidak selesai. Tautan tersebut disimpan di perangkat ini, bukan di akun Anda.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(AppButton, 'Masuk untuk menyimpan tautan ini'),
+      findsOneWidget,
+    );
+    expect(find.text('Penyimpanan belum dikonfirmasi'), findsOneWidget);
+    expect(find.textContaining('Disimpan 2 hari lalu'), findsOneWidget);
+    expect(find.byTooltip('Kembali ke halaman masuk'), findsOneWidget);
+  });
+
+  testWidgets('renders Indonesian saving progress and kept time', (
+    tester,
+  ) async {
+    final twoDaysAgo = DateTime.now().toUtc().subtract(const Duration(days: 2));
+    final store = await testPendingUrlStore(now: () => twoDaysAgo);
+    await store.upsert(url: url, uncertain: false);
+    await store.upsert(url: 'https://example.com/another', uncertain: false);
+    final gate = Completer<void>();
+    final repository = FakeSavedItemsRepository(onCreate: (_) => gate.future);
+    final container = await makeContainer(
+      store,
+      session: session,
+      repository: repository,
+    );
+
+    await pumpScreen(tester, container, locale: const Locale('id'));
+
+    expect(
+      find.text(
+        'Tautan yang Anda bagikan disimpan di sini selama tujuh hari jika penyimpanan tidak selesai. Tautan tersebut disimpan di perangkat ini sampai Anda menyimpannya ke akun.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(AppButton, 'Simpan semua ke akun saya'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Disimpan 2 hari lalu'), findsNWidgets(2));
+
+    await tester.tap(
+      find.widgetWithText(AppButton, 'Simpan semua ke akun saya'),
+    );
+    await tester.pump();
+
+    expect(find.text('Menyimpan 1 dari 2…'), findsOneWidget);
+
+    gate.complete();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('renders the Indonesian local-store error and retry', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final store = _FailingReadStore(preferences);
+    final container = await makeContainer(store);
+
+    await pumpScreen(tester, container, locale: const Locale('id'));
+
+    expect(
+      find.text(
+        'Kami tidak dapat membaca tautan yang disimpan di perangkat ini.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(AppButton, 'Coba lagi'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(AppButton, 'Coba lagi'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Tidak ada yang disimpan di perangkat ini'),
+      findsOneWidget,
+    );
   });
 }

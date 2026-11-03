@@ -1,5 +1,6 @@
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
 import 'package:stash_it_app/features/pending_urls/application/pending_url_save_state.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 /// The one sentence a bulk save leaves behind.
 ///
@@ -7,128 +8,151 @@ import 'package:stash_it_app/features/pending_urls/application/pending_url_save_
 /// message. The certainty rule is the same one the rest of the app uses:
 /// [FeedbackTone.uncertain] is the only treatment that may say an outcome was
 /// not established, and it must not call the link unsaved.
-///
-/// The copy is client-owned and English-only until the ARB layer exists, like
-/// every other string in the app.
 AppFeedback pendingUrlSaveSummaryFeedback(PendingUrlSaveSummary summary) {
   final total = summary.total;
   final saved = summary.saved;
-  final remaining = summary.remaining;
+  final uncertain = summary.uncertain;
+  final remaining = summary.remaining ?? 0;
+  final stoppedBy = summary.stoppedBy;
+
+  return AppFeedback.localized(
+    tone: _toneFor(summary),
+    message: (localizations) {
+      if (stoppedBy == PendingUrlSaveStop.localList) {
+        return localizations.pendingSummaryLocalList(saved);
+      }
+
+      if (uncertain > 0) {
+        if (total == 1) {
+          return localizations.pendingSummaryUncertainSingle;
+        }
+        if (saved == 0) {
+          return localizations.pendingSummaryUncertainNoneSaved(remaining);
+        }
+        return localizations.pendingSummaryUncertainPartial(
+          saved,
+          total,
+          uncertain,
+          remaining,
+        );
+      }
+
+      if (stoppedBy == PendingUrlSaveStop.rateLimited) {
+        final wait = summary.retryAfter;
+        if (saved == 0) {
+          if (total == 1) {
+            return wait == null
+                ? localizations.pendingSummaryRateLimitedSingleNoneSavedNoWait(
+                    remaining,
+                  )
+                : localizations
+                      .pendingSummaryRateLimitedSingleNoneSavedWithWait(
+                        _waitPhrase(localizations, wait),
+                        remaining,
+                      );
+          }
+          return wait == null
+              ? localizations.pendingSummaryRateLimitedNoneSavedNoWait(
+                  remaining,
+                )
+              : localizations.pendingSummaryRateLimitedNoneSavedWithWait(
+                  _waitPhrase(localizations, wait),
+                  remaining,
+                );
+        }
+        return wait == null
+            ? localizations.pendingSummaryRateLimitedPartialNoWait(
+                saved,
+                total,
+                remaining,
+              )
+            : localizations.pendingSummaryRateLimitedPartialWithWait(
+                saved,
+                total,
+                _waitPhrase(localizations, wait),
+                remaining,
+              );
+      }
+
+      if (stoppedBy == PendingUrlSaveStop.authRequired) {
+        if (saved == 0) {
+          return total == 1
+              ? localizations.pendingSummaryAuthSingleNoneSaved(remaining)
+              : localizations.pendingSummaryAuthNoneSaved(remaining);
+        }
+        return localizations.pendingSummaryAuthPartial(saved, total, remaining);
+      }
+
+      if (stoppedBy == PendingUrlSaveStop.server ||
+          stoppedBy == PendingUrlSaveStop.malformed ||
+          stoppedBy == PendingUrlSaveStop.unknown) {
+        if (saved == 0) {
+          return total == 1
+              ? localizations.pendingSummaryRetrySingleNoneSaved(remaining)
+              : localizations.pendingSummaryRetryNoneSaved(remaining);
+        }
+        return localizations.pendingSummaryRetryPartial(
+          saved,
+          total,
+          remaining,
+        );
+      }
+
+      if (total > 0 &&
+          saved == total &&
+          (summary.remaining == null || remaining == 0)) {
+        return total == 1
+            ? localizations.pendingSummaryAllSavedSingle
+            : localizations.pendingSummaryAllSaved(total);
+      }
+
+      if (saved == 0) {
+        return localizations.pendingSummaryNoneSaved(remaining);
+      }
+
+      return localizations.pendingSummaryPartial(saved, total, remaining);
+    },
+  );
+}
+
+FeedbackTone _toneFor(PendingUrlSaveSummary summary) {
+  final total = summary.total;
+  final saved = summary.saved;
 
   if (summary.stoppedBy == PendingUrlSaveStop.localList) {
-    return AppFeedback(
-      tone: FeedbackTone.warning,
-      copy:
-          "Saved ${_links(saved)}, but this device couldn't update the list. "
-          'Check the list before trying again.',
-    );
+    return FeedbackTone.warning;
   }
 
-  if (summary.uncertain > 0) {
-    if (total == 1) {
-      return const AppFeedback(
-        tone: FeedbackTone.uncertain,
-        copy:
-            "We couldn't confirm the save. The link is still on this device. "
-            'Check your Inbox before trying again.',
-      );
-    }
+  if (summary.uncertain > 0) return FeedbackTone.uncertain;
 
-    final lead = saved == 0
-        ? "We couldn't confirm saving these links."
-        : "Saved $saved of $total links. We couldn't confirm "
-              '${_links(summary.uncertain)}.';
-    return AppFeedback(
-      tone: FeedbackTone.uncertain,
-      copy:
-          '$lead${_remainingClause(remaining)} Check your Inbox before trying '
-          'again.',
-    );
-  }
-
-  if (summary.stoppedBy == PendingUrlSaveStop.rateLimited) {
-    final wait = summary.retryAfter;
-    final advice = wait == null
-        ? "You're saving too quickly. Try again shortly."
-        : "You're saving too quickly. Try again in ${_waitPhrase(wait)}.";
-    return AppFeedback(
-      tone: FeedbackTone.warning,
-      copy: '${_lead(saved, total)} $advice${_remainingClause(remaining)}',
-    );
-  }
-
-  if (summary.stoppedBy == PendingUrlSaveStop.authRequired) {
-    return AppFeedback(
-      tone: FeedbackTone.warning,
-      copy:
-          '${_lead(saved, total)} Sign in again to save the rest.'
-          '${_remainingClause(remaining)}',
-    );
+  if (summary.stoppedBy == PendingUrlSaveStop.rateLimited ||
+      summary.stoppedBy == PendingUrlSaveStop.authRequired) {
+    return FeedbackTone.warning;
   }
 
   if (summary.stoppedBy == PendingUrlSaveStop.server ||
       summary.stoppedBy == PendingUrlSaveStop.malformed ||
       summary.stoppedBy == PendingUrlSaveStop.unknown) {
-    return AppFeedback(
-      tone: saved == 0 ? FeedbackTone.danger : FeedbackTone.warning,
-      copy: '${_lead(saved, total)} Try again.${_remainingClause(remaining)}',
-    );
+    return saved == 0 ? FeedbackTone.danger : FeedbackTone.warning;
   }
 
-  if (total > 0 && saved == total && (remaining == null || remaining == 0)) {
-    return AppFeedback(
-      tone: FeedbackTone.success,
-      copy: total == 1
-          ? 'Saved the link to your account.'
-          : 'Saved all $total links to your account.',
-    );
+  if (total > 0 &&
+      saved == total &&
+      (summary.remaining == null || summary.remaining == 0)) {
+    return FeedbackTone.success;
   }
 
-  if (saved == 0) {
-    return AppFeedback(
-      tone: FeedbackTone.danger,
-      copy: 'No links were saved.${_remainingClause(remaining)}',
-    );
-  }
-
-  return AppFeedback(
-    tone: FeedbackTone.warning,
-    copy: 'Saved $saved of $total links.${_remainingClause(remaining)}',
-  );
+  return saved == 0 ? FeedbackTone.danger : FeedbackTone.warning;
 }
-
-String _lead(int saved, int total) {
-  if (saved == 0) {
-    return total == 1 ? "The link wasn't saved." : 'No links were saved.';
-  }
-  return 'Saved $saved of $total links.';
-}
-
-String _remainingClause(int? remaining) {
-  // Null means the final store read failed; zero means the entries were
-  // pruned. Neither is evidence that anything is still on the device, so
-  // neither may carry the sentence that says so.
-  if (remaining == null || remaining <= 0) return '';
-  return ' ${_links(remaining)} ${remaining == 1 ? 'is' : 'are'} still on this '
-      'device.';
-}
-
-String _links(int count) => count == 1 ? '1 link' : '$count links';
 
 /// The server's stated wait, in the coarsest unit that does not understate it.
-///
-/// Mirrors the existing single-save helper: a missing `Retry-After` produces no
-/// countdown at all, and the value is never invented.
-String _waitPhrase(Duration wait) {
+String _waitPhrase(AppLocalizations localizations, Duration wait) {
   final seconds = wait.inSeconds;
-  if (seconds <= 1) return 'a second';
-  if (seconds < 60) return '$seconds seconds';
+  if (seconds <= 1) return localizations.retryAfterSecond;
+  if (seconds < 60) return localizations.retryAfterSeconds(seconds);
 
   final minutes = (seconds / 60).ceil();
-  if (minutes < 60) return _count(minutes, 'minute');
+  if (minutes < 60) return localizations.retryAfterMinutes(minutes);
 
-  return _count((minutes / 60).ceil(), 'hour');
+  return localizations.retryAfterHours((minutes / 60).ceil());
 }
-
-String _count(int value, String unit) =>
-    value == 1 ? '1 $unit' : '$value ${unit}s';

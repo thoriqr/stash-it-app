@@ -39,23 +39,9 @@ enum ShareSaveOutcome {
   /// Whether the native share handler should show feedback.
   bool get hasFeedback => this != ignored;
 
-  /// The message displayed in the Android Toast.
-  ///
-  /// These messages are client-owned. The uncertain outcome describes what
-  /// is unknown without claiming that the save failed.
-  String get message => switch (this) {
-    ShareSaveOutcome.saved => 'Saved to your account.',
-    ShareSaveOutcome.storedAfterFailure =>
-      "Couldn't save it. Kept on this device.",
-    ShareSaveOutcome.storedAfterUncertain =>
-      'Save not confirmed. Kept on this device.',
-    ShareSaveOutcome.invalid => "That's not a link, so nothing was saved.",
-    ShareSaveOutcome.notStored => "Couldn't save or keep this link.",
-    ShareSaveOutcome.ignored => '',
-  };
-
-  /// Serializes the outcome for the platform channel.
-  Map<String, Object?> toChannelMap() => {
+  /// Serializes the outcome for the platform channel with its localized
+  /// message. The protocol keys and outcome values are unchanged.
+  Map<String, Object?> toChannelMap(String message) => {
     'outcome': name,
     'message': message,
     'stored': this == storedAfterFailure || this == storedAfterUncertain,

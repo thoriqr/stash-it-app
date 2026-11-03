@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/feedback/feedback_controller.dart';
@@ -10,11 +11,14 @@ import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 import 'package:stash_it_app/features/pending_urls/application/pending_urls_controller.dart';
 import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../../support/fake_http.dart';
 import '../../../support/pending_urls.dart';
 
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
   const url = 'https://example.com/articles/crdts-explained';
 
   group('the local list', () {
@@ -74,8 +78,12 @@ void main() {
 
       expect(snapshot.entries.single.url, 'https://example.com/new');
       expect(
-        container.read(feedbackProvider)?.copy,
+        container.read(feedbackProvider)?.resolve(english),
         'Some links saved on this device expired after seven days.',
+      );
+      expect(
+        container.read(feedbackProvider)?.resolve(indonesian),
+        'Beberapa tautan yang disimpan di perangkat ini kedaluwarsa setelah tujuh hari.',
       );
     });
 
@@ -97,7 +105,7 @@ void main() {
       expect(snapshot.entries, isEmpty);
       expect(snapshot.expiredCount, 1);
       expect(
-        container.read(feedbackProvider)?.copy,
+        container.read(feedbackProvider)?.resolve(english),
         'Some links saved on this device expired after seven days.',
       );
 
@@ -184,7 +192,7 @@ void main() {
 
       expect(container.read(pendingUrlCountProvider), 0);
       expect(
-        container.read(feedbackProvider)?.copy,
+        container.read(feedbackProvider)?.resolve(english),
         'Some links saved on this device expired after seven days.',
       );
 

@@ -877,6 +877,122 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inboxSaveAction => 'Save URL';
 
   @override
+  String get pendingUrlsTitle => 'SAVED ON THIS DEVICE';
+
+  @override
+  String get pendingUrlsBackToInbox => 'Back to Inbox';
+
+  @override
+  String get pendingUrlsBackToSignIn => 'Back to sign in';
+
+  @override
+  String get pendingUrlsLoading => 'Loading links…';
+
+  @override
+  String get pendingUrlsSignedInIntro =>
+      'Links you shared are kept here for seven days when a save didn\'t finish. They are stored on this device until you save them to your account.';
+
+  @override
+  String get pendingUrlsSignedOutIntro =>
+      'Links you shared are kept here for seven days when a save didn\'t finish. They are stored on this device, not in your account.';
+
+  @override
+  String get pendingUrlsSaveAllAction => 'Save all to my account';
+
+  @override
+  String get pendingUrlsSignInAction => 'Sign in to save these links';
+
+  @override
+  String get pendingUrlsSaving => 'Saving…';
+
+  @override
+  String pendingUrlsSavingProgress(int current, int total) {
+    return 'Saving $current of $total…';
+  }
+
+  @override
+  String get pendingUrlsSaveNotConfirmed => 'Save not confirmed';
+
+  @override
+  String get pendingUrlsEmptyTitle => 'Nothing saved on this device';
+
+  @override
+  String get pendingUrlsEmptyBody =>
+      'Links that didn\'t finish saving will appear here for seven days.';
+
+  @override
+  String get pendingUrlsReadError =>
+      'We couldn\'t read the links saved on this device.';
+
+  @override
+  String get pendingUrlsRetry => 'Retry';
+
+  @override
+  String get pendingUrlsKeptJustNow => 'Kept just now';
+
+  @override
+  String pendingUrlsKeptMinutesAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Kept $count min ago',
+      one: 'Kept 1 min ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pendingUrlsKeptHoursAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Kept $count hours ago',
+      one: 'Kept 1 hour ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pendingUrlsKeptYesterday => 'Kept yesterday';
+
+  @override
+  String pendingUrlsKeptDaysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Kept $count days ago',
+      one: 'Kept 1 day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pendingUrlsEntryTitle => 'Saved on this device';
+
+  @override
+  String get pendingUrlsEntryActiveBody =>
+      'Kept on this device. Open to review them.';
+
+  @override
+  String get pendingUrlsEntryEmptyBody =>
+      'Links that couldn\'t be saved will appear here.';
+
+  @override
+  String pendingUrlsEntrySemanticsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count links',
+      one: '1 link',
+    );
+    return 'Saved on this device, $_temp0';
+  }
+
+  @override
+  String get pendingUrlsEntrySemanticsOverflow =>
+      'Saved on this device, more than 99 links';
+
+  @override
   String get savedItemDetailTitle => 'ITEM';
 
   @override

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 /// The one entry point to the device-local URL list.
 ///
@@ -27,6 +28,7 @@ class PendingUrlsEntry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final safeCount = count < 0 ? 0 : count;
     final active = safeCount > 0;
@@ -38,7 +40,7 @@ class PendingUrlsEntry extends StatelessWidget {
     return Semantics(
       button: true,
       container: true,
-      label: _semanticLabel(safeCount),
+      label: _semanticLabel(safeCount, l10n),
       onTap: onTap,
       excludeSemantics: true,
       child: DecoratedBox(
@@ -78,7 +80,7 @@ class PendingUrlsEntry extends StatelessWidget {
                             children: [
                               Flexible(
                                 child: Text(
-                                  'Saved on this device',
+                                  l10n.pendingUrlsEntryTitle,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTypography.itemTitle.copyWith(
@@ -93,9 +95,8 @@ class PendingUrlsEntry extends StatelessWidget {
                           const SizedBox(height: AppMetrics.space1),
                           Text(
                             active
-                                ? 'Kept on this device. Open to review them.'
-                                : "Links that couldn't be saved will appear "
-                                      'here.',
+                                ? l10n.pendingUrlsEntryActiveBody
+                                : l10n.pendingUrlsEntryEmptyBody,
                             style: AppTypography.meta.copyWith(
                               color: tokens.textSecondary,
                             ),
@@ -119,10 +120,10 @@ class PendingUrlsEntry extends StatelessWidget {
     );
   }
 
-  static String _semanticLabel(int count) {
-    if (count <= 0) return 'Saved on this device';
-    final value = count > 99 ? 'more than 99' : '$count';
-    return 'Saved on this device, $value ${count == 1 ? 'link' : 'links'}';
+  static String _semanticLabel(int count, AppLocalizations localizations) {
+    if (count <= 0) return localizations.pendingUrlsEntryTitle;
+    if (count > 99) return localizations.pendingUrlsEntrySemanticsOverflow;
+    return localizations.pendingUrlsEntrySemanticsCount(count);
   }
 }
 

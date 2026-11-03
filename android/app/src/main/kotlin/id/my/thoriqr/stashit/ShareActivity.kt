@@ -297,7 +297,7 @@ class ShareActivity : Activity() {
     private fun showGenericFailure() {
         Toast.makeText(
             applicationContext,
-            "Stash-it couldn't finish saving that link.",
+            getString(R.string.share_save_failed),
             Toast.LENGTH_LONG,
         ).show()
     }

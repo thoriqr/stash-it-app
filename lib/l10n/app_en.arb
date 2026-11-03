@@ -173,6 +173,31 @@
   "inboxIntakeHint": "Paste fills the field. Save URL sends it.",
   "inboxPaste": "Paste",
   "inboxSaveAction": "Save URL",
+  "pendingUrlsTitle": "SAVED ON THIS DEVICE",
+  "pendingUrlsBackToInbox": "Back to Inbox",
+  "pendingUrlsBackToSignIn": "Back to sign in",
+  "pendingUrlsLoading": "Loading links…",
+  "pendingUrlsSignedInIntro": "Links you shared are kept here for seven days when a save didn't finish. They are stored on this device until you save them to your account.",
+  "pendingUrlsSignedOutIntro": "Links you shared are kept here for seven days when a save didn't finish. They are stored on this device, not in your account.",
+  "pendingUrlsSaveAllAction": "Save all to my account",
+  "pendingUrlsSignInAction": "Sign in to save these links",
+  "pendingUrlsSaving": "Saving…",
+  "pendingUrlsSavingProgress": "Saving {current} of {total}…",
+  "pendingUrlsSaveNotConfirmed": "Save not confirmed",
+  "pendingUrlsEmptyTitle": "Nothing saved on this device",
+  "pendingUrlsEmptyBody": "Links that didn't finish saving will appear here for seven days.",
+  "pendingUrlsReadError": "We couldn't read the links saved on this device.",
+  "pendingUrlsRetry": "Retry",
+  "pendingUrlsKeptJustNow": "Kept just now",
+  "pendingUrlsKeptMinutesAgo": "{count, plural, =1{Kept 1 min ago} other{Kept {count} min ago}}",
+  "pendingUrlsKeptHoursAgo": "{count, plural, =1{Kept 1 hour ago} other{Kept {count} hours ago}}",
+  "pendingUrlsKeptYesterday": "Kept yesterday",
+  "pendingUrlsKeptDaysAgo": "{count, plural, =1{Kept 1 day ago} other{Kept {count} days ago}}",
+  "pendingUrlsEntryTitle": "Saved on this device",
+  "pendingUrlsEntryActiveBody": "Kept on this device. Open to review them.",
+  "pendingUrlsEntryEmptyBody": "Links that couldn't be saved will appear here.",
+  "pendingUrlsEntrySemanticsCount": "Saved on this device, {count, plural, =1{1 link} other{{count} links}}",
+  "pendingUrlsEntrySemanticsOverflow": "Saved on this device, more than 99 links",
   "savedItemDetailTitle": "ITEM",
   "savedItemCollectionDetailTitle": "COLLECTION",
   "savedItemBackToInbox": "Back to Inbox",
@@ -1387,6 +1412,109 @@
   },
   "@inboxSaveAction": {
     "description": "Action that submits the URL field."
+  },
+  "@pendingUrlsTitle": {
+    "description": "App bar title for the device-local Pending URLs screen."
+  },
+  "@pendingUrlsBackToInbox": {
+    "description": "Back tooltip for a signed-in direct entry to Pending URLs."
+  },
+  "@pendingUrlsBackToSignIn": {
+    "description": "Back tooltip for a signed-out direct entry to Pending URLs."
+  },
+  "@pendingUrlsLoading": {
+    "description": "Loading label while the device-local URL list is read."
+  },
+  "@pendingUrlsSignedInIntro": {
+    "description": "Explanation of device-local retention for signed-in users."
+  },
+  "@pendingUrlsSignedOutIntro": {
+    "description": "Explanation of device-local retention for signed-out users."
+  },
+  "@pendingUrlsSaveAllAction": {
+    "description": "Action that saves every device-local URL to the account."
+  },
+  "@pendingUrlsSignInAction": {
+    "description": "Signed-out action that opens sign-in before saving local URLs."
+  },
+  "@pendingUrlsSaving": {
+    "description": "Progress label when a single local URL is being saved."
+  },
+  "@pendingUrlsSavingProgress": {
+    "description": "Progress label with the current and total local URLs.",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingUrlsSaveNotConfirmed": {
+    "description": "Row label for a local URL whose save outcome is unconfirmed."
+  },
+  "@pendingUrlsEmptyTitle": {
+    "description": "Empty state title for the device-local URL list."
+  },
+  "@pendingUrlsEmptyBody": {
+    "description": "Empty state explanation for the device-local URL list."
+  },
+  "@pendingUrlsReadError": {
+    "description": "Error copy when the device-local URL store cannot be read."
+  },
+  "@pendingUrlsRetry": {
+    "description": "Retry action for a failed device-local URL read."
+  },
+  "@pendingUrlsKeptJustNow": {
+    "description": "Kept-time label for a URL kept less than a minute ago."
+  },
+  "@pendingUrlsKeptMinutesAgo": {
+    "description": "Kept-time label for a URL kept less than an hour ago.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingUrlsKeptHoursAgo": {
+    "description": "Kept-time label for a URL kept less than a day ago.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingUrlsKeptYesterday": {
+    "description": "Kept-time label for a URL kept between one and two days ago."
+  },
+  "@pendingUrlsKeptDaysAgo": {
+    "description": "Kept-time label for a URL kept two or more days ago.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingUrlsEntryTitle": {
+    "description": "Title of the Pending URLs entry card."
+  },
+  "@pendingUrlsEntryActiveBody": {
+    "description": "Entry card subtitle when device-local URLs exist."
+  },
+  "@pendingUrlsEntryEmptyBody": {
+    "description": "Entry card subtitle when no device-local URLs exist."
+  },
+  "@pendingUrlsEntrySemanticsCount": {
+    "description": "Accessibility label for the entry card with a count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@pendingUrlsEntrySemanticsOverflow": {
+    "description": "Accessibility label when the entry card count is shown as 99+."
   },
   "@savedItemDetailTitle": {
     "description": "Title of the saved-item detail app bar."

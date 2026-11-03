@@ -9,9 +9,9 @@ import 'package:stash_it_app/features/pending_urls/domain/pending_url.dart';
 
 part 'pending_urls_controller.g.dart';
 
-const AppFeedback _expiredFeedback = AppFeedback(
+final AppFeedback _expiredFeedback = AppFeedback.localized(
   tone: FeedbackTone.warning,
-  copy: 'Some links saved on this device expired after seven days.',
+  message: (l10n) => l10n.pendingUrlsExpired,
 );
 
 /// The device-local fallback list.

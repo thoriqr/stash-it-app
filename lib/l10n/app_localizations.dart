@@ -1159,6 +1159,156 @@ abstract class AppLocalizations {
   /// **'Save URL'**
   String get inboxSaveAction;
 
+  /// App bar title for the device-local Pending URLs screen.
+  ///
+  /// In en, this message translates to:
+  /// **'SAVED ON THIS DEVICE'**
+  String get pendingUrlsTitle;
+
+  /// Back tooltip for a signed-in direct entry to Pending URLs.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Inbox'**
+  String get pendingUrlsBackToInbox;
+
+  /// Back tooltip for a signed-out direct entry to Pending URLs.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to sign in'**
+  String get pendingUrlsBackToSignIn;
+
+  /// Loading label while the device-local URL list is read.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading links…'**
+  String get pendingUrlsLoading;
+
+  /// Explanation of device-local retention for signed-in users.
+  ///
+  /// In en, this message translates to:
+  /// **'Links you shared are kept here for seven days when a save didn\'t finish. They are stored on this device until you save them to your account.'**
+  String get pendingUrlsSignedInIntro;
+
+  /// Explanation of device-local retention for signed-out users.
+  ///
+  /// In en, this message translates to:
+  /// **'Links you shared are kept here for seven days when a save didn\'t finish. They are stored on this device, not in your account.'**
+  String get pendingUrlsSignedOutIntro;
+
+  /// Action that saves every device-local URL to the account.
+  ///
+  /// In en, this message translates to:
+  /// **'Save all to my account'**
+  String get pendingUrlsSaveAllAction;
+
+  /// Signed-out action that opens sign-in before saving local URLs.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to save these links'**
+  String get pendingUrlsSignInAction;
+
+  /// Progress label when a single local URL is being saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get pendingUrlsSaving;
+
+  /// Progress label with the current and total local URLs.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving {current} of {total}…'**
+  String pendingUrlsSavingProgress(int current, int total);
+
+  /// Row label for a local URL whose save outcome is unconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Save not confirmed'**
+  String get pendingUrlsSaveNotConfirmed;
+
+  /// Empty state title for the device-local URL list.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing saved on this device'**
+  String get pendingUrlsEmptyTitle;
+
+  /// Empty state explanation for the device-local URL list.
+  ///
+  /// In en, this message translates to:
+  /// **'Links that didn\'t finish saving will appear here for seven days.'**
+  String get pendingUrlsEmptyBody;
+
+  /// Error copy when the device-local URL store cannot be read.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t read the links saved on this device.'**
+  String get pendingUrlsReadError;
+
+  /// Retry action for a failed device-local URL read.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get pendingUrlsRetry;
+
+  /// Kept-time label for a URL kept less than a minute ago.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept just now'**
+  String get pendingUrlsKeptJustNow;
+
+  /// Kept-time label for a URL kept less than an hour ago.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Kept 1 min ago} other{Kept {count} min ago}}'**
+  String pendingUrlsKeptMinutesAgo(int count);
+
+  /// Kept-time label for a URL kept less than a day ago.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Kept 1 hour ago} other{Kept {count} hours ago}}'**
+  String pendingUrlsKeptHoursAgo(int count);
+
+  /// Kept-time label for a URL kept between one and two days ago.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept yesterday'**
+  String get pendingUrlsKeptYesterday;
+
+  /// Kept-time label for a URL kept two or more days ago.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Kept 1 day ago} other{Kept {count} days ago}}'**
+  String pendingUrlsKeptDaysAgo(int count);
+
+  /// Title of the Pending URLs entry card.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this device'**
+  String get pendingUrlsEntryTitle;
+
+  /// Entry card subtitle when device-local URLs exist.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept on this device. Open to review them.'**
+  String get pendingUrlsEntryActiveBody;
+
+  /// Entry card subtitle when no device-local URLs exist.
+  ///
+  /// In en, this message translates to:
+  /// **'Links that couldn\'t be saved will appear here.'**
+  String get pendingUrlsEntryEmptyBody;
+
+  /// Accessibility label for the entry card with a count.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this device, {count, plural, =1{1 link} other{{count} links}}'**
+  String pendingUrlsEntrySemanticsCount(int count);
+
+  /// Accessibility label when the entry card count is shown as 99+.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this device, more than 99 links'**
+  String get pendingUrlsEntrySemanticsOverflow;
+
   /// Title of the saved-item detail app bar.
   ///
   /// In en, this message translates to:

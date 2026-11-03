@@ -323,40 +323,5 @@ void main() {
         expect((await store.readAll()).entries.single.uncertain, isTrue);
       },
     );
-
-    test('the outcome copy is short and uncertainty-safe', () {
-      expect(ShareSaveOutcome.saved.message, 'Saved to your account.');
-      expect(
-        ShareSaveOutcome.storedAfterFailure.message,
-        "Couldn't save it. Kept on this device.",
-      );
-      expect(
-        ShareSaveOutcome.storedAfterUncertain.message,
-        'Save not confirmed. Kept on this device.',
-      );
-      expect(
-        ShareSaveOutcome.invalid.message,
-        "That's not a link, so nothing was saved.",
-      );
-      expect(
-        ShareSaveOutcome.notStored.message,
-        "Couldn't save or keep this link.",
-      );
-      expect(ShareSaveOutcome.ignored.message, isEmpty);
-
-      expect(
-        ShareSaveOutcome.storedAfterUncertain.message,
-        isNot(contains("couldn't save")),
-        reason: 'an unconfirmed outcome must not claim a known failure',
-      );
-
-      for (final outcome in ShareSaveOutcome.values) {
-        expect(
-          outcome.message.length,
-          lessThanOrEqualTo(60),
-          reason: '${outcome.name} must fit comfortably in a brief Toast',
-        );
-      }
-    });
   });
 }

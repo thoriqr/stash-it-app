@@ -163,33 +163,31 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get pendingUrlsExpired =>
-      'Some links saved on this device expired after seven days.';
+      'Beberapa tautan yang disimpan di perangkat ini kedaluwarsa setelah tujuh hari.';
 
   @override
   String pendingSummaryLocalList(int saved) {
     String _temp0 = intl.Intl.pluralLogic(
       saved,
       locale: localeName,
-      other: '$saved links',
-      one: '1 link',
+      other: '$saved tautan',
     );
-    return 'Saved $_temp0, but this device couldn\'t update the list. Check the list before trying again.';
+    return 'Tersimpan $_temp0, tetapi perangkat ini tidak dapat memperbarui daftar. Periksa daftar sebelum mencoba lagi.';
   }
 
   @override
   String get pendingSummaryUncertainSingle =>
-      'We couldn\'t confirm the save. The link is still on this device. Check your Inbox before trying again.';
+      'Kami tidak dapat mengonfirmasi penyimpanan. Tautan masih ada di perangkat ini. Periksa Inbox sebelum mencoba lagi.';
 
   @override
   String pendingSummaryUncertainNoneSaved(int remaining) {
     String _temp0 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'We couldn\'t confirm saving these links.$_temp0 Check your Inbox before trying again.';
+    return 'Kami tidak dapat mengonfirmasi penyimpanan tautan ini.$_temp0 Periksa Inbox sebelum mencoba lagi.';
   }
 
   @override
@@ -200,19 +198,12 @@ class AppLocalizationsId extends AppLocalizations {
     int remaining,
   ) {
     String _temp0 = intl.Intl.pluralLogic(
-      uncertain,
-      locale: localeName,
-      other: '$uncertain links',
-      one: '1 link',
-    );
-    String _temp1 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'Saved $saved of $total links. We couldn\'t confirm $_temp0.$_temp1 Check your Inbox before trying again.';
+    return 'Tersimpan $saved dari $total tautan. Kami tidak dapat mengonfirmasi $uncertain tautan.$_temp0 Periksa Inbox sebelum mencoba lagi.';
   }
 
   @override
@@ -220,11 +211,10 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'The link wasn\'t saved. You\'re saving too quickly. Try again shortly.$_temp0';
+    return 'Tautan tidak tersimpan. Anda menyimpan terlalu cepat. Coba lagi sebentar lagi.$_temp0';
   }
 
   @override
@@ -235,11 +225,10 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'The link wasn\'t saved. You\'re saving too quickly. Try again in $wait.$_temp0';
+    return 'Tautan tidak tersimpan. Anda menyimpan terlalu cepat. Coba lagi dalam $wait.$_temp0';
   }
 
   @override
@@ -247,11 +236,10 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'No links were saved. You\'re saving too quickly. Try again shortly.$_temp0';
+    return 'Tidak ada tautan yang tersimpan. Anda menyimpan terlalu cepat. Coba lagi sebentar lagi.$_temp0';
   }
 
   @override
@@ -262,11 +250,10 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'No links were saved. You\'re saving too quickly. Try again in $wait.$_temp0';
+    return 'Tidak ada tautan yang tersimpan. Anda menyimpan terlalu cepat. Coba lagi dalam $wait.$_temp0';
   }
 
   @override
@@ -278,11 +265,10 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'Saved $saved of $total links. You\'re saving too quickly. Try again shortly.$_temp0';
+    return 'Tersimpan $saved dari $total tautan. Anda menyimpan terlalu cepat. Coba lagi sebentar lagi.$_temp0';
   }
 
   @override
@@ -295,11 +281,10 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'Saved $saved of $total links. You\'re saving too quickly. Try again in $wait.$_temp0';
+    return 'Tersimpan $saved dari $total tautan. Anda menyimpan terlalu cepat. Coba lagi dalam $wait.$_temp0';
   }
 
   @override
@@ -307,11 +292,10 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'The link wasn\'t saved. Sign in again to save the rest.$_temp0';
+    return 'Tautan tidak tersimpan. Masuk lagi untuk menyimpan sisanya.$_temp0';
   }
 
   @override
@@ -319,11 +303,10 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'No links were saved. Sign in again to save the rest.$_temp0';
+    return 'Tidak ada tautan yang tersimpan. Masuk lagi untuk menyimpan sisanya.$_temp0';
   }
 
   @override
@@ -331,11 +314,10 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'Saved $saved of $total links. Sign in again to save the rest.$_temp0';
+    return 'Tersimpan $saved dari $total tautan. Masuk lagi untuk menyimpan sisanya.$_temp0';
   }
 
   @override
@@ -343,11 +325,10 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'The link wasn\'t saved. Try again.$_temp0';
+    return 'Tautan tidak tersimpan. Coba lagi.$_temp0';
   }
 
   @override
@@ -355,11 +336,10 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'No links were saved. Try again.$_temp0';
+    return 'Tidak ada tautan yang tersimpan. Coba lagi.$_temp0';
   }
 
   @override
@@ -367,19 +347,18 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'Saved $saved of $total links. Try again.$_temp0';
+    return 'Tersimpan $saved dari $total tautan. Coba lagi.$_temp0';
   }
 
   @override
-  String get pendingSummaryAllSavedSingle => 'Saved the link to your account.';
+  String get pendingSummaryAllSavedSingle => 'Tautan tersimpan ke akun Anda.';
 
   @override
   String pendingSummaryAllSaved(int total) {
-    return 'Saved all $total links to your account.';
+    return 'Semua $total tautan tersimpan ke akun Anda.';
   }
 
   @override
@@ -387,11 +366,10 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'No links were saved.$_temp0';
+    return 'Tidak ada tautan yang tersimpan.$_temp0';
   }
 
   @override
@@ -399,11 +377,10 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       remaining,
       locale: localeName,
-      other: ' $remaining links are still on this device.',
-      one: ' 1 link is still on this device.',
+      other: ' $remaining tautan masih ada di perangkat ini.',
       zero: '',
     );
-    return 'Saved $saved of $total links.$_temp0';
+    return 'Tersimpan $saved dari $total tautan.$_temp0';
   }
 
   @override
@@ -807,21 +784,22 @@ class AppLocalizationsId extends AppLocalizations {
       'PIN terverifikasi, tetapi perangkat ini tidak dapat menyimpan kemajuan Anda. Selesaikan sebelum menutup aplikasi.';
 
   @override
-  String get shareSaved => 'Saved to your account.';
+  String get shareSaved => 'Disimpan ke akun Anda.';
 
   @override
   String get shareStoredAfterFailure =>
-      'Couldn\'t save it. Kept on this device.';
+      'Gagal disimpan. Tetap disimpan di perangkat ini.';
 
   @override
   String get shareStoredAfterUncertain =>
-      'Save not confirmed. Kept on this device.';
+      'Belum terkonfirmasi. Tetap disimpan di perangkat ini.';
 
   @override
-  String get shareInvalid => 'That\'s not a link, so nothing was saved.';
+  String get shareInvalid => 'Itu bukan tautan, jadi tidak ada yang disimpan.';
 
   @override
-  String get shareNotStored => 'Couldn\'t save or keep this link.';
+  String get shareNotStored =>
+      'Tidak dapat menyimpan atau mempertahankan tautan ini.';
 
   @override
   String get inboxTitle => 'INBOX';
@@ -880,6 +858,119 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get inboxSaveAction => 'Simpan URL';
+
+  @override
+  String get pendingUrlsTitle => 'DISIMPAN DI PERANGKAT INI';
+
+  @override
+  String get pendingUrlsBackToInbox => 'Kembali ke Inbox';
+
+  @override
+  String get pendingUrlsBackToSignIn => 'Kembali ke halaman masuk';
+
+  @override
+  String get pendingUrlsLoading => 'Memuat tautan…';
+
+  @override
+  String get pendingUrlsSignedInIntro =>
+      'Tautan yang Anda bagikan disimpan di sini selama tujuh hari jika penyimpanan tidak selesai. Tautan tersebut disimpan di perangkat ini sampai Anda menyimpannya ke akun.';
+
+  @override
+  String get pendingUrlsSignedOutIntro =>
+      'Tautan yang Anda bagikan disimpan di sini selama tujuh hari jika penyimpanan tidak selesai. Tautan tersebut disimpan di perangkat ini, bukan di akun Anda.';
+
+  @override
+  String get pendingUrlsSaveAllAction => 'Simpan semua ke akun saya';
+
+  @override
+  String get pendingUrlsSignInAction => 'Masuk untuk menyimpan tautan ini';
+
+  @override
+  String get pendingUrlsSaving => 'Menyimpan…';
+
+  @override
+  String pendingUrlsSavingProgress(int current, int total) {
+    return 'Menyimpan $current dari $total…';
+  }
+
+  @override
+  String get pendingUrlsSaveNotConfirmed => 'Penyimpanan belum dikonfirmasi';
+
+  @override
+  String get pendingUrlsEmptyTitle =>
+      'Tidak ada yang disimpan di perangkat ini';
+
+  @override
+  String get pendingUrlsEmptyBody =>
+      'Tautan yang penyimpanannya tidak selesai akan muncul di sini selama tujuh hari.';
+
+  @override
+  String get pendingUrlsReadError =>
+      'Kami tidak dapat membaca tautan yang disimpan di perangkat ini.';
+
+  @override
+  String get pendingUrlsRetry => 'Coba lagi';
+
+  @override
+  String get pendingUrlsKeptJustNow => 'Baru saja disimpan';
+
+  @override
+  String pendingUrlsKeptMinutesAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Disimpan $count menit lalu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pendingUrlsKeptHoursAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Disimpan $count jam lalu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pendingUrlsKeptYesterday => 'Disimpan kemarin';
+
+  @override
+  String pendingUrlsKeptDaysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Disimpan $count hari lalu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pendingUrlsEntryTitle => 'Disimpan di perangkat ini';
+
+  @override
+  String get pendingUrlsEntryActiveBody =>
+      'Disimpan di perangkat ini. Buka untuk meninjaunya.';
+
+  @override
+  String get pendingUrlsEntryEmptyBody =>
+      'Tautan yang tidak dapat disimpan akan muncul di sini.';
+
+  @override
+  String pendingUrlsEntrySemanticsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Disimpan di perangkat ini, $count tautan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pendingUrlsEntrySemanticsOverflow =>
+      'Disimpan di perangkat ini, lebih dari 99 tautan';
 
   @override
   String get savedItemDetailTitle => 'ITEM';

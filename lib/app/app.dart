@@ -14,6 +14,7 @@ import 'package:stash_it_app/features/pending_urls/application/pending_urls_cont
 import 'package:stash_it_app/features/pending_urls/application/save_pending_urls_controller.dart';
 import 'package:stash_it_app/features/pending_urls/application/shared_url_intake.dart';
 import 'package:stash_it_app/features/pending_urls/presentation/share_intake_channel.dart';
+import 'package:stash_it_app/features/pending_urls/presentation/share_intake_localization.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/settings/application/language_preference_controller.dart';
 import 'package:stash_it_app/features/settings/application/theme_mode_controller.dart';
@@ -55,6 +56,12 @@ class _StashItAppState extends ConsumerState<StashItApp>
     bindShareIntakeChannel(
       _shareChannel,
       (raw) => ref.read(sharedUrlIntakeProvider).save(raw),
+      messageFor: (outcome) => shareOutcomeMessage(
+        outcome,
+        shareIntakeLocalizations(
+          ref.read(languagePreferenceControllerProvider),
+        ),
+      ),
       onOutcome: _afterShare,
     );
   }
