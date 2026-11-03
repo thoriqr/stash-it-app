@@ -71,6 +71,7 @@ class _CollectionsScreenState extends ConsumerState<CollectionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final listing = ref.watch(collectionsProvider);
 
@@ -80,7 +81,7 @@ class _CollectionsScreenState extends ConsumerState<CollectionsScreen> {
     }
 
     return Scaffold(
-      appBar: const DestinationAppBar(title: 'COLLECTIONS'),
+      appBar: DestinationAppBar(title: l10n.collectionsTitle),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -89,7 +90,7 @@ class _CollectionsScreenState extends ConsumerState<CollectionsScreen> {
             child: Row(
               children: [
                 Text(
-                  'COLLECTIONS',
+                  l10n.collectionsTitle,
                   style: AppTypography.sectionLabel.copyWith(
                     color: tokens.textTertiary,
                   ),
@@ -112,10 +113,19 @@ class _CollectionsScreenState extends ConsumerState<CollectionsScreen> {
                         ref.read(collectionsProvider.notifier).setSort(value);
                       }
                     },
-                    items: const [
-                      DropdownMenuItem(value: 'newest', child: Text('Newest')),
-                      DropdownMenuItem(value: 'oldest', child: Text('Oldest')),
-                      DropdownMenuItem(value: 'name', child: Text('Name')),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'newest',
+                        child: Text(l10n.collectionsSortNewest),
+                      ),
+                      DropdownMenuItem(
+                        value: 'oldest',
+                        child: Text(l10n.collectionsSortOldest),
+                      ),
+                      DropdownMenuItem(
+                        value: 'name',
+                        child: Text(l10n.collectionsSortName),
+                      ),
                     ],
                   ),
                 ),
@@ -186,6 +196,7 @@ class _CollectionsEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Center(
@@ -195,7 +206,7 @@ class _CollectionsEmpty extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'No collections yet',
+              l10n.collectionsEmptyTitle,
               textAlign: TextAlign.center,
               style: AppTypography.screenHeading.copyWith(
                 fontSize: 15,
@@ -204,7 +215,7 @@ class _CollectionsEmpty extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Collections appear when you save links or organize them.',
+              l10n.collectionsEmptyBody,
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: tokens.textSecondary),
             ),
@@ -223,6 +234,7 @@ class _CollectionsError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Center(
@@ -232,13 +244,13 @@ class _CollectionsError extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              _messageFor(failure, AppLocalizations.of(context)),
+              _messageFor(failure, l10n),
               textAlign: TextAlign.center,
               style: AppTypography.body.copyWith(color: tokens.textPrimary),
             ),
             const SizedBox(height: 16),
             AppButton(
-              label: 'Retry',
+              label: l10n.collectionsRetry,
               variant: AppButtonVariant.secondary,
               block: false,
               onPressed: onRetry,
@@ -251,15 +263,12 @@ class _CollectionsError extends StatelessWidget {
 
   static String _messageFor(Object failure, AppLocalizations localizations) =>
       switch (failure) {
-        ApiFailureSessionEnded() =>
-          'Your session has ended. Sign in again to see your collections.',
-        ApiFailureAuthRequired() => 'Sign in again to see your collections.',
-        ApiFailureServerUnavailable() =>
-          'Your collections are temporarily unavailable. Try again shortly.',
-        ApiFailureTransport() =>
-          'No connection to the server. We could not load your collections.',
+        ApiFailureSessionEnded() => localizations.collectionsSessionEnded,
+        ApiFailureAuthRequired() => localizations.collectionsSignInRequired,
+        ApiFailureServerUnavailable() => localizations.collectionsUnavailable,
+        ApiFailureTransport() => localizations.collectionsLoadTransport,
         _ =>
           genericReadFailureMessage(failure, localizations) ??
-              'We could not load your collections. Try again.',
+              localizations.collectionsLoadGeneric,
       };
 }

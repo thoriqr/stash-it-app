@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_theme.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/collection_summary.dart';
 
 class CollectionTile extends StatelessWidget {
@@ -11,10 +12,14 @@ class CollectionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     final borderColor = item.isUnsorted ? tokens.accent : tokens.border;
     final borderWidth = item.isUnsorted ? 1.5 : 1.0;
+    final countLabel = item.savedItemsCountOverflow
+        ? l10n.collectionsSavedItemsCountOverflow
+        : l10n.collectionsSavedItemsCount(item.savedItemsCount);
 
     return Material(
       color: tokens.surface,
@@ -42,21 +47,27 @@ class CollectionTile extends StatelessWidget {
                   ),
                   const Spacer(),
                   // Count badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: tokens.accentSoft,
-                      border: Border.all(color: tokens.accentBorder),
-                      borderRadius: const BorderRadius.all(Radius.circular(2)),
-                    ),
-                    child: Text(
-                      item.displayCount,
-                      style: AppTypography.label.copyWith(
-                        color: tokens.accent,
-                        fontSize: 10.5,
+                  Semantics(
+                    label: countLabel,
+                    excludeSemantics: true,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: tokens.accentSoft,
+                        border: Border.all(color: tokens.accentBorder),
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(2),
+                        ),
+                      ),
+                      child: Text(
+                        item.displayCount,
+                        style: AppTypography.label.copyWith(
+                          color: tokens.accent,
+                          fontSize: 10.5,
+                        ),
                       ),
                     ),
                   ),
@@ -76,7 +87,7 @@ class CollectionTile extends StatelessWidget {
                     borderRadius: const BorderRadius.all(Radius.circular(2)),
                   ),
                   child: Text(
-                    'system',
+                    l10n.collectionsSystemBadge,
                     style: AppTypography.micro.copyWith(
                       color: tokens.accent,
                       fontSize: 9,

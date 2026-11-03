@@ -1172,6 +1172,65 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get collectionsTitle => 'COLLECTIONS';
+
+  @override
+  String get collectionsSortNewest => 'Newest';
+
+  @override
+  String get collectionsSortOldest => 'Oldest';
+
+  @override
+  String get collectionsSortName => 'Name';
+
+  @override
+  String get collectionsEmptyTitle => 'No collections yet';
+
+  @override
+  String get collectionsEmptyBody =>
+      'Collections appear when you save links or organize them.';
+
+  @override
+  String get collectionsRetry => 'Retry';
+
+  @override
+  String get collectionsSessionEnded =>
+      'Your session has ended. Sign in again to see your collections.';
+
+  @override
+  String get collectionsSignInRequired =>
+      'Sign in again to see your collections.';
+
+  @override
+  String get collectionsUnavailable =>
+      'Your collections are temporarily unavailable. Try again shortly.';
+
+  @override
+  String get collectionsLoadTransport =>
+      'No connection to the server. We could not load your collections.';
+
+  @override
+  String get collectionsLoadGeneric =>
+      'We could not load your collections. Try again.';
+
+  @override
+  String get collectionsSystemBadge => 'system';
+
+  @override
+  String collectionsSavedItemsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count saved items',
+      one: '1 saved item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get collectionsSavedItemsCountOverflow => 'More than 99 saved items';
+
+  @override
   String get authBackToWelcome => 'Back to welcome';
 
   @override

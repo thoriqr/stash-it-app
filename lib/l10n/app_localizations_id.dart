@@ -1177,6 +1177,65 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get collectionsTitle => 'KOLEKSI';
+
+  @override
+  String get collectionsSortNewest => 'Terbaru';
+
+  @override
+  String get collectionsSortOldest => 'Terlama';
+
+  @override
+  String get collectionsSortName => 'Nama';
+
+  @override
+  String get collectionsEmptyTitle => 'Belum ada koleksi';
+
+  @override
+  String get collectionsEmptyBody =>
+      'Koleksi muncul saat Anda menyimpan tautan atau mengaturnya.';
+
+  @override
+  String get collectionsRetry => 'Coba lagi';
+
+  @override
+  String get collectionsSessionEnded =>
+      'Sesi Anda telah berakhir. Masuk lagi untuk melihat koleksi Anda.';
+
+  @override
+  String get collectionsSignInRequired =>
+      'Masuk lagi untuk melihat koleksi Anda.';
+
+  @override
+  String get collectionsUnavailable =>
+      'Koleksi Anda untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
+
+  @override
+  String get collectionsLoadTransport =>
+      'Tidak ada koneksi ke server. Kami tidak dapat memuat koleksi Anda.';
+
+  @override
+  String get collectionsLoadGeneric =>
+      'Kami tidak dapat memuat koleksi Anda. Coba lagi.';
+
+  @override
+  String get collectionsSystemBadge => 'sistem';
+
+  @override
+  String collectionsSavedItemsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count item tersimpan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get collectionsSavedItemsCountOverflow =>
+      'Lebih dari 99 item tersimpan';
+
+  @override
   String get authBackToWelcome => 'Kembali ke halaman awal';
 
   @override

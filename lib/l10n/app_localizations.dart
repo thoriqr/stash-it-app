@@ -1645,6 +1645,96 @@ abstract class AppLocalizations {
   /// **'Choose where these items should go. {name} will be deleted.'**
   String savedItemBulkMoveTheseItems(String name);
 
+  /// App bar title and section label for the Collections destination.
+  ///
+  /// In en, this message translates to:
+  /// **'COLLECTIONS'**
+  String get collectionsTitle;
+
+  /// Sort option that orders collections by newest first.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest'**
+  String get collectionsSortNewest;
+
+  /// Sort option that orders collections by oldest first.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest'**
+  String get collectionsSortOldest;
+
+  /// Sort option that orders collections by name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get collectionsSortName;
+
+  /// Empty state title when there are no collections.
+  ///
+  /// In en, this message translates to:
+  /// **'No collections yet'**
+  String get collectionsEmptyTitle;
+
+  /// Empty state explanation for the Collections destination.
+  ///
+  /// In en, this message translates to:
+  /// **'Collections appear when you save links or organize them.'**
+  String get collectionsEmptyBody;
+
+  /// Retry action for a failed Collections read.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get collectionsRetry;
+
+  /// Collections read message when the session ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session has ended. Sign in again to see your collections.'**
+  String get collectionsSessionEnded;
+
+  /// Collections read message when authentication is required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to see your collections.'**
+  String get collectionsSignInRequired;
+
+  /// Collections are temporarily unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Your collections are temporarily unavailable. Try again shortly.'**
+  String get collectionsUnavailable;
+
+  /// Collections read failed because the server was unreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection to the server. We could not load your collections.'**
+  String get collectionsLoadTransport;
+
+  /// Fallback copy for a failed Collections read.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not load your collections. Try again.'**
+  String get collectionsLoadGeneric;
+
+  /// Badge identifying a locally known system collection.
+  ///
+  /// In en, this message translates to:
+  /// **'system'**
+  String get collectionsSystemBadge;
+
+  /// Accessibility label for a collection's saved-item count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 saved item} other{{count} saved items}}'**
+  String collectionsSavedItemsCount(int count);
+
+  /// Accessibility label when a collection's count is shown as 99+.
+  ///
+  /// In en, this message translates to:
+  /// **'More than 99 saved items'**
+  String get collectionsSavedItemsCountOverflow;
+
   /// Tooltip for returning to the signed-out welcome screen.
   ///
   /// In en, this message translates to:

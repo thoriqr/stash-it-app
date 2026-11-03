@@ -254,6 +254,21 @@
   "savedItemCollectionHasItems": "This collection has {count, plural, =1{1 saved item. Choose what happens to it.} other{{count} saved items. Choose what happens to them.}}",
   "savedItemBulkMoveThisItem": "Choose where this item should go. {name} will be deleted.",
   "savedItemBulkMoveTheseItems": "Choose where these items should go. {name} will be deleted.",
+  "collectionsTitle": "COLLECTIONS",
+  "collectionsSortNewest": "Newest",
+  "collectionsSortOldest": "Oldest",
+  "collectionsSortName": "Name",
+  "collectionsEmptyTitle": "No collections yet",
+  "collectionsEmptyBody": "Collections appear when you save links or organize them.",
+  "collectionsRetry": "Retry",
+  "collectionsSessionEnded": "Your session has ended. Sign in again to see your collections.",
+  "collectionsSignInRequired": "Sign in again to see your collections.",
+  "collectionsUnavailable": "Your collections are temporarily unavailable. Try again shortly.",
+  "collectionsLoadTransport": "No connection to the server. We could not load your collections.",
+  "collectionsLoadGeneric": "We could not load your collections. Try again.",
+  "collectionsSystemBadge": "system",
+  "collectionsSavedItemsCount": "{count, plural, =1{1 saved item} other{{count} saved items}}",
+  "collectionsSavedItemsCountOverflow": "More than 99 saved items",
   "authBackToWelcome": "Back to welcome",
   "authEmailLabel": "Email",
   "authPasswordLabel": "Password",
@@ -1602,6 +1617,56 @@
         "type": "String"
       }
     }
+  },
+  "@collectionsTitle": {
+    "description": "App bar title and section label for the Collections destination."
+  },
+  "@collectionsSortNewest": {
+    "description": "Sort option that orders collections by newest first."
+  },
+  "@collectionsSortOldest": {
+    "description": "Sort option that orders collections by oldest first."
+  },
+  "@collectionsSortName": {
+    "description": "Sort option that orders collections by name."
+  },
+  "@collectionsEmptyTitle": {
+    "description": "Empty state title when there are no collections."
+  },
+  "@collectionsEmptyBody": {
+    "description": "Empty state explanation for the Collections destination."
+  },
+  "@collectionsRetry": {
+    "description": "Retry action for a failed Collections read."
+  },
+  "@collectionsSessionEnded": {
+    "description": "Collections read message when the session ended."
+  },
+  "@collectionsSignInRequired": {
+    "description": "Collections read message when authentication is required."
+  },
+  "@collectionsUnavailable": {
+    "description": "Collections are temporarily unavailable."
+  },
+  "@collectionsLoadTransport": {
+    "description": "Collections read failed because the server was unreachable."
+  },
+  "@collectionsLoadGeneric": {
+    "description": "Fallback copy for a failed Collections read."
+  },
+  "@collectionsSystemBadge": {
+    "description": "Badge identifying a locally known system collection."
+  },
+  "@collectionsSavedItemsCount": {
+    "description": "Accessibility label for a collection's saved-item count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@collectionsSavedItemsCountOverflow": {
+    "description": "Accessibility label when a collection's count is shown as 99+."
   },
   "@authBackToWelcome": {
     "description": "Tooltip for returning to the signed-out welcome screen."
