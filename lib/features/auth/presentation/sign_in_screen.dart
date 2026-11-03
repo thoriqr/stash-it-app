@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -121,6 +122,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
+    final googleSignInSupported =
+        kIsWeb || defaultTargetPlatform != TargetPlatform.windows;
 
     return Scaffold(
       // The brand row provides the identity for this auth screen without an app bar.
@@ -261,10 +264,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                             onPressed: _googleBusy ? null : _submit,
                           ),
                           const SizedBox(height: AppMetrics.space3),
-                          GoogleSignInButton(
-                            enabled: !_submitting,
-                            onBusyChanged: _setGoogleBusy,
-                          ),
+                          if (googleSignInSupported)
+                            GoogleSignInButton(
+                              enabled: !_submitting,
+                              onBusyChanged: _setGoogleBusy,
+                            )
+                          else
+                            Tooltip(
+                              message: l10n.authGoogleUnsupportedWindows,
+                              child: const GoogleSignInButton(enabled: false),
+                            ),
                           const SizedBox(height: AppMetrics.space3),
                           _SignUpPrompt(
                             onPressed: _submitting || _googleBusy

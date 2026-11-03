@@ -7,6 +7,7 @@ import 'package:stash_it_app/features/profile/domain/display_name.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
+import 'package:stash_it_app/shared/widgets/desktop_layout.dart';
 
 /// Opens the display-name editor for the profile currently on screen.
 ///
@@ -21,6 +22,7 @@ Future<void> showDisplayNameSheet(
 
   return showModalBottomSheet<void>(
     context: context,
+    constraints: desktopSheetConstraints,
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: tokens.surface,

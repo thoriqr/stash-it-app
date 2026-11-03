@@ -7,13 +7,24 @@
 
 The app has its core saved-link experience in place, including authentication, collections, search, profile and account settings, Google Sign-In, and Android link sharing for device-local saves.
 
-The latest completed milestone is **Localization Phase 8**: Pending URLs UI, Dart share-intake outcomes, headless share localization, and the native Android fallback are localized in English and Indonesian.
+The latest completed milestone is the **Windows desktop adaptation**: fixed 900×700 window, compact content and sheet constraints, manual Inbox/Collections refresh, and Windows-specific Google Sign-In behavior. Android remains gated to its existing behavior.
 
 The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
 
-**Current focus:** localize the remaining theme/language preference warnings and complete native-speaker/device review.
+**Current focus:** Windows desktop visual review, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
 
 ## Verification
+
+### Windows desktop adaptation (2026-11-03)
+
+- `flutter analyze` — no issues found.
+- Focused bootstrap, saved-items refresh, and collections refresh tests — 66 tests passed in the combined run; bootstrap was re-run after the final `kIsWeb` guard and 18 tests passed.
+- `flutter build windows --debug --dart-define=API_BASE_URL=http://localhost:8080` — succeeded.
+- Launch smoke test — window title `Stash-it`, 900×700, no resize frame or maximize box, minimize/system menu present, process responding. Visual layout was not verified.
+- `git diff --check` — no whitespace errors.
+- The full test suite and an Android build were not run for this task.
+
+### Localization Phase 8
 
 - `flutter gen-l10n` — completed; 2 Indonesian preference-warning messages still fall back to English.
 - `dart format` on changed Dart files — completed.
@@ -50,6 +61,16 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - Search collections and saved links.
 - Move saved links between collections.
 - Delete collections using the supported server options.
+
+### Windows desktop
+
+- Runs in a fixed 900×700 window titled `Stash-it`, with minimize and close available and resize/maximize disabled.
+- Inbox and Collections expose a Windows-only manual refresh action with an in-progress spinner and duplicate-request guard; Android pull-to-refresh is unchanged.
+- Main content is centered at a compact maximum width, Collections uses an adaptive card grid, bottom sheets are width-constrained, and feedback banners no longer span the full window.
+- Bottom navigation remains at the bottom; there is no desktop sidebar.
+- Windows reports `Windows PC` as its device name in client metadata.
+- Google Sign-In remains visible but disabled on Windows with an explanatory tooltip; Windows startup no longer requires a Google server client ID. Google Sign-In on supported platforms is unchanged.
+- The Windows target is additive; desktop-only layout and authentication behavior is selected only on native Windows and is not applied on Android or web.
 
 ### Authentication and account
 
@@ -95,6 +116,7 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 
 ## In Progress and Next Steps
 
+- [ ] Review the Windows desktop layout and interactions manually.
 - [ ] Localize the remaining theme/language preference warnings.
 - [ ] Review Indonesian translations with a native speaker, including native share fallback wording.
 - [ ] Verify the app on a physical Android device.
@@ -102,6 +124,8 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 
 ## Known Limitations
 
+- Windows Google Sign-In is intentionally unavailable; email/password authentication remains fully functional.
+- The Windows desktop UI has not yet been reviewed visually by the project owner.
 - Search results are limited by the server.
 - Physical-device verification has not yet been completed.
 - Android link sharing still needs verification in cases such as the app being closed, the user being signed out, or the device being offline.

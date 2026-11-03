@@ -17,6 +17,7 @@ import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_ite
 import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_confirm_dialog.dart';
+import 'package:stash_it_app/shared/widgets/desktop_layout.dart';
 
 /// Displays a collection and its saved items from the collection listing.
 ///
@@ -191,12 +192,14 @@ class _CollectionSavedItemsScreenState
             ),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (showHeader) _header(context, listing),
-          Expanded(child: _body(context, listing)),
-        ],
+      body: DesktopContentFrame(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (showHeader) _header(context, listing),
+            Expanded(child: _body(context, listing)),
+          ],
+        ),
       ),
     );
   }

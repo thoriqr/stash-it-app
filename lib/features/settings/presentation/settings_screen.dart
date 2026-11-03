@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
+import 'package:stash_it_app/shared/widgets/desktop_layout.dart';
 
 import '../application/language_preference_controller.dart';
 import '../application/theme_mode_controller.dart';
@@ -42,92 +43,98 @@ class SettingsScreen extends ConsumerWidget {
                 onPressed: () => context.go(AppRoutes.inbox),
               ),
       ),
-      body: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          _SectionLabelRow(label: l10n.settingsAppearance, tokens: tokens),
-          Material(
-            color: tokens.surface,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: tokens.border)),
-              ),
-              child: RadioGroup<ThemeMode>(
-                groupValue: themeMode,
-                onChanged: (mode) {
-                  if (mode == null) return;
-                  unawaited(
-                    ref.read(themeModeControllerProvider.notifier).select(mode),
-                  );
-                },
-                child: Column(
-                  children: [
-                    for (
-                      var index = 0;
-                      index < _themeChoices.length;
-                      index++
-                    ) ...[
-                      if (index > 0) _RowDivider(tokens: tokens),
-                      _SettingsRadioOption<ThemeMode>(
-                        value: _themeChoices[index],
-                        label: switch (_themeChoices[index]) {
-                          ThemeMode.light => l10n.themeLight,
-                          ThemeMode.dark => l10n.themeDark,
-                          ThemeMode.system => l10n.themeSystem,
-                        },
-                        selected: themeMode == _themeChoices[index],
-                        tokens: tokens,
-                      ),
+      body: DesktopContentFrame(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            _SectionLabelRow(label: l10n.settingsAppearance, tokens: tokens),
+            Material(
+              color: tokens.surface,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: tokens.border)),
+                ),
+                child: RadioGroup<ThemeMode>(
+                  groupValue: themeMode,
+                  onChanged: (mode) {
+                    if (mode == null) return;
+                    unawaited(
+                      ref
+                          .read(themeModeControllerProvider.notifier)
+                          .select(mode),
+                    );
+                  },
+                  child: Column(
+                    children: [
+                      for (
+                        var index = 0;
+                        index < _themeChoices.length;
+                        index++
+                      ) ...[
+                        if (index > 0) _RowDivider(tokens: tokens),
+                        _SettingsRadioOption<ThemeMode>(
+                          value: _themeChoices[index],
+                          label: switch (_themeChoices[index]) {
+                            ThemeMode.light => l10n.themeLight,
+                            ThemeMode.dark => l10n.themeDark,
+                            ThemeMode.system => l10n.themeSystem,
+                          },
+                          selected: themeMode == _themeChoices[index],
+                          tokens: tokens,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-          _SectionLabelRow(label: l10n.settingsLanguage, tokens: tokens),
-          Material(
-            color: tokens.surface,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: tokens.borderSubtle)),
-              ),
-              child: RadioGroup<LanguagePreference>(
-                groupValue: language,
-                onChanged: (preference) {
-                  if (preference == null) return;
-                  unawaited(
-                    ref
-                        .read(languagePreferenceControllerProvider.notifier)
-                        .select(preference),
-                  );
-                },
-                child: Column(
-                  children: [
-                    for (
-                      var index = 0;
-                      index < _languageChoices.length;
-                      index++
-                    ) ...[
-                      if (index > 0) _RowDivider(tokens: tokens),
-                      _SettingsRadioOption<LanguagePreference>(
-                        value: _languageChoices[index],
-                        label: switch (_languageChoices[index]) {
-                          LanguagePreference.system =>
-                            l10n.languageSystemDefault,
-                          LanguagePreference.english => l10n.languageEnglish,
-                          LanguagePreference.indonesian =>
-                            l10n.languageIndonesian,
-                        },
-                        selected: language == _languageChoices[index],
-                        tokens: tokens,
-                      ),
+            _SectionLabelRow(label: l10n.settingsLanguage, tokens: tokens),
+            Material(
+              color: tokens.surface,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: tokens.borderSubtle),
+                  ),
+                ),
+                child: RadioGroup<LanguagePreference>(
+                  groupValue: language,
+                  onChanged: (preference) {
+                    if (preference == null) return;
+                    unawaited(
+                      ref
+                          .read(languagePreferenceControllerProvider.notifier)
+                          .select(preference),
+                    );
+                  },
+                  child: Column(
+                    children: [
+                      for (
+                        var index = 0;
+                        index < _languageChoices.length;
+                        index++
+                      ) ...[
+                        if (index > 0) _RowDivider(tokens: tokens),
+                        _SettingsRadioOption<LanguagePreference>(
+                          value: _languageChoices[index],
+                          label: switch (_languageChoices[index]) {
+                            LanguagePreference.system =>
+                              l10n.languageSystemDefault,
+                            LanguagePreference.english => l10n.languageEnglish,
+                            LanguagePreference.indonesian =>
+                              l10n.languageIndonesian,
+                          },
+                          selected: language == _languageChoices[index],
+                          tokens: tokens,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

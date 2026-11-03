@@ -14,6 +14,7 @@ import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart
 import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_confirm_dialog.dart';
+import 'package:stash_it_app/shared/widgets/desktop_layout.dart';
 
 import 'widgets/move_to_collection_sheet.dart';
 import 'widgets/saved_item_collection_chip.dart';
@@ -79,30 +80,32 @@ class SavedItemDetailScreen extends ConsumerWidget {
                 onPressed: () => context.go(AppRoutes.inbox),
               ),
       ),
-      body: switch (detail) {
-        AsyncData(:final value) => _DetailBody(
-          item: value,
-          deleting: deleting,
-          enriching: enriching,
-          onMoveToCollection: () =>
-              showMoveToCollectionSheet(context, item: value),
-          onOpenUrl: () => ref.read(openSavedItemUrlProvider).open(value),
-          onDelete: () => _confirmDelete(context, ref, value),
-          onReRead: () =>
-              ref.read(enrichSavedItemProvider.notifier).enrich(value),
-        ),
-        AsyncError(:final error, :final isLoading) when !isLoading =>
-          error is ApiFailureNotFound
-              ? _NotFound(onBack: () => _leave(context))
-              : _ReadError(
-                  failure: error,
-                  onRetry: () =>
-                      ref.invalidate(savedItemDetailProvider(itemId)),
-                ),
-        // The initial read and a manual retry both show the detail layout
-        // under a skeleton instead of a bare spinner.
-        _ => const _DetailSkeleton(),
-      },
+      body: DesktopContentFrame(
+        child: switch (detail) {
+          AsyncData(:final value) => _DetailBody(
+            item: value,
+            deleting: deleting,
+            enriching: enriching,
+            onMoveToCollection: () =>
+                showMoveToCollectionSheet(context, item: value),
+            onOpenUrl: () => ref.read(openSavedItemUrlProvider).open(value),
+            onDelete: () => _confirmDelete(context, ref, value),
+            onReRead: () =>
+                ref.read(enrichSavedItemProvider.notifier).enrich(value),
+          ),
+          AsyncError(:final error, :final isLoading) when !isLoading =>
+            error is ApiFailureNotFound
+                ? _NotFound(onBack: () => _leave(context))
+                : _ReadError(
+                    failure: error,
+                    onRetry: () =>
+                        ref.invalidate(savedItemDetailProvider(itemId)),
+                  ),
+          // The initial read and a manual retry both show the detail layout
+          // under a skeleton instead of a bare spinner.
+          _ => const _DetailSkeleton(),
+        },
+      ),
     );
   }
 

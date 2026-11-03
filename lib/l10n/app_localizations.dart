@@ -194,6 +194,12 @@ abstract class AppLocalizations {
   /// **'Clear'**
   String get clearTooltip;
 
+  /// No description provided for @refreshTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refreshTooltip;
+
   /// Dismiss action on an inline message band.
   ///
   /// In en, this message translates to:
@@ -2394,6 +2400,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue with Google'**
   String get authContinueWithGoogle;
+
+  /// No description provided for @authGoogleUnsupportedWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Sign-In is not supported on Windows'**
+  String get authGoogleUnsupportedWindows;
 
   /// Retry action label on authentication screens.
   ///

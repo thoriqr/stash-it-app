@@ -10,6 +10,7 @@ import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_ite
 import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
+import 'package:stash_it_app/shared/widgets/desktop_layout.dart';
 import 'package:stash_it_app/shared/widgets/destination_app_bar.dart';
 
 import '../application/search_controller.dart';
@@ -98,42 +99,44 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return Scaffold(
       appBar: DestinationAppBar(title: l10n.searchTitle),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(
-              AppMetrics.screenPadding,
-              AppMetrics.space3,
-              AppMetrics.screenPadding,
-              AppMetrics.space3,
+      body: DesktopContentFrame(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(
+                AppMetrics.screenPadding,
+                AppMetrics.space3,
+                AppMetrics.screenPadding,
+                AppMetrics.space3,
+              ),
+              decoration: BoxDecoration(
+                color: tokens.surface,
+                border: Border(bottom: BorderSide(color: tokens.border)),
+              ),
+              // The Clear action is placed inside the field, alongside its
+              // trailing input action.
+              child: AppField(
+                controller: _queryController,
+                placeholder: l10n.searchPlaceholder,
+                prefixIcon: Icons.search,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => _submit(),
+                onChanged: _onChanged,
+                // Any non-empty input can be cleared, including whitespace.
+                // Whitespace-only queries are rejected by local validation.
+                onClear: _queryController.text.isNotEmpty ? _clear : null,
+                // Display validation feedback through the field's own error
+                // treatment rather than rendering a separate message.
+                errorText: switch (_queryProblem) {
+                  final problem? => _problemCopy(problem, l10n),
+                  null => null,
+                },
+              ),
             ),
-            decoration: BoxDecoration(
-              color: tokens.surface,
-              border: Border(bottom: BorderSide(color: tokens.border)),
-            ),
-            // The Clear action is placed inside the field, alongside its
-            // trailing input action.
-            child: AppField(
-              controller: _queryController,
-              placeholder: l10n.searchPlaceholder,
-              prefixIcon: Icons.search,
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) => _submit(),
-              onChanged: _onChanged,
-              // Any non-empty input can be cleared, including whitespace.
-              // Whitespace-only queries are rejected by local validation.
-              onClear: _queryController.text.isNotEmpty ? _clear : null,
-              // Display validation feedback through the field's own error
-              // treatment rather than rendering a separate message.
-              errorText: switch (_queryProblem) {
-                final problem? => _problemCopy(problem, l10n),
-                null => null,
-              },
-            ),
-          ),
-          Expanded(child: _content(state, l10n)),
-        ],
+            Expanded(child: _content(state, l10n)),
+          ],
+        ),
       ),
     );
   }

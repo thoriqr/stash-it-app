@@ -6,6 +6,7 @@ import 'package:stash_it_app/app/feedback/app_feedback.dart';
 import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
+import 'package:stash_it_app/shared/widgets/desktop_layout.dart';
 
 /// How long a notice stays visible before dismissing automatically.
 const Duration feedbackVisibleDuration = Duration(seconds: 4);
@@ -224,17 +225,19 @@ class _FeedbackHostState extends ConsumerState<FeedbackHost> {
                 switchOutCurve: Curves.easeIn,
                 child: feedback == null
                     ? const SizedBox.shrink()
-                    : GestureDetector(
+                    : DesktopContentFrame(
                         // AppFeedback uses identity equality, so a new notice
                         // with identical content still gets its own transition.
                         key: ValueKey<AppFeedback>(feedback),
-                        behavior: HitTestBehavior.opaque,
-                        onTap: _dismiss,
-                        child: Semantics(
-                          // Announce transient feedback to screen readers.
-                          liveRegion: true,
-                          container: true,
-                          child: FeedbackNotice(feedback: feedback),
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: _dismiss,
+                          child: Semantics(
+                            // Announce transient feedback to screen readers.
+                            liveRegion: true,
+                            container: true,
+                            child: FeedbackNotice(feedback: feedback),
+                          ),
                         ),
                       ),
               ),

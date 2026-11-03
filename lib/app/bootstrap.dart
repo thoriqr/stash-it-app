@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 // `Override` is not part of flutter_riverpod's main export surface in 3.4.x.
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -28,7 +29,11 @@ Future<List<Override>> bootstrap() async {
     );
   }
 
-  if (!GoogleAuthConfig.isConfigured) {
+  // google_sign_in has no native Windows implementation. Keep the existing
+  // validation on every platform that can use the configured Google flow,
+  // including web builds running on Windows.
+  if ((kIsWeb || defaultTargetPlatform != TargetPlatform.windows) &&
+      !GoogleAuthConfig.isConfigured) {
     throw StateError(
       'GOOGLE_SERVER_CLIENT_ID is not set. Run with '
       '--dart-define=GOOGLE_SERVER_CLIENT_ID=<client-id>.',

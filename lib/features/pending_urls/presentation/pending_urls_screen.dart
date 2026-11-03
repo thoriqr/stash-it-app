@@ -12,6 +12,7 @@ import 'package:stash_it_app/features/pending_urls/domain/pending_url.dart';
 import 'package:stash_it_app/features/pending_urls/presentation/pending_url_save_summary_copy.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
+import 'package:stash_it_app/shared/widgets/desktop_layout.dart';
 
 /// The device-local fallback list.
 ///
@@ -52,47 +53,49 @@ class PendingUrlsScreen extends ConsumerWidget {
                 ),
               ),
       ),
-      body: switch (pending) {
-        AsyncData(:final value) => _LoadedBody(
-          entries: value.entries,
-          isSignedIn: auth.isSignedIn,
-          saveState: saveState,
-          onSave: () {
-            ref.read(savePendingUrlsProvider.notifier).saveAll();
-          },
-          onSignIn: () => context.go(AppRoutes.signIn),
-        ),
-        AsyncError(isLoading: false) => _ErrorState(
-          onRetry: () => ref.invalidate(pendingUrlsProvider),
-        ),
-        _ => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppMetrics.space6),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: tokens.accent,
-                  ),
-                ),
-                const SizedBox(width: AppMetrics.space2),
-                Flexible(
-                  child: Text(
-                    l10n.pendingUrlsLoading,
-                    style: AppTypography.body.copyWith(
-                      color: tokens.textSecondary,
+      body: DesktopContentFrame(
+        child: switch (pending) {
+          AsyncData(:final value) => _LoadedBody(
+            entries: value.entries,
+            isSignedIn: auth.isSignedIn,
+            saveState: saveState,
+            onSave: () {
+              ref.read(savePendingUrlsProvider.notifier).saveAll();
+            },
+            onSignIn: () => context.go(AppRoutes.signIn),
+          ),
+          AsyncError(isLoading: false) => _ErrorState(
+            onRetry: () => ref.invalidate(pendingUrlsProvider),
+          ),
+          _ => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppMetrics.space6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: tokens.accent,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: AppMetrics.space2),
+                  Flexible(
+                    child: Text(
+                      l10n.pendingUrlsLoading,
+                      style: AppTypography.body.copyWith(
+                        color: tokens.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      },
+        },
+      ),
     );
   }
 }

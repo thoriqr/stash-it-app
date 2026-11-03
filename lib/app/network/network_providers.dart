@@ -23,9 +23,7 @@ Dio appDio(Ref ref) {
   dio.interceptors.addAll([
     ClientMetadataInterceptor(
       platform: _currentPlatform(),
-      deviceName: defaultTargetPlatform == TargetPlatform.android
-          ? 'Android'
-          : 'iOS',
+      deviceName: _deviceName(),
     ),
     AuthInterceptor(
       dio: dio,
@@ -52,9 +50,7 @@ Dio refreshDio(Ref ref) {
   dio.interceptors.add(
     ClientMetadataInterceptor(
       platform: _currentPlatform(),
-      deviceName: defaultTargetPlatform == TargetPlatform.android
-          ? 'Android'
-          : 'iOS',
+      deviceName: _deviceName(),
     ),
   );
 
@@ -83,5 +79,17 @@ String _currentPlatform() {
     TargetPlatform.windows => 'windows',
     TargetPlatform.linux => 'linux',
     TargetPlatform.fuchsia => 'fuchsia',
+  };
+}
+
+/// Returns the device label sent with client metadata.
+///
+/// Other platforms retain the existing iOS label; Windows uses a fixed name
+/// rather than looking up the computer hostname.
+String _deviceName() {
+  return switch (defaultTargetPlatform) {
+    TargetPlatform.android => 'Android',
+    TargetPlatform.windows => 'Windows PC',
+    _ => 'iOS',
   };
 }

@@ -8,6 +8,8 @@ import '../../../core/error/api_failure.dart';
 import '../../../core/error/api_failure_messages.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_refresh_button.dart';
+import '../../../shared/widgets/desktop_layout.dart';
 import '../../../shared/widgets/destination_app_bar.dart';
 import '../application/collections_controller.dart';
 import '../application/collections_state.dart';
@@ -28,6 +30,7 @@ class CollectionsScreen extends ConsumerStatefulWidget {
 
 class _CollectionsScreenState extends ConsumerState<CollectionsScreen> {
   final _scrollController = ScrollController();
+  bool _refreshing = false;
 
   @override
   void initState() {
@@ -52,7 +55,16 @@ class _CollectionsScreenState extends ConsumerState<CollectionsScreen> {
     }
   }
 
-  Future<void> _refresh() => ref.read(collectionsProvider.notifier).refresh();
+  Future<void> _refresh() async {
+    if (_refreshing || ref.read(collectionsProvider).isLoading) return;
+
+    setState(() => _refreshing = true);
+    try {
+      await ref.read(collectionsProvider.notifier).refresh();
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
 
   Widget _refreshable(Widget child) {
     return RefreshIndicator(
@@ -81,59 +93,71 @@ class _CollectionsScreenState extends ConsumerState<CollectionsScreen> {
     }
 
     return Scaffold(
-      appBar: DestinationAppBar(title: l10n.collectionsTitle),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-            child: Row(
-              children: [
-                Text(
-                  l10n.collectionsTitle,
-                  style: AppTypography.sectionLabel.copyWith(
-                    color: tokens.textTertiary,
-                  ),
+      appBar: DestinationAppBar(
+        title: l10n.collectionsTitle,
+        actions: usesDesktopLayout
+            ? [
+                AppRefreshButton(
+                  refreshing: _refreshing,
+                  onPressed: listing.isLoading ? null : _refresh,
                 ),
-                const Spacer(),
-                DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: currentSort,
-                    isDense: true,
-                    icon: Icon(
-                      Icons.arrow_drop_down,
-                      size: 16,
+              ]
+            : const [],
+      ),
+      body: DesktopContentFrame(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+              child: Row(
+                children: [
+                  Text(
+                    l10n.collectionsTitle,
+                    style: AppTypography.sectionLabel.copyWith(
                       color: tokens.textTertiary,
                     ),
-                    style: AppTypography.meta.copyWith(
-                      color: tokens.textTertiary,
-                    ),
-                    onChanged: (value) {
-                      if (value != null) {
-                        ref.read(collectionsProvider.notifier).setSort(value);
-                      }
-                    },
-                    items: [
-                      DropdownMenuItem(
-                        value: 'newest',
-                        child: Text(l10n.collectionsSortNewest),
-                      ),
-                      DropdownMenuItem(
-                        value: 'oldest',
-                        child: Text(l10n.collectionsSortOldest),
-                      ),
-                      DropdownMenuItem(
-                        value: 'name',
-                        child: Text(l10n.collectionsSortName),
-                      ),
-                    ],
                   ),
-                ),
-              ],
+                  const Spacer(),
+                  DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: currentSort,
+                      isDense: true,
+                      icon: Icon(
+                        Icons.arrow_drop_down,
+                        size: 16,
+                        color: tokens.textTertiary,
+                      ),
+                      style: AppTypography.meta.copyWith(
+                        color: tokens.textTertiary,
+                      ),
+                      onChanged: (value) {
+                        if (value != null) {
+                          ref.read(collectionsProvider.notifier).setSort(value);
+                        }
+                      },
+                      items: [
+                        DropdownMenuItem(
+                          value: 'newest',
+                          child: Text(l10n.collectionsSortNewest),
+                        ),
+                        DropdownMenuItem(
+                          value: 'oldest',
+                          child: Text(l10n.collectionsSortOldest),
+                        ),
+                        DropdownMenuItem(
+                          value: 'name',
+                          child: Text(l10n.collectionsSortName),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Expanded(child: _body(context, listing)),
-        ],
+            Expanded(child: _body(context, listing)),
+          ],
+        ),
       ),
     );
   }
@@ -163,12 +187,19 @@ class _CollectionsScreenState extends ConsumerState<CollectionsScreen> {
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.3,
-        ),
+        gridDelegate: usesDesktopLayout
+            ? const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 260,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.3,
+              )
+            : const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.3,
+              ),
         itemCount: state.items.length + (state.isLoadingMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index >= state.items.length) {

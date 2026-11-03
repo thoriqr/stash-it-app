@@ -57,6 +57,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearTooltip => 'Clear';
 
   @override
+  String get refreshTooltip => 'Refresh';
+
+  @override
   String get dismissAction => 'Dismiss';
 
   @override
@@ -1634,6 +1637,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authContinueWithGoogle => 'Continue with Google';
+
+  @override
+  String get authGoogleUnsupportedWindows =>
+      'Google Sign-In is not supported on Windows';
 
   @override
   String get authRetry => 'Retry';

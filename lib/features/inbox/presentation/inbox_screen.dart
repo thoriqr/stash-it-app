@@ -14,6 +14,8 @@ import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_ite
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_skeleton.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
+import 'package:stash_it_app/shared/widgets/app_refresh_button.dart';
+import 'package:stash_it_app/shared/widgets/desktop_layout.dart';
 import 'package:stash_it_app/shared/widgets/destination_app_bar.dart';
 
 /// The Inbox destination.
@@ -44,6 +46,7 @@ class InboxScreen extends ConsumerStatefulWidget {
 
 class _InboxScreenState extends ConsumerState<InboxScreen> {
   final _scrollController = ScrollController();
+  bool _refreshing = false;
 
   @override
   void initState() {
@@ -76,7 +79,16 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   ///
   /// Existing rows remain visible while refreshing. The skeleton is reserved
   /// for the initial load rather than being shown during a manual refresh.
-  Future<void> _refresh() => ref.read(savedItemsProvider.notifier).refresh();
+  Future<void> _refresh() async {
+    if (_refreshing || ref.read(savedItemsProvider).isLoading) return;
+
+    setState(() => _refreshing = true);
+    try {
+      await ref.read(savedItemsProvider.notifier).refresh();
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
 
   /// Makes a centred empty or error state pull-to-refresh capable.
   ///
@@ -106,42 +118,54 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     final pendingCount = ref.watch(pendingUrlCountProvider);
 
     return Scaffold(
-      appBar: DestinationAppBar(title: l10n.inboxTitle),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const InboxIntake(),
-          if (pendingCount > 0)
+      appBar: DestinationAppBar(
+        title: l10n.inboxTitle,
+        actions: usesDesktopLayout
+            ? [
+                AppRefreshButton(
+                  refreshing: _refreshing,
+                  onPressed: listing.isLoading ? null : _refresh,
+                ),
+              ]
+            : const [],
+      ),
+      body: DesktopContentFrame(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const InboxIntake(),
+            if (pendingCount > 0)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppMetrics.space3,
+                  AppMetrics.space2,
+                  AppMetrics.space3,
+                  0,
+                ),
+                child: PendingUrlsEntry(
+                  count: pendingCount,
+                  onTap: () => context.push(AppRoutes.savedOnDevice),
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppMetrics.space3,
-                AppMetrics.space2,
+                AppMetrics.space3,
                 AppMetrics.space3,
                 0,
               ),
-              child: PendingUrlsEntry(
-                count: pendingCount,
-                onTap: () => context.push(AppRoutes.savedOnDevice),
+              child: Text(
+                l10n.inboxRecentlySaved,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.sectionLabel.copyWith(
+                  color: tokens.textTertiary,
+                ),
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppMetrics.space3,
-              AppMetrics.space3,
-              AppMetrics.space3,
-              0,
-            ),
-            child: Text(
-              l10n.inboxRecentlySaved,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTypography.sectionLabel.copyWith(
-                color: tokens.textTertiary,
-              ),
-            ),
-          ),
-          Expanded(child: _body(context, listing)),
-        ],
+            Expanded(child: _body(context, listing)),
+          ],
+        ),
       ),
     );
   }

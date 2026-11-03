@@ -13,9 +13,16 @@ import 'package:stash_it_app/l10n/app_localizations.dart';
 /// Titles are passed in uppercase because Flutter does not support
 /// `text-transform`. Visual styling is inherited from `AppBarTheme`.
 class DestinationAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const DestinationAppBar({required this.title, super.key});
+  const DestinationAppBar({
+    required this.title,
+    this.actions = const [],
+    super.key,
+  });
 
   final String title;
+
+  /// Optional destination-specific actions shown before Settings.
+  final List<Widget> actions;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -27,6 +34,7 @@ class DestinationAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       title: Text(title),
       actions: [
+        ...actions,
         IconButton(
           icon: const Icon(Icons.settings_outlined, size: AppMetrics.iconSize),
           tooltip: l10n.settingsTooltip,

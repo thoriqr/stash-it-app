@@ -57,6 +57,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get clearTooltip => 'Kosongkan';
 
   @override
+  String get refreshTooltip => 'Muat ulang';
+
+  @override
   String get dismissAction => 'Tutup';
 
   @override
@@ -1619,6 +1622,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get authContinueWithGoogle => 'Lanjutkan dengan Google';
+
+  @override
+  String get authGoogleUnsupportedWindows =>
+      'Google Sign-In tidak didukung di Windows';
 
   @override
   String get authRetry => 'Coba lagi';
