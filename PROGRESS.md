@@ -7,18 +7,19 @@
 
 The app has its core saved-link experience in place, including authentication, collections, search, profile and account settings, Google Sign-In, and Android link sharing for device-local saves.
 
-The latest completed milestone is **Localization Phase 5**: Collections headings, sort labels, empty and error states, retry copy, system badge, and saved-item count labels are localized in English and Indonesian.
+The latest completed milestone is **Localization Phase 6**: Search title, input copy, initial and zero-result states, validation, loading semantics, result-group headings, typed failure copy, and retry are localized in English and Indonesian.
 
-**Current focus:** complete localization for Search, Profile, device-local URLs, and Android share intake, including their remaining feedback call sites.
+**Current focus:** complete localization for Profile, device-local URLs, and Android share intake, including their remaining feedback call sites.
 
 ## Verification
 
 - `flutter gen-l10n` — completed; 55 Indonesian messages for remaining feature areas still fall back to English.
 - `dart format` on changed Dart files — completed.
-- Targeted Collections and navigation tests — 37 tests passed.
+- Targeted Search feature tests — 66 tests passed.
+- Search navigation regression — 2 tests passed.
 - `flutter analyze` — no issues found.
 - `git diff --check` — no whitespace errors.
-- The full test suite was not rerun for Phase 5; broader regression testing remains with the project owner.
+- The full test suite was not rerun for Phase 6; broader regression testing remains with the project owner.
 
 ## Implemented
 
@@ -68,10 +69,11 @@ The latest completed milestone is **Localization Phase 5**: Collections headings
 - Saved Item detail headings, actions, enrichment states, empty and error states, deletion confirmations, collection move and delete sheets, and Saved Items feedback are localized in English and Indonesian.
 - Saved-time labels are represented by typed time buckets and converted to localized copy in presentation, with English singular/plural forms and natural Indonesian equivalents.
 - Collections headings, localized sort labels, empty and error states, retry copy, system badges, and saved-item count accessibility labels are localized in English and Indonesian; technical sort values remain unchanged.
+- Search title, placeholder, initial and zero-result states, validation messages, loading semantics, result-group headings, typed failure copy, and retry are localized in English and Indonesian; queries and server-provided result content remain unchanged.
 
 ## In Progress and Next Steps
 
-- [ ] Complete localization for the remaining feature areas: Search, Profile, device-local URLs, and Android share intake.
+- [ ] Complete localization for the remaining feature areas: Profile, device-local URLs, and Android share intake.
 - [ ] Migrate the remaining feature feedback call sites outside Inbox and Saved Items to locale-aware messages.
 - [ ] Review Indonesian translations with a native speaker.
 - [ ] Verify the app on a physical Android device.
@@ -85,7 +87,7 @@ The latest completed milestone is **Localization Phase 5**: Collections headings
 - A link rejected by the server may remain in the device-local list until it expires or the list is otherwise cleared.
 - Some operations started under a previous account may finish after the account changes. User-specific data must remain isolated across account changes.
 - Feedback call sites outside Inbox and Saved Items still supply fixed English copy; those messages are migrated in later phases.
-- 55 Indonesian messages for Search, Profile, device-local URLs, Android share intake, and account messages still fall back to English.
+- 55 Indonesian messages for Profile, device-local URLs, Android share intake, account messages, and preference warnings still fall back to English.
 - Skeleton placeholder text is layout-only and excluded from accessibility; it is not localized copy.
 
 ## Project Constraints

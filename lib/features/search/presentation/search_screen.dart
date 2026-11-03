@@ -92,11 +92,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final state = ref.watch(searchProvider);
 
     return Scaffold(
-      appBar: const DestinationAppBar(title: 'SEARCH'),
+      appBar: DestinationAppBar(title: l10n.searchTitle),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -115,7 +116,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             // trailing input action.
             child: AppField(
               controller: _queryController,
-              placeholder: 'Search saved items and collections',
+              placeholder: l10n.searchPlaceholder,
               prefixIcon: Icons.search,
               textInputAction: TextInputAction.search,
               onSubmitted: (_) => _submit(),
@@ -126,12 +127,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               // Display validation feedback through the field's own error
               // treatment rather than rendering a separate message.
               errorText: switch (_queryProblem) {
-                final problem? => _problemCopy(problem),
+                final problem? => _problemCopy(problem, l10n),
                 null => null,
               },
             ),
           ),
-          Expanded(child: _content(state, AppLocalizations.of(context))),
+          Expanded(child: _content(state, l10n)),
         ],
       ),
     );
@@ -139,26 +140,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _content(SearchState state, AppLocalizations localizations) {
     return switch (state) {
-      SearchInitial() => const _SearchMessage(
-        title: 'Find something you saved',
-        body: 'Search matches item titles, domains, URLs and collection names.',
+      SearchInitial() => _SearchMessage(
+        title: localizations.searchInitialTitle,
+        body: localizations.searchInitialBody,
       ),
       SearchLoading() => const _SearchLoading(),
       SearchSuccess(:final query, :final collections, :final savedItems) =>
         collections.isEmpty && savedItems.isEmpty
             ? _SearchMessage(
-                title: 'No matches for \u2018$query\u2019',
-                body:
-                    'An item may still match by title, domain, URL or '
-                    'collection name. Try a different word, or browse '
-                    'Collections.',
+                title: localizations.searchNoMatchesTitle(query),
+                body: localizations.searchNoMatchesBody,
               )
             : _SearchResults(collections: collections, savedItems: savedItems),
       SearchFailure(:final failure) => _SearchMessage(
-        title: 'Search did not run',
+        title: localizations.searchFailureTitle,
         body: _failureCopy(failure, localizations),
         action: AppButton(
-          label: 'Retry',
+          label: localizations.searchRetry,
           variant: AppButtonVariant.secondary,
           block: false,
           onPressed: () => ref.read(searchProvider.notifier).retry(),
@@ -167,11 +165,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     };
   }
 
-  static String _problemCopy(SearchQueryProblem problem) => switch (problem) {
-    SearchQueryProblem.empty => 'Enter something to search for.',
-    SearchQueryProblem.tooShort => 'Search needs at least 2 characters.',
-    SearchQueryProblem.tooLong =>
-      'Search is limited to 128 characters. Shorten it and try again.',
+  static String _problemCopy(
+    SearchQueryProblem problem,
+    AppLocalizations localizations,
+  ) => switch (problem) {
+    SearchQueryProblem.empty => localizations.searchQueryRequired,
+    SearchQueryProblem.tooShort => localizations.searchQueryTooShort(
+      searchQueryMinRunes,
+    ),
+    SearchQueryProblem.tooLong => localizations.searchQueryTooLong(
+      searchQueryMaxRunes,
+    ),
   };
 
   /// Selects client-owned copy for a failed search request.
@@ -179,30 +183,26 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   /// Messages are based on the typed failure rather than backend response
   /// text. Since search is a read operation, the copy describes the failed
   /// search without making claims about the state of any saved item.
-  static String _failureCopy(
-    Object failure,
-    AppLocalizations localizations,
-  ) => switch (failure) {
-    // Handle server-side validation explicitly. Although local validation
-    // normally prevents this, the backend remains authoritative.
-    ApiFailureValidation() =>
-      'Search needs between 2 and 128 characters. Check your search and try '
-          'again.',
-    ApiFailureSessionEnded() =>
-      'Your session has ended. Sign in again to search.',
-    ApiFailureAuthRequired() => 'Sign in again to search.',
-    ApiFailureRateLimited(:final retryAfter) =>
-      retryAfter != null
-          ? 'Too many searches. Try again in ${retryAfter.inSeconds} seconds.'
-          : 'Too many searches. Try again shortly.',
-    ApiFailureServerUnavailable() =>
-      'Search is temporarily unavailable. Try again shortly.',
-    ApiFailureTransport() =>
-      'No connection to the server. We could not run your search.',
-    _ =>
-      genericReadFailureMessage(failure, localizations) ??
-          'We could not run your search. Try again.',
-  };
+  static String _failureCopy(Object failure, AppLocalizations localizations) =>
+      switch (failure) {
+        // Handle server-side validation explicitly. Although local validation
+        // normally prevents this, the backend remains authoritative.
+        ApiFailureValidation() => localizations.searchValidationFailure(
+          searchQueryMinRunes,
+          searchQueryMaxRunes,
+        ),
+        ApiFailureSessionEnded() => localizations.searchSessionEnded,
+        ApiFailureAuthRequired() => localizations.searchSignInRequired,
+        ApiFailureRateLimited(:final retryAfter) =>
+          retryAfter != null
+              ? localizations.searchRateLimitedWithWait(retryAfter.inSeconds)
+              : localizations.searchRateLimitedNoWait,
+        ApiFailureServerUnavailable() => localizations.searchUnavailable,
+        ApiFailureTransport() => localizations.searchTransport,
+        _ =>
+          genericReadFailureMessage(failure, localizations) ??
+              localizations.searchFailureGeneric,
+      };
 }
 
 /// Shows a compact progress indicator while a search request is in flight.
@@ -215,11 +215,12 @@ class _SearchLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
     return Center(
       child: Semantics(
-        label: 'Searching',
+        label: l10n.searchSearchingSemantics,
         child: SizedBox(
           width: 20,
           height: 20,
@@ -244,6 +245,8 @@ class _SearchResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         AppMetrics.screenPadding,
@@ -253,7 +256,7 @@ class _SearchResults extends StatelessWidget {
       ),
       children: [
         if (collections.isNotEmpty) ...[
-          const _GroupHeading('COLLECTIONS'),
+          _GroupHeading(l10n.searchCollectionsHeading),
           for (final collection in collections)
             SearchCollectionRow(
               collection: collection,
@@ -267,7 +270,7 @@ class _SearchResults extends StatelessWidget {
         ],
         if (savedItems.isNotEmpty) ...[
           if (collections.isNotEmpty) const SizedBox(height: AppMetrics.space4),
-          const _GroupHeading('SAVED ITEMS'),
+          _GroupHeading(l10n.searchSavedItemsHeading),
           for (var index = 0; index < savedItems.length; index++) ...[
             SavedItemRow(
               item: savedItems[index],

@@ -1236,6 +1236,94 @@ class AppLocalizationsId extends AppLocalizations {
       'Lebih dari 99 item tersimpan';
 
   @override
+  String get searchTitle => 'CARI';
+
+  @override
+  String get searchPlaceholder => 'Cari item tersimpan dan koleksi';
+
+  @override
+  String get searchInitialTitle => 'Temukan sesuatu yang Anda simpan';
+
+  @override
+  String get searchInitialBody =>
+      'Pencarian mencocokkan judul item, domain, URL, dan nama koleksi.';
+
+  @override
+  String searchNoMatchesTitle(String query) {
+    return 'Tidak ada hasil untuk ‘$query’';
+  }
+
+  @override
+  String get searchNoMatchesBody =>
+      'Item mungkin masih cocok berdasarkan judul, domain, URL, atau nama koleksi. Coba kata lain, atau jelajahi Koleksi.';
+
+  @override
+  String get searchQueryRequired => 'Masukkan sesuatu untuk dicari.';
+
+  @override
+  String searchQueryTooShort(int min) {
+    return 'Pencarian membutuhkan setidaknya $min karakter.';
+  }
+
+  @override
+  String searchQueryTooLong(int max) {
+    return 'Pencarian dibatasi $max karakter. Persingkat dan coba lagi.';
+  }
+
+  @override
+  String get searchSearchingSemantics => 'Mencari';
+
+  @override
+  String get searchFailureTitle => 'Pencarian tidak berjalan';
+
+  @override
+  String searchValidationFailure(int min, int max) {
+    return 'Pencarian membutuhkan antara $min dan $max karakter. Periksa pencarian Anda dan coba lagi.';
+  }
+
+  @override
+  String get searchSessionEnded =>
+      'Sesi Anda telah berakhir. Masuk lagi untuk mencari.';
+
+  @override
+  String get searchSignInRequired => 'Masuk lagi untuk mencari.';
+
+  @override
+  String get searchRateLimitedNoWait =>
+      'Terlalu banyak pencarian. Coba lagi sebentar lagi.';
+
+  @override
+  String searchRateLimitedWithWait(int seconds) {
+    String _temp0 = intl.Intl.pluralLogic(
+      seconds,
+      locale: localeName,
+      other: 'Terlalu banyak pencarian. Coba lagi dalam $seconds detik.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get searchUnavailable =>
+      'Pencarian untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
+
+  @override
+  String get searchTransport =>
+      'Tidak ada koneksi ke server. Kami tidak dapat menjalankan pencarian Anda.';
+
+  @override
+  String get searchFailureGeneric =>
+      'Kami tidak dapat menjalankan pencarian Anda. Coba lagi.';
+
+  @override
+  String get searchRetry => 'Coba lagi';
+
+  @override
+  String get searchCollectionsHeading => 'KOLEKSI';
+
+  @override
+  String get searchSavedItemsHeading => 'ITEM TERSIMPAN';
+
+  @override
   String get authBackToWelcome => 'Kembali ke halaman awal';
 
   @override

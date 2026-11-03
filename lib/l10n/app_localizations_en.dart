@@ -1231,6 +1231,93 @@ class AppLocalizationsEn extends AppLocalizations {
   String get collectionsSavedItemsCountOverflow => 'More than 99 saved items';
 
   @override
+  String get searchTitle => 'SEARCH';
+
+  @override
+  String get searchPlaceholder => 'Search saved items and collections';
+
+  @override
+  String get searchInitialTitle => 'Find something you saved';
+
+  @override
+  String get searchInitialBody =>
+      'Search matches item titles, domains, URLs and collection names.';
+
+  @override
+  String searchNoMatchesTitle(String query) {
+    return 'No matches for ‘$query’';
+  }
+
+  @override
+  String get searchNoMatchesBody =>
+      'An item may still match by title, domain, URL or collection name. Try a different word, or browse Collections.';
+
+  @override
+  String get searchQueryRequired => 'Enter something to search for.';
+
+  @override
+  String searchQueryTooShort(int min) {
+    return 'Search needs at least $min characters.';
+  }
+
+  @override
+  String searchQueryTooLong(int max) {
+    return 'Search is limited to $max characters. Shorten it and try again.';
+  }
+
+  @override
+  String get searchSearchingSemantics => 'Searching';
+
+  @override
+  String get searchFailureTitle => 'Search did not run';
+
+  @override
+  String searchValidationFailure(int min, int max) {
+    return 'Search needs between $min and $max characters. Check your search and try again.';
+  }
+
+  @override
+  String get searchSessionEnded =>
+      'Your session has ended. Sign in again to search.';
+
+  @override
+  String get searchSignInRequired => 'Sign in again to search.';
+
+  @override
+  String get searchRateLimitedNoWait => 'Too many searches. Try again shortly.';
+
+  @override
+  String searchRateLimitedWithWait(int seconds) {
+    String _temp0 = intl.Intl.pluralLogic(
+      seconds,
+      locale: localeName,
+      other: 'Too many searches. Try again in $seconds seconds.',
+      one: 'Too many searches. Try again in 1 second.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get searchUnavailable =>
+      'Search is temporarily unavailable. Try again shortly.';
+
+  @override
+  String get searchTransport =>
+      'No connection to the server. We could not run your search.';
+
+  @override
+  String get searchFailureGeneric => 'We could not run your search. Try again.';
+
+  @override
+  String get searchRetry => 'Retry';
+
+  @override
+  String get searchCollectionsHeading => 'COLLECTIONS';
+
+  @override
+  String get searchSavedItemsHeading => 'SAVED ITEMS';
+
+  @override
   String get authBackToWelcome => 'Back to welcome';
 
   @override

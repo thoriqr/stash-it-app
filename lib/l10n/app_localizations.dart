@@ -1735,6 +1735,138 @@ abstract class AppLocalizations {
   /// **'More than 99 saved items'**
   String get collectionsSavedItemsCountOverflow;
 
+  /// Switching title for the Search destination.
+  ///
+  /// In en, this message translates to:
+  /// **'SEARCH'**
+  String get searchTitle;
+
+  /// Placeholder in the Search input field.
+  ///
+  /// In en, this message translates to:
+  /// **'Search saved items and collections'**
+  String get searchPlaceholder;
+
+  /// Initial Search prompt before any query is submitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Find something you saved'**
+  String get searchInitialTitle;
+
+  /// Initial Search explanation of what the search matches.
+  ///
+  /// In en, this message translates to:
+  /// **'Search matches item titles, domains, URLs and collection names.'**
+  String get searchInitialBody;
+
+  /// Title for a successful search with no results.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches for ‘{query}’'**
+  String searchNoMatchesTitle(String query);
+
+  /// Explanation that a different search might still match.
+  ///
+  /// In en, this message translates to:
+  /// **'An item may still match by title, domain, URL or collection name. Try a different word, or browse Collections.'**
+  String get searchNoMatchesBody;
+
+  /// Validation message for an empty search query.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter something to search for.'**
+  String get searchQueryRequired;
+
+  /// Validation message for a query below the minimum length.
+  ///
+  /// In en, this message translates to:
+  /// **'Search needs at least {min} characters.'**
+  String searchQueryTooShort(int min);
+
+  /// Validation message for a query above the maximum length.
+  ///
+  /// In en, this message translates to:
+  /// **'Search is limited to {max} characters. Shorten it and try again.'**
+  String searchQueryTooLong(int max);
+
+  /// Accessibility label for the Search loading indicator.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching'**
+  String get searchSearchingSemantics;
+
+  /// Title shown when a search request fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Search did not run'**
+  String get searchFailureTitle;
+
+  /// Server-side search validation failure copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Search needs between {min} and {max} characters. Check your search and try again.'**
+  String searchValidationFailure(int min, int max);
+
+  /// Search failure copy when the session ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session has ended. Sign in again to search.'**
+  String get searchSessionEnded;
+
+  /// Search failure copy when authentication is required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to search.'**
+  String get searchSignInRequired;
+
+  /// Search rate-limit copy without a retry interval.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many searches. Try again shortly.'**
+  String get searchRateLimitedNoWait;
+
+  /// Search rate-limit copy with a retry interval in seconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds, plural, =1{Too many searches. Try again in 1 second.} other{Too many searches. Try again in {seconds} seconds.}}'**
+  String searchRateLimitedWithWait(int seconds);
+
+  /// Search is temporarily unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Search is temporarily unavailable. Try again shortly.'**
+  String get searchUnavailable;
+
+  /// Search failed because the server was unreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection to the server. We could not run your search.'**
+  String get searchTransport;
+
+  /// Fallback copy for a failed search request.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not run your search. Try again.'**
+  String get searchFailureGeneric;
+
+  /// Retry action for a failed search request.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get searchRetry;
+
+  /// Heading for the Collections result group.
+  ///
+  /// In en, this message translates to:
+  /// **'COLLECTIONS'**
+  String get searchCollectionsHeading;
+
+  /// Heading for the Saved Items result group.
+  ///
+  /// In en, this message translates to:
+  /// **'SAVED ITEMS'**
+  String get searchSavedItemsHeading;
+
   /// Tooltip for returning to the signed-out welcome screen.
   ///
   /// In en, this message translates to:

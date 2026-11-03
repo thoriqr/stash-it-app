@@ -31,7 +31,7 @@ void main() {
     addTearDown(tester.view.reset);
   }
 
-  Future<void> pumpSearch(WidgetTester tester) async {
+  Future<void> pumpSearch(WidgetTester tester, {Locale? locale}) async {
     final dio = Dio(BaseOptions(baseUrl: 'https://api.test'))
       ..httpClientAdapter = adapter;
 
@@ -44,6 +44,7 @@ void main() {
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
+          locale: locale,
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: const SearchScreen(),
@@ -72,6 +73,7 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(find.text('Search saved items and collections'), findsOneWidget);
       expect(find.text('SEARCH'), findsOneWidget);
       expect(find.byIcon(Icons.close), findsNothing);
       expect(adapter.requests, isEmpty);
@@ -439,5 +441,230 @@ void main() {
         );
       },
     );
+  });
+
+  group('Indonesian localization', () {
+    testWidgets('renders the title, placeholder and initial state', (
+      tester,
+    ) async {
+      await pumpSearch(tester, locale: const Locale('id'));
+
+      expect(find.text('CARI'), findsOneWidget);
+      expect(find.text('Cari item tersimpan dan koleksi'), findsOneWidget);
+      expect(find.text('Temukan sesuatu yang Anda simpan'), findsOneWidget);
+      expect(
+        find.text(
+          'Pencarian mencocokkan judul item, domain, URL, dan nama koleksi.',
+        ),
+        findsOneWidget,
+      );
+      expect(adapter.requests, isEmpty);
+    });
+
+    testWidgets('renders all local validation messages', (tester) async {
+      await pumpSearch(tester, locale: const Locale('id'));
+
+      await submit(tester, '   ');
+      await tester.pump();
+      expect(find.text('Masukkan sesuatu untuk dicari.'), findsOneWidget);
+
+      await submit(tester, 'a');
+      await tester.pump();
+      expect(
+        find.text('Pencarian membutuhkan setidaknya 2 karakter.'),
+        findsOneWidget,
+      );
+
+      await submit(tester, 'é' * 129);
+      await tester.pump();
+      expect(
+        find.text('Pencarian dibatasi 128 karakter. Persingkat dan coba lagi.'),
+        findsOneWidget,
+      );
+      expect(adapter.requests, isEmpty);
+    });
+
+    testWidgets('zero results keep the query unchanged', (tester) async {
+      adapter.on('/search', body: SearchFixtures.emptyResponse());
+      await pumpSearch(tester, locale: const Locale('id'));
+
+      await submit(tester, 'camera');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Tidak ada hasil untuk \u2018camera\u2019'),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Item mungkin masih cocok berdasarkan judul, domain, URL, atau nama koleksi. Coba kata lain, atau jelajahi Koleksi.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        Uri.parse(adapter.lastRequestTo('/search')!.path).queryParameters['q'],
+        'camera',
+      );
+      expect(find.text('KOLEKSI'), findsNothing);
+      expect(find.text('ITEM TERSIMPAN'), findsNothing);
+    });
+
+    testWidgets('renders group headings and preserves server content', (
+      tester,
+    ) async {
+      useTallSurface(tester);
+      adapter.on(
+        '/search',
+        body: SearchFixtures.response(
+          collections: [SearchFixtures.collection(name: 'Nama Koleksi')],
+          savedItems: [
+            SearchFixtures.savedItem(
+              title: 'Judul Server',
+              url: 'https://example.com/server-item',
+              domain: 'example.com',
+              collectionName: 'Koleksi Server',
+            ),
+          ],
+        ),
+      );
+      await pumpSearch(tester, locale: const Locale('id'));
+
+      await submit(tester, 'camera');
+      await tester.pumpAndSettle();
+
+      expect(find.text('KOLEKSI'), findsOneWidget);
+      expect(find.text('ITEM TERSIMPAN'), findsOneWidget);
+      expect(find.text('Nama Koleksi'), findsOneWidget);
+      expect(find.text('Judul Server'), findsOneWidget);
+      expect(find.text('Koleksi Server'), findsOneWidget);
+      expect(
+        Uri.parse(adapter.lastRequestTo('/search')!.path).queryParameters['q'],
+        'camera',
+      );
+    });
+
+    testWidgets('localizes the clear tooltip and loading semantics', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      adapter.onBlocking(
+        '/search',
+        FakeReply(
+          200,
+          SearchFixtures.response(
+            savedItems: [SearchFixtures.savedItem(title: 'Stale Item')],
+          ),
+        ),
+      );
+      await pumpSearch(tester, locale: const Locale('id'));
+
+      await tester.enterText(find.byType(TextField), 'camera');
+      await tester.pump();
+      expect(find.byTooltip('Kosongkan'), findsOneWidget);
+
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pump();
+      expect(find.bySemanticsLabel('Mencari'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pump();
+      expect(find.text('Temukan sesuatu yang Anda simpan'), findsOneWidget);
+      expect(find.bySemanticsLabel('Mencari'), findsNothing);
+      expect(find.byTooltip('Kosongkan'), findsNothing);
+
+      adapter.releaseBlocked();
+      await tester.pumpAndSettle();
+      expect(find.text('Temukan sesuatu yang Anda simpan'), findsOneWidget);
+      expect(find.text('Stale Item'), findsNothing);
+
+      semantics.dispose();
+    });
+
+    testWidgets('renders typed server errors and retries', (tester) async {
+      adapter.onSequence('/search', [
+        FakeReply.error(500, 'INTERNAL_SERVER_ERROR'),
+        FakeReply(
+          200,
+          SearchFixtures.response(
+            savedItems: [SearchFixtures.savedItem(title: 'Recovered Item')],
+          ),
+        ),
+      ]);
+      await pumpSearch(tester, locale: const Locale('id'));
+
+      await submit(tester, 'camera');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Pencarian tidak berjalan'), findsOneWidget);
+      expect(
+        find.text(
+          'Kami tidak dapat menghubungi server. Coba lagi sebentar lagi.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Coba lagi'), findsOneWidget);
+
+      await tester.tap(find.text('Coba lagi'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Recovered Item'), findsOneWidget);
+      expect(find.text('Pencarian tidak berjalan'), findsNothing);
+    });
+
+    testWidgets('renders the transport failure copy', (tester) async {
+      adapter.onOffline('/search');
+      await pumpSearch(tester, locale: const Locale('id'));
+
+      await submit(tester, 'camera');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Tidak ada koneksi ke server. Kami tidak dapat menjalankan pencarian Anda.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Coba lagi'), findsOneWidget);
+    });
+
+    testWidgets('renders the rate-limit wait in seconds', (tester) async {
+      adapter.on(
+        '/search',
+        status: 429,
+        body: errorBody('USER_RATE_LIMIT_EXCEEDED'),
+        headers: {
+          'retry-after': ['45'],
+        },
+      );
+      await pumpSearch(tester, locale: const Locale('id'));
+
+      await submit(tester, 'camera');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Terlalu banyak pencarian. Coba lagi dalam 45 detik.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('renders the server validation failure copy', (tester) async {
+      adapter.on(
+        '/search',
+        status: 400,
+        body: errorBody('INVALID_SEARCH_QUERY'),
+      );
+      await pumpSearch(tester, locale: const Locale('id'));
+
+      await submit(tester, 'camera');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Pencarian membutuhkan antara 2 dan 128 karakter. Periksa pencarian Anda dan coba lagi.',
+        ),
+        findsOneWidget,
+      );
+    });
   });
 }

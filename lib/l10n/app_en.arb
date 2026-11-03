@@ -269,6 +269,28 @@
   "collectionsSystemBadge": "system",
   "collectionsSavedItemsCount": "{count, plural, =1{1 saved item} other{{count} saved items}}",
   "collectionsSavedItemsCountOverflow": "More than 99 saved items",
+  "searchTitle": "SEARCH",
+  "searchPlaceholder": "Search saved items and collections",
+  "searchInitialTitle": "Find something you saved",
+  "searchInitialBody": "Search matches item titles, domains, URLs and collection names.",
+  "searchNoMatchesTitle": "No matches for ‘{query}’",
+  "searchNoMatchesBody": "An item may still match by title, domain, URL or collection name. Try a different word, or browse Collections.",
+  "searchQueryRequired": "Enter something to search for.",
+  "searchQueryTooShort": "Search needs at least {min} characters.",
+  "searchQueryTooLong": "Search is limited to {max} characters. Shorten it and try again.",
+  "searchSearchingSemantics": "Searching",
+  "searchFailureTitle": "Search did not run",
+  "searchValidationFailure": "Search needs between {min} and {max} characters. Check your search and try again.",
+  "searchSessionEnded": "Your session has ended. Sign in again to search.",
+  "searchSignInRequired": "Sign in again to search.",
+  "searchRateLimitedNoWait": "Too many searches. Try again shortly.",
+  "searchRateLimitedWithWait": "{seconds, plural, =1{Too many searches. Try again in 1 second.} other{Too many searches. Try again in {seconds} seconds.}}",
+  "searchUnavailable": "Search is temporarily unavailable. Try again shortly.",
+  "searchTransport": "No connection to the server. We could not run your search.",
+  "searchFailureGeneric": "We could not run your search. Try again.",
+  "searchRetry": "Retry",
+  "searchCollectionsHeading": "COLLECTIONS",
+  "searchSavedItemsHeading": "SAVED ITEMS",
   "authBackToWelcome": "Back to welcome",
   "authEmailLabel": "Email",
   "authPasswordLabel": "Password",
@@ -1667,6 +1689,100 @@
   },
   "@collectionsSavedItemsCountOverflow": {
     "description": "Accessibility label when a collection's count is shown as 99+."
+  },
+  "@searchTitle": {
+    "description": "Switching title for the Search destination."
+  },
+  "@searchPlaceholder": {
+    "description": "Placeholder in the Search input field."
+  },
+  "@searchInitialTitle": {
+    "description": "Initial Search prompt before any query is submitted."
+  },
+  "@searchInitialBody": {
+    "description": "Initial Search explanation of what the search matches."
+  },
+  "@searchNoMatchesTitle": {
+    "description": "Title for a successful search with no results.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "@searchNoMatchesBody": {
+    "description": "Explanation that a different search might still match."
+  },
+  "@searchQueryRequired": {
+    "description": "Validation message for an empty search query."
+  },
+  "@searchQueryTooShort": {
+    "description": "Validation message for a query below the minimum length.",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "@searchQueryTooLong": {
+    "description": "Validation message for a query above the maximum length.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "@searchSearchingSemantics": {
+    "description": "Accessibility label for the Search loading indicator."
+  },
+  "@searchFailureTitle": {
+    "description": "Title shown when a search request fails."
+  },
+  "@searchValidationFailure": {
+    "description": "Server-side search validation failure copy.",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "@searchSessionEnded": {
+    "description": "Search failure copy when the session ended."
+  },
+  "@searchSignInRequired": {
+    "description": "Search failure copy when authentication is required."
+  },
+  "@searchRateLimitedNoWait": {
+    "description": "Search rate-limit copy without a retry interval."
+  },
+  "@searchRateLimitedWithWait": {
+    "description": "Search rate-limit copy with a retry interval in seconds.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "@searchUnavailable": {
+    "description": "Search is temporarily unavailable."
+  },
+  "@searchTransport": {
+    "description": "Search failed because the server was unreachable."
+  },
+  "@searchFailureGeneric": {
+    "description": "Fallback copy for a failed search request."
+  },
+  "@searchRetry": {
+    "description": "Retry action for a failed search request."
+  },
+  "@searchCollectionsHeading": {
+    "description": "Heading for the Collections result group."
+  },
+  "@searchSavedItemsHeading": {
+    "description": "Heading for the Saved Items result group."
   },
   "@authBackToWelcome": {
     "description": "Tooltip for returning to the signed-out welcome screen."
