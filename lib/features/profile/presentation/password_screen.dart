@@ -8,6 +8,7 @@ import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/profile/application/password_update_controller.dart';
 import 'package:stash_it_app/features/profile/application/profile_controller.dart';
 import 'package:stash_it_app/features/profile/domain/user_profile.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -92,6 +93,7 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
 
     if (!mounted) return;
 
+    final l10n = AppLocalizations.of(context);
     switch (outcome) {
       case PasswordUpdateSucceeded() ||
           PasswordUpdateModeConflict() ||
@@ -102,24 +104,22 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
 
       case PasswordUpdateCurrentPasswordInvalid():
         setState(
-          () => _currentServerError = 'That current password is incorrect.',
+          () => _currentServerError = l10n.profileCurrentPasswordIncorrect,
         );
 
       case PasswordUpdateValidation():
-        setState(() => _newServerError = 'Use between 8 and 128 characters.');
+        setState(() => _newServerError = l10n.profilePasswordLength);
 
       // A concurrent change won. The submitted current password is no longer the
       // stored one, so it is cleared rather than left looking usable.
       case PasswordUpdateAlreadyChanged():
         _currentController.clear();
         setState(() {
-          _currentServerError =
-              'Your password was changed somewhere else. Enter the current '
-              'password again.';
+          _currentServerError = l10n.profilePasswordChangedElsewhere;
         });
 
       case PasswordUpdateRejected(:final message, :final tone):
-        setState(() => _notice = (copy: message, tone: tone));
+        setState(() => _notice = (copy: message(l10n), tone: tone));
 
       case PasswordUpdateIgnored():
         break;
@@ -128,6 +128,7 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final profile = ref.watch(profileProvider);
 
@@ -147,16 +148,16 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
       appBar: AppBar(
         title: Text(
           change == null
-              ? 'PASSWORD'
+              ? l10n.profilePasswordTitle
               : change
-              ? 'CHANGE PASSWORD'
-              : 'CREATE PASSWORD',
+              ? l10n.profileChangePasswordTitle
+              : l10n.profileCreatePasswordTitle,
         ),
         leading: canPop
             ? null
             : IconButton(
                 icon: const Icon(Icons.arrow_back, size: AppMetrics.iconSize),
-                tooltip: 'Back to Profile',
+                tooltip: l10n.profileBackToProfile,
                 onPressed: () => context.go(AppRoutes.profile),
               ),
       ),
@@ -176,6 +177,7 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
     required bool change,
     required bool busy,
   }) {
+    final l10n = AppLocalizations.of(context);
     final viewInsets = MediaQuery.viewInsetsOf(context);
 
     return SafeArea(
@@ -191,15 +193,14 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
           children: [
             Text(
               change
-                  ? 'Choose a new password for your account.'
-                  : 'Add a password so you can sign in with your email '
-                        'address.',
+                  ? l10n.profileChangePasswordDescription
+                  : l10n.profileCreatePasswordDescription,
               style: AppTypography.body.copyWith(color: tokens.textSecondary),
             ),
             const SizedBox(height: AppMetrics.space5),
             if (change) ...[
               AppField(
-                label: 'Current password',
+                label: l10n.profileCurrentPasswordLabel,
                 controller: _currentController,
                 enabled: !busy,
                 obscureText: _obscureCurrent,
@@ -213,15 +214,15 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
                 suffixIcon: _visibilityToggle(
                   tokens: tokens,
                   obscured: _obscureCurrent,
-                  showLabel: 'Show current password',
-                  hideLabel: 'Hide current password',
+                  showLabel: l10n.profileShowCurrentPassword,
+                  hideLabel: l10n.profileHideCurrentPassword,
                   enabled: !busy,
                   onPressed: () =>
                       setState(() => _obscureCurrent = !_obscureCurrent),
                 ),
                 validator: (value) {
                   if ((value ?? '').isEmpty) {
-                    return 'Enter your current password.';
+                    return l10n.profileCurrentPasswordRequired;
                   }
                   return null;
                 },
@@ -229,7 +230,7 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
               const SizedBox(height: AppMetrics.space4),
             ],
             AppField(
-              label: 'New password',
+              label: l10n.profileNewPasswordLabel,
               controller: _newController,
               enabled: !busy,
               obscureText: _obscureNew,
@@ -243,22 +244,22 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
               suffixIcon: _visibilityToggle(
                 tokens: tokens,
                 obscured: _obscureNew,
-                showLabel: 'Show new password',
-                hideLabel: 'Hide new password',
+                showLabel: l10n.profileShowNewPassword,
+                hideLabel: l10n.profileHideNewPassword,
                 enabled: !busy,
                 onPressed: () => setState(() => _obscureNew = !_obscureNew),
               ),
               validator: (value) {
                 final length = (value ?? '').runes.length;
                 if (length < 8 || length > 128) {
-                  return 'Use between 8 and 128 characters.';
+                  return l10n.profilePasswordLength;
                 }
                 return null;
               },
             ),
             const SizedBox(height: AppMetrics.space4),
             AppField(
-              label: 'Confirm new password',
+              label: l10n.profileConfirmNewPasswordLabel,
               controller: _confirmController,
               enabled: !busy,
               obscureText: _obscureConfirm,
@@ -270,15 +271,15 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
               suffixIcon: _visibilityToggle(
                 tokens: tokens,
                 obscured: _obscureConfirm,
-                showLabel: 'Show confirmation password',
-                hideLabel: 'Hide confirmation password',
+                showLabel: l10n.profileShowConfirmationPassword,
+                hideLabel: l10n.profileHideConfirmationPassword,
                 enabled: !busy,
                 onPressed: () =>
                     setState(() => _obscureConfirm = !_obscureConfirm),
               ),
               validator: (value) {
                 if ((value ?? '') != _newController.text) {
-                  return 'The passwords do not match.';
+                  return l10n.profilePasswordsDoNotMatch;
                 }
                 return null;
               },
@@ -289,7 +290,9 @@ class _PasswordScreenState extends ConsumerState<PasswordScreen> {
             ],
             const SizedBox(height: AppMetrics.space6),
             AppButton(
-              label: change ? 'Change password' : 'Create password',
+              label: change
+                  ? l10n.profileChangePasswordAction
+                  : l10n.profileCreatePasswordAction,
               variant: AppButtonVariant.primary,
               busy: busy,
               onPressed: busy ? null : _submit,
@@ -339,19 +342,21 @@ class _UnavailableBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     if (profile.hasError) {
       return ListView(
         padding: const EdgeInsets.all(AppMetrics.screenPadding),
         children: [
           Text(
-            _modeFailureCopy(profile.error!),
+            _modeFailureCopy(profile.error!, l10n),
             style: AppTypography.body.copyWith(color: tokens.textPrimary),
           ),
           const SizedBox(height: AppMetrics.space3),
           Align(
             alignment: Alignment.centerLeft,
             child: AppButton(
-              label: 'Retry',
+              label: l10n.profileRetry,
               variant: AppButtonVariant.secondary,
               block: false,
               onPressed: onRetry,
@@ -376,7 +381,7 @@ class _UnavailableBody extends StatelessWidget {
           const SizedBox(width: AppMetrics.space2),
           Flexible(
             child: Text(
-              'Loading profile…',
+              l10n.profileLoading,
               style: AppTypography.body.copyWith(color: tokens.textSecondary),
             ),
           ),
@@ -386,15 +391,15 @@ class _UnavailableBody extends StatelessWidget {
   }
 }
 
-String _modeFailureCopy(Object error) => switch (error) {
-  ApiFailureSessionEnded() => 'Your session has ended. Sign in again.',
-  ApiFailureAuthRequired() => 'Sign in again to set your password.',
-  ApiFailureUserNotFound() => 'This account is no longer available.',
-  ApiFailureServerUnavailable() =>
-    'Profile is temporarily unavailable. Try again shortly.',
-  ApiFailureTransport() => 'No connection. We could not load your profile.',
-  _ => 'We could not load your profile. Try again.',
-};
+String _modeFailureCopy(Object error, AppLocalizations localizations) =>
+    switch (error) {
+      ApiFailureSessionEnded() => localizations.profileSessionEnded,
+      ApiFailureAuthRequired() => localizations.passwordAuthRequired,
+      ApiFailureUserNotFound() => localizations.accountUnavailable,
+      ApiFailureServerUnavailable() => localizations.profileUnavailable,
+      ApiFailureTransport() => localizations.profileTransport,
+      _ => localizations.profileLoadGeneric,
+    };
 
 /// A known not-set refusal that is not tied to one field.
 class _PasswordNotice extends StatelessWidget {

@@ -30,9 +30,9 @@ void main() {
     expect(profile.hasPasswordCredential, true);
     expect(profile.createdAt, DateTime.utc(2026, 1, 1));
     expect(profile.identities.length, 2);
-    expect(profile.identities[0].displayLabel, 'Google');
+    expect(profile.identities[0].provider, 'google');
     expect(profile.identities[0].linkedAt, DateTime.utc(2026, 1, 2));
-    expect(profile.identities[1].displayLabel, 'Email & password');
+    expect(profile.identities[1].provider, 'email');
   });
 
   test('never substitutes a date for an unparseable timestamp', () {
@@ -53,23 +53,23 @@ void main() {
     expect(profile.identities.single.linkedAt, isNull);
   });
 
-  test('maps unknown provider to capitalized label', () {
+  test('preserves an unknown provider identifier', () {
     final identity = identityFrom(
       const UserIdentityResponse(
         provider: 'discord',
         linkedAt: '2026-01-01T00:00:00Z',
       ),
     );
-    expect(identity.displayLabel, 'Discord');
+    expect(identity.provider, 'discord');
   });
 
-  test('handles empty provider gracefully', () {
+  test('preserves an empty provider identifier', () {
     final identity = identityFrom(
       const UserIdentityResponse(
         provider: '',
         linkedAt: '2026-01-01T00:00:00Z',
       ),
     );
-    expect(identity.displayLabel, 'Unknown');
+    expect(identity.provider, isEmpty);
   });
 }

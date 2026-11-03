@@ -4,6 +4,7 @@ import 'package:stash_it_app/app/feedback/app_feedback.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/profile/application/display_name_update_controller.dart';
 import 'package:stash_it_app/features/profile/domain/display_name.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
@@ -80,7 +81,7 @@ class _DisplayNameSheetState extends ConsumerState<DisplayNameSheet> {
     final problem = displayNameProblem(_controller.text);
     if (problem != null) {
       setState(() {
-        _fieldError = _messageFor(problem);
+        _fieldError = _messageFor(problem, AppLocalizations.of(context));
         _notice = null;
       });
       return;
@@ -97,6 +98,7 @@ class _DisplayNameSheetState extends ConsumerState<DisplayNameSheet> {
 
     if (!mounted) return;
 
+    final l10n = AppLocalizations.of(context);
     switch (outcome) {
       case DisplayNameUpdateSucceeded() ||
           DisplayNameUpdateAccountUnavailable() ||
@@ -105,10 +107,10 @@ class _DisplayNameSheetState extends ConsumerState<DisplayNameSheet> {
         Navigator.of(context).pop();
 
       case DisplayNameUpdateValidation():
-        setState(() => _fieldError = 'Use between 2 and 100 characters.');
+        setState(() => _fieldError = l10n.profileDisplayNameValidation);
 
       case DisplayNameUpdateRejected(:final message, :final tone):
-        setState(() => _notice = (copy: message, tone: tone));
+        setState(() => _notice = (copy: message(l10n), tone: tone));
 
       case DisplayNameUpdateIgnored():
         break;
@@ -130,6 +132,7 @@ class _DisplayNameSheetState extends ConsumerState<DisplayNameSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final busy = ref.watch(displayNameUpdateProvider);
     final viewInsets = MediaQuery.viewInsetsOf(context);
@@ -159,14 +162,14 @@ class _DisplayNameSheetState extends ConsumerState<DisplayNameSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Edit display name',
+                    l10n.profileEditDisplayNameTitle,
                     style: AppTypography.screenHeading.copyWith(
                       color: tokens.textPrimary,
                     ),
                   ),
                   const SizedBox(height: AppMetrics.space5),
                   AppField(
-                    label: 'Display name',
+                    label: l10n.profileDisplayNameLabel,
                     controller: _controller,
                     enabled: !busy,
                     textInputAction: TextInputAction.done,
@@ -183,7 +186,7 @@ class _DisplayNameSheetState extends ConsumerState<DisplayNameSheet> {
                     children: [
                       Expanded(
                         child: AppButton(
-                          label: 'Cancel',
+                          label: l10n.profileCancelAction,
                           variant: AppButtonVariant.secondary,
                           onPressed: busy ? null : _cancel,
                         ),
@@ -191,7 +194,7 @@ class _DisplayNameSheetState extends ConsumerState<DisplayNameSheet> {
                       const SizedBox(width: AppMetrics.space3),
                       Expanded(
                         child: AppButton(
-                          label: 'Save',
+                          label: l10n.profileSaveAction,
                           variant: AppButtonVariant.primary,
                           busy: busy,
                           onPressed: busy ? null : _save,
@@ -258,7 +261,10 @@ class _SheetNotice extends StatelessWidget {
   }
 }
 
-String _messageFor(DisplayNameProblem problem) => switch (problem) {
+String _messageFor(
+  DisplayNameProblem problem,
+  AppLocalizations localizations,
+) => switch (problem) {
   DisplayNameProblem.tooShort ||
-  DisplayNameProblem.tooLong => 'Use between 2 and 100 characters.',
+  DisplayNameProblem.tooLong => localizations.profileDisplayNameValidation,
 };

@@ -1318,6 +1318,140 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchSavedItemsHeading => 'SAVED ITEMS';
 
   @override
+  String get profileTitle => 'PROFILE';
+
+  @override
+  String get profileSignOut => 'Sign out';
+
+  @override
+  String get profileLoading => 'Loading profile…';
+
+  @override
+  String get profileRetry => 'Retry';
+
+  @override
+  String get profileSessionEnded => 'Your session has ended. Sign in again.';
+
+  @override
+  String get profileSignInRequired => 'Sign in again to view your profile.';
+
+  @override
+  String get profileUnavailable =>
+      'Profile is temporarily unavailable. Try again shortly.';
+
+  @override
+  String get profileTransport =>
+      'No connection. We could not load your profile.';
+
+  @override
+  String get profileLoadGeneric => 'We could not load your profile. Try again.';
+
+  @override
+  String get profileAccountSection => 'ACCOUNT';
+
+  @override
+  String get profileLinkedIdentitiesSection => 'LINKED IDENTITIES';
+
+  @override
+  String get profileDisplayNameLabel => 'Display name';
+
+  @override
+  String get profileChangePasswordAction => 'Change password';
+
+  @override
+  String get profileCreatePasswordAction => 'Create password';
+
+  @override
+  String get profileNoAccountsConnected => 'No accounts connected yet.';
+
+  @override
+  String profileJoinedDate(String date) {
+    return 'joined $date';
+  }
+
+  @override
+  String profileLinkedDate(String date) {
+    return 'linked $date';
+  }
+
+  @override
+  String get profilePasswordTitle => 'PASSWORD';
+
+  @override
+  String get profileChangePasswordTitle => 'CHANGE PASSWORD';
+
+  @override
+  String get profileCreatePasswordTitle => 'CREATE PASSWORD';
+
+  @override
+  String get profileBackToProfile => 'Back to Profile';
+
+  @override
+  String get profileChangePasswordDescription =>
+      'Choose a new password for your account.';
+
+  @override
+  String get profileCreatePasswordDescription =>
+      'Add a password so you can sign in with your email address.';
+
+  @override
+  String get profileCurrentPasswordLabel => 'Current password';
+
+  @override
+  String get profileNewPasswordLabel => 'New password';
+
+  @override
+  String get profileConfirmNewPasswordLabel => 'Confirm new password';
+
+  @override
+  String get profileShowCurrentPassword => 'Show current password';
+
+  @override
+  String get profileHideCurrentPassword => 'Hide current password';
+
+  @override
+  String get profileShowNewPassword => 'Show new password';
+
+  @override
+  String get profileHideNewPassword => 'Hide new password';
+
+  @override
+  String get profileShowConfirmationPassword => 'Show confirmation password';
+
+  @override
+  String get profileHideConfirmationPassword => 'Hide confirmation password';
+
+  @override
+  String get profileCurrentPasswordRequired => 'Enter your current password.';
+
+  @override
+  String get profilePasswordLength => 'Use between 8 and 128 characters.';
+
+  @override
+  String get profilePasswordsDoNotMatch => 'The passwords do not match.';
+
+  @override
+  String get profileCurrentPasswordIncorrect =>
+      'That current password is incorrect.';
+
+  @override
+  String get profilePasswordChangedElsewhere =>
+      'Your password was changed somewhere else. Enter the current password again.';
+
+  @override
+  String get profileEditDisplayNameTitle => 'Edit display name';
+
+  @override
+  String get profileDisplayNameValidation =>
+      'Use between 2 and 100 characters.';
+
+  @override
+  String get profileCancelAction => 'Cancel';
+
+  @override
+  String get profileSaveAction => 'Save';
+
+  @override
   String get authBackToWelcome => 'Back to welcome';
 
   @override

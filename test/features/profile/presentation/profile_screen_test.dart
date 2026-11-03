@@ -52,6 +52,7 @@ void main() {
     WidgetTester tester, {
     required FutureOr<UserProfile> Function() load,
     _RecordingAuthState? auth,
+    Locale? locale,
   }) async {
     final container = ProviderContainer(
       overrides: [
@@ -69,6 +70,7 @@ void main() {
         container: container,
         child: MaterialApp(
           theme: AppTheme.light(),
+          locale: locale,
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: const ProfileScreen(),
@@ -364,5 +366,80 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('PASSWORD FORM'), findsOneWidget);
+  });
+
+  testWidgets('renders Indonesian profile, dates, identities and actions', (
+    tester,
+  ) async {
+    await pumpProfile(
+      tester,
+      locale: const Locale('id'),
+      load: () async => _profile(
+        createdAt: DateTime(2026, 5, 12, 12),
+        displayName: 'Pembaca',
+        email: 'pembaca@example.com',
+        identities: [
+          UserIdentity(provider: 'google', linkedAt: DateTime(2026, 5, 3, 12)),
+          const UserIdentity(provider: 'email', linkedAt: null),
+          const UserIdentity(provider: '', linkedAt: null),
+          const UserIdentity(provider: 'discord', linkedAt: null),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(AppBar, 'PROFIL'), findsOneWidget);
+    expect(find.text('AKUN'), findsOneWidget);
+    expect(find.text('IDENTITAS TERTAUT'), findsOneWidget);
+    expect(find.text('Nama tampilan'), findsOneWidget);
+    expect(find.text('Ubah kata sandi'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Keluar'), findsOneWidget);
+    expect(find.text('bergabung 12 Mei 2026'), findsOneWidget);
+
+    // User and server-provided values remain unchanged.
+    expect(find.text('Pembaca'), findsNWidgets(2));
+    expect(find.text('pembaca@example.com'), findsOneWidget);
+
+    // Provider identifiers remain unchanged; UI concepts are localized.
+    expect(find.text('Google'), findsOneWidget);
+    expect(find.text('tertaut 03 Mei 2026'), findsOneWidget);
+    expect(find.text('Email & kata sandi'), findsOneWidget);
+    expect(find.text('Tidak diketahui'), findsOneWidget);
+    expect(find.text('Discord'), findsOneWidget);
+  });
+
+  testWidgets('renders Indonesian loading and error states', (tester) async {
+    final completer = Completer<UserProfile>();
+    await pumpProfile(
+      tester,
+      locale: const Locale('id'),
+      load: () => completer.future,
+    );
+    await tester.pump();
+
+    expect(find.text('Memuat profil…'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Keluar'), findsOneWidget);
+
+    completer.complete(_profile(createdAt: _joined));
+    await tester.pumpAndSettle();
+    expect(find.text('Memuat profil…'), findsNothing);
+  });
+
+  testWidgets('renders Indonesian typed profile errors and retry', (
+    tester,
+  ) async {
+    await pumpProfile(
+      tester,
+      locale: const Locale('id'),
+      load: () async => throw const ApiFailureTransport(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Tidak ada koneksi. Kami tidak dapat memuat profil Anda.'),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(AppButton, 'Coba lagi'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Keluar'), findsOneWidget);
   });
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
@@ -9,6 +10,7 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/profile/application/display_name_update_controller.dart';
 import 'package:stash_it_app/features/profile/application/profile_controller.dart';
 import 'package:stash_it_app/features/profile/data/profile_providers.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../../support/fake_profile_repository.dart';
 
@@ -25,6 +27,9 @@ class _RecordingAuthState extends AuthState {
 }
 
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
+
   ProviderContainer makeContainer(
     FakeProfileRepository fake, {
     _RecordingAuthState? auth,
@@ -56,7 +61,14 @@ void main() {
         '  Ada Lovelace  ',
       );
       expect(container.read(feedbackProvider)?.tone, FeedbackTone.success);
-      expect(container.read(feedbackProvider)?.copy, 'Display name updated.');
+      expect(
+        container.read(feedbackProvider)?.resolve(english),
+        'Display name updated.',
+      );
+      expect(
+        container.read(feedbackProvider)?.resolve(indonesian),
+        'Nama tampilan diperbarui.',
+      );
     },
   );
 
@@ -97,7 +109,8 @@ void main() {
       expect(outcome, isA<DisplayNameUpdateRejected>());
       final rejected = outcome as DisplayNameUpdateRejected;
       expect(rejected.tone, FeedbackTone.warning);
-      expect(rejected.message, contains('30 seconds'));
+      expect(rejected.message(english), contains('30 seconds'));
+      expect(rejected.message(indonesian), contains('30 detik'));
     },
   );
 
@@ -118,8 +131,8 @@ void main() {
 
     final notice = container.read(feedbackProvider);
     expect(notice?.tone, FeedbackTone.uncertain);
-    expect(notice?.copy, contains("couldn't confirm"));
-    expect(notice?.copy, isNot(contains("wasn't changed")));
+    expect(notice?.resolve(english), contains("couldn't confirm"));
+    expect(notice?.resolve(english), isNot(contains("wasn't changed")));
 
     await container.read(profileProvider.future);
     expect(
@@ -163,8 +176,12 @@ void main() {
 
     expect(outcome, isA<DisplayNameUpdateAccountUnavailable>());
     expect(
-      container.read(feedbackProvider)?.copy,
+      container.read(feedbackProvider)?.resolve(english),
       'This account is no longer available.',
+    );
+    expect(
+      container.read(feedbackProvider)?.resolve(indonesian),
+      'Akun ini sudah tidak tersedia.',
     );
     expect(auth.signOutCalls, 0);
 

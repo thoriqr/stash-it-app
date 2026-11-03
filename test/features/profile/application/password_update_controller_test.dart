@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/feedback/app_feedback.dart';
@@ -9,6 +10,7 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/profile/application/password_update_controller.dart';
 import 'package:stash_it_app/features/profile/application/profile_controller.dart';
 import 'package:stash_it_app/features/profile/data/profile_providers.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 
 import '../../../support/fake_http.dart';
 import '../../../support/fake_profile_repository.dart';
@@ -26,6 +28,9 @@ class _RecordingAuthState extends AuthState {
 }
 
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
+
   ProviderContainer makeContainer(
     FakeProfileRepository fake, {
     _RecordingAuthState? auth,
@@ -64,7 +69,14 @@ void main() {
         container.read(profileProvider).value!.hasPasswordCredential,
         isTrue,
       );
-      expect(container.read(feedbackProvider)?.copy, 'Password created.');
+      expect(
+        container.read(feedbackProvider)?.resolve(english),
+        'Password created.',
+      );
+      expect(
+        container.read(feedbackProvider)?.resolve(indonesian),
+        'Kata sandi dibuat.',
+      );
       expect(
         auth.signOutCalls,
         0,
@@ -92,7 +104,14 @@ void main() {
       fake.passwordSubmissions.single.currentPassword,
       '  my current password  ',
     );
-    expect(container.read(feedbackProvider)?.copy, 'Password changed.');
+    expect(
+      container.read(feedbackProvider)?.resolve(english),
+      'Password changed.',
+    );
+    expect(
+      container.read(feedbackProvider)?.resolve(indonesian),
+      'Kata sandi diubah.',
+    );
     expect(auth.signOutCalls, 0);
   });
 
@@ -207,7 +226,10 @@ void main() {
 
         expect(outcome, isA<PasswordUpdateModeConflict>(), reason: '$failure');
         expect(container.read(feedbackProvider)?.tone, FeedbackTone.warning);
-        expect(container.read(feedbackProvider)?.copy, contains(expectedCopy));
+        expect(
+          container.read(feedbackProvider)?.resolve(english),
+          contains(expectedCopy),
+        );
 
         await container.read(profileProvider.future);
         expect(fake.getUserCalls, 2, reason: '$failure');
@@ -231,10 +253,11 @@ void main() {
     expect(outcome, isA<PasswordUpdateRejected>());
     final rejected = outcome as PasswordUpdateRejected;
     expect(rejected.tone, FeedbackTone.warning);
-    expect(rejected.message, contains('90 seconds'));
-    expect(rejected.message, isNot(contains('Too many attempts')));
+    expect(rejected.message(english), contains('90 seconds'));
+    expect(rejected.message(indonesian), contains('90 detik'));
+    expect(rejected.message(english), isNot(contains('Too many attempts')));
     expect(
-      rejected.message,
+      rejected.message(english),
       isNot(contains('too many')),
       reason:
           'a spent budget and exhausted password capacity are different '
@@ -261,9 +284,9 @@ void main() {
       expect(outcome, isA<PasswordUpdateUncertain>(), reason: '$failure');
       final notice = container.read(feedbackProvider);
       expect(notice?.tone, FeedbackTone.uncertain);
-      expect(notice?.copy, contains("couldn't confirm"));
-      expect(notice?.copy, isNot(contains("wasn't written")));
-      expect(notice?.copy, isNot(contains('unchanged')));
+      expect(notice?.resolve(english), contains("couldn't confirm"));
+      expect(notice?.resolve(english), isNot(contains("wasn't written")));
+      expect(notice?.resolve(english), isNot(contains('unchanged')));
 
       await container.read(profileProvider.future);
       expect(fake.getUserCalls, 2, reason: '$failure');

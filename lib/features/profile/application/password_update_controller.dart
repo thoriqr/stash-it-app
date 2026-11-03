@@ -6,6 +6,7 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 
 import '../data/profile_providers.dart';
 import 'profile_controller.dart';
+import 'profile_feedback.dart';
 
 part 'password_update_controller.g.dart';
 
@@ -43,8 +44,9 @@ final class PasswordUpdateAlreadyChanged extends PasswordUpdateOutcome {
 final class PasswordUpdateRejected extends PasswordUpdateOutcome {
   const PasswordUpdateRejected(this.message, {this.tone = FeedbackTone.danger});
 
-  /// Client-owned copy. Never a backend `message`.
-  final String message;
+  /// Client-owned copy, resolved at presentation time. Never a backend
+  /// `message`.
+  final FeedbackMessage message;
 
   /// How the form paints the notice: [FeedbackTone.warning] for a budget or a
   /// session-layer problem, [FeedbackTone.danger] for a confirmed failure.
@@ -142,12 +144,7 @@ class PasswordUpdate extends _$PasswordUpdate {
       // A success belonging to an account that is no longer loaded must not
       // announce itself during the next account's session.
       if (applied) {
-        _publish(
-          AppFeedback(
-            tone: FeedbackTone.success,
-            copy: change ? 'Password changed.' : 'Password created.',
-          ),
-        );
+        _publish(passwordSucceededFeedback(change));
       }
       return const PasswordUpdateSucceeded();
     } on ApiFailure catch (failure) {
@@ -195,38 +192,17 @@ class PasswordUpdate extends _$PasswordUpdate {
       // field errors: the correction is a fresh profile and the other form. The
       // profile is refetched so the next visit renders the right mode.
       case ApiFailurePasswordCredentialAlreadyExists():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                'A password was already created for this account. Open this '
-                'screen again to change it.',
-          ),
-        );
+        _publish(passwordModeConflictExistsFeedback);
         ref.read(profileProvider.notifier).reconcile();
         return const PasswordUpdateModeConflict();
 
       case ApiFailureCurrentPasswordRequired():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                'Your account already has a password. Open this screen again '
-                'to change it.',
-          ),
-        );
+        _publish(passwordModeConflictRequiredFeedback);
         ref.read(profileProvider.notifier).reconcile();
         return const PasswordUpdateModeConflict();
 
       case ApiFailureUnexpectedCurrentPassword():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.warning,
-            copy:
-                'Your account has no password yet. Open this screen again to '
-                'create one.',
-          ),
-        );
+        _publish(passwordModeConflictUnexpectedFeedback);
         ref.read(profileProvider.notifier).reconcile();
         return const PasswordUpdateModeConflict();
 
@@ -237,19 +213,14 @@ class PasswordUpdate extends _$PasswordUpdate {
       // countdown is shown only when `Retry-After` supplied one.
       case ApiFailureRateLimited(:final retryAfter):
         return PasswordUpdateRejected(
-          retryAfter == null
-              ? "We can't set a password right now. Try again shortly."
-              : "We can't set a password right now. Try again in "
-                    '${retryAfter.inSeconds} seconds.',
+          passwordRateLimitedMessage(retryAfter),
           tone: FeedbackTone.warning,
         );
 
       // The per-user limiter failed closed, or an upstream refused before the
       // handler. Nothing was written and no recovery time is known.
       case ApiFailureServerUnavailable():
-        return const PasswordUpdateRejected(
-          "We can't set a password right now. Try again shortly.",
-        );
+        return PasswordUpdateRejected(passwordUnavailableMessage());
 
       // A commit error, a lost request, or a `2xx` whose body could not be read.
       // None of them establishes the outcome. The profile is refetched so a
@@ -257,35 +228,18 @@ class PasswordUpdate extends _$PasswordUpdate {
       case ApiFailureServerFault() ||
           ApiFailureTransport() ||
           ApiFailureUnreadableResponse():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.uncertain,
-            copy:
-                "We couldn't confirm whether your password was set. Open this "
-                'screen again before trying again.',
-          ),
-        );
+        _publish(passwordUnconfirmedFeedback);
         ref.read(profileProvider.notifier).reconcile();
         return const PasswordUpdateUncertain();
 
       case ApiFailureUserNotFound():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.danger,
-            copy: 'This account is no longer available.',
-          ),
-        );
+        _publish(accountUnavailableFeedback);
         ref.read(profileProvider.notifier).reconcile();
         return const PasswordUpdateAccountUnavailable();
 
       case ApiFailureAuthRequired():
         if (!ref.read(authStateProvider).isSignedOut) {
-          _publish(
-            const AppFeedback(
-              tone: FeedbackTone.danger,
-              copy: 'Sign in again to set your password.',
-            ),
-          );
+          _publish(passwordAuthRequiredFeedback);
         }
         return const PasswordUpdateSessionRefused();
 
@@ -297,15 +251,13 @@ class PasswordUpdate extends _$PasswordUpdate {
       // and the form stays open for a manual retry.
       case ApiFailureRefreshUncertain():
         return PasswordUpdateRejected(
-          "We couldn't renew your session, so your password wasn't "
-          '${change ? 'changed' : 'set'}. Try again.',
+          passwordRefreshUncertainMessage(change),
           tone: FeedbackTone.warning,
         );
 
       case ApiFailureCredentialStorage():
         return PasswordUpdateRejected(
-          "This device couldn't refresh your session, so your password wasn't "
-          '${change ? 'changed' : 'set'}. Try again.',
+          passwordCredentialStorageMessage(change),
           tone: FeedbackTone.warning,
         );
 
@@ -321,9 +273,7 @@ class PasswordUpdate extends _$PasswordUpdate {
           ApiFailureGoogleAuth() ||
           ApiFailurePasswordReset() ||
           ApiFailureCollectionDeleteTargetNotFound():
-        return const PasswordUpdateRejected(
-          "We couldn't set your password. Try again.",
-        );
+        return PasswordUpdateRejected(passwordSetFailedMessage());
     }
   }
 

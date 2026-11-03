@@ -156,10 +156,10 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get profileIdentityEmailPassword => 'Email & password';
+  String get profileIdentityEmailPassword => 'Email & kata sandi';
 
   @override
-  String get profileIdentityUnknown => 'Unknown';
+  String get profileIdentityUnknown => 'Tidak diketahui';
 
   @override
   String get pendingUrlsExpired =>
@@ -702,100 +702,102 @@ class AppLocalizationsId extends AppLocalizations {
   String get refreshFailed => 'Tidak dapat menyegarkan. Periksa koneksi Anda.';
 
   @override
-  String get displayNameUpdated => 'Display name updated.';
+  String get displayNameUpdated => 'Nama tampilan diperbarui.';
 
   @override
   String get displayNameRateLimitedNoWait =>
-      'Too many attempts. Try again shortly.';
+      'Terlalu banyak percobaan. Coba lagi sebentar lagi.';
 
   @override
   String displayNameRateLimitedWithWait(String wait) {
-    return 'Too many attempts. Try again in $wait.';
+    return 'Terlalu banyak percobaan. Coba lagi dalam $wait.';
   }
 
   @override
   String get displayNameUnavailable =>
-      'Display name changes are temporarily unavailable. Try again shortly.';
+      'Perubahan nama tampilan untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
 
   @override
   String get displayNameUnconfirmed =>
-      'We couldn\'t confirm whether your display name was updated. Check your profile before trying again.';
+      'Kami tidak dapat memastikan apakah nama tampilan Anda diperbarui. Periksa profil Anda sebelum mencoba lagi.';
 
   @override
-  String get accountUnavailable => 'This account is no longer available.';
+  String get accountUnavailable => 'Akun ini sudah tidak tersedia.';
 
   @override
   String get displayNameAuthRequired =>
-      'Sign in again to change your display name.';
+      'Masuk lagi untuk mengubah nama tampilan Anda.';
 
   @override
   String get displayNameRefreshUncertain =>
-      'We couldn\'t renew your session, so your display name wasn\'t changed. Try again.';
+      'Kami tidak dapat memperbarui sesi Anda, sehingga nama tampilan Anda tidak diubah. Coba lagi.';
 
   @override
   String get displayNameCredentialStorage =>
-      'This device couldn\'t refresh your session, so your display name wasn\'t changed. Try again.';
+      'Perangkat ini tidak dapat memperbarui sesi Anda, sehingga nama tampilan Anda tidak diubah. Coba lagi.';
 
   @override
   String get displayNameChangeFailed =>
-      'We couldn\'t change your display name. Try again.';
+      'Kami tidak dapat mengubah nama tampilan Anda. Coba lagi.';
 
   @override
-  String get passwordChanged => 'Password changed.';
+  String get passwordChanged => 'Kata sandi diubah.';
 
   @override
-  String get passwordCreated => 'Password created.';
+  String get passwordCreated => 'Kata sandi dibuat.';
 
   @override
   String get passwordModeConflictExists =>
-      'A password was already created for this account. Open this screen again to change it.';
+      'Kata sandi sudah dibuat untuk akun ini. Buka layar ini lagi untuk mengubahnya.';
 
   @override
   String get passwordModeConflictRequired =>
-      'Your account already has a password. Open this screen again to change it.';
+      'Akun Anda sudah memiliki kata sandi. Buka layar ini lagi untuk mengubahnya.';
 
   @override
   String get passwordModeConflictUnexpected =>
-      'Your account has no password yet. Open this screen again to create one.';
+      'Akun Anda belum memiliki kata sandi. Buka layar ini lagi untuk membuatnya.';
 
   @override
   String get passwordRateLimitedNoWait =>
-      'We can\'t set a password right now. Try again shortly.';
+      'Kami tidak dapat mengatur kata sandi saat ini. Coba lagi sebentar lagi.';
 
   @override
   String passwordRateLimitedWithWait(String wait) {
-    return 'We can\'t set a password right now. Try again in $wait.';
+    return 'Kami tidak dapat mengatur kata sandi saat ini. Coba lagi dalam $wait.';
   }
 
   @override
   String get passwordUnavailable =>
-      'We can\'t set a password right now. Try again shortly.';
+      'Kami tidak dapat mengatur kata sandi saat ini. Coba lagi sebentar lagi.';
 
   @override
   String get passwordUnconfirmed =>
-      'We couldn\'t confirm whether your password was set. Open this screen again before trying again.';
+      'Kami tidak dapat memastikan apakah kata sandi Anda telah diatur. Buka layar ini lagi sebelum mencoba lagi.';
 
   @override
-  String get passwordAuthRequired => 'Sign in again to set your password.';
+  String get passwordAuthRequired =>
+      'Masuk lagi untuk mengatur kata sandi Anda.';
 
   @override
   String get passwordRefreshUncertainChanged =>
-      'We couldn\'t renew your session, so your password wasn\'t changed. Try again.';
+      'Kami tidak dapat memperbarui sesi Anda, sehingga kata sandi Anda tidak diubah. Coba lagi.';
 
   @override
   String get passwordRefreshUncertainSet =>
-      'We couldn\'t renew your session, so your password wasn\'t set. Try again.';
+      'Kami tidak dapat memperbarui sesi Anda, sehingga kata sandi Anda tidak diatur. Coba lagi.';
 
   @override
   String get passwordCredentialStorageChanged =>
-      'This device couldn\'t refresh your session, so your password wasn\'t changed. Try again.';
+      'Perangkat ini tidak dapat memperbarui sesi Anda, sehingga kata sandi Anda tidak diubah. Coba lagi.';
 
   @override
   String get passwordCredentialStorageSet =>
-      'This device couldn\'t refresh your session, so your password wasn\'t set. Try again.';
+      'Perangkat ini tidak dapat memperbarui sesi Anda, sehingga kata sandi Anda tidak diatur. Coba lagi.';
 
   @override
-  String get passwordSetFailed => 'We couldn\'t set your password. Try again.';
+  String get passwordSetFailed =>
+      'Kami tidak dapat mengatur kata sandi Anda. Coba lagi.';
 
   @override
   String get newPinSent => 'PIN baru telah dikirim.';
@@ -1322,6 +1324,142 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get searchSavedItemsHeading => 'ITEM TERSIMPAN';
+
+  @override
+  String get profileTitle => 'PROFIL';
+
+  @override
+  String get profileSignOut => 'Keluar';
+
+  @override
+  String get profileLoading => 'Memuat profil…';
+
+  @override
+  String get profileRetry => 'Coba lagi';
+
+  @override
+  String get profileSessionEnded => 'Sesi Anda telah berakhir. Masuk lagi.';
+
+  @override
+  String get profileSignInRequired => 'Masuk lagi untuk melihat profil Anda.';
+
+  @override
+  String get profileUnavailable =>
+      'Profil untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
+
+  @override
+  String get profileTransport =>
+      'Tidak ada koneksi. Kami tidak dapat memuat profil Anda.';
+
+  @override
+  String get profileLoadGeneric =>
+      'Kami tidak dapat memuat profil Anda. Coba lagi.';
+
+  @override
+  String get profileAccountSection => 'AKUN';
+
+  @override
+  String get profileLinkedIdentitiesSection => 'IDENTITAS TERTAUT';
+
+  @override
+  String get profileDisplayNameLabel => 'Nama tampilan';
+
+  @override
+  String get profileChangePasswordAction => 'Ubah kata sandi';
+
+  @override
+  String get profileCreatePasswordAction => 'Buat kata sandi';
+
+  @override
+  String get profileNoAccountsConnected => 'Belum ada akun yang terhubung.';
+
+  @override
+  String profileJoinedDate(String date) {
+    return 'bergabung $date';
+  }
+
+  @override
+  String profileLinkedDate(String date) {
+    return 'tertaut $date';
+  }
+
+  @override
+  String get profilePasswordTitle => 'KATA SANDI';
+
+  @override
+  String get profileChangePasswordTitle => 'UBAH KATA SANDI';
+
+  @override
+  String get profileCreatePasswordTitle => 'BUAT KATA SANDI';
+
+  @override
+  String get profileBackToProfile => 'Kembali ke Profil';
+
+  @override
+  String get profileChangePasswordDescription =>
+      'Pilih kata sandi baru untuk akun Anda.';
+
+  @override
+  String get profileCreatePasswordDescription =>
+      'Tambahkan kata sandi agar Anda dapat masuk dengan alamat email.';
+
+  @override
+  String get profileCurrentPasswordLabel => 'Kata sandi saat ini';
+
+  @override
+  String get profileNewPasswordLabel => 'Kata sandi baru';
+
+  @override
+  String get profileConfirmNewPasswordLabel => 'Konfirmasi kata sandi baru';
+
+  @override
+  String get profileShowCurrentPassword => 'Tampilkan kata sandi saat ini';
+
+  @override
+  String get profileHideCurrentPassword => 'Sembunyikan kata sandi saat ini';
+
+  @override
+  String get profileShowNewPassword => 'Tampilkan kata sandi baru';
+
+  @override
+  String get profileHideNewPassword => 'Sembunyikan kata sandi baru';
+
+  @override
+  String get profileShowConfirmationPassword =>
+      'Tampilkan konfirmasi kata sandi';
+
+  @override
+  String get profileHideConfirmationPassword =>
+      'Sembunyikan konfirmasi kata sandi';
+
+  @override
+  String get profileCurrentPasswordRequired => 'Masukkan kata sandi saat ini.';
+
+  @override
+  String get profilePasswordLength => 'Gunakan antara 8 dan 128 karakter.';
+
+  @override
+  String get profilePasswordsDoNotMatch => 'Kata sandi tidak cocok.';
+
+  @override
+  String get profileCurrentPasswordIncorrect => 'Kata sandi saat ini salah.';
+
+  @override
+  String get profilePasswordChangedElsewhere =>
+      'Kata sandi Anda diubah di tempat lain. Masukkan kata sandi saat ini lagi.';
+
+  @override
+  String get profileEditDisplayNameTitle => 'Edit nama tampilan';
+
+  @override
+  String get profileDisplayNameValidation =>
+      'Gunakan antara 2 dan 100 karakter.';
+
+  @override
+  String get profileCancelAction => 'Batal';
+
+  @override
+  String get profileSaveAction => 'Simpan';
 
   @override
   String get authBackToWelcome => 'Kembali ke halaman awal';

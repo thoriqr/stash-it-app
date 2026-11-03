@@ -1867,6 +1867,252 @@ abstract class AppLocalizations {
   /// **'SAVED ITEMS'**
   String get searchSavedItemsHeading;
 
+  /// App bar title for the Profile destination.
+  ///
+  /// In en, this message translates to:
+  /// **'PROFILE'**
+  String get profileTitle;
+
+  /// Action that signs the current account out.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get profileSignOut;
+
+  /// Loading label while the profile is being read.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading profile…'**
+  String get profileLoading;
+
+  /// Retry action for a failed profile read.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get profileRetry;
+
+  /// Profile read failure when the session ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session has ended. Sign in again.'**
+  String get profileSessionEnded;
+
+  /// Profile read failure when authentication is required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to view your profile.'**
+  String get profileSignInRequired;
+
+  /// Profile is temporarily unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile is temporarily unavailable. Try again shortly.'**
+  String get profileUnavailable;
+
+  /// Profile read failed because the server was unreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection. We could not load your profile.'**
+  String get profileTransport;
+
+  /// Fallback copy for a failed profile read.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not load your profile. Try again.'**
+  String get profileLoadGeneric;
+
+  /// Heading for editable account fields.
+  ///
+  /// In en, this message translates to:
+  /// **'ACCOUNT'**
+  String get profileAccountSection;
+
+  /// Heading for linked sign-in identities.
+  ///
+  /// In en, this message translates to:
+  /// **'LINKED IDENTITIES'**
+  String get profileLinkedIdentitiesSection;
+
+  /// Label for the display name account row and edit field.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get profileDisplayNameLabel;
+
+  /// Action that opens the change-password form.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get profileChangePasswordAction;
+
+  /// Action that opens the create-password form.
+  ///
+  /// In en, this message translates to:
+  /// **'Create password'**
+  String get profileCreatePasswordAction;
+
+  /// Empty state when the profile has no linked identities.
+  ///
+  /// In en, this message translates to:
+  /// **'No accounts connected yet.'**
+  String get profileNoAccountsConnected;
+
+  /// Chip copy combining the joined label with a formatted date.
+  ///
+  /// In en, this message translates to:
+  /// **'joined {date}'**
+  String profileJoinedDate(String date);
+
+  /// Identity note combining the linked label with a formatted date.
+  ///
+  /// In en, this message translates to:
+  /// **'linked {date}'**
+  String profileLinkedDate(String date);
+
+  /// Password screen title while the profile mode is still loading.
+  ///
+  /// In en, this message translates to:
+  /// **'PASSWORD'**
+  String get profilePasswordTitle;
+
+  /// Password screen title when changing a password.
+  ///
+  /// In en, this message translates to:
+  /// **'CHANGE PASSWORD'**
+  String get profileChangePasswordTitle;
+
+  /// Password screen title when creating a password.
+  ///
+  /// In en, this message translates to:
+  /// **'CREATE PASSWORD'**
+  String get profileCreatePasswordTitle;
+
+  /// Back action or tooltip returning to Profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Profile'**
+  String get profileBackToProfile;
+
+  /// Explanation shown in change-password mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a new password for your account.'**
+  String get profileChangePasswordDescription;
+
+  /// Explanation shown in create-password mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a password so you can sign in with your email address.'**
+  String get profileCreatePasswordDescription;
+
+  /// Label for the current-password field.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password'**
+  String get profileCurrentPasswordLabel;
+
+  /// Label for the new-password field.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get profileNewPasswordLabel;
+
+  /// Label for the new-password confirmation field.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm new password'**
+  String get profileConfirmNewPasswordLabel;
+
+  /// Tooltip that reveals the current password.
+  ///
+  /// In en, this message translates to:
+  /// **'Show current password'**
+  String get profileShowCurrentPassword;
+
+  /// Tooltip that hides the current password.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide current password'**
+  String get profileHideCurrentPassword;
+
+  /// Tooltip that reveals the new password.
+  ///
+  /// In en, this message translates to:
+  /// **'Show new password'**
+  String get profileShowNewPassword;
+
+  /// Tooltip that hides the new password.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide new password'**
+  String get profileHideNewPassword;
+
+  /// Tooltip that reveals the password confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Show confirmation password'**
+  String get profileShowConfirmationPassword;
+
+  /// Tooltip that hides the password confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide confirmation password'**
+  String get profileHideConfirmationPassword;
+
+  /// Validation message for an empty current password.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your current password.'**
+  String get profileCurrentPasswordRequired;
+
+  /// Validation message for a password outside the supported length.
+  ///
+  /// In en, this message translates to:
+  /// **'Use between 8 and 128 characters.'**
+  String get profilePasswordLength;
+
+  /// Validation message when the password confirmation differs.
+  ///
+  /// In en, this message translates to:
+  /// **'The passwords do not match.'**
+  String get profilePasswordsDoNotMatch;
+
+  /// Server error when the current password is incorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'That current password is incorrect.'**
+  String get profileCurrentPasswordIncorrect;
+
+  /// Server error when another request changed the password first.
+  ///
+  /// In en, this message translates to:
+  /// **'Your password was changed somewhere else. Enter the current password again.'**
+  String get profilePasswordChangedElsewhere;
+
+  /// Title of the edit-display-name sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit display name'**
+  String get profileEditDisplayNameTitle;
+
+  /// Validation message for a display name outside the supported length.
+  ///
+  /// In en, this message translates to:
+  /// **'Use between 2 and 100 characters.'**
+  String get profileDisplayNameValidation;
+
+  /// Cancel action in the display-name sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get profileCancelAction;
+
+  /// Save action in the display-name sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get profileSaveAction;
+
   /// Tooltip for returning to the signed-out welcome screen.
   ///
   /// In en, this message translates to:

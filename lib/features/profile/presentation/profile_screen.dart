@@ -15,6 +15,7 @@ import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/destination_app_bar.dart';
 
 import 'profile_date.dart';
+import 'profile_identity_label.dart';
 import 'widgets/display_name_sheet.dart';
 
 /// The Profile destination.
@@ -28,6 +29,7 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final profile = ref.watch(profileProvider);
 
@@ -40,7 +42,7 @@ class ProfileScreen extends ConsumerWidget {
     };
 
     return Scaffold(
-      appBar: const DestinationAppBar(title: 'PROFILE'),
+      appBar: DestinationAppBar(title: l10n.profileTitle),
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
@@ -53,7 +55,7 @@ class ProfileScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.all(AppMetrics.space4),
             child: AppButton(
-              label: 'Sign out',
+              label: l10n.profileSignOut,
               variant: AppButtonVariant.secondary,
               onPressed: () => ref.read(authStateProvider.notifier).signOut(),
             ),
@@ -112,9 +114,10 @@ class _IdentitySummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final displayName = value.displayName.trim();
     final email = value.email.trim();
-    final joined = formatProfileDate(value.createdAt);
+    final joined = formatProfileDate(value.createdAt, l10n.localeName);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,7 +144,7 @@ class _IdentitySummary extends StatelessWidget {
         ],
         if (joined != null) ...[
           const SizedBox(height: AppMetrics.space2),
-          _DateChip(label: 'joined $joined', tokens: tokens),
+          _DateChip(label: l10n.profileJoinedDate(joined), tokens: tokens),
         ],
       ],
     );
@@ -185,6 +188,8 @@ class _HeaderLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -199,7 +204,7 @@ class _HeaderLoading extends StatelessWidget {
         const SizedBox(width: AppMetrics.space2),
         Flexible(
           child: Text(
-            'Loading profile…',
+            l10n.profileLoading,
             style: AppTypography.body.copyWith(color: tokens.textSecondary),
           ),
         ),
@@ -221,16 +226,18 @@ class _HeaderError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          _profileErrorMessage(error, AppLocalizations.of(context)),
+          _profileErrorMessage(error, l10n),
           style: AppTypography.body.copyWith(color: tokens.textPrimary),
         ),
         const SizedBox(height: AppMetrics.space3),
         AppButton(
-          label: 'Retry',
+          label: l10n.profileRetry,
           variant: AppButtonVariant.secondary,
           block: false,
           onPressed: onRetry,
@@ -242,17 +249,16 @@ class _HeaderError extends StatelessWidget {
 
 String _profileErrorMessage(Object error, AppLocalizations localizations) =>
     switch (error) {
-      ApiFailureSessionEnded() => 'Your session has ended. Sign in again.',
-      ApiFailureAuthRequired() => 'Sign in again to view your profile.',
+      ApiFailureSessionEnded() => localizations.profileSessionEnded,
+      ApiFailureAuthRequired() => localizations.profileSignInRequired,
       // The token is valid but the account it names is gone. No copy may offer
       // signing in as a fix: a new session would name the same missing account.
-      ApiFailureUserNotFound() => 'This account is no longer available.',
-      ApiFailureServerUnavailable() =>
-        'Profile is temporarily unavailable. Try again shortly.',
-      ApiFailureTransport() => 'No connection. We could not load your profile.',
+      ApiFailureUserNotFound() => localizations.accountUnavailable,
+      ApiFailureServerUnavailable() => localizations.profileUnavailable,
+      ApiFailureTransport() => localizations.profileTransport,
       _ =>
         genericReadFailureMessage(error, localizations) ??
-            'We could not load your profile. Try again.',
+            localizations.profileLoadGeneric,
     };
 
 /// A section heading with the reference's rule running to the right edge.
@@ -300,14 +306,15 @@ class _AccountSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final displayName = profile.displayName.trim();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _SectionLabelRow(label: 'ACCOUNT', tokens: tokens),
+        _SectionLabelRow(label: l10n.profileAccountSection, tokens: tokens),
         _ActionRow(
-          label: 'Display name',
+          label: l10n.profileDisplayNameLabel,
           value: displayName.isEmpty ? '—' : displayName,
           tokens: tokens,
           // The raw stored value, not the trimmed one shown in the row: the
@@ -318,8 +325,8 @@ class _AccountSection extends ConsumerWidget {
         ),
         _ActionRow(
           label: profile.hasPasswordCredential
-              ? 'Change password'
-              : 'Create password',
+              ? l10n.profileChangePasswordAction
+              : l10n.profileCreatePasswordAction,
           tokens: tokens,
           // The screen captures the mode from the loaded profile at this
           // instant. It is not passed as an argument, so a direct entry has to
@@ -426,10 +433,15 @@ class _LinkedIdentitiesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _SectionLabelRow(label: 'LINKED IDENTITIES', tokens: tokens),
+        _SectionLabelRow(
+          label: l10n.profileLinkedIdentitiesSection,
+          tokens: tokens,
+        ),
         if (profile.identities.isEmpty)
           _EmptyIdentities(tokens: tokens)
         else
@@ -460,8 +472,11 @@ class _IdentityRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final linked = formatProfileDate(identity.linkedAt);
-    final note = linked != null ? 'linked $linked' : _usefulSnapshot();
+    final l10n = AppLocalizations.of(context);
+    final linked = formatProfileDate(identity.linkedAt, l10n.localeName);
+    final note = linked != null
+        ? l10n.profileLinkedDate(linked)
+        : _usefulSnapshot();
 
     return Container(
       decoration: BoxDecoration(
@@ -475,7 +490,10 @@ class _IdentityRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(identity.displayLabel, style: _rowLabelStyle(tokens)),
+          Text(
+            identityDisplayLabel(identity, l10n),
+            style: _rowLabelStyle(tokens),
+          ),
           if (note != null) ...[
             const SizedBox(height: 2),
             Text(
@@ -516,6 +534,8 @@ class _EmptyIdentities extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -527,7 +547,7 @@ class _EmptyIdentities extends StatelessWidget {
         vertical: AppMetrics.space4,
       ),
       child: Text(
-        'No accounts connected yet.',
+        l10n.profileNoAccountsConnected,
         style: AppTypography.body.copyWith(color: tokens.textSecondary),
       ),
     );

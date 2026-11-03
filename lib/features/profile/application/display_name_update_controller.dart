@@ -6,6 +6,7 @@ import 'package:stash_it_app/features/auth/application/auth_state.dart';
 
 import '../data/profile_providers.dart';
 import 'profile_controller.dart';
+import 'profile_feedback.dart';
 
 part 'display_name_update_controller.g.dart';
 
@@ -33,8 +34,9 @@ final class DisplayNameUpdateRejected extends DisplayNameUpdateOutcome {
     this.tone = FeedbackTone.danger,
   });
 
-  /// Client-owned copy for the inline message. Never a backend `message`.
-  final String message;
+  /// Client-owned copy for the inline message, resolved at presentation time.
+  /// Never a backend `message`.
+  final FeedbackMessage message;
 
   /// How the sheet paints the notice: [FeedbackTone.warning] for a budget or a
   /// session-layer problem, [FeedbackTone.danger] for a confirmed failure.
@@ -100,12 +102,7 @@ class DisplayNameUpdate extends _$DisplayNameUpdate {
       if (!ref.mounted) return const DisplayNameUpdateSucceeded();
 
       ref.read(profileProvider.notifier).applyUpdatedProfile(updated);
-      _publish(
-        const AppFeedback(
-          tone: FeedbackTone.success,
-          copy: 'Display name updated.',
-        ),
-      );
+      _publish(displayNameUpdatedFeedback);
       return const DisplayNameUpdateSucceeded();
     } on ApiFailure catch (failure) {
       if (!ref.mounted) return const DisplayNameUpdateUncertain();
@@ -122,20 +119,14 @@ class DisplayNameUpdate extends _$DisplayNameUpdate {
 
       case ApiFailureRateLimited(:final retryAfter):
         return DisplayNameUpdateRejected(
-          retryAfter == null
-              ? 'Too many attempts. Try again shortly.'
-              : 'Too many attempts. Try again in ${retryAfter.inSeconds} '
-                    'seconds.',
+          displayNameRateLimitedMessage(retryAfter),
           tone: FeedbackTone.warning,
         );
 
       // The limiter or an upstream refused before the handler ran. No write
       // happened and there is no recovery time, so the sheet stays open.
       case ApiFailureServerUnavailable():
-        return const DisplayNameUpdateRejected(
-          'Display name changes are temporarily unavailable. Try again '
-          'shortly.',
-        );
+        return DisplayNameUpdateRejected(displayNameUnavailableMessage());
 
       // A `500` is **not** proof the rename failed: the handler commits the name
       // before reading identities, and a later identity-read failure is reported
@@ -144,14 +135,7 @@ class DisplayNameUpdate extends _$DisplayNameUpdate {
       case ApiFailureServerFault() ||
           ApiFailureTransport() ||
           ApiFailureUnreadableResponse():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.uncertain,
-            copy:
-                "We couldn't confirm whether your display name was updated. "
-                'Check your profile before trying again.',
-          ),
-        );
+        _publish(displayNameUnconfirmedFeedback);
         ref.read(profileProvider.notifier).reconcile();
         return const DisplayNameUpdateUncertain();
 
@@ -159,23 +143,13 @@ class DisplayNameUpdate extends _$DisplayNameUpdate {
       // and do not sign out: the token is valid and signing in cannot recreate
       // the account.
       case ApiFailureUserNotFound():
-        _publish(
-          const AppFeedback(
-            tone: FeedbackTone.danger,
-            copy: 'This account is no longer available.',
-          ),
-        );
+        _publish(accountUnavailableFeedback);
         ref.read(profileProvider.notifier).reconcile();
         return const DisplayNameUpdateAccountUnavailable();
 
       case ApiFailureAuthRequired():
         if (!ref.read(authStateProvider).isSignedOut) {
-          _publish(
-            const AppFeedback(
-              tone: FeedbackTone.danger,
-              copy: 'Sign in again to change your display name.',
-            ),
-          );
+          _publish(displayNameAuthRequiredFeedback);
         }
         return const DisplayNameUpdateSessionRefused();
 
@@ -189,16 +163,14 @@ class DisplayNameUpdate extends _$DisplayNameUpdate {
       // while the session is the uncertain part. Keeping the sheet open keeps
       // the typed name; a retry is manual, never automatic.
       case ApiFailureRefreshUncertain():
-        return const DisplayNameUpdateRejected(
-          "We couldn't renew your session, so your display name wasn't "
-          'changed. Try again.',
+        return DisplayNameUpdateRejected(
+          displayNameRefreshUncertainMessage(),
           tone: FeedbackTone.warning,
         );
 
       case ApiFailureCredentialStorage():
-        return const DisplayNameUpdateRejected(
-          "This device couldn't refresh your session, so your display name "
-          "wasn't changed. Try again.",
+        return DisplayNameUpdateRejected(
+          displayNameCredentialStorageMessage(),
           tone: FeedbackTone.warning,
         );
 
@@ -219,9 +191,7 @@ class DisplayNameUpdate extends _$DisplayNameUpdate {
           ApiFailureGoogleAuth() ||
           ApiFailurePasswordReset() ||
           ApiFailureCollectionDeleteTargetNotFound():
-        return const DisplayNameUpdateRejected(
-          "We couldn't change your display name. Try again.",
-        );
+        return DisplayNameUpdateRejected(displayNameChangeFailedMessage());
     }
   }
 

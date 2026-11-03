@@ -19,31 +19,6 @@ class UserIdentity {
   final String? emailSnapshot;
   final String? displayNameSnapshot;
 
-  String get displayLabel {
-    switch (provider.toLowerCase()) {
-      case 'google':
-        return 'Google';
-      case 'apple':
-        return 'Apple';
-      case 'github':
-        return 'GitHub';
-      case 'facebook':
-        return 'Facebook';
-      case 'twitter':
-      case 'x':
-        return 'X';
-      case 'email':
-      case 'password':
-      case 'local':
-      case 'credentials':
-        return 'Email & password';
-      default:
-        // Capitalize first letter of unknown providers
-        if (provider.isEmpty) return 'Unknown';
-        return provider[0].toUpperCase() + provider.substring(1);
-    }
-  }
-
   @override
   bool operator ==(Object other) =>
       other is UserIdentity &&

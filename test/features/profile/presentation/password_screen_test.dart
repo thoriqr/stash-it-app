@@ -9,17 +9,22 @@ import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/profile/application/profile_controller.dart';
 import 'package:stash_it_app/features/profile/data/profile_providers.dart';
 import 'package:stash_it_app/features/profile/presentation/password_screen.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 
 import '../../../support/fake_profile_repository.dart';
 
 void main() {
+  final english = lookupAppLocalizations(const Locale('en'));
+  final indonesian = lookupAppLocalizations(const Locale('id'));
+
   Future<ProviderContainer> pumpPasswordScreen(
     WidgetTester tester,
     FakeProfileRepository repository, {
     bool awaitProfile = true,
     bool settle = true,
+    Locale? locale,
   }) async {
     final container = ProviderContainer.test(
       overrides: [profileRepositoryProvider.overrideWithValue(repository)],
@@ -31,6 +36,9 @@ void main() {
         container: container,
         child: MaterialApp(
           theme: AppTheme.light(),
+          locale: locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: Builder(
             builder: (context) => Scaffold(
               body: Center(
@@ -218,7 +226,14 @@ void main() {
 
     expect(find.byType(PasswordScreen), findsNothing);
     expect(repository.passwordSubmissions.single.currentPassword, isNull);
-    expect(container.read(feedbackProvider)?.copy, 'Password created.');
+    expect(
+      container.read(feedbackProvider)?.resolve(english),
+      'Password created.',
+    );
+    expect(
+      container.read(feedbackProvider)?.resolve(indonesian),
+      'Kata sandi dibuat.',
+    );
   });
 
   testWidgets('CURRENT_PASSWORD_INVALID is shown on the current field', (
@@ -310,10 +325,118 @@ void main() {
 
     expect(find.byType(PasswordScreen), findsNothing);
     expect(
-      container.read(feedbackProvider)?.copy,
+      container.read(feedbackProvider)?.resolve(english),
       contains('already has a password'),
     );
     await container.read(profileProvider.future);
     expect(repository.getUserCalls, 2);
+  });
+
+  testWidgets('renders create mode in Indonesian', (tester) async {
+    final repository = FakeProfileRepository(
+      profile: profileFixture(hasPasswordCredential: false),
+    );
+    await pumpPasswordScreen(tester, repository, locale: const Locale('id'));
+
+    expect(find.text('BUAT KATA SANDI'), findsOneWidget);
+    expect(
+      find.text(
+        'Tambahkan kata sandi agar Anda dapat masuk dengan alamat email.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Kata sandi baru'), findsOneWidget);
+    expect(find.text('Konfirmasi kata sandi baru'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Buat kata sandi'), findsOneWidget);
+    expect(find.byTooltip('Tampilkan kata sandi baru'), findsOneWidget);
+
+    await tester.enterText(fieldFor('Kata sandi baru'), 'short');
+    await tester.enterText(fieldFor('Konfirmasi kata sandi baru'), 'short');
+    await tester.tap(find.widgetWithText(AppButton, 'Buat kata sandi'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Gunakan antara 8 dan 128 karakter.'), findsOneWidget);
+    expect(repository.passwordCalls, 0);
+  });
+
+  testWidgets('renders change mode in Indonesian', (tester) async {
+    final repository = FakeProfileRepository(
+      profile: profileFixture(hasPasswordCredential: true),
+    );
+    await pumpPasswordScreen(tester, repository, locale: const Locale('id'));
+
+    expect(find.text('UBAH KATA SANDI'), findsOneWidget);
+    expect(find.text('Pilih kata sandi baru untuk akun Anda.'), findsOneWidget);
+    expect(find.text('Kata sandi saat ini'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Ubah kata sandi'), findsOneWidget);
+    expect(find.byTooltip('Tampilkan kata sandi saat ini'), findsOneWidget);
+  });
+
+  testWidgets('renders Indonesian password notices and field errors', (
+    tester,
+  ) async {
+    final repository = FakeProfileRepository()
+      ..passwordFailure = const ApiFailureCurrentPasswordInvalid(
+        code: 'CURRENT_PASSWORD_INVALID',
+      );
+    await pumpPasswordScreen(tester, repository, locale: const Locale('id'));
+
+    await tester.enterText(fieldFor('Kata sandi saat ini'), 'wrong password');
+    await tester.enterText(fieldFor('Kata sandi baru'), 'a new password');
+    await tester.enterText(
+      fieldFor('Konfirmasi kata sandi baru'),
+      'a new password',
+    );
+    await tester.tap(find.widgetWithText(AppButton, 'Ubah kata sandi'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kata sandi saat ini salah.'), findsOneWidget);
+  });
+
+  testWidgets('renders an Indonesian rate-limit notice', (tester) async {
+    final repository =
+        FakeProfileRepository(
+            profile: profileFixture(hasPasswordCredential: false),
+          )
+          ..passwordFailure = const ApiFailureRateLimited(
+            code: 'PASSWORD_WORK_UNAVAILABLE',
+            retryAfter: Duration(seconds: 45),
+          );
+    await pumpPasswordScreen(tester, repository, locale: const Locale('id'));
+
+    await tester.enterText(fieldFor('Kata sandi baru'), 'a first password');
+    await tester.enterText(
+      fieldFor('Konfirmasi kata sandi baru'),
+      'a first password',
+    );
+    await tester.tap(find.widgetWithText(AppButton, 'Buat kata sandi'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Kami tidak dapat mengatur kata sandi saat ini. Coba lagi dalam 45 detik.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('renders the unavailable profile state in Indonesian', (
+    tester,
+  ) async {
+    final repository = FakeProfileRepository()
+      ..getUserFailure = const ApiFailureTransport();
+    await pumpPasswordScreen(
+      tester,
+      repository,
+      awaitProfile: false,
+      locale: const Locale('id'),
+    );
+
+    expect(
+      find.text('Tidak ada koneksi. Kami tidak dapat memuat profil Anda.'),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(AppButton, 'Coba lagi'), findsOneWidget);
+    expect(find.text('Kata sandi baru'), findsNothing);
   });
 }

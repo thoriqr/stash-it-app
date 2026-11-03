@@ -291,6 +291,47 @@
   "searchRetry": "Retry",
   "searchCollectionsHeading": "COLLECTIONS",
   "searchSavedItemsHeading": "SAVED ITEMS",
+  "profileTitle": "PROFILE",
+  "profileSignOut": "Sign out",
+  "profileLoading": "Loading profile…",
+  "profileRetry": "Retry",
+  "profileSessionEnded": "Your session has ended. Sign in again.",
+  "profileSignInRequired": "Sign in again to view your profile.",
+  "profileUnavailable": "Profile is temporarily unavailable. Try again shortly.",
+  "profileTransport": "No connection. We could not load your profile.",
+  "profileLoadGeneric": "We could not load your profile. Try again.",
+  "profileAccountSection": "ACCOUNT",
+  "profileLinkedIdentitiesSection": "LINKED IDENTITIES",
+  "profileDisplayNameLabel": "Display name",
+  "profileChangePasswordAction": "Change password",
+  "profileCreatePasswordAction": "Create password",
+  "profileNoAccountsConnected": "No accounts connected yet.",
+  "profileJoinedDate": "joined {date}",
+  "profileLinkedDate": "linked {date}",
+  "profilePasswordTitle": "PASSWORD",
+  "profileChangePasswordTitle": "CHANGE PASSWORD",
+  "profileCreatePasswordTitle": "CREATE PASSWORD",
+  "profileBackToProfile": "Back to Profile",
+  "profileChangePasswordDescription": "Choose a new password for your account.",
+  "profileCreatePasswordDescription": "Add a password so you can sign in with your email address.",
+  "profileCurrentPasswordLabel": "Current password",
+  "profileNewPasswordLabel": "New password",
+  "profileConfirmNewPasswordLabel": "Confirm new password",
+  "profileShowCurrentPassword": "Show current password",
+  "profileHideCurrentPassword": "Hide current password",
+  "profileShowNewPassword": "Show new password",
+  "profileHideNewPassword": "Hide new password",
+  "profileShowConfirmationPassword": "Show confirmation password",
+  "profileHideConfirmationPassword": "Hide confirmation password",
+  "profileCurrentPasswordRequired": "Enter your current password.",
+  "profilePasswordLength": "Use between 8 and 128 characters.",
+  "profilePasswordsDoNotMatch": "The passwords do not match.",
+  "profileCurrentPasswordIncorrect": "That current password is incorrect.",
+  "profilePasswordChangedElsewhere": "Your password was changed somewhere else. Enter the current password again.",
+  "profileEditDisplayNameTitle": "Edit display name",
+  "profileDisplayNameValidation": "Use between 2 and 100 characters.",
+  "profileCancelAction": "Cancel",
+  "profileSaveAction": "Save",
   "authBackToWelcome": "Back to welcome",
   "authEmailLabel": "Email",
   "authPasswordLabel": "Password",
@@ -1783,6 +1824,139 @@
   },
   "@searchSavedItemsHeading": {
     "description": "Heading for the Saved Items result group."
+  },
+  "@profileTitle": {
+    "description": "App bar title for the Profile destination."
+  },
+  "@profileSignOut": {
+    "description": "Action that signs the current account out."
+  },
+  "@profileLoading": {
+    "description": "Loading label while the profile is being read."
+  },
+  "@profileRetry": {
+    "description": "Retry action for a failed profile read."
+  },
+  "@profileSessionEnded": {
+    "description": "Profile read failure when the session ended."
+  },
+  "@profileSignInRequired": {
+    "description": "Profile read failure when authentication is required."
+  },
+  "@profileUnavailable": {
+    "description": "Profile is temporarily unavailable."
+  },
+  "@profileTransport": {
+    "description": "Profile read failed because the server was unreachable."
+  },
+  "@profileLoadGeneric": {
+    "description": "Fallback copy for a failed profile read."
+  },
+  "@profileAccountSection": {
+    "description": "Heading for editable account fields."
+  },
+  "@profileLinkedIdentitiesSection": {
+    "description": "Heading for linked sign-in identities."
+  },
+  "@profileDisplayNameLabel": {
+    "description": "Label for the display name account row and edit field."
+  },
+  "@profileChangePasswordAction": {
+    "description": "Action that opens the change-password form."
+  },
+  "@profileCreatePasswordAction": {
+    "description": "Action that opens the create-password form."
+  },
+  "@profileNoAccountsConnected": {
+    "description": "Empty state when the profile has no linked identities."
+  },
+  "@profileJoinedDate": {
+    "description": "Chip copy combining the joined label with a formatted date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@profileLinkedDate": {
+    "description": "Identity note combining the linked label with a formatted date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@profilePasswordTitle": {
+    "description": "Password screen title while the profile mode is still loading."
+  },
+  "@profileChangePasswordTitle": {
+    "description": "Password screen title when changing a password."
+  },
+  "@profileCreatePasswordTitle": {
+    "description": "Password screen title when creating a password."
+  },
+  "@profileBackToProfile": {
+    "description": "Back action or tooltip returning to Profile."
+  },
+  "@profileChangePasswordDescription": {
+    "description": "Explanation shown in change-password mode."
+  },
+  "@profileCreatePasswordDescription": {
+    "description": "Explanation shown in create-password mode."
+  },
+  "@profileCurrentPasswordLabel": {
+    "description": "Label for the current-password field."
+  },
+  "@profileNewPasswordLabel": {
+    "description": "Label for the new-password field."
+  },
+  "@profileConfirmNewPasswordLabel": {
+    "description": "Label for the new-password confirmation field."
+  },
+  "@profileShowCurrentPassword": {
+    "description": "Tooltip that reveals the current password."
+  },
+  "@profileHideCurrentPassword": {
+    "description": "Tooltip that hides the current password."
+  },
+  "@profileShowNewPassword": {
+    "description": "Tooltip that reveals the new password."
+  },
+  "@profileHideNewPassword": {
+    "description": "Tooltip that hides the new password."
+  },
+  "@profileShowConfirmationPassword": {
+    "description": "Tooltip that reveals the password confirmation."
+  },
+  "@profileHideConfirmationPassword": {
+    "description": "Tooltip that hides the password confirmation."
+  },
+  "@profileCurrentPasswordRequired": {
+    "description": "Validation message for an empty current password."
+  },
+  "@profilePasswordLength": {
+    "description": "Validation message for a password outside the supported length."
+  },
+  "@profilePasswordsDoNotMatch": {
+    "description": "Validation message when the password confirmation differs."
+  },
+  "@profileCurrentPasswordIncorrect": {
+    "description": "Server error when the current password is incorrect."
+  },
+  "@profilePasswordChangedElsewhere": {
+    "description": "Server error when another request changed the password first."
+  },
+  "@profileEditDisplayNameTitle": {
+    "description": "Title of the edit-display-name sheet."
+  },
+  "@profileDisplayNameValidation": {
+    "description": "Validation message for a display name outside the supported length."
+  },
+  "@profileCancelAction": {
+    "description": "Cancel action in the display-name sheet."
+  },
+  "@profileSaveAction": {
+    "description": "Save action in the display-name sheet."
   },
   "@authBackToWelcome": {
     "description": "Tooltip for returning to the signed-out welcome screen."
