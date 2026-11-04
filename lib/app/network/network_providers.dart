@@ -84,12 +84,13 @@ String _currentPlatform() {
 
 /// Returns the device label sent with client metadata.
 ///
-/// Other platforms retain the existing iOS label; Windows uses a fixed name
-/// rather than looking up the computer hostname.
+/// Desktop platforms use fixed names rather than looking up the hostname.
+/// Other platforms retain the existing iOS label.
 String _deviceName() {
   return switch (defaultTargetPlatform) {
     TargetPlatform.android => 'Android',
     TargetPlatform.windows => 'Windows PC',
+    TargetPlatform.macOS => 'macOS',
     _ => 'iOS',
   };
 }

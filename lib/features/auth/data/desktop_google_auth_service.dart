@@ -22,8 +22,8 @@ const String googleDesktopScopes = 'openid email profile';
 
 /// Build-time Desktop OAuth client secret.
 ///
-/// Read only by the Windows implementation. Android and other platforms never
-/// read or require this value.
+/// Read only by the shared desktop implementation. Android and other
+/// non-desktop platforms never read or require this value.
 const String googleDesktopClientSecret = String.fromEnvironment(
   'GOOGLE_DESKTOP_CLIENT_SECRET',
 );
@@ -276,14 +276,14 @@ const String _notFoundPage =
 /// Opens a URL in the system default browser.
 typedef BrowserLauncher = Future<bool> Function(Uri url);
 
-/// Acquires a Google ID token on Windows through the system browser.
+/// Acquires a Google ID token on Windows and macOS through the system browser.
 ///
 /// The flow uses OAuth 2.0 Authorization Code with PKCE (S256), a dynamic
 /// loopback redirect on `127.0.0.1`, and no embedded WebView. The authorization
 /// code is exchanged directly with the original verifier; the returned ID token
 /// enters the existing [GoogleAuthClient] pipeline unchanged.
-class WindowsGoogleAuthService implements GoogleAuthCancellation {
-  WindowsGoogleAuthService({
+class DesktopGoogleAuthService implements GoogleAuthCancellation {
+  DesktopGoogleAuthService({
     required this.clientId,
     this.clientSecret = googleDesktopClientSecret,
     Dio? dio,

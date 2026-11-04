@@ -29,11 +29,13 @@ Future<List<Override>> bootstrap() async {
     );
   }
 
-  // google_sign_in has no native Windows implementation. Windows uses a
-  // browser-based flow with a Desktop OAuth client instead, so each platform
-  // validates the client ID its Google flow actually uses.
+  // The supported native desktop targets use a browser-based flow with a
+  // Desktop OAuth client instead of the mobile Google Sign-In plugin, so each
+  // platform validates the client ID its Google flow actually uses.
   final requiresDesktopClient =
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.macOS);
 
   if (requiresDesktopClient && !GoogleAuthConfig.isDesktopConfigured) {
     throw StateError(
@@ -48,12 +50,19 @@ Future<List<Override>> bootstrap() async {
     );
   }
 
-  const secureStorage = FlutterSecureStorage();
-  const credentialStore = SecureCredentialStore(secureStorage);
-  const registrationContinuationStore = RegistrationContinuationStore(
+  // macOS uses the legacy Keychain so an unsigned testing build does not need
+  // the keychain-access-groups entitlement or a provisioning profile. Other
+  // platforms keep their existing secure storage configuration.
+  final secureStorage = !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS
+      ? const FlutterSecureStorage(
+          mOptions: MacOsOptions(usesDataProtectionKeychain: false),
+        )
+      : const FlutterSecureStorage();
+  final credentialStore = SecureCredentialStore(secureStorage);
+  final registrationContinuationStore = RegistrationContinuationStore(
     secureStorage,
   );
-  const passwordResetContinuationStore = PasswordResetContinuationStore(
+  final passwordResetContinuationStore = PasswordResetContinuationStore(
     secureStorage,
   );
 

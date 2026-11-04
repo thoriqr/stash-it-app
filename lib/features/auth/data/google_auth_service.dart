@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../app/config/google_auth_config.dart';
-import 'windows_google_auth_service.dart';
+import 'desktop_google_auth_service.dart';
 
 /// The Google credential the client needs for the backend.
 ///
@@ -66,8 +66,8 @@ class GoogleAuthException implements Exception {
 
 /// Acquires a Google ID token for the active platform.
 ///
-/// Android keeps using the `google_sign_in` plugin. Windows uses a browser-based
-/// OAuth authorization code flow with PKCE.
+/// Android keeps using the `google_sign_in` plugin. Windows and macOS use a
+/// browser-based OAuth authorization code flow with PKCE.
 abstract interface class GoogleAuthClient {
   /// Returns null only when the user cancels or the flow is interrupted.
   Future<GoogleAuthCredential?> signIn();
@@ -75,8 +75,8 @@ abstract interface class GoogleAuthClient {
 
 /// A Google client that can stop an in-flight sign-in.
 ///
-/// Android's plugin service does not implement this interface. Windows does,
-/// where the operation waits on an external browser callback.
+/// Android's plugin service does not implement this interface. Windows and
+/// macOS do, where the operation waits on an external browser callback.
 abstract interface class GoogleAuthCancellation implements GoogleAuthClient {
   /// Stops the current operation and releases its callback resources.
   ///
@@ -158,12 +158,14 @@ class GoogleAuthService implements GoogleAuthClient {
 
 /// Overridable in tests with a fake that returns a credential or a cancellation.
 ///
-/// Windows has no native Google Sign-In implementation, so it uses the browser
-/// OAuth flow instead. Other platforms keep the existing plugin.
+/// Native desktop platforms have no supported Google Sign-In plugin flow here,
+/// so they use the browser OAuth flow. Android keeps the existing plugin.
 final Provider<GoogleAuthClient> googleAuthServiceProvider =
     Provider<GoogleAuthClient>((ref) {
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
-        return WindowsGoogleAuthService(
+      if (!kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.windows ||
+              defaultTargetPlatform == TargetPlatform.macOS)) {
+        return DesktopGoogleAuthService(
           clientId: GoogleAuthConfig.desktopClientId,
         );
       }

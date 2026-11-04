@@ -1,19 +1,29 @@
 # Stash-it Flutter — Project Progress
 
-> Last updated: 2026-11-04
+> Last updated: 2026-11-05
 > Scope: Flutter application (`stash-it-app`).
 
 ## Current Status
 
 The app has its core saved-link experience in place, including authentication, collections, search, profile and account settings, Google Sign-In, and Android link sharing for device-local saves.
 
-The latest completed milestone is **browser-based Google Sign-In on Windows**: OAuth 2.0 Authorization Code with PKCE (`S256`), a dynamic `127.0.0.1` loopback callback, and the existing Google authentication pipeline unchanged. Android keeps its existing `google_sign_in` behavior.
+The latest milestone is **macOS target support**: a macOS runner and Codemagic build workflow are in place, and the existing Windows browser-based Desktop OAuth implementation is shared by Windows and macOS. Static Flutter verification is complete; macOS build, runtime, Google Sign-In, and Keychain behavior have not been verified on a Mac.
 
 The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
 
-**Current focus:** Manual Windows Google Sign-In verification against a configured Desktop OAuth client, Windows desktop visual review, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
+**Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
 
 ## Verification
+
+### macOS target and desktop OAuth sharing (2026-11-05)
+
+- `flutter pub get` — completed; macOS plugins resolved and `macos/Flutter/GeneratedPluginRegistrant.swift` generated. No dependency-version changes.
+- `dart format` on changed Dart files — completed.
+- `flutter analyze` — no issues found.
+- `flutter test test/features/auth/data/desktop_google_auth_service_test.dart test/shared/widgets/desktop_layout_test.dart` — 27 tests passed, including Windows and macOS selection of the desktop browser flow, Android selection of the plugin service, and desktop-layout selection.
+- `codemagic.yaml` parsed with the project's `yaml` package — valid; workflow is macOS-only and targets `mac_mini_m1`.
+- macOS `Info.plist` and entitlement XML parsed successfully.
+- No macOS build, runtime, secure-storage, or Google Sign-In verification was performed: development is on Windows and no Mac is available. These remain manual M1/Codemagic checks.
 
 ### Windows browser-based Google Sign-In (2026-11-04)
 
@@ -82,7 +92,19 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - Windows binds a temporary callback server to `127.0.0.1` on an available port, validates the OAuth state, and exchanges the authorization code with the original verifier.
 - The Windows flow returns a Google ID token into the existing Google authentication call, so direct sign-in, account linking, and social registration keep their existing handling.
 - Windows startup requires `GOOGLE_DESKTOP_CLIENT_ID`; it does not require `GOOGLE_SERVER_CLIENT_ID`. Other supported platforms retain the existing server client validation.
-- The Windows target is additive; desktop-only layout and authentication behavior is selected only on native Windows and is not applied on Android.
+- The Windows target is additive; desktop-only layout and authentication behavior is selected only on native desktop platforms and is not applied on Android.
+
+### macOS desktop
+
+- Adds a macOS Flutter target with application name `Stash-it`, bundle identifier `id.my.thoriqr.stashit`, and a 900×700 initial window.
+- The shared desktop browser OAuth implementation is selected on macOS and Windows; Android keeps the existing `google_sign_in` implementation.
+- macOS uses the same PKCE, state validation, loopback callback, token exchange, cancellation, timeout, cleanup, and diagnostic behavior as Windows.
+- macOS uses `GOOGLE_DESKTOP_CLIENT_ID` and `GOOGLE_DESKTOP_CLIENT_SECRET` (the latter supplied only through build configuration).
+- macOS uses the legacy Keychain (`usesDataProtectionKeychain: false`) so the unsigned testing build does not need a Keychain Sharing entitlement or provisioning profile.
+- macOS entitlements allow outbound network access and the local OAuth callback server. ATS allows local networking only, without globally disabling transport security.
+- The desktop layout, manual refresh actions, constrained sheets, and adaptive collection grid apply to macOS.
+- Client metadata reports platform `macos` and device name `macOS`.
+- A macOS-only Codemagic workflow builds an unsigned M1 application using `mac_mini_m1` and accepts `API_BASE_URL`, `GOOGLE_DESKTOP_CLIENT_ID`, and `GOOGLE_DESKTOP_CLIENT_SECRET` from a Codemagic environment group.
 
 ### Authentication and account
 
@@ -128,6 +150,9 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 
 ## In Progress and Next Steps
 
+- [ ] Trigger the first Codemagic macOS workflow and retrieve the unsigned `Stash-it.app` artifact.
+- [ ] Verify macOS startup, desktop layout, backend connectivity over the LAN, Google Sign-In, account linking, and social registration on the M1 Mac.
+- [ ] Verify macOS credential persistence and restoration with the legacy Keychain configuration.
 - [ ] Verify Windows Google Sign-In end to end against a configured Desktop OAuth client.
 - [ ] Confirm the backend accepts the Desktop OAuth client ID as a valid Google ID-token audience.
 - [ ] Review the Windows desktop layout and interactions manually.
@@ -138,8 +163,13 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 
 ## Known Limitations
 
-- Windows Google Sign-In requires a Google OAuth client of type **Desktop app**, supplied as `GOOGLE_DESKTOP_CLIENT_ID`, and has not been verified against Google's live endpoints.
-- The resulting Google ID token is issued for the Desktop OAuth client. The backend must accept that client ID as an ID-token audience; no backend or API changes were made.
+- macOS support has not been built or run on a Mac. Codemagic build results, runtime behavior, Google Sign-In, and secure storage remain unverified.
+- The Codemagic macOS artifact is intentionally unsigned and ad-hoc distribution is not configured. Without an Apple Developer Program membership there is no Developer ID signing, notarization, App Store distribution, or auto-update. macOS may require right-click Open or quarantine removal before first launch.
+- macOS uses the legacy Keychain instead of the data-protection Keychain to remain compatible with an unsigned testing build. Enabling Keychain Sharing or the data-protection Keychain would require provisioning.
+- macOS backend connectivity requires the Windows PC to be reachable on the LAN and port 8080 to be allowed through the Windows firewall. The app accepts the LAN URL only through `API_BASE_URL`.
+- Google Desktop OAuth requires the Desktop client secret for the token exchange. The macOS build receives it through `--dart-define`; it is not committed to the repository.
+- Windows and macOS Google Sign-In require a Google OAuth client of type **Desktop app**, supplied as `GOOGLE_DESKTOP_CLIENT_ID`, and have not been verified against Google's live endpoints.
+- The resulting Google ID token on Windows and macOS is issued for the Desktop OAuth client. The backend must accept that client ID as an ID-token audience; no backend or API changes were made.
 - The Windows desktop UI has not yet been reviewed visually by the project owner.
 - Search results are limited by the server.
 - Physical-device verification has not yet been completed.

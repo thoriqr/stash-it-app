@@ -9,7 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/features/auth/data/google_auth_diagnostics.dart';
 import 'package:stash_it_app/features/auth/data/google_auth_service.dart';
-import 'package:stash_it_app/features/auth/data/windows_google_auth_service.dart';
+import 'package:stash_it_app/features/auth/data/desktop_google_auth_service.dart';
 
 import '../../../support/fake_http.dart';
 
@@ -251,9 +251,9 @@ void main() {
     });
   });
 
-  group('WindowsGoogleAuthService', () {
+  group('DesktopGoogleAuthService', () {
     test('requires a Desktop OAuth client ID', () async {
-      final service = WindowsGoogleAuthService(clientId: '');
+      final service = DesktopGoogleAuthService(clientId: '');
 
       await expectLater(
         service.signIn(),
@@ -268,7 +268,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
         var launched = false;
 
-        final service = WindowsGoogleAuthService(
+        final service = DesktopGoogleAuthService(
           clientId: 'desktop-client',
           clientSecret: '',
           dio: dio,
@@ -289,7 +289,7 @@ void main() {
     );
 
     test('uses a five-minute callback timeout by default', () {
-      final service = WindowsGoogleAuthService(
+      final service = DesktopGoogleAuthService(
         clientId: 'desktop-client',
         clientSecret: 'test-desktop-secret',
       );
@@ -301,7 +301,7 @@ void main() {
       late _RecordingCallbackServer callbackServer;
       final browserOpened = Completer<void>();
 
-      final service = WindowsGoogleAuthService(
+      final service = DesktopGoogleAuthService(
         clientId: 'desktop-client',
         clientSecret: 'test-desktop-secret',
         callbackTimeout: const Duration(seconds: 5),
@@ -329,7 +329,7 @@ void main() {
     test('closes the callback server after an unexpected exception', () async {
       late _FailingCallbackServer callbackServer;
 
-      final service = WindowsGoogleAuthService(
+      final service = DesktopGoogleAuthService(
         clientId: 'desktop-client',
         clientSecret: 'test-desktop-secret',
         launchBrowser: (_) async => true,
@@ -349,7 +349,7 @@ void main() {
       'reports browser launch failure and closes the callback server',
       () async {
         late _RecordingCallbackServer callbackServer;
-        final service = WindowsGoogleAuthService(
+        final service = DesktopGoogleAuthService(
           clientId: 'desktop-client',
           clientSecret: 'test-desktop-secret',
           launchBrowser: (_) async => false,
@@ -371,7 +371,7 @@ void main() {
 
     test('times out and closes the callback server', () async {
       late _RecordingCallbackServer callbackServer;
-      final service = WindowsGoogleAuthService(
+      final service = DesktopGoogleAuthService(
         clientId: 'desktop-client',
         clientSecret: 'test-desktop-secret',
         launchBrowser: (_) async => true,
@@ -394,7 +394,7 @@ void main() {
     test('closes the callback server after a validation failure', () async {
       late _RecordingCallbackServer callbackServer;
 
-      final service = WindowsGoogleAuthService(
+      final service = DesktopGoogleAuthService(
         clientId: 'desktop-client',
         clientSecret: 'test-desktop-secret',
         callbackTimeout: const Duration(seconds: 5),
@@ -436,7 +436,7 @@ void main() {
         final dio = Dio()..httpClientAdapter = adapter;
 
         late Uri authorizationUrl;
-        final service = WindowsGoogleAuthService(
+        final service = DesktopGoogleAuthService(
           clientId: 'desktop-client',
           clientSecret: 'test-desktop-secret',
           dio: dio,
@@ -500,7 +500,7 @@ void main() {
       final dio = Dio()..httpClientAdapter = adapter;
       late _RecordingCallbackServer callbackServer;
 
-      final service = WindowsGoogleAuthService(
+      final service = DesktopGoogleAuthService(
         clientId: 'desktop-client',
         clientSecret: 'test-desktop-secret',
         dio: dio,
@@ -552,7 +552,7 @@ void main() {
       adapter.onMethod('POST', '/token', body: {'access_token': 'unused'});
       final dio = Dio()..httpClientAdapter = adapter;
 
-      final service = WindowsGoogleAuthService(
+      final service = DesktopGoogleAuthService(
         clientId: 'desktop-client',
         clientSecret: 'test-desktop-secret',
         dio: dio,
@@ -624,7 +624,19 @@ void main() {
 
       expect(
         container.read(googleAuthServiceProvider),
-        isA<WindowsGoogleAuthService>(),
+        isA<DesktopGoogleAuthService>(),
+      );
+    });
+
+    test('uses the browser flow on macOS', () {
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      expect(
+        container.read(googleAuthServiceProvider),
+        isA<DesktopGoogleAuthService>(),
       );
     });
 
@@ -637,7 +649,7 @@ void main() {
       final service = container.read(googleAuthServiceProvider);
 
       expect(service, isA<GoogleAuthService>());
-      expect(service, isNot(isA<WindowsGoogleAuthService>()));
+      expect(service, isNot(isA<DesktopGoogleAuthService>()));
     });
   });
 }

@@ -7,7 +7,7 @@ abstract final class GoogleAuthConfig {
     'GOOGLE_SERVER_CLIENT_ID',
   );
 
-  /// Desktop OAuth client ID used by the Windows browser-based flow.
+  /// Desktop OAuth client ID used by the Windows and macOS browser-based flow.
   ///
   /// A desktop client is a distinct Google OAuth client type from the server
   /// client used by the mobile Google Sign-In plugin. Its secret is never

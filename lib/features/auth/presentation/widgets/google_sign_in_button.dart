@@ -177,7 +177,7 @@ class _GoogleSignInButtonState extends ConsumerState<GoogleSignInButton> {
     }
   }
 
-  /// Cancels the in-flight Windows OAuth operation.
+  /// Cancels the in-flight desktop OAuth operation.
   ///
   /// The callback server is closed by the service, which ends its wait
   /// immediately. The operation then completes with a null credential.

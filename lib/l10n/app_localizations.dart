@@ -3223,13 +3223,13 @@ abstract class AppLocalizations {
   /// **'Google sign-in was not completed. Try again.'**
   String get authGoogleCallbackError;
 
-  /// Action shown while the Windows browser sign-in is waiting for its callback.
+  /// Action shown while the desktop browser sign-in is waiting for its callback.
   ///
   /// In en, this message translates to:
   /// **'Cancel Google sign-in'**
   String get authCancelGoogleSignIn;
 
-  /// The user explicitly cancelled the Windows browser sign-in.
+  /// The user explicitly cancelled the desktop browser sign-in.
   ///
   /// In en, this message translates to:
   /// **'Google sign-in was cancelled.'**

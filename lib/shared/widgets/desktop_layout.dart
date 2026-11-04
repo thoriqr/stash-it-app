@@ -4,9 +4,12 @@ import 'package:flutter/widgets.dart';
 const double desktopContentMaxWidth = 840;
 const double desktopSheetMaxWidth = 560;
 
-/// Native Windows uses the compact desktop layout; mobile and web keep theirs.
+/// Native desktop platforms use the compact desktop layout; mobile and web keep
+/// theirs.
 bool get usesDesktopLayout =>
-    !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+    !kIsWeb &&
+    (defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.macOS);
 
 BoxConstraints? get desktopSheetConstraints => usesDesktopLayout
     ? const BoxConstraints(maxWidth: desktopSheetMaxWidth)

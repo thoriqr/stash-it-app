@@ -2617,10 +2617,10 @@
     "description": "Google returned an OAuth error instead of an authorization code."
   },
   "@authCancelGoogleSignIn": {
-    "description": "Action shown while the Windows browser sign-in is waiting for its callback."
+    "description": "Action shown while the desktop browser sign-in is waiting for its callback."
   },
   "@authGoogleSignInCancelled": {
-    "description": "The user explicitly cancelled the Windows browser sign-in."
+    "description": "The user explicitly cancelled the desktop browser sign-in."
   },
   "@authGoogleTokenExchangeFailed": {
     "description": "The authorization code could not be exchanged for an ID token."
