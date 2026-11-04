@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../core/error/api_failure.dart';
 import '../data/auth_api_providers.dart';
 import '../data/auth_repository.dart';
 import '../data/models/auth_tokens.dart';
@@ -123,7 +124,16 @@ class AuthState extends _$AuthState {
   /// This ensures that the app never reports a signed-in state when the
   /// credentials could not be stored.
   Future<void> _persistAndAdopt(AuthTokens tokens) async {
-    await ref.read(credentialStoreProvider).write(tokens);
+    try {
+      await ref.read(credentialStoreProvider).write(tokens);
+    } catch (error) {
+      // A storage failure is not an unknown sign-in outcome. The backend
+      // authenticated the caller, but this device could not retain the session,
+      // so callers receive the existing typed credential-storage failure rather
+      // than an indistinguishable generic error.
+      throw ApiFailureCredentialStorage(cause: error);
+    }
+
     ref.read(sessionControllerProvider.notifier).adopt(tokens);
   }
 

@@ -2401,12 +2401,6 @@ abstract class AppLocalizations {
   /// **'Continue with Google'**
   String get authContinueWithGoogle;
 
-  /// No description provided for @authGoogleUnsupportedWindows.
-  ///
-  /// In en, this message translates to:
-  /// **'Google Sign-In is not supported on Windows'**
-  String get authGoogleUnsupportedWindows;
-
   /// Retry action label on authentication screens.
   ///
   /// In en, this message translates to:
@@ -3204,6 +3198,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Google did not return a sign-in token. Try again.'**
   String get authGoogleMissingToken;
+
+  /// The system browser could not be opened for Google sign-in.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open your browser for Google sign-in. Try again.'**
+  String get authGoogleBrowserFailed;
+
+  /// The browser-based Google sign-in callback timed out.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in timed out. Try again.'**
+  String get authGoogleSignInTimeout;
+
+  /// The OAuth callback state did not match the request.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in could not be verified. Try again.'**
+  String get authGoogleStateMismatch;
+
+  /// Google returned an OAuth error instead of an authorization code.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in was not completed. Try again.'**
+  String get authGoogleCallbackError;
+
+  /// Action shown while the Windows browser sign-in is waiting for its callback.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Google sign-in'**
+  String get authCancelGoogleSignIn;
+
+  /// The user explicitly cancelled the Windows browser sign-in.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in was cancelled.'**
+  String get authGoogleSignInCancelled;
+
+  /// The authorization code could not be exchanged for an ID token.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in could not be completed after the browser returned. Try again.'**
+  String get authGoogleTokenExchangeFailed;
 
   /// Google could not verify the returned token.
   ///

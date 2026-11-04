@@ -1,19 +1,28 @@
 # Stash-it Flutter — Project Progress
 
-> Last updated: 2026-11-03
+> Last updated: 2026-11-04
 > Scope: Flutter application (`stash-it-app`).
 
 ## Current Status
 
 The app has its core saved-link experience in place, including authentication, collections, search, profile and account settings, Google Sign-In, and Android link sharing for device-local saves.
 
-The latest completed milestone is the **Windows desktop adaptation**: fixed 900×700 window, compact content and sheet constraints, manual Inbox/Collections refresh, and Windows-specific Google Sign-In behavior. Android remains gated to its existing behavior.
+The latest completed milestone is **browser-based Google Sign-In on Windows**: OAuth 2.0 Authorization Code with PKCE (`S256`), a dynamic `127.0.0.1` loopback callback, and the existing Google authentication pipeline unchanged. Android keeps its existing `google_sign_in` behavior.
 
 The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
 
-**Current focus:** Windows desktop visual review, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
+**Current focus:** Manual Windows Google Sign-In verification against a configured Desktop OAuth client, Windows desktop visual review, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
 
 ## Verification
+
+### Windows browser-based Google Sign-In (2026-11-04)
+
+- `dart format` on all changed Dart files — completed.
+- `flutter analyze` — no issues found.
+- `flutter test test/features/auth/data/windows_google_auth_service_test.dart` — 17 tests passed (PKCE, authorization URL, callback validation, cancellation, timeout, cleanup, token exchange, platform selection).
+- `flutter test test/features/auth/application/google_auth_state_test.dart test/app/router/google_auth_routes_test.dart` — 21 tests passed; existing Google authentication outcomes remain unchanged.
+- `flutter build windows --debug --dart-define=API_BASE_URL=http://localhost:8080 --dart-define=GOOGLE_DESKTOP_CLIENT_ID=test-desktop-client` — succeeded.
+- The app was not launched and no real Google authentication request was made. End-to-end Windows sign-in is not verified.
 
 ### Windows desktop adaptation (2026-11-03)
 
@@ -69,8 +78,11 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - Main content is centered at a compact maximum width, Collections uses an adaptive card grid, bottom sheets are width-constrained, and feedback banners no longer span the full window.
 - Bottom navigation remains at the bottom; there is no desktop sidebar.
 - Windows reports `Windows PC` as its device name in client metadata.
-- Google Sign-In remains visible but disabled on Windows with an explanatory tooltip; Windows startup no longer requires a Google server client ID. Google Sign-In on supported platforms is unchanged.
-- The Windows target is additive; desktop-only layout and authentication behavior is selected only on native Windows and is not applied on Android or web.
+- Google Sign-In on Windows uses the system default browser with OAuth 2.0 Authorization Code and PKCE (`S256`); Android keeps the existing `google_sign_in` implementation.
+- Windows binds a temporary callback server to `127.0.0.1` on an available port, validates the OAuth state, and exchanges the authorization code with the original verifier.
+- The Windows flow returns a Google ID token into the existing Google authentication call, so direct sign-in, account linking, and social registration keep their existing handling.
+- Windows startup requires `GOOGLE_DESKTOP_CLIENT_ID`; it does not require `GOOGLE_SERVER_CLIENT_ID`. Other supported platforms retain the existing server client validation.
+- The Windows target is additive; desktop-only layout and authentication behavior is selected only on native Windows and is not applied on Android.
 
 ### Authentication and account
 
@@ -116,6 +128,8 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 
 ## In Progress and Next Steps
 
+- [ ] Verify Windows Google Sign-In end to end against a configured Desktop OAuth client.
+- [ ] Confirm the backend accepts the Desktop OAuth client ID as a valid Google ID-token audience.
 - [ ] Review the Windows desktop layout and interactions manually.
 - [ ] Localize the remaining theme/language preference warnings.
 - [ ] Review Indonesian translations with a native speaker, including native share fallback wording.
@@ -124,7 +138,8 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 
 ## Known Limitations
 
-- Windows Google Sign-In is intentionally unavailable; email/password authentication remains fully functional.
+- Windows Google Sign-In requires a Google OAuth client of type **Desktop app**, supplied as `GOOGLE_DESKTOP_CLIENT_ID`, and has not been verified against Google's live endpoints.
+- The resulting Google ID token is issued for the Desktop OAuth client. The backend must accept that client ID as an ID-token audience; no backend or API changes were made.
 - The Windows desktop UI has not yet been reviewed visually by the project owner.
 - Search results are limited by the server.
 - Physical-device verification has not yet been completed.

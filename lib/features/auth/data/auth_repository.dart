@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../core/error/api_failure.dart';
 import '../../../core/error/api_failure_mapper.dart';
 import 'datasources/auth_api.dart';
+import 'google_auth_diagnostics.dart';
 import 'models/account_link_confirmation_response.dart';
 import 'models/auth_tokens.dart';
 import 'models/auth_user.dart';
@@ -119,14 +120,27 @@ class AuthRepository {
   /// registration outcomes are intermediate states; the caller must not store
   /// or adopt credentials for them.
   Future<GoogleSignInResult> loginGoogle({required String idToken}) async {
+    logGoogleAuthStage('backend-request', outcome: 'started');
+
     try {
       final response = await authApi.loginGoogle(
         LoginGoogleRequest(idToken: idToken),
       );
       final data = response.data;
       if (data == null) {
+        logGoogleAuthStage(
+          'backend-request',
+          outcome: 'unreadable-response',
+          failure: true,
+        );
         throw const ApiFailureUnreadableResponse();
       }
+
+      logGoogleAuthStage(
+        'backend-request',
+        outcome: 'response',
+        detail: 'data_outcome=${data.outcome}',
+      );
 
       switch (data.outcome) {
         case 'authenticated':
@@ -157,11 +171,37 @@ class AuthRepository {
           // Unknown outcomes cannot be safely handled by this client.
           throw const ApiFailureUnreadableResponse();
       }
-    } on DioException catch (error) {
+    } on DioException catch (error, stackTrace) {
+      final backendError =
+          parseApiErrorBody(error.response?.data)?.code ?? 'unreadable';
+      logGoogleAuthStage(
+        'backend-request',
+        outcome: 'failed',
+        detail:
+            'type=${error.type.name} '
+            'status=${error.response?.statusCode} '
+            'backend_error=$backendError',
+        failure: true,
+        stackTrace: stackTrace,
+      );
       throw mapApiFailure(error);
-    } on TypeError catch (error) {
+    } on TypeError catch (error, stackTrace) {
+      logGoogleAuthStage(
+        'backend-request',
+        outcome: 'decode-failed',
+        detail: 'exception=${error.runtimeType}',
+        failure: true,
+        stackTrace: stackTrace,
+      );
       throw mapDecodeFailure(error);
-    } on FormatException catch (error) {
+    } on FormatException catch (error, stackTrace) {
+      logGoogleAuthStage(
+        'backend-request',
+        outcome: 'decode-failed',
+        detail: 'exception=${error.runtimeType}',
+        failure: true,
+        stackTrace: stackTrace,
+      );
       throw mapDecodeFailure(error);
     }
   }

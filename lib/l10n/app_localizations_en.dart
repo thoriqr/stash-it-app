@@ -1639,10 +1639,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authContinueWithGoogle => 'Continue with Google';
 
   @override
-  String get authGoogleUnsupportedWindows =>
-      'Google Sign-In is not supported on Windows';
-
-  @override
   String get authRetry => 'Retry';
 
   @override
@@ -2130,6 +2126,31 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get authGoogleMissingToken =>
       'Google did not return a sign-in token. Try again.';
+
+  @override
+  String get authGoogleBrowserFailed =>
+      'Could not open your browser for Google sign-in. Try again.';
+
+  @override
+  String get authGoogleSignInTimeout => 'Google sign-in timed out. Try again.';
+
+  @override
+  String get authGoogleStateMismatch =>
+      'Google sign-in could not be verified. Try again.';
+
+  @override
+  String get authGoogleCallbackError =>
+      'Google sign-in was not completed. Try again.';
+
+  @override
+  String get authCancelGoogleSignIn => 'Cancel Google sign-in';
+
+  @override
+  String get authGoogleSignInCancelled => 'Google sign-in was cancelled.';
+
+  @override
+  String get authGoogleTokenExchangeFailed =>
+      'Google sign-in could not be completed after the browser returned. Try again.';
 
   @override
   String get authGoogleInvalidToken =>

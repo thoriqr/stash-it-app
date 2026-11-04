@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -568,8 +567,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   /// Email form shown before registration progresses.
   Widget _buildForm(AppTokens tokens) {
     final l10n = AppLocalizations.of(context);
-    final googleSignInSupported =
-        kIsWeb || defaultTargetPlatform != TargetPlatform.windows;
 
     return Form(
       key: _formKey,
@@ -622,16 +619,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             onPressed: _googleBusy ? null : _submit,
           ),
           const SizedBox(height: AppMetrics.space3),
-          if (googleSignInSupported)
-            GoogleSignInButton(
-              enabled: !_submitting,
-              onBusyChanged: _setGoogleBusy,
-            )
-          else
-            Tooltip(
-              message: l10n.authGoogleUnsupportedWindows,
-              child: const GoogleSignInButton(enabled: false),
-            ),
+          GoogleSignInButton(
+            enabled: !_submitting,
+            onBusyChanged: _setGoogleBusy,
+          ),
           const SizedBox(height: AppMetrics.space3),
           _SignInPrompt(
             onPressed: _submitting || _googleBusy ? null : _openSignIn,

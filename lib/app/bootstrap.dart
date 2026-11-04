@@ -29,11 +29,19 @@ Future<List<Override>> bootstrap() async {
     );
   }
 
-  // google_sign_in has no native Windows implementation. Keep the existing
-  // validation on every platform that can use the configured Google flow,
-  // including web builds running on Windows.
-  if ((kIsWeb || defaultTargetPlatform != TargetPlatform.windows) &&
-      !GoogleAuthConfig.isConfigured) {
+  // google_sign_in has no native Windows implementation. Windows uses a
+  // browser-based flow with a Desktop OAuth client instead, so each platform
+  // validates the client ID its Google flow actually uses.
+  final requiresDesktopClient =
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+
+  if (requiresDesktopClient && !GoogleAuthConfig.isDesktopConfigured) {
+    throw StateError(
+      'GOOGLE_DESKTOP_CLIENT_ID is not set. Run with '
+      '--dart-define=GOOGLE_DESKTOP_CLIENT_ID=<desktop-client-id>.',
+    );
+  }
+  if (!requiresDesktopClient && !GoogleAuthConfig.isConfigured) {
     throw StateError(
       'GOOGLE_SERVER_CLIENT_ID is not set. Run with '
       '--dart-define=GOOGLE_SERVER_CLIENT_ID=<client-id>.',

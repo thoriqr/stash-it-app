@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/app/network/network_providers.dart';
+import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
@@ -67,6 +68,28 @@ void main() {
       'access-google',
     );
   });
+
+  test(
+    'an authenticated login that cannot be stored reports the typed failure',
+    () async {
+      adapter.onMethod(
+        'POST',
+        '/auth/login/google',
+        body: {'data': authenticatedData(), 'message': 'login successful'},
+      );
+      backend.failingWrites.add('stash_it.auth.access_token');
+
+      await expectLater(
+        container
+            .read(authStateProvider.notifier)
+            .signInWithGoogle('google-id-token'),
+        throwsA(isA<ApiFailureCredentialStorage>()),
+      );
+
+      expect(container.read(authStateProvider), AuthStatus.signedOut);
+      expect(await hasStoredPair(), isFalse);
+    },
+  );
 
   test(
     'account-link-required never creates a session or stores a pair',

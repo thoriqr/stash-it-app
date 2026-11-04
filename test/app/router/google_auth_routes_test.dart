@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,14 +25,30 @@ import '../../support/fake_http.dart';
 import '../../support/pending_urls.dart';
 import '../../support/saved_items_fixtures.dart';
 
-class _FakeGoogleAuthService extends GoogleAuthService {
+class _FakeGoogleAuthService extends GoogleAuthService
+    implements GoogleAuthCancellation {
   Future<GoogleAuthCredential?> Function()? result;
+  bool holdUntilCancelled = false;
+  Completer<void>? _cancelCompleter;
 
   @override
   Future<GoogleAuthCredential?> signIn() async {
     final handler = result;
-    if (handler == null) return null;
-    return handler();
+    if (handler != null) return handler();
+
+    if (holdUntilCancelled) {
+      final completer = Completer<void>();
+      _cancelCompleter = completer;
+      await completer.future;
+    }
+
+    return null;
+  }
+
+  @override
+  void cancel() {
+    _cancelCompleter?.complete();
+    _cancelCompleter = null;
   }
 }
 
@@ -149,6 +167,105 @@ void main() {
       'access-google',
     );
   });
+
+  testWidgets(
+    'a failed Google sign-in restores the button and shows its stage',
+    (tester) async {
+      google.result = () async => throw const GoogleAuthException(
+        GoogleAuthFailure.tokenExchangeFailed,
+        statusCode: 400,
+        oauthError: 'invalid_request',
+      );
+
+      await pumpApp(tester, location: AppRoutes.signIn);
+      final buttonFinder = find.widgetWithText(
+        AppButton,
+        'Continue with Google',
+      );
+
+      await tester.tap(buttonFinder);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Google sign-in could not be completed after the browser returned. '
+          'Try again.',
+        ),
+        findsOneWidget,
+      );
+
+      final button = tester.widget<AppButton>(buttonFinder);
+      expect(button.busy, isFalse);
+      expect(button.onPressed, isNotNull);
+    },
+  );
+
+  testWidgets('a cancelled Google sign-in restores the button', (tester) async {
+    google.result = () async => null;
+
+    await pumpApp(tester, location: AppRoutes.signIn);
+    final buttonFinder = find.widgetWithText(AppButton, 'Continue with Google');
+
+    await tester.tap(buttonFinder);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('Google sign-in could not be completed'),
+      findsNothing,
+    );
+
+    final button = tester.widget<AppButton>(buttonFinder);
+    expect(button.busy, isFalse);
+    expect(button.onPressed, isNotNull);
+  });
+
+  testWidgets(
+    'explicit cancellation stops the wait and restores the controls',
+    (tester) async {
+      google.holdUntilCancelled = true;
+
+      await pumpApp(tester, location: AppRoutes.signIn);
+      await tester.tap(find.widgetWithText(AppButton, 'Continue with Google'));
+      await tester.pump();
+
+      expect(
+        find.widgetWithText(AppButton, 'Cancel Google sign-in'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.widgetWithText(AppButton, 'Cancel Google sign-in'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Google sign-in was cancelled.'), findsOneWidget);
+
+      final button = tester.widget<AppButton>(
+        find.widgetWithText(AppButton, 'Continue with Google'),
+      );
+      expect(button.busy, isFalse);
+      expect(button.onPressed, isNotNull);
+      expect(adapter.countFor('/auth/login/google'), 0);
+    },
+  );
+
+  testWidgets(
+    'a Google timeout restores the button and shows the timeout message',
+    (tester) async {
+      google.result = () async =>
+          throw const GoogleAuthException(GoogleAuthFailure.callbackTimeout);
+
+      await pumpApp(tester, location: AppRoutes.signIn);
+      await tester.tap(find.widgetWithText(AppButton, 'Continue with Google'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Google sign-in timed out. Try again.'), findsOneWidget);
+
+      final button = tester.widget<AppButton>(
+        find.widgetWithText(AppButton, 'Continue with Google'),
+      );
+      expect(button.busy, isFalse);
+      expect(button.onPressed, isNotNull);
+    },
+  );
 
   testWidgets(
     'account-link-required opens the masked confirmation without a session',
