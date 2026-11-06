@@ -10,6 +10,7 @@ import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_state.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_enrichment_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 
@@ -780,6 +781,368 @@ void main() {
       expect(state.items.map((i) => i.id), ['new', 'a', 'b']);
       expect(state.isLoadingMore, isFalse);
     });
+  });
+
+  group('head refresh reconciliation', () {
+    test('updates an existing row in place with the latest head', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      scriptPages([
+        SavedItemsFixtures.page(
+          items: [
+            SavedItemsFixtures.item(
+              id: 'a',
+              title: null,
+              description: null,
+              imageUrl: null,
+              enrichmentStatus: 'pending',
+            ),
+            SavedItemsFixtures.item(id: 'b'),
+          ],
+          nextCursor: 'cursor-2',
+          hasMore: true,
+        ),
+        // The head after enrichment completed for 'a'. 'b' is outside the head
+        // page and must remain loaded.
+        SavedItemsFixtures.page(
+          items: [
+            SavedItemsFixtures.item(id: 'new', enrichmentStatus: 'pending'),
+            SavedItemsFixtures.item(
+              id: 'a',
+              title: 'Fresh title',
+              description: 'Fresh description',
+              enrichmentStatus: 'completed',
+            ),
+          ],
+          nextCursor: 'cursor-2',
+          hasMore: true,
+        ),
+      ]);
+
+      await container.read(savedItemsProvider.future);
+      await container.read(savedItemsProvider.notifier).refreshHead();
+
+      final state = stateOf(container);
+      expect(state.items.map((i) => i.id).toList(), ['new', 'a', 'b']);
+      expect(state.nextCursor, 'cursor-2');
+      expect(state.hasMore, isTrue);
+
+      final updated = state.items[1];
+      expect(updated.enrichmentStatus, EnrichmentStatus.completed);
+      expect(updated.title, 'Fresh title');
+      expect(updated.description, 'Fresh description');
+      expect(
+        state.items[2].title,
+        'Understanding CRDTs',
+        reason: 'a row absent from the head is not removed or rewritten',
+      );
+    });
+
+    test(
+      'does not duplicate an id shared by the head and a loaded page',
+      () async {
+        final container = await makeContainer();
+        addTearDown(container.dispose);
+
+        scriptPages([
+          SavedItemsFixtures.page(
+            items: [
+              SavedItemsFixtures.item(id: 'a'),
+              SavedItemsFixtures.item(id: 'b'),
+            ],
+            nextCursor: 'cursor-2',
+            hasMore: true,
+          ),
+          SavedItemsFixtures.page(
+            items: [
+              SavedItemsFixtures.item(id: 'a', title: 'Renamed'),
+              SavedItemsFixtures.item(id: 'b'),
+              SavedItemsFixtures.item(id: 'new', enrichmentStatus: 'pending'),
+            ],
+            nextCursor: 'cursor-2',
+            hasMore: true,
+          ),
+        ]);
+
+        await container.read(savedItemsProvider.future);
+        await container.read(savedItemsProvider.notifier).refreshHead();
+
+        final state = stateOf(container);
+        expect(state.items.map((i) => i.id).toList(), ['new', 'a', 'b']);
+        expect(state.items[1].title, 'Renamed');
+      },
+    );
+
+    test('keeps pages loaded after the head refresh', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      scriptPages([
+        SavedItemsFixtures.page(
+          items: [SavedItemsFixtures.item(id: 'a')],
+          nextCursor: 'cursor-2',
+          hasMore: true,
+        ),
+        SavedItemsFixtures.page(
+          items: [SavedItemsFixtures.item(id: 'old')],
+          nextCursor: 'cursor-3',
+          hasMore: true,
+        ),
+        SavedItemsFixtures.page(
+          items: [
+            SavedItemsFixtures.item(id: 'new', enrichmentStatus: 'pending'),
+            SavedItemsFixtures.item(id: 'a'),
+          ],
+          nextCursor: 'cursor-2',
+          hasMore: true,
+        ),
+      ]);
+
+      await container.read(savedItemsProvider.future);
+      final notifier = container.read(savedItemsProvider.notifier);
+      await notifier.loadMore();
+
+      expect(stateOf(container).items.map((i) => i.id), ['a', 'old']);
+
+      await notifier.refreshHead();
+
+      final state = stateOf(container);
+      expect(state.items.map((i) => i.id), ['new', 'a', 'old']);
+      expect(
+        state.nextCursor,
+        'cursor-3',
+        reason: 'the loaded history keeps its own continuation point',
+      );
+      expect(state.hasMore, isTrue);
+    });
+
+    test(
+      'a local update made during the head request is not overwritten',
+      () async {
+        final container = await makeContainer();
+        addTearDown(container.dispose);
+
+        adapter.onSequenceHolding('/saved-items', [
+          FakeReply(
+            200,
+            SavedItemsFixtures.page(
+              items: [
+                SavedItemsFixtures.item(
+                  id: 'a',
+                  title: null,
+                  description: null,
+                  imageUrl: null,
+                  enrichmentStatus: 'pending',
+                ),
+              ],
+              nextCursor: 'cursor-2',
+              hasMore: true,
+            ),
+          ),
+          // Fetched before the local re-read below, held until it has been applied.
+          FakeReply(
+            200,
+            SavedItemsFixtures.page(
+              items: [
+                SavedItemsFixtures.item(id: 'new', enrichmentStatus: 'pending'),
+                SavedItemsFixtures.item(
+                  id: 'a',
+                  title: null,
+                  description: null,
+                  imageUrl: null,
+                  enrichmentStatus: 'pending',
+                ),
+              ],
+              nextCursor: 'cursor-2',
+              hasMore: true,
+            ),
+          ),
+        ], holdAt: 2);
+
+        await container.read(savedItemsProvider.future);
+        final notifier = container.read(savedItemsProvider.notifier);
+
+        final head = notifier.refreshHead();
+        await untilCalled(() => adapter.countFor('/saved-items') == 2);
+
+        notifier.applyEnrichment(
+          const SavedItemEnrichmentResult(
+            savedItemId: 'a',
+            enrichmentStatus: EnrichmentStatus.completed,
+            title: 'Local result',
+          ),
+        );
+
+        adapter.releaseBlocked();
+        await head;
+
+        final state = stateOf(container);
+        expect(state.items.map((i) => i.id).toList(), ['new', 'a']);
+        expect(
+          state.items[1].enrichmentStatus,
+          EnrichmentStatus.completed,
+          reason: 'the reply predates the confirmed local re-read',
+        );
+        expect(state.items[1].title, 'Local result');
+      },
+    );
+  });
+
+  group('overlapping head refreshes', () {
+    test(
+      'an older reply cannot overwrite a newer head or move the cursor back',
+      () async {
+        final container = await makeContainer();
+        addTearDown(container.dispose);
+
+        adapter.onSequenceHolding('/saved-items', [
+          // 1: the initial head.
+          FakeReply(
+            200,
+            SavedItemsFixtures.page(
+              items: [
+                SavedItemsFixtures.item(
+                  id: 'a',
+                  title: null,
+                  enrichmentStatus: 'pending',
+                ),
+              ],
+              nextCursor: 'cursor-2',
+              hasMore: true,
+            ),
+          ),
+          // 2: the final page, so the loaded history has no continuation.
+          FakeReply(
+            200,
+            SavedItemsFixtures.page(
+              items: [SavedItemsFixtures.item(id: 'old')],
+            ),
+          ),
+          // 3: the older head, answered after the newer one.
+          FakeReply(
+            200,
+            SavedItemsFixtures.page(
+              items: [
+                SavedItemsFixtures.item(
+                  id: 'a',
+                  title: null,
+                  enrichmentStatus: 'pending',
+                ),
+              ],
+              nextCursor: 'stale-cursor',
+              hasMore: true,
+            ),
+          ),
+          // 4: the newer head, answered first.
+          FakeReply(
+            200,
+            SavedItemsFixtures.page(
+              items: [
+                SavedItemsFixtures.item(id: 'new', enrichmentStatus: 'pending'),
+                SavedItemsFixtures.item(
+                  id: 'a',
+                  title: 'Fresh title',
+                  enrichmentStatus: 'completed',
+                ),
+              ],
+            ),
+          ),
+        ], holdAt: 3);
+
+        await container.read(savedItemsProvider.future);
+        final notifier = container.read(savedItemsProvider.notifier);
+        await notifier.loadMore();
+
+        expect(stateOf(container).items.map((i) => i.id), ['a', 'old']);
+        expect(stateOf(container).hasMore, isFalse);
+
+        final older = notifier.refreshHead();
+        await untilCalled(() => adapter.countFor('/saved-items') == 3);
+
+        final newer = notifier.refreshHead();
+        await newer;
+
+        var state = stateOf(container);
+        expect(state.items.map((i) => i.id), ['new', 'a', 'old']);
+        expect(state.items[1].enrichmentStatus, EnrichmentStatus.completed);
+        expect(state.nextCursor, isNull);
+        expect(state.hasMore, isFalse);
+
+        adapter.releaseBlocked();
+        await older;
+
+        state = stateOf(container);
+        expect(state.items.map((i) => i.id), [
+          'new',
+          'a',
+          'old',
+        ], reason: 'the newer reply is the one that stays adopted');
+        expect(
+          state.items[1].enrichmentStatus,
+          EnrichmentStatus.completed,
+          reason: 'a late older reply must not regress the status',
+        );
+        expect(state.items[1].title, 'Fresh title');
+        expect(
+          state.nextCursor,
+          isNull,
+          reason: 'an older reply cannot reintroduce a stale cursor',
+        );
+        expect(state.hasMore, isFalse);
+      },
+    );
+
+    test(
+      'a save-triggered head is still applied when a newer poll fails',
+      () async {
+        final container = await makeContainer();
+        addTearDown(container.dispose);
+
+        adapter.onSequenceHolding('/saved-items', [
+          // 1: the initial head.
+          FakeReply(
+            200,
+            SavedItemsFixtures.page(items: [SavedItemsFixtures.item(id: 'a')]),
+          ),
+          // 2: the save-triggered head, held while a newer poll runs.
+          FakeReply(
+            200,
+            SavedItemsFixtures.page(
+              items: [
+                SavedItemsFixtures.item(id: 'new', enrichmentStatus: 'pending'),
+                SavedItemsFixtures.item(id: 'a'),
+              ],
+            ),
+          ),
+          // 3: the newer poll, answered first and failed.
+          FakeReply.error(500, 'INTERNAL_SERVER_ERROR'),
+        ], holdAt: 2);
+
+        await container.read(savedItemsProvider.future);
+        final notifier = container.read(savedItemsProvider.notifier);
+
+        final older = notifier.refreshHead();
+        await untilCalled(() => adapter.countFor('/saved-items') == 2);
+
+        final newer = notifier.refreshHead();
+        await newer;
+
+        // The newer request wrote nothing, so the save-triggered reply must still
+        // be adopted instead of being discarded as merely "older".
+        adapter.releaseBlocked();
+        await older;
+
+        final state = stateOf(container);
+        expect(state.items.map((i) => i.id), ['new', 'a']);
+        expect(
+          container.read(savedItemsProvider).hasError,
+          isFalse,
+          reason: 'both head reads are best effort',
+        );
+        expect(noticeOf(container), isNull);
+      },
+    );
   });
 
   group('manual refresh', () {

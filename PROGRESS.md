@@ -1,6 +1,6 @@
 # Stash-it Flutter — Project Progress
 
-> Last updated: 2026-11-05
+> Last updated: 2026-11-06
 > Scope: Flutter application (`stash-it-app`).
 
 ## Current Status
@@ -11,9 +11,17 @@ The latest milestone is **macOS target support**: a macOS runner and Codemagic b
 
 The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
 
-**Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
+**Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, manual Inbox enrichment polling verification, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
 
 ## Verification
+
+### Inbox enrichment synchronization (2026-11-06)
+
+- `dart format` on all changed Dart files — completed.
+- `flutter analyze` — no issues found.
+- `flutter test test/features/saved_items/application/saved_items_controller_test.dart test/features/saved_items/application/save_url_controller_test.dart test/features/saved_items/application/saved_items_enrichment_poller_test.dart` — 91 tests passed, including overlapping head-refresh ordering, retention of a save-triggered refresh when a newer poll fails, head reconciliation, local-update protection, cursor preservation, polling lifecycle, and the confirmed-save flow.
+- `git diff --check` — no whitespace errors.
+- The full test suite was not run, and no application, emulator, or visual verification was performed. Polling timing and lifecycle behavior on a device remain a manual check.
 
 ### macOS target and desktop OAuth sharing (2026-11-05)
 
@@ -73,6 +81,20 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - View link metadata and enrichment status, and refresh metadata.
 - Move and delete saved links.
 - Preview saved-link images, including pending and unavailable states.
+
+### Inbox enrichment synchronization
+
+- While the Inbox is visible and the app is in the foreground, a single coordinated polling loop keeps `pending` items synchronized with the server.
+- Only `pending` items created within approximately 60 seconds are eligible; the window is evaluated per item from the server's `created_at` value.
+- Polling waits 1.5, 3, 5, 8, and then 10 seconds between requests, capped at 10 seconds, and never starts a request while the previous one is still running.
+- A newly appearing pending item restarts the interval progression so the first poll after a save is prompt.
+- Leaving the Inbox, switching destinations, opening a covering screen, or backgrounding the app stops the timer. Returning performs one head synchronisation, re-evaluates eligibility, and resumes only when an eligible pending item remains.
+- A head refresh now updates existing rows in place, so an item that moves from `pending` to `completed` or `failed`, or whose metadata changes, is reflected without discarding loaded pages or the pagination cursor.
+- Newly discovered items are inserted at the head, existing items keep their positions, items absent from the head remain loaded, and tombstones and collection relocation still filter stale replies.
+- A confirmed local update made while a head request is in flight is not overwritten by that older reply.
+- Overlapping head refreshes are ordered by when they started: once a newer reply has been adopted, a later reply from an earlier request is dropped instead of regressing statuses or moving the cursor backwards. If the newer request fails, the earlier save-triggered reply can still be adopted.
+- Polling reads are best effort: a failure keeps the displayed rows, publishes no feedback, and continues on the bounded schedule while eligible items remain.
+- The existing Save URL flow is unchanged: a confirmed save still triggers the head refresh without becoming a save failure if the refresh fails.
 
 ### Collections
 
@@ -171,6 +193,9 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - Windows and macOS Google Sign-In require a Google OAuth client of type **Desktop app**, supplied as `GOOGLE_DESKTOP_CLIENT_ID`, and have not been verified against Google's live endpoints.
 - The resulting Google ID token on Windows and macOS is issued for the Desktop OAuth client. The backend must accept that client ID as an ID-token audience; no backend or API changes were made.
 - The Windows desktop UI has not yet been reviewed visually by the project owner.
+- Inbox polling only refreshes the newest page. An eligible pending item loaded further down the history keeps polling active but is only updated when it appears in the head response; polling never requests individual pages.
+- Polling eligibility compares the server's `created_at` with the device clock. A large clock offset can end the window early or, beyond the 60-second window, mark a newly saved item ineligible; this bound avoids polling indefinitely.
+- Enrichment polling runs only while the Inbox is visible and the app is in the foreground. There is no background synchronization while the app is closed or another destination is active.
 - Search results are limited by the server.
 - Physical-device verification has not yet been completed.
 - Android link sharing still needs verification in cases such as the app being closed, the user being signed out, or the device being offline.

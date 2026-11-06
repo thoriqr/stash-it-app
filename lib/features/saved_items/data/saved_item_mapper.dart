@@ -28,5 +28,6 @@ SavedItemSummary savedItemFrom(
     // hasPreviewImage from this value, and the preview handles image loading.
     imageUrl: dto.imageUrl,
     savedTime: savedTimeFrom(dto.createdAt, now),
+    createdAt: DateTime.tryParse(dto.createdAt),
   );
 }

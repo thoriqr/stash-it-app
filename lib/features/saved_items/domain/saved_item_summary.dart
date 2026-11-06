@@ -29,6 +29,7 @@ class SavedItemSummary {
     this.description,
     this.imageUrl,
     this.savedTime,
+    this.createdAt,
   });
 
   /// The item's ID as reported by the API.
@@ -90,6 +91,14 @@ class SavedItemSummary {
   /// does not determine the ordering of items.
   final SavedTime? savedTime;
 
+  /// The item's `created_at` value parsed as a point in time, or null when it
+  /// cannot be parsed.
+  ///
+  /// Kept alongside [savedTime] because polling eligibility needs the actual
+  /// age rather than an elapsed-time bucket. The value is server time, so the
+  /// consumer must tolerate clock skew; see the enrichment polling rules.
+  final DateTime? createdAt;
+
   /// Returns this item with its collection information replaced.
   ///
   /// Only the collection ID and name change. All other values remain from the
@@ -110,6 +119,7 @@ class SavedItemSummary {
       description: description,
       imageUrl: imageUrl,
       savedTime: savedTime,
+      createdAt: createdAt,
     );
   }
 
@@ -138,6 +148,7 @@ class SavedItemSummary {
       description: description,
       imageUrl: imageUrl,
       savedTime: savedTime,
+      createdAt: createdAt,
     );
   }
 

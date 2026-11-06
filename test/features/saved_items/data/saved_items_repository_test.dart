@@ -48,6 +48,11 @@ void main() {
       expect(page.items.map((i) => i.id).toList(), ['a', 'b']);
       expect(page.items.first.title, 'First');
       expect(page.items.first.collectionName, 'Camera Gear');
+      expect(
+        page.items.first.createdAt,
+        DateTime.utc(2026, 10, 2, 10, 30),
+        reason: 'polling eligibility needs the item age, not a time bucket',
+      );
       expect(page.hasMore, isFalse);
       expect(page.nextCursor, isNull);
     });

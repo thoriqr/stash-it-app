@@ -116,6 +116,31 @@ class SavedItems extends _$SavedItems {
   /// a reply that was already in flight cannot authorise clearing them.
   int _tombstoneVersion = 0;
 
+  /// Increments whenever a confirmed local operation replaces fields on an
+  /// already-loaded row.
+  ///
+  /// A head refresh records this value before its request. If a move or a
+  /// confirmed re-read lands while that request is in flight, the reply was
+  /// fetched before the operation and must not be written back over it. New
+  /// rows from the same reply are still prepended; only existing rows keep
+  /// their newer local values.
+  int _localUpdateVersion = 0;
+
+  /// Identifies head reads in the order they started.
+  int _headRequestVersion = 0;
+
+  /// The newest head read whose reply has already been written into state.
+  ///
+  /// Head reads can overlap: the poller, a confirmed save, a pending-URL bulk
+  /// save and a shared save can each request the newest page. A later read is
+  /// assumed to describe the server at least as recently as an earlier one, so
+  /// once a reply is adopted, a reply from a request that started before it is
+  /// dropped instead of rolling the list back. Comparing against **applied**
+  /// replies rather than merely the newest started request matters: when the
+  /// newer read fails and writes nothing, the earlier save-triggered reply can
+  /// still be adopted.
+  int _appliedHeadRequestVersion = 0;
+
   @override
   Future<SavedItemsState> build() async {
     // A rebuild is a new list too. Any page requested against the previous one
@@ -249,13 +274,27 @@ class SavedItems extends _$SavedItems {
   /// history, so dropping the history to show its newest entry is the wrong
   /// trade.
   ///
-  /// **A reply is adopted as a whole.** The fetched page's rows go in front in
-  /// server order (no client sorting, **D4**), an id already present keeps its
-  /// existing position, and the never-negated facts the page carries —
+  /// **A reply is reconciled into the loaded history.** Newly discovered rows
+  /// go in front in server order (no client sorting, **D4**). An id already
+  /// present keeps its existing position but takes the reply's newer
+  /// representation, which is what lets the Inbox reflect an item that finished
+  /// enrichment without discarding loaded pages. Rows absent from the reply
+  /// remain untouched. The never-negated facts the page carries —
   /// `nextCursor`/`hasMore` — are preserved rather than replaced when the list
   /// already had a continuation point. Its cursor still names the position after
   /// the last row those pages fetched; adopting the new first page's cursor would
   /// make the next [loadMore] re-fetch rows this list already holds.
+  ///
+  /// A confirmed local operation that lands while this request is in flight is
+  /// newer than the reply, so existing rows keep their local values for that
+  /// one cycle.
+  ///
+  /// **Overlapping reads are ordered by start.** Each call still issues its own
+  /// request, so a refresh triggered by a confirmed save is never folded into a
+  /// read that began before the save. A reply is adopted only when no
+  /// later-started reply has already been adopted; a late reply from an earlier
+  /// request is dropped rather than rolling the list back. If the later request
+  /// fails and writes nothing, the earlier successful reply may still be used.
   ///
   /// **Never throws, and never reports.** A save the server confirmed is not
   /// turned into a failure by a listing read that did not arrive: the rows on
@@ -282,7 +321,9 @@ class SavedItems extends _$SavedItems {
       return;
     }
 
+    final headRequest = ++_headRequestVersion;
     final version = _listVersion;
+    final localUpdateVersion = _localUpdateVersion;
     final SavedItemPage head;
     try {
       head = await ref.read(savedItemsRepositoryProvider).list();
@@ -294,6 +335,10 @@ class SavedItems extends _$SavedItems {
 
     if (!ref.mounted || version != _listVersion) return;
 
+    // A later-started head read already wrote its reply. This one is older and
+    // must not replace fresher server data or move the cursor backwards.
+    if (headRequest <= _appliedHeadRequestVersion) return;
+
     // Re-read rather than reuse `loaded`: a `loadMore` may have completed while
     // this request was in flight, and merging into that snapshot would drop its
     // rows. If the listing is no longer in a data state at all, a retry replaced
@@ -304,9 +349,15 @@ class SavedItems extends _$SavedItems {
     };
     if (latest == null) return;
 
+    _appliedHeadRequestVersion = headRequest;
+
     state = AsyncData(
       latest.copyWith(
-        items: _prepend(head.items, latest.items),
+        items: _mergeHead(
+          head.items,
+          latest.items,
+          replaceExisting: localUpdateVersion == _localUpdateVersion,
+        ),
         // A list that had more to load keeps its own continuation point; one
         // that had none adopts the new page's, which is how a fully-loaded
         // history learns that a save has pushed it past a page boundary.
@@ -319,10 +370,11 @@ class SavedItems extends _$SavedItems {
   /// Rewrites one loaded row's collection in place, without changing its
   /// position or the list's continuation point.
   ///
-  /// This is the Inbox half of a confirmed move. [refreshHead] cannot do it: it
-  /// skips ids already present, so the moved row would keep its stale collection
-  /// chip while a duplicate row was avoided. Replacing the whole list would throw
-  /// away pages the user has loaded and the cursor that continues them.
+  /// This is the Inbox half of a confirmed move. [refreshHead] can reconcile the
+  /// row from the server, but doing so would cost another read and could still
+  /// race the confirmation; this applies the known result immediately. Replacing
+  /// the whole list would throw away pages the user has loaded and the cursor
+  /// that continues them.
   ///
   /// **Only fields the move changed are replaced.** The rest of the row comes
   /// from the read that produced it; a move neither enriches nor re-titles.
@@ -370,6 +422,8 @@ class SavedItems extends _$SavedItems {
 
     if (!found) return;
 
+    _localUpdateVersion++;
+
     // Freezed's equality makes this a no-op when the row already matched, so a
     // repeated "already in collection" success does not notify listeners.
     state = AsyncData(current.copyWith(items: items));
@@ -377,10 +431,10 @@ class SavedItems extends _$SavedItems {
 
   /// Replaces one loaded row's enrichment fields in place.
   ///
-  /// This is the Inbox half of a confirmed re-read. [refreshHead] cannot do it:
-  /// the row is already present, so a merge would skip it and leave stale
-  /// metadata on screen. Replacing the whole list would throw away pages the user
-  /// has loaded and the cursor that continues them.
+  /// This is the Inbox half of a confirmed re-read. [refreshHead] can reconcile
+  /// the row from the server, but the result is already known and applying it
+  /// here avoids another read. Replacing the whole list would throw away pages
+  /// the user has loaded and the cursor that continues them.
   ///
   /// **Only the four fields a re-read can change are replaced**, through
   /// [SavedItemSummary.copyWithEnrichment]: title, description, preview URL and
@@ -420,6 +474,8 @@ class SavedItems extends _$SavedItems {
     }
 
     if (!found) return;
+
+    _localUpdateVersion++;
 
     state = AsyncData(current.copyWith(items: items));
   }
@@ -516,6 +572,8 @@ class SavedItems extends _$SavedItems {
     }
     if (!changed) return;
 
+    _localUpdateVersion++;
+
     state = AsyncData(current.copyWith(items: items));
   }
 
@@ -598,30 +656,48 @@ class SavedItems extends _$SavedItems {
     _ => null,
   };
 
-  /// Prepends [incoming] — a newer first page — above [existing], in the order
-  /// the server sent it, skipping any id already present.
+  /// Merges [incoming] — a newer first page — into [existing].
+  ///
+  /// Newly discovered rows keep the server's order and are prepended, because
+  /// the listing is newest-first. Rows already loaded keep their current
+  /// position so pagination is not disturbed. When [replaceExisting] is true,
+  /// an existing row takes the incoming representation, which is how a status
+  /// that changed from `pending` to `completed` or `failed` reaches the screen;
+  /// when false, a local operation landed while the request was in flight, so
+  /// existing rows keep their newer local values.
   ///
   /// The counterpart of [_append] and needed for the same reason: a save that
   /// landed between two fetches can appear both in the refreshed first page and
   /// in an older page already on screen, and a duplicated row is a visible
-  /// defect. A row already present keeps its existing position instead of moving
-  /// to the head. Locally reconciled rows — deleted ids, removed collections and
+  /// defect. Locally reconciled rows — deleted ids, removed collections and
   /// confirmed bulk moves — are applied first: this merge is not a fresh first
   /// page and cannot authorise clearing those protections.
-  List<SavedItemSummary> _prepend(
+  List<SavedItemSummary> _mergeHead(
     List<SavedItemSummary> incoming,
-    List<SavedItemSummary> existing,
-  ) {
-    final seen = {for (final item in existing) item.id};
-    final leading = <SavedItemSummary>[];
+    List<SavedItemSummary> existing, {
+    required bool replaceExisting,
+  }) {
+    final existingIds = {for (final item in existing) item.id};
+    final incomingById = <String, SavedItemSummary>{};
+    final incomingOrder = <String>[];
 
     for (final item in incoming) {
       final reconciled = _reconcile(item);
       if (reconciled == null) continue;
-      if (seen.add(reconciled.id)) leading.add(reconciled);
+      if (incomingById.containsKey(reconciled.id)) continue;
+      incomingById[reconciled.id] = reconciled;
+      incomingOrder.add(reconciled.id);
     }
 
-    return [...leading, ...existing];
+    return <SavedItemSummary>[
+      for (final id in incomingOrder)
+        if (!existingIds.contains(id)) incomingById[id]!,
+      for (final item in existing)
+        if (replaceExisting && incomingById.containsKey(item.id))
+          incomingById[item.id]!
+        else
+          item,
+    ];
   }
 
   /// Appends [incoming], skipping any id already present or locally reconciled.

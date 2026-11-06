@@ -39,6 +39,7 @@ List<SavedItemSummary> collectionSavedItemsFrom(
         // hasPreviewImage from this value, and the preview handles image loading.
         imageUrl: item.imageUrl,
         savedTime: savedTimeFrom(item.createdAt, now),
+        createdAt: DateTime.tryParse(item.createdAt),
       ),
   ];
 }

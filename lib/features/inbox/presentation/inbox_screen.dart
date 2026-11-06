@@ -9,7 +9,9 @@ import 'package:stash_it_app/features/inbox/presentation/widgets/inbox_intake.da
 import 'package:stash_it_app/features/pending_urls/application/pending_urls_controller.dart';
 import 'package:stash_it_app/features/pending_urls/presentation/widgets/pending_urls_entry.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
+import 'package:stash_it_app/features/saved_items/application/saved_items_enrichment_poller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_state.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_row.dart';
 import 'package:stash_it_app/features/saved_items/presentation/widgets/saved_item_skeleton.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
@@ -44,22 +46,147 @@ class InboxScreen extends ConsumerStatefulWidget {
   ConsumerState<InboxScreen> createState() => _InboxScreenState();
 }
 
-class _InboxScreenState extends ConsumerState<InboxScreen> {
+class _InboxScreenState extends ConsumerState<InboxScreen>
+    with WidgetsBindingObserver {
   final _scrollController = ScrollController();
   bool _refreshing = false;
+
+  /// The single coordinated polling loop for this Inbox.
+  ///
+  /// Kept in the screen rather than in the keep-alive Saved Items provider so
+  /// the timer's lifetime follows visibility instead of the retained listing.
+  late final SavedItemsEnrichmentPoller _enrichmentPoller;
+
+  bool _appActive = true;
+  bool _screenVisible = false;
+  bool _pollingActive = false;
+  bool _pollingActivatedOnce = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScrolled);
+    WidgetsBinding.instance.addObserver(this);
+
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    _appActive = lifecycle == null || lifecycle == AppLifecycleState.resumed;
+
+    _enrichmentPoller = SavedItemsEnrichmentPoller(
+      synchronize: () => ref.read(savedItemsProvider.notifier).refreshHead(),
+      hasEligibleItems: _hasEligiblePendingItem,
+      hasPendingItems: _hasPendingItem,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // An inactive shell branch and a route covered by an opaque page are both
+    // ticker-disabled, so this reports whether the Inbox is actually visible.
+    final visible = TickerMode.valuesOf(context).enabled;
+    if (visible == _screenVisible) return;
+
+    _screenVisible = visible;
+    _syncPollingLifecycle();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final active = state == AppLifecycleState.resumed;
+    if (active == _appActive) return;
+
+    _appActive = active;
+    _syncPollingLifecycle();
   }
 
   @override
   void dispose() {
+    _enrichmentPoller.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController
       ..removeListener(_onScrolled)
       ..dispose();
     super.dispose();
+  }
+
+  /// Starts or stops polling for the current visibility and foreground state.
+  ///
+  /// Idempotent, so visibility and lifecycle events arriving together cannot
+  /// start two activation synchronisations.
+  void _syncPollingLifecycle() {
+    final shouldBeActive = _screenVisible && _appActive;
+    if (shouldBeActive == _pollingActive) return;
+
+    _pollingActive = shouldBeActive;
+    if (!shouldBeActive) {
+      _enrichmentPoller.deactivate();
+      return;
+    }
+
+    // The first activation follows the initial listing read, which is already a
+    // head request. Returning to the Inbox performs one before polling resumes.
+    final synchronizeOnActivation = _pollingActivatedOnce;
+    _pollingActivatedOnce = true;
+    _enrichmentPoller.activate(
+      synchronizeOnActivation: synchronizeOnActivation,
+    );
+  }
+
+  SavedItemsState? get _loadedItems => switch (ref.read(savedItemsProvider)) {
+    AsyncData(:final value) => value,
+    _ => null,
+  };
+
+  bool _hasEligiblePendingItem() {
+    final state = _loadedItems;
+    if (state == null) return false;
+
+    final now = DateTime.now();
+    return state.items.any(
+      (item) => isSavedItemEnrichmentPollingEligible(item, now),
+    );
+  }
+
+  bool _hasPendingItem() {
+    final state = _loadedItems;
+    return state != null &&
+        state.items.any(
+          (item) => item.enrichmentStatus == EnrichmentStatus.pending,
+        );
+  }
+
+  /// Re-evaluates polling after the listing changes.
+  ///
+  /// A newly appearing eligible pending item restarts the interval progression,
+  /// so the first poll after a save is prompt even when a longer interval was
+  /// already scheduled.
+  void _onSavedItemsChanged(
+    AsyncValue<SavedItemsState>? previous,
+    AsyncValue<SavedItemsState> next,
+  ) {
+    final current = switch (next) {
+      AsyncData(:final value) => value,
+      _ => null,
+    };
+    if (current == null) {
+      _enrichmentPoller.update(newPending: false);
+      return;
+    }
+
+    final previousIds = switch (previous) {
+      AsyncData(:final value) => {for (final item in value.items) item.id},
+      _ => const <String>{},
+    };
+
+    final now = DateTime.now();
+    final hasNewPending = current.items.any(
+      (item) =>
+          !previousIds.contains(item.id) &&
+          isSavedItemEnrichmentPollingEligible(item, now),
+    );
+
+    _enrichmentPoller.update(newPending: hasNewPending);
   }
 
   /// Requests the next page as the user approaches the end.
@@ -116,6 +243,11 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     final tokens = AppTheme.tokensOf(context);
     final listing = ref.watch(savedItemsProvider);
     final pendingCount = ref.watch(pendingUrlCountProvider);
+
+    ref.listen<AsyncValue<SavedItemsState>>(
+      savedItemsProvider,
+      _onSavedItemsChanged,
+    );
 
     return Scaffold(
       appBar: DestinationAppBar(

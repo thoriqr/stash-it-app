@@ -40,6 +40,7 @@ SavedItemSummary searchSavedItemFrom(
     // `hasPreviewImage` from it and the preview decides whether to load it.
     imageUrl: dto.imageUrl,
     savedTime: savedTimeFrom(dto.createdAt, now),
+    createdAt: DateTime.tryParse(dto.createdAt),
   );
 }
 
