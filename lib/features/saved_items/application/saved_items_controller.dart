@@ -480,6 +480,38 @@ class SavedItems extends _$SavedItems {
     state = AsyncData(current.copyWith(items: items));
   }
 
+  /// Replaces one loaded row's note in place.
+  ///
+  /// This keeps an open Inbox's note preview truthful after the detail screen
+  /// saves or clears a note. Position, cursor, pagination state and every other
+  /// field come from the read that produced the row; only [note] changes.
+  ///
+  /// **No row is invented and no request is made.** A missing id is a silent
+  /// no-op. The caller has already confirmed the mutation and publishes its
+  /// feedback.
+  void applyNote(String savedItemId, String? note) {
+    final current = _currentState;
+    if (current == null) return;
+
+    var found = false;
+    final items = <SavedItemSummary>[];
+    for (final item in current.items) {
+      if (item.id != savedItemId) {
+        items.add(item);
+        continue;
+      }
+
+      found = true;
+      items.add(item.copyWithNote(note));
+    }
+
+    if (!found) return;
+
+    _localUpdateVersion++;
+
+    state = AsyncData(current.copyWith(items: items));
+  }
+
   /// Removes one confirmed-deleted row in place.
   ///
   /// Cursor, `hasMore` and `isLoadingMore` are preserved: deleting one row does

@@ -80,4 +80,19 @@ class SavedItemDetail extends _$SavedItemDetail {
       ),
     );
   }
+
+  /// Applies a confirmed note save or clear without fetching anything.
+  ///
+  /// Only a loaded detail for this item is updated. A missing or loading state
+  /// and a different id are silent no-ops. An explicit null clears the note.
+  /// No other field changes, because a note mutation changes nothing else.
+  void applyNote(String? note) {
+    final current = switch (state) {
+      AsyncData(:final value) => value,
+      _ => null,
+    };
+    if (current == null || current.id != id) return;
+
+    state = AsyncData(current.copyWithNote(note));
+  }
 }

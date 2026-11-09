@@ -153,6 +153,29 @@ class SavedItemSummary {
     );
   }
 
+  /// Returns this item with only its note replaced.
+  ///
+  /// An explicit null clears the note. Everything else — including the item's
+  /// identity, collection, URL and enrichment fields — is preserved because a
+  /// note mutation changes nothing else about the item.
+  SavedItemSummary copyWithNote(String? note) {
+    return SavedItemSummary(
+      id: id,
+      collectionId: collectionId,
+      url: url,
+      collectionName: collectionName,
+      enrichmentStatus: enrichmentStatus,
+      title: title,
+      description: description,
+      imageUrl: imageUrl,
+      note: note,
+      priceAmount: priceAmount,
+      priceCurrency: priceCurrency,
+      savedTime: savedTime,
+      createdAt: createdAt,
+    );
+  }
+
   /// Returns this item with its enrichment fields replaced.
   ///
   /// This is replacement, not merging. All parameters are required, including

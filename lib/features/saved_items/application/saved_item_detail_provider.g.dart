@@ -101,7 +101,7 @@ final class SavedItemDetailProvider
   }
 }
 
-String _$savedItemDetailHash() => r'47a13e4a393027abc32abe724ab80ea1266649e8';
+String _$savedItemDetailHash() => r'1565f4accb545ecd3880547166aa624a2e66cdb5';
 
 /// One saved item, read fresh from `GET /saved-items/{id}`.
 ///

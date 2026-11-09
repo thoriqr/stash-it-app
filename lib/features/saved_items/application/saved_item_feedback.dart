@@ -143,6 +143,71 @@ final AppFeedback linkLaunchFailedFeedback = AppFeedback.localized(
   message: (l10n) => l10n.linkLaunchFailed,
 );
 
+final AppFeedback urlCopiedFeedback = AppFeedback.localized(
+  tone: FeedbackTone.success,
+  message: (l10n) => l10n.urlCopied,
+);
+
+final AppFeedback urlCopyFailedFeedback = AppFeedback.localized(
+  tone: FeedbackTone.danger,
+  message: (l10n) => l10n.urlCopyFailed,
+);
+
+final AppFeedback noteSavedFeedback = AppFeedback.localized(
+  tone: FeedbackTone.success,
+  message: (l10n) => l10n.savedItemNoteSaved,
+);
+
+final AppFeedback noteDeletedFeedback = AppFeedback.localized(
+  tone: FeedbackTone.success,
+  message: (l10n) => l10n.savedItemNoteDeleted,
+);
+
+final AppFeedback noteSaveUnconfirmedFeedback = AppFeedback.localized(
+  tone: FeedbackTone.uncertain,
+  message: (l10n) => l10n.savedItemNoteSaveUnconfirmed,
+);
+
+final AppFeedback noteDeleteUnconfirmedFeedback = AppFeedback.localized(
+  tone: FeedbackTone.uncertain,
+  message: (l10n) => l10n.savedItemNoteDeleteUnconfirmed,
+);
+
+final AppFeedback noteAuthRequiredFeedback = AppFeedback.localized(
+  tone: FeedbackTone.danger,
+  message: (l10n) => l10n.savedItemNoteAuthRequired,
+);
+
+final AppFeedback noteRefreshUncertainFeedback = AppFeedback.localized(
+  tone: FeedbackTone.warning,
+  message: (l10n) => l10n.savedItemNoteRefreshUncertain,
+);
+
+final AppFeedback noteCredentialStorageFeedback = AppFeedback.localized(
+  tone: FeedbackTone.warning,
+  message: (l10n) => l10n.savedItemNoteCredentialStorage,
+);
+
+final AppFeedback noteUnavailableFeedback = AppFeedback.localized(
+  tone: FeedbackTone.warning,
+  message: (l10n) => l10n.savedItemNoteUnavailable,
+);
+
+final AppFeedback noteInvalidFeedback = AppFeedback.localized(
+  tone: FeedbackTone.danger,
+  message: (l10n) => l10n.savedItemNoteInvalid,
+);
+
+final AppFeedback noteSaveFailedFeedback = AppFeedback.localized(
+  tone: FeedbackTone.danger,
+  message: (l10n) => l10n.savedItemNoteSaveFailed,
+);
+
+final AppFeedback noteDeleteFailedFeedback = AppFeedback.localized(
+  tone: FeedbackTone.danger,
+  message: (l10n) => l10n.savedItemNoteDeleteFailed,
+);
+
 AppFeedback refreshFailedFeedback() => AppFeedback.localized(
   tone: FeedbackTone.uncertain,
   message: (l10n) => l10n.refreshFailed,
@@ -330,6 +395,23 @@ AppFeedback moveRateLimitedFeedback(Duration? retryAfter) =>
       message: (l10n) {
         if (retryAfter == null) return l10n.moveRateLimitedNoWait;
         return l10n.moveRateLimitedWithWait(
+          _waitPhrase(
+            retryAfter,
+            second: l10n.retryAfterSecond,
+            seconds: l10n.retryAfterSeconds,
+            minutes: l10n.retryAfterMinutes,
+            hours: l10n.retryAfterHours,
+          ),
+        );
+      },
+    );
+
+AppFeedback noteRateLimitedFeedback(Duration? retryAfter) =>
+    AppFeedback.localized(
+      tone: FeedbackTone.warning,
+      message: (l10n) {
+        if (retryAfter == null) return l10n.savedItemNoteRateLimitedNoWait;
+        return l10n.savedItemNoteRateLimitedWithWait(
           _waitPhrase(
             retryAfter,
             second: l10n.retryAfterSecond,

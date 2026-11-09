@@ -78,6 +78,9 @@ class SavedItemsFixtures {
     String? title = 'Understanding CRDTs',
     String? description = 'Conflict-free replicated data types converge.',
     String? imageUrl = 'https://example.com/og.png',
+    String? note,
+    String? priceAmount,
+    String? priceCurrency,
     String collectionId = '01a0f359-093b-737a-963a-80f7ca6768ed',
     String collectionName = 'Camera Gear',
     String enrichmentStatus = 'completed',
@@ -93,6 +96,9 @@ class SavedItemsFixtures {
       title: title,
       description: description,
       imageUrl: imageUrl,
+      note: note,
+      priceAmount: priceAmount,
+      priceCurrency: priceCurrency,
       collectionId: collectionId,
       collectionName: collectionName,
       enrichmentStatus: enrichmentStatus,
@@ -128,6 +134,9 @@ class SavedItemsFixtures {
     String? title = 'Understanding CRDTs',
     String? description = 'Conflict-free replicated data types converge.',
     String? imageUrl = 'https://example.com/og.png',
+    String? note,
+    String? priceAmount,
+    String? priceCurrency,
     String collectionId = '01a0f359-093b-737a-963a-80f7ca6768ed',
     String enrichmentStatus = 'completed',
     String? lastEnrichedAt = '2026-10-02T10:31:00Z',
@@ -142,6 +151,9 @@ class SavedItemsFixtures {
       title: title,
       description: description,
       imageUrl: imageUrl,
+      note: note,
+      priceAmount: priceAmount,
+      priceCurrency: priceCurrency,
       collectionId: collectionId,
       enrichmentStatus: enrichmentStatus,
       lastEnrichedAt: lastEnrichedAt,
@@ -154,6 +166,20 @@ class SavedItemsFixtures {
       'message': 'saved item enriched successfully',
     };
   }
+
+  /// The whole `200` body of `PUT /saved-items/{id}/note`.
+  static Map<String, dynamic> noteUpdated({
+    String note = 'My updated context for saving this URL.',
+  }) => {
+    'data': {'note': note},
+    'message': 'saved item note saved successfully',
+  };
+
+  /// The whole `200` body of `DELETE /saved-items/{id}/note`.
+  static Map<String, dynamic> noteDeleted() => {
+    'data': <String, dynamic>{},
+    'message': 'saved item note deleted successfully',
+  };
 
   /// The whole `200` body of `PUT /saved-items/{id}/collection`.
   ///

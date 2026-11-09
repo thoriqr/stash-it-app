@@ -4,12 +4,15 @@ import 'package:retrofit/retrofit.dart';
 import '../models/collection_saved_items_response.dart';
 import '../models/create_saved_item_request.dart';
 import '../models/create_saved_item_response.dart';
+import '../models/delete_saved_item_note_response.dart';
 import '../models/delete_saved_item_response.dart';
 import '../models/enrich_saved_item_response.dart';
 import '../models/get_saved_item_response.dart';
 import '../models/list_saved_items_response.dart';
 import '../models/move_to_collection_request.dart';
 import '../models/move_to_collection_response.dart';
+import '../models/update_saved_item_note_request.dart';
+import '../models/update_saved_item_note_response.dart';
 
 part 'saved_items_api.g.dart';
 
@@ -107,6 +110,27 @@ abstract class SavedItemsApi {
   /// `404 RESOURCE_NOT_FOUND`; the client cannot distinguish those cases.
   @GET('/saved-items/{id}')
   Future<GetSavedItemResponse> getById(@Path('id') String id);
+
+  /// `PUT /saved-items/{id}/note` — adds or replaces the user's note.
+  ///
+  /// The note is plain text, may contain line breaks, and is limited to 5,000
+  /// characters. A whitespace-only value is rejected; removing a note uses
+  /// [deleteNote] instead.
+  ///
+  /// The response reports the note as it was stored. A missing item and one
+  /// owned by another user both return the documented not-found error.
+  @PUT('/saved-items/{id}/note')
+  Future<UpdateSavedItemNoteResponse> updateNote(
+    @Path('id') String id,
+    @Body() UpdateSavedItemNoteRequest request,
+  );
+
+  /// `DELETE /saved-items/{id}/note` — clears the note without deleting the
+  /// saved item.
+  ///
+  /// Clearing an absent note is a success. The saved item itself is untouched.
+  @DELETE('/saved-items/{id}/note')
+  Future<DeleteSavedItemNoteResponse> deleteNote(@Path('id') String id);
 
   /// `POST /saved-items/{id}/enrich` — re-reads the saved item's source page
   /// and records the extraction result.

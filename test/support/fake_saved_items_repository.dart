@@ -40,6 +40,10 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
     this.onDelete,
     this.enrichResults = const [],
     this.onEnrich,
+    this.updateNoteResults = const [],
+    this.onUpdateNote,
+    this.deleteNoteResults = const [],
+    this.onDeleteNote,
     this.collectionResults = const [],
     this.onListInCollection,
   }) : listPage =
@@ -98,6 +102,21 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   /// open while a test asserts the in-flight UI.
   final Future<SavedItemDeleteResult> Function(String id)? onDelete;
 
+  /// A stored note or an error to throw for one `PUT .../note`.
+  ///
+  /// A null entry is a successful response that omitted the note; the caller
+  /// falls back to the submitted text.
+  final List<Object?> updateNoteResults;
+
+  /// An optional handler for one note save, used to hold the request open.
+  final Future<String?> Function(String id, String note)? onUpdateNote;
+
+  /// A null entry is a successful note clear; an [ApiFailure] is thrown.
+  final List<Object?> deleteNoteResults;
+
+  /// An optional handler for one note clear, used to hold the request open.
+  final Future<void> Function(String id)? onDeleteNote;
+
   /// A `CollectionSavedItemsPage` to return, or an error to throw.
   ///
   /// Empty means the collection listing is not scripted; reaching it is then a
@@ -122,6 +141,8 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   int moveCalls = 0;
   int deleteCalls = 0;
   int enrichCalls = 0;
+  int updateNoteCalls = 0;
+  int deleteNoteCalls = 0;
   int collectionCalls = 0;
 
   /// The URLs passed to [create], in order.
@@ -135,6 +156,12 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
 
   /// The ids passed to [enrich], in order.
   final List<String> enrichIds = [];
+
+  /// The note writes submitted, in order.
+  final List<({String savedItemId, String note})> noteUpdates = [];
+
+  /// The ids passed to [deleteNote], in order.
+  final List<String> noteDeleteIds = [];
 
   /// The collection ids passed to [listInCollection], in order.
   final List<String> collectionIds = [];
@@ -280,6 +307,60 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
 
     if (result is SavedItemEnrichmentResult) return result;
     throw result;
+  }
+
+  @override
+  Future<String?> updateNote({
+    required String savedItemId,
+    required String note,
+  }) async {
+    updateNoteCalls++;
+    noteUpdates.add((savedItemId: savedItemId, note: note));
+
+    final handler = onUpdateNote;
+    if (handler != null) return handler(savedItemId, note);
+
+    if (updateNoteResults.isEmpty) {
+      throw StateError(
+        'FakeSavedItemsRepository has no updateNote result scripted',
+      );
+    }
+
+    final result =
+        updateNoteResults[updateNoteCalls - 1 < updateNoteResults.length
+            ? updateNoteCalls - 1
+            : updateNoteResults.length - 1];
+
+    if (result is ApiFailure) throw result;
+    if (result is String || result == null) return result as String?;
+    throw StateError(
+      'updateNote results must be a String, null, or ApiFailure',
+    );
+  }
+
+  @override
+  Future<void> deleteNote(String savedItemId) async {
+    deleteNoteCalls++;
+    noteDeleteIds.add(savedItemId);
+
+    final handler = onDeleteNote;
+    if (handler != null) return handler(savedItemId);
+
+    if (deleteNoteResults.isEmpty) {
+      throw StateError(
+        'FakeSavedItemsRepository has no deleteNote result scripted',
+      );
+    }
+
+    final result =
+        deleteNoteResults[deleteNoteCalls - 1 < deleteNoteResults.length
+            ? deleteNoteCalls - 1
+            : deleteNoteResults.length - 1];
+
+    if (result is ApiFailure) throw result;
+    if (result != null) {
+      throw StateError('deleteNote results must be null or an ApiFailure');
+    }
   }
 
   @override

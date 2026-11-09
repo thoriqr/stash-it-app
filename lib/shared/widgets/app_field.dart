@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 
@@ -24,6 +25,9 @@ class AppField extends StatefulWidget {
     this.obscureText = false,
     this.keyboardType,
     this.textInputAction,
+    this.minLines,
+    this.maxLines = 1,
+    this.inputFormatters,
     this.autofillHints,
     this.onSubmitted,
     this.onChanged,
@@ -59,6 +63,17 @@ class AppField extends StatefulWidget {
   final TextInputType? keyboardType;
 
   final TextInputAction? textInputAction;
+
+  /// Minimum visible lines. Used by multiline fields such as the note editor.
+  final int? minLines;
+
+  /// Maximum visible lines. Defaults to one, matching a single-line field.
+  ///
+  /// A null value lets the field grow with its content.
+  final int? maxLines;
+
+  /// Formatters applied to the input, such as the note length limit.
+  final List<TextInputFormatter>? inputFormatters;
 
   final Iterable<String>? autofillHints;
 
@@ -162,6 +177,9 @@ class _AppFieldState extends State<AppField> {
           obscureText: widget.obscureText,
           keyboardType: widget.keyboardType,
           textInputAction: widget.textInputAction,
+          minLines: widget.minLines,
+          maxLines: widget.maxLines,
+          inputFormatters: widget.inputFormatters,
           autofillHints: widget.autofillHints,
           onFieldSubmitted: widget.onSubmitted,
           onChanged: _onChanged,

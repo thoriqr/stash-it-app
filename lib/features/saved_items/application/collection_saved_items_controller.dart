@@ -292,6 +292,33 @@ class CollectionSavedItems extends _$CollectionSavedItems {
     state = AsyncData(current.copyWith(items: items));
   }
 
+  /// Replaces one loaded row's note in place.
+  ///
+  /// This is the collection-contents half of a confirmed note change. The row
+  /// already exists, so only its note is replaced; the collection's name,
+  /// cursor, pagination state, enrichment fields and tombstones stay exactly as
+  /// they were. A missing id is a silent no-op and no request is made.
+  void applyNote(String savedItemId, String? note) {
+    final current = _currentState;
+    if (current == null) return;
+
+    var found = false;
+    final items = <SavedItemSummary>[];
+    for (final item in current.items) {
+      if (item.id != savedItemId) {
+        items.add(item);
+        continue;
+      }
+
+      found = true;
+      items.add(item.copyWithNote(note));
+    }
+
+    if (!found) return;
+
+    state = AsyncData(current.copyWith(items: items));
+  }
+
   /// Removes one confirmed-deleted row in place.
   ///
   /// The collection's name, cursor, `hasMore` and any load-more failure are

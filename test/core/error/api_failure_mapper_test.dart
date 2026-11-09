@@ -247,6 +247,17 @@ void main() {
       expect(failure, isNot(isA<ApiFailureUnreadableResponse>()));
     });
 
+    test('INVALID_NOTE is actionable input', () {
+      // A blank or over-long note passed structural parsing and failed the note
+      // rule. Nothing was written, and the user can correct the text.
+      final failure = mapApiFailure(
+        badResponse(400, errorBody(ApiErrorCode.invalidNote)),
+      );
+
+      expect(failure, isA<ApiFailureValidation>());
+      expect(failure, isNot(isA<ApiFailureUnreadableResponse>()));
+    });
+
     test('COLLECTION_NAME_ALREADY_EXISTS is its own conflict', () {
       // Well formed, but the create flow cannot take a name another collection
       // holds. A validation variant would describe the shape; this one says the

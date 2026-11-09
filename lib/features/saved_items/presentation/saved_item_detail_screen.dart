@@ -10,7 +10,9 @@ import 'package:stash_it_app/features/saved_items/application/delete_saved_item_
 import 'package:stash_it_app/features/saved_items/application/enrich_saved_item_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/open_saved_item_url.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_item_detail_provider.dart';
+import 'package:stash_it_app/features/saved_items/application/saved_item_url_actions.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/presentation/price_label.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_confirm_dialog.dart';
@@ -18,6 +20,7 @@ import 'package:stash_it_app/shared/widgets/desktop_layout.dart';
 
 import 'widgets/move_to_collection_sheet.dart';
 import 'widgets/saved_item_collection_chip.dart';
+import 'widgets/saved_item_detail_note.dart';
 import 'widgets/saved_item_enrichment_state.dart';
 import 'widgets/saved_item_preview.dart';
 
@@ -65,6 +68,7 @@ class SavedItemDetailScreen extends ConsumerWidget {
     final detail = ref.watch(savedItemDetailProvider(itemId));
     final deleting = ref.watch(deleteSavedItemProvider);
     final enriching = ref.watch(enrichSavedItemProvider);
+    final urlActions = ref.read(savedItemUrlActionsProvider);
     final canPop = Navigator.of(context).canPop();
 
     return Scaffold(
@@ -86,9 +90,13 @@ class SavedItemDetailScreen extends ConsumerWidget {
             item: value,
             deleting: deleting,
             enriching: enriching,
+            showShareAction: showsSavedItemShareAction,
             onMoveToCollection: () =>
                 showMoveToCollectionSheet(context, item: value),
             onOpenUrl: () => ref.read(openSavedItemUrlProvider).open(value),
+            onCopyUrl: () => urlActions.copy(value.url),
+            onShareUrl: () => urlActions.share(value.url),
+            onEditNote: () => showSavedItemNoteEditor(context, item: value),
             onDelete: () => _confirmDelete(context, ref, value),
             onReRead: () =>
                 ref.read(enrichSavedItemProvider.notifier).enrich(value),
@@ -220,8 +228,12 @@ class _DetailBody extends StatelessWidget {
     required this.item,
     this.onMoveToCollection,
     this.onOpenUrl,
+    this.onCopyUrl,
+    this.onShareUrl,
+    this.onEditNote,
     this.onDelete,
     this.onReRead,
+    this.showShareAction = false,
     this.deleting = false,
     this.enriching = false,
   });
@@ -238,6 +250,19 @@ class _DetailBody extends StatelessWidget {
   /// Remains available while writes are in flight. Opening the URL does not
   /// modify the saved item, so it does not need to be blocked by those writes.
   final VoidCallback? onOpenUrl;
+
+  /// Copies the complete original URL. Null outside the loaded-data state.
+  final VoidCallback? onCopyUrl;
+
+  /// Opens the native share sheet for the complete original URL. Null outside
+  /// the loaded-data state or when the platform has no share action.
+  final VoidCallback? onShareUrl;
+
+  /// Opens the one note editor sheet. Null outside the loaded-data state.
+  final VoidCallback? onEditNote;
+
+  /// Whether this platform exposes the native share action.
+  final bool showShareAction;
 
   /// Null outside the loaded-data state.
   final VoidCallback? onDelete;
@@ -260,6 +285,10 @@ class _DetailBody extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
     final description = _descriptionOf(item);
+    final price = priceLabel(
+      amount: item.priceAmount,
+      currency: item.priceCurrency,
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
@@ -293,10 +322,50 @@ class _DetailBody extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppMetrics.space1),
-          Text(
-            item.displaySource,
-            style: AppTypography.mono.copyWith(color: tokens.textTertiary),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  item.displaySource,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.mono.copyWith(
+                    color: tokens.textTertiary,
+                  ),
+                ),
+              ),
+              if (onShareUrl != null && showShareAction)
+                _UrlAction(
+                  icon: Icons.share_outlined,
+                  tooltip: l10n.savedItemShareUrl,
+                  onPressed: onShareUrl,
+                ),
+              if (onCopyUrl != null)
+                _UrlAction(
+                  icon: Icons.copy_outlined,
+                  tooltip: l10n.savedItemCopyUrl,
+                  onPressed: onCopyUrl,
+                ),
+            ],
           ),
+          if (price != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              price,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.meta.copyWith(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: tokens.textPrimary,
+              ),
+            ),
+            if (onOpenUrl != null) ...[
+              const SizedBox(height: 2),
+              _PriceContext(onOpenUrl: onOpenUrl!),
+            ],
+          ],
           const SizedBox(height: AppMetrics.space3),
           Row(
             children: [
@@ -322,6 +391,10 @@ class _DetailBody extends StatelessWidget {
               description,
               style: AppTypography.body.copyWith(color: tokens.textSecondary),
             ),
+          ],
+          if (onEditNote != null) ...[
+            const SizedBox(height: AppMetrics.space3),
+            SavedItemDetailNote(note: item.note, onTap: onEditNote!),
           ],
           const SizedBox(height: AppMetrics.space5),
           Divider(
@@ -387,6 +460,75 @@ class _DetailBody extends StatelessWidget {
     final description = item.description?.trim();
     if (description == null || description.isEmpty) return null;
     return description;
+  }
+}
+
+/// A compact icon action beside the URL.
+class _UrlAction extends StatelessWidget {
+  const _UrlAction({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTheme.tokensOf(context);
+
+    return IconButton(
+      icon: Icon(icon, size: AppMetrics.iconSize),
+      tooltip: tooltip,
+      color: tokens.textTertiary,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+      onPressed: onPressed,
+    );
+  }
+}
+
+/// The small price caveat with an interactive link to the original page.
+///
+/// Both sentences are complete localized messages. The second sentence is the
+/// link, so the interactive area is exactly the copy the requirement names.
+class _PriceContext extends StatelessWidget {
+  const _PriceContext({required this.onOpenUrl});
+
+  final VoidCallback onOpenUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final tokens = AppTheme.tokensOf(context);
+    final style = AppTypography.meta.copyWith(color: tokens.textTertiary);
+
+    return Wrap(
+      spacing: 4,
+      runSpacing: 2,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(l10n.savedItemPriceMayHaveChanged, style: style),
+        Semantics(
+          link: true,
+          child: InkWell(
+            borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
+            onTap: onOpenUrl,
+            child: Text(
+              l10n.savedItemPriceCheckOriginalPage,
+              style: style.copyWith(
+                color: tokens.accent,
+                decoration: TextDecoration.underline,
+                decorationColor: tokens.accent,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

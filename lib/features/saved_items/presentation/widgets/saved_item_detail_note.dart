@@ -1,0 +1,298 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/features/saved_items/application/note_edit_decision.dart';
+import 'package:stash_it_app/features/saved_items/application/note_mutation_controller.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/l10n/app_localizations.dart';
+import 'package:stash_it_app/shared/widgets/app_button.dart';
+import 'package:stash_it_app/shared/widgets/app_confirm_dialog.dart';
+import 'package:stash_it_app/shared/widgets/app_field.dart';
+import 'package:stash_it_app/shared/widgets/desktop_layout.dart';
+
+/// The backend's maximum note length, in characters.
+const int savedItemNoteMaxLength = 5000;
+
+/// The note section in Saved Item Detail.
+///
+/// An existing note shows a compact two-line preview. Without one, the same
+/// surface offers a compact add affordance. Both open the one editor sheet.
+class SavedItemDetailNote extends StatelessWidget {
+  const SavedItemDetailNote({
+    required this.note,
+    required this.onTap,
+    super.key,
+  });
+
+  final String? note;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final tokens = AppTheme.tokensOf(context);
+    final hasNote = note?.trim().isNotEmpty ?? false;
+
+    return Material(
+      color: tokens.surfaceInset,
+      borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
+      child: InkWell(
+        borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppMetrics.space2,
+            vertical: 8,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: Icon(
+                  hasNote
+                      ? Icons.sticky_note_2_outlined
+                      : Icons.note_add_outlined,
+                  size: 14,
+                  color: tokens.textTertiary,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: hasNote
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.inboxYourNote,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.meta.copyWith(
+                              color: tokens.textTertiary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            note!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.body.copyWith(
+                              fontSize: 12.5,
+                              height: 1.4,
+                              color: tokens.textSecondary,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Text(
+                        l10n.savedItemAddNote,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.meta.copyWith(
+                          color: tokens.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Opens the one read-and-edit surface for this item's note.
+///
+/// The existing note is prepopulated exactly as stored, including line breaks.
+/// The same sheet is used for adding and editing; it has one Save action and no
+/// permanent delete control.
+Future<void> showSavedItemNoteEditor(
+  BuildContext context, {
+  required SavedItemSummary item,
+}) {
+  final tokens = AppTheme.tokensOf(context);
+
+  return showModalBottomSheet<void>(
+    context: context,
+    constraints: desktopSheetConstraints,
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: tokens.surface,
+    clipBehavior: Clip.antiAlias,
+    showDragHandle: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppMetrics.radius2),
+      ),
+    ),
+    builder: (_) => SavedItemNoteEditorSheet(item: item),
+  );
+}
+
+/// The add/edit note editor.
+class SavedItemNoteEditorSheet extends ConsumerStatefulWidget {
+  const SavedItemNoteEditorSheet({required this.item, super.key});
+
+  final SavedItemSummary item;
+
+  @override
+  ConsumerState<SavedItemNoteEditorSheet> createState() =>
+      _SavedItemNoteEditorSheetState();
+}
+
+class _SavedItemNoteEditorSheetState
+    extends ConsumerState<SavedItemNoteEditorSheet> {
+  late final TextEditingController _controller;
+  late final String? _initialNote;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialNote = widget.item.note;
+    _controller = TextEditingController(text: _initialNote ?? '');
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (ref.read(noteMutationProvider)) return;
+
+    final decision = noteSaveDecision(
+      initialNote: _initialNote,
+      enteredText: _controller.text,
+    );
+
+    switch (decision) {
+      case NoteSaveDecision.none:
+        Navigator.of(context).pop();
+
+      case NoteSaveDecision.delete:
+        await _confirmDelete();
+
+      case NoteSaveDecision.save:
+        final outcome = await ref
+            .read(noteMutationProvider.notifier)
+            .save(widget.item, _controller.text);
+        if (!mounted) return;
+        if (outcome.closesEditor) Navigator.of(context).pop();
+    }
+  }
+
+  Future<void> _confirmDelete() async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: l10n.savedItemNoteDeleteTitle,
+      message: l10n.savedItemNoteDeleteMessage,
+      cancelLabel: l10n.savedItemNoteKeepAction,
+      confirmLabel: l10n.savedItemNoteDeleteConfirmAction,
+      destructive: true,
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final outcome = await ref
+        .read(noteMutationProvider.notifier)
+        .delete(widget.item);
+    if (!mounted) return;
+    if (outcome.closesEditor) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final tokens = AppTheme.tokensOf(context);
+    final busy = ref.watch(noteMutationProvider);
+    final viewInsets = MediaQuery.viewInsetsOf(context);
+    final availableHeight =
+        MediaQuery.sizeOf(context).height - viewInsets.bottom;
+    final count = _controller.text.runes.length;
+
+    return PopScope(
+      canPop: !busy,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          // The sheet rises with the keyboard rather than covering the editor.
+          padding: EdgeInsets.only(bottom: viewInsets.bottom),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: availableHeight > 0 ? availableHeight * 0.9 : 0,
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                AppMetrics.screenPadding,
+                AppMetrics.space4,
+                AppMetrics.screenPadding,
+                AppMetrics.space5,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.sticky_note_2_outlined,
+                        size: AppMetrics.iconSize,
+                        color: tokens.textTertiary,
+                      ),
+                      const SizedBox(width: AppMetrics.space2),
+                      Text(
+                        l10n.inboxYourNote,
+                        style: AppTypography.screenHeading.copyWith(
+                          color: tokens.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppMetrics.space5),
+                  AppField(
+                    controller: _controller,
+                    enabled: !busy,
+                    placeholder: l10n.savedItemNotePlaceholder,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
+                    minLines: 4,
+                    maxLines: 8,
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(savedItemNoteMaxLength),
+                    ],
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: AppMetrics.space2),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      l10n.savedItemNoteCharacterCount(
+                        count,
+                        savedItemNoteMaxLength,
+                      ),
+                      style: AppTypography.meta.copyWith(
+                        color: tokens.textTertiary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppMetrics.space5),
+                  AppButton(
+                    label: l10n.savedItemNoteSaveAction,
+                    variant: AppButtonVariant.primary,
+                    busy: busy,
+                    onPressed: busy ? null : _save,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

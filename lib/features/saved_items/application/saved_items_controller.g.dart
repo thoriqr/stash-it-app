@@ -138,7 +138,7 @@ final class SavedItemsProvider
   SavedItems create() => SavedItems();
 }
 
-String _$savedItemsHash() => r'fb0cb9cb8dd5880c60a1bd5e158faece88a7f2a1';
+String _$savedItemsHash() => r'9d3ec5e93e7eafddc1e70bfca02163f7337cb024';
 
 /// The Inbox listing: the first page, and any page after it.
 ///

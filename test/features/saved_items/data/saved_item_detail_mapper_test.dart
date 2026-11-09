@@ -21,6 +21,9 @@ void main() {
     String? title = 'Understanding CRDTs',
     String? description = 'Conflict-free replicated data types converge.',
     String? imageUrl = 'https://example.com/og.png',
+    String? note,
+    String? priceAmount,
+    String? priceCurrency,
     String enrichmentStatus = 'completed',
     String createdAt = '2026-10-02T10:30:00Z',
     String collectionId = 'collection-1',
@@ -31,6 +34,9 @@ void main() {
         title: title,
         description: description,
         imageUrl: imageUrl,
+        note: note,
+        priceAmount: priceAmount,
+        priceCurrency: priceCurrency,
         enrichmentStatus: enrichmentStatus,
         createdAt: createdAt,
         collectionId: collectionId,
@@ -122,6 +128,32 @@ void main() {
           'show the page rather than an excerpt.';
 
       expect(detail(description: long).description, long);
+    });
+  });
+
+  group('note and price', () {
+    test('carries the note and price through without reinterpretation', () {
+      final item = detail(
+        note: 'Read the indexing section.\nThen the conclusion.',
+        priceAmount: '129.99',
+        priceCurrency: 'USD',
+      );
+
+      expect(item.note, 'Read the indexing section.\nThen the conclusion.');
+      expect(
+        item.priceAmount,
+        '129.99',
+        reason: 'the amount stays text so decimal precision is preserved',
+      );
+      expect(item.priceCurrency, 'USD');
+    });
+
+    test('missing values stay null rather than becoming empty text', () {
+      final item = detail();
+
+      expect(item.note, isNull);
+      expect(item.priceAmount, isNull);
+      expect(item.priceCurrency, isNull);
     });
   });
 

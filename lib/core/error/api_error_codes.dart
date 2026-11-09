@@ -271,6 +271,14 @@ abstract final class ApiErrorCode {
   /// have been saved.
   static const String invalidUrl = 'INVALID_URL';
 
+  /// 400. The submitted note is blank after trimming or exceeds the allowed
+  /// length of 5,000 characters.
+  ///
+  /// The note is plain text and may span multiple lines. Add and update share
+  /// this validation rule; removing a note uses `DELETE /saved-items/{id}/note`
+  /// instead. The request writes nothing.
+  static const String invalidNote = 'INVALID_NOTE';
+
   /// 500. An unexpected internal server error occurred.
   static const String internalServerError = 'INTERNAL_SERVER_ERROR';
 

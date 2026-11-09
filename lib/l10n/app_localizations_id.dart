@@ -679,6 +679,12 @@ class AppLocalizationsId extends AppLocalizations {
       'Kami tidak dapat membuka tautan ini. Coba lagi.';
 
   @override
+  String get urlCopied => 'URL disalin';
+
+  @override
+  String get urlCopyFailed => 'Tidak dapat menyalin URL. Coba lagi.';
+
+  @override
   String get refreshFailed => 'Tidak dapat menyegarkan. Periksa koneksi Anda.';
 
   @override
@@ -995,6 +1001,96 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get savedItemOpenAction => 'Buka halaman asli';
+
+  @override
+  String get savedItemCopyUrl => 'Salin URL';
+
+  @override
+  String get savedItemShareUrl => 'Bagikan URL';
+
+  @override
+  String get savedItemPriceMayHaveChanged => 'Harga mungkin sudah berubah.';
+
+  @override
+  String get savedItemPriceCheckOriginalPage => 'Cek halaman asli.';
+
+  @override
+  String get savedItemAddNote => 'Tambahkan catatan pribadi';
+
+  @override
+  String get savedItemNoteSaveAction => 'Simpan';
+
+  @override
+  String get savedItemNotePlaceholder => 'Tulis catatan Anda…';
+
+  @override
+  String savedItemNoteCharacterCount(int count, int max) {
+    return '$count/$max';
+  }
+
+  @override
+  String get savedItemNoteDeleteTitle => 'Hapus catatan ini?';
+
+  @override
+  String get savedItemNoteDeleteMessage =>
+      'Ini menghapus catatan Anda. Item tersimpan tetap ada.';
+
+  @override
+  String get savedItemNoteKeepAction => 'Pertahankan catatan';
+
+  @override
+  String get savedItemNoteDeleteConfirmAction => 'Hapus catatan';
+
+  @override
+  String get savedItemNoteSaved => 'Catatan disimpan.';
+
+  @override
+  String get savedItemNoteDeleted => 'Catatan dihapus.';
+
+  @override
+  String get savedItemNoteSaveUnconfirmed =>
+      'Kami tidak dapat memastikan apakah catatan Anda tersimpan. Periksa catatan sebelum mencoba lagi.';
+
+  @override
+  String get savedItemNoteDeleteUnconfirmed =>
+      'Kami tidak dapat memastikan apakah catatan Anda terhapus. Periksa catatan sebelum mencoba lagi.';
+
+  @override
+  String get savedItemNoteAuthRequired =>
+      'Masuk lagi untuk mengubah catatan ini.';
+
+  @override
+  String get savedItemNoteRefreshUncertain =>
+      'Kami tidak dapat memperbarui sesi Anda, jadi catatan tidak diubah. Coba lagi.';
+
+  @override
+  String get savedItemNoteCredentialStorage =>
+      'Perangkat ini tidak dapat memperbarui sesi Anda, jadi catatan tidak diubah. Coba lagi.';
+
+  @override
+  String get savedItemNoteRateLimitedNoWait =>
+      'Anda mengubah catatan terlalu cepat. Coba lagi sebentar lagi.';
+
+  @override
+  String savedItemNoteRateLimitedWithWait(String wait) {
+    return 'Anda mengubah catatan terlalu cepat. Coba lagi dalam $wait.';
+  }
+
+  @override
+  String get savedItemNoteUnavailable =>
+      'Perubahan catatan untuk sementara tidak tersedia. Coba lagi sebentar lagi.';
+
+  @override
+  String get savedItemNoteInvalid =>
+      'Catatan itu tidak dapat disimpan. Periksa teksnya dan coba lagi.';
+
+  @override
+  String get savedItemNoteSaveFailed =>
+      'Kami tidak dapat menyimpan catatan Anda. Coba lagi.';
+
+  @override
+  String get savedItemNoteDeleteFailed =>
+      'Kami tidak dapat menghapus catatan Anda. Coba lagi.';
 
   @override
   String get savedItemDeleteAction => 'Hapus item ini';

@@ -12,21 +12,26 @@ part 'get_saved_item_response.g.dart';
 /// {
 ///   "id": "...", "url": "...", "domain": "...", "platform": "...",
 ///   "title": "...", "description": "...", "image_url": "...",
+///   "note": "...", "price_amount": "24500000", "price_currency": "IDR",
 ///   "collection_id": "...", "enrichment_status": "completed",
 ///   "last_enriched_at": "...", "created_at": "...", "updated_at": "..."
 /// }
 /// ```
 ///
-/// Declares all twelve saved item fields. This DTO is separate from
+/// Declares every documented saved item field. This DTO is separate from
 /// `ListedSavedItemResponse` because the detail response reports the collection
 /// as a sibling of the item, while listing rows use a different response shape.
 ///
 /// Both endpoints return the same saved item structure, so the enrichment
 /// response reuses this DTO rather than declaring a duplicate.
 ///
-/// `domain`, `platform`, `title`, `description`, `image_url` and
-/// `last_enriched_at` are nullable. A completed item may still have a null
-/// `title`; this does not necessarily indicate an enrichment failure.
+/// `domain`, `platform`, `title`, `description`, `image_url`, `note`,
+/// `price_amount`, `price_currency` and `last_enriched_at` are nullable. A
+/// completed item may still have a null `title`; this does not necessarily
+/// indicate an enrichment failure.
+///
+/// `price_amount` stays a string so its decimal precision is never reduced by a
+/// floating-point conversion.
 ///
 /// Fields with snake_case wire keys use [JsonKey] to ensure the generated
 /// decoder reads the correct JSON keys.
@@ -40,6 +45,9 @@ abstract class SavedItemDetailResponse with _$SavedItemDetailResponse {
     String? title,
     String? description,
     @JsonKey(name: 'image_url') String? imageUrl,
+    String? note,
+    @JsonKey(name: 'price_amount') String? priceAmount,
+    @JsonKey(name: 'price_currency') String? priceCurrency,
     @JsonKey(name: 'collection_id') required String collectionId,
     @JsonKey(name: 'enrichment_status') required String enrichmentStatus,
     @JsonKey(name: 'last_enriched_at') String? lastEnrichedAt,

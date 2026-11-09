@@ -124,6 +124,8 @@
   "collectionDeleteRateLimitedWithWait": "You're going too quickly. The collection wasn't deleted. Try again in {wait}.",
   "linkCannotOpen": "This link can't be opened.",
   "linkLaunchFailed": "We couldn't open this link. Try again.",
+  "urlCopied": "URL copied",
+  "urlCopyFailed": "Couldn't copy the URL. Try again.",
   "refreshFailed": "Couldn't refresh. Check your connection.",
   "displayNameUpdated": "Display name updated.",
   "displayNameRateLimitedNoWait": "Too many attempts. Try again shortly.",
@@ -206,6 +208,31 @@
   "savedItemActionsSection": "ACTIONS",
   "savedItemMoveAction": "Move to a collection",
   "savedItemOpenAction": "Open the original page",
+  "savedItemCopyUrl": "Copy URL",
+  "savedItemShareUrl": "Share URL",
+  "savedItemPriceMayHaveChanged": "Price may have changed.",
+  "savedItemPriceCheckOriginalPage": "Check the original page.",
+  "savedItemAddNote": "Add a personal note",
+  "savedItemNoteSaveAction": "Save",
+  "savedItemNotePlaceholder": "Write your note…",
+  "savedItemNoteCharacterCount": "{count}/{max}",
+  "savedItemNoteDeleteTitle": "Delete this note?",
+  "savedItemNoteDeleteMessage": "This removes your note. The saved item stays.",
+  "savedItemNoteKeepAction": "Keep note",
+  "savedItemNoteDeleteConfirmAction": "Delete note",
+  "savedItemNoteSaved": "Note saved.",
+  "savedItemNoteDeleted": "Note deleted.",
+  "savedItemNoteSaveUnconfirmed": "We couldn't confirm whether your note was saved. Check the note before trying again.",
+  "savedItemNoteDeleteUnconfirmed": "We couldn't confirm whether your note was deleted. Check the note before trying again.",
+  "savedItemNoteAuthRequired": "Sign in again to change this note.",
+  "savedItemNoteRefreshUncertain": "We couldn't renew your session, so the note wasn't changed. Try again.",
+  "savedItemNoteCredentialStorage": "This device couldn't refresh your session, so the note wasn't changed. Try again.",
+  "savedItemNoteRateLimitedNoWait": "You're changing notes too quickly. Try again shortly.",
+  "savedItemNoteRateLimitedWithWait": "You're changing notes too quickly. Try again in {wait}.",
+  "savedItemNoteUnavailable": "Note changes are temporarily unavailable. Try again shortly.",
+  "savedItemNoteInvalid": "That note can't be saved. Check the text and try again.",
+  "savedItemNoteSaveFailed": "We couldn't save your note. Try again.",
+  "savedItemNoteDeleteFailed": "We couldn't delete your note. Try again.",
   "savedItemDeleteAction": "Delete this item",
   "savedItemEnrichmentSection": "ENRICHMENT",
   "savedItemReReadAction": "Re-read page",
@@ -1262,6 +1289,12 @@
   "@linkLaunchFailed": {
     "description": "The platform refused to open the link."
   },
+  "@urlCopied": {
+    "description": "Feedback after the saved URL was copied."
+  },
+  "@urlCopyFailed": {
+    "description": "Feedback when the saved URL could not be copied."
+  },
   "@refreshFailed": {
     "description": "A manual refresh failed."
   },
@@ -1545,6 +1578,94 @@
   },
   "@savedItemOpenAction": {
     "description": "Action opening the original saved URL."
+  },
+  "@savedItemCopyUrl": {
+    "description": "Icon action that copies the complete saved URL."
+  },
+  "@savedItemShareUrl": {
+    "description": "Icon action that opens the Android system share sheet."
+  },
+  "@savedItemPriceMayHaveChanged": {
+    "description": "First sentence of the price caveat below a displayed price."
+  },
+  "@savedItemPriceCheckOriginalPage": {
+    "description": "Interactive second sentence that opens the original saved page."
+  },
+  "@savedItemAddNote": {
+    "description": "Compact affordance shown when the saved item has no note."
+  },
+  "@savedItemNoteSaveAction": {
+    "description": "Primary action in the note editor."
+  },
+  "@savedItemNotePlaceholder": {
+    "description": "Placeholder in the empty note editor."
+  },
+  "@savedItemNoteCharacterCount": {
+    "description": "Note editor character counter.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "@savedItemNoteDeleteTitle": {
+    "description": "Confirmation title shown when an existing note is cleared."
+  },
+  "@savedItemNoteDeleteMessage": {
+    "description": "Confirmation body for clearing a note; the item itself is kept."
+  },
+  "@savedItemNoteKeepAction": {
+    "description": "Safe action in the note deletion confirmation."
+  },
+  "@savedItemNoteDeleteConfirmAction": {
+    "description": "Destructive action that clears the note."
+  },
+  "@savedItemNoteSaved": {
+    "description": "Feedback after a confirmed note save."
+  },
+  "@savedItemNoteDeleted": {
+    "description": "Feedback after a confirmed note clear."
+  },
+  "@savedItemNoteSaveUnconfirmed": {
+    "description": "Feedback when a note save outcome could not be confirmed."
+  },
+  "@savedItemNoteDeleteUnconfirmed": {
+    "description": "Feedback when a note clear outcome could not be confirmed."
+  },
+  "@savedItemNoteAuthRequired": {
+    "description": "Feedback when the session refuses a note change."
+  },
+  "@savedItemNoteRefreshUncertain": {
+    "description": "Known not-changed note outcome after an ambiguous session refresh."
+  },
+  "@savedItemNoteCredentialStorage": {
+    "description": "Known not-changed note outcome when local credential storage failed."
+  },
+  "@savedItemNoteRateLimitedNoWait": {
+    "description": "Note mutation rate limit with no Retry-After."
+  },
+  "@savedItemNoteRateLimitedWithWait": {
+    "description": "Note mutation rate limit with a Retry-After wait.",
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "@savedItemNoteUnavailable": {
+    "description": "Note changes are temporarily unavailable."
+  },
+  "@savedItemNoteInvalid": {
+    "description": "The submitted note was rejected as invalid."
+  },
+  "@savedItemNoteSaveFailed": {
+    "description": "Known not-saved note outcome."
+  },
+  "@savedItemNoteDeleteFailed": {
+    "description": "Known not-cleared note outcome."
   },
   "@savedItemDeleteAction": {
     "description": "Action starting saved-item deletion."

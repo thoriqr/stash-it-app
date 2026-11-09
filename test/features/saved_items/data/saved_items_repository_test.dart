@@ -686,6 +686,47 @@ void main() {
       );
     });
 
+    test('decodes the nullable note and price fields', () async {
+      adapter.onMethod(
+        'GET',
+        path,
+        body: SavedItemsFixtures.detail(
+          id: id,
+          note: 'Read the indexing section.',
+          priceAmount: '129.99',
+          priceCurrency: 'USD',
+        ),
+      );
+
+      final item = await repository.getById(id);
+
+      expect(item.note, 'Read the indexing section.');
+      expect(
+        item.priceAmount,
+        '129.99',
+        reason: 'the wire amount stays text so no decimal precision is lost',
+      );
+      expect(item.priceCurrency, 'USD');
+    });
+
+    test('treats missing note and price fields as null', () async {
+      final body = SavedItemsFixtures.detail(id: id);
+      final savedItem =
+          (body['data'] as Map<String, dynamic>)['saved_item']
+              as Map<String, dynamic>;
+      savedItem
+        ..remove('note')
+        ..remove('price_amount')
+        ..remove('price_currency');
+      adapter.onMethod('GET', path, body: body);
+
+      final item = await repository.getById(id);
+
+      expect(item.note, isNull);
+      expect(item.priceAmount, isNull);
+      expect(item.priceCurrency, isNull);
+    });
+
     test('maps the verified RESOURCE_NOT_FOUND to typed not-found', () async {
       adapter.onMethod(
         'GET',
@@ -931,6 +972,128 @@ void main() {
 
       await expectLater(
         repository.enrich(id),
+        throwsA(isA<ApiFailureTransport>()),
+      );
+    });
+  });
+
+  group('note', () {
+    const path = '/saved-items/item-1/note';
+
+    test(
+      'PUTs the note exactly as supplied and returns the stored text',
+      () async {
+        const note = 'First line\nSecond line stays exactly as typed.  ';
+        adapter.onMethod(
+          'PUT',
+          path,
+          body: SavedItemsFixtures.noteUpdated(note: note),
+        );
+
+        final stored = await repository.updateNote(
+          savedItemId: 'item-1',
+          note: note,
+        );
+
+        final request = adapter.lastRequestTo(path)!;
+        expect(request.method, 'PUT');
+        expect(adapter.countFor(path), 1, reason: 'one write, no retry');
+        expect(request.body, {'note': note});
+        expect(stored, note);
+      },
+    );
+
+    test('DELETE sends no body', () async {
+      adapter.onMethod('DELETE', path, body: SavedItemsFixtures.noteDeleted());
+
+      await repository.deleteNote('item-1');
+
+      final request = adapter.lastRequestTo(path)!;
+      expect(request.method, 'DELETE');
+      expect(adapter.countFor(path), 1);
+      expect(request.body, isNull);
+    });
+
+    test('maps INVALID_NOTE to actionable validation', () async {
+      adapter.onMethod(
+        'PUT',
+        path,
+        status: 400,
+        body: errorBody('INVALID_NOTE'),
+      );
+
+      await expectLater(
+        repository.updateNote(savedItemId: 'item-1', note: '   '),
+        throwsA(isA<ApiFailureValidation>()),
+      );
+    });
+
+    test('keeps the Retry-After from a note mutation rate limit', () async {
+      adapter.onMethod(
+        'PUT',
+        path,
+        status: 429,
+        body: errorBody('USER_RATE_LIMIT_EXCEEDED'),
+        headers: {
+          'retry-after': ['60'],
+        },
+      );
+
+      final failure = await repository
+          .updateNote(savedItemId: 'item-1', note: 'A note')
+          .then<Object?>((_) => null, onError: (Object e) => e);
+
+      expect(failure, isA<ApiFailureRateLimited>());
+      expect(
+        (failure! as ApiFailureRateLimited).retryAfter,
+        const Duration(seconds: 60),
+      );
+    });
+
+    test('maps RESOURCE_NOT_FOUND to typed not-found', () async {
+      adapter.onMethod(
+        'DELETE',
+        path,
+        status: 404,
+        body: errorBody('RESOURCE_NOT_FOUND'),
+      );
+
+      await expectLater(
+        repository.deleteNote('item-1'),
+        throwsA(isA<ApiFailureNotFound>()),
+      );
+    });
+
+    test('an unreadable PUT reply leaves the save unconfirmed', () async {
+      adapter.onMethod(
+        'PUT',
+        path,
+        body: {'message': 'saved item note saved successfully'},
+      );
+
+      await expectLater(
+        repository.updateNote(savedItemId: 'item-1', note: 'A note'),
+        throwsA(isA<ApiFailureUnreadableResponse>()),
+      );
+    });
+
+    test('a 2xx DELETE with an unreadable body still clears the note', () async {
+      // The delete response carries no note value; the successful status is the
+      // confirmation, and there is nothing else the client needs from it.
+      adapter.onMethod(
+        'DELETE',
+        path,
+        body: {'message': 'saved item note deleted successfully'},
+      );
+
+      await expectLater(repository.deleteNote('item-1'), completes);
+    });
+
+    test('a request that never arrives is transport', () async {
+      adapter.onOffline(path, method: 'PUT');
+
+      await expectLater(
+        repository.updateNote(savedItemId: 'item-1', note: 'A note'),
         throwsA(isA<ApiFailureTransport>()),
       );
     });

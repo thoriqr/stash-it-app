@@ -701,6 +701,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get linkLaunchFailed => 'We couldn\'t open this link. Try again.';
 
   @override
+  String get urlCopied => 'URL copied';
+
+  @override
+  String get urlCopyFailed => 'Couldn\'t copy the URL. Try again.';
+
+  @override
   String get refreshFailed => 'Couldn\'t refresh. Check your connection.';
 
   @override
@@ -1015,6 +1021,95 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get savedItemOpenAction => 'Open the original page';
+
+  @override
+  String get savedItemCopyUrl => 'Copy URL';
+
+  @override
+  String get savedItemShareUrl => 'Share URL';
+
+  @override
+  String get savedItemPriceMayHaveChanged => 'Price may have changed.';
+
+  @override
+  String get savedItemPriceCheckOriginalPage => 'Check the original page.';
+
+  @override
+  String get savedItemAddNote => 'Add a personal note';
+
+  @override
+  String get savedItemNoteSaveAction => 'Save';
+
+  @override
+  String get savedItemNotePlaceholder => 'Write your note…';
+
+  @override
+  String savedItemNoteCharacterCount(int count, int max) {
+    return '$count/$max';
+  }
+
+  @override
+  String get savedItemNoteDeleteTitle => 'Delete this note?';
+
+  @override
+  String get savedItemNoteDeleteMessage =>
+      'This removes your note. The saved item stays.';
+
+  @override
+  String get savedItemNoteKeepAction => 'Keep note';
+
+  @override
+  String get savedItemNoteDeleteConfirmAction => 'Delete note';
+
+  @override
+  String get savedItemNoteSaved => 'Note saved.';
+
+  @override
+  String get savedItemNoteDeleted => 'Note deleted.';
+
+  @override
+  String get savedItemNoteSaveUnconfirmed =>
+      'We couldn\'t confirm whether your note was saved. Check the note before trying again.';
+
+  @override
+  String get savedItemNoteDeleteUnconfirmed =>
+      'We couldn\'t confirm whether your note was deleted. Check the note before trying again.';
+
+  @override
+  String get savedItemNoteAuthRequired => 'Sign in again to change this note.';
+
+  @override
+  String get savedItemNoteRefreshUncertain =>
+      'We couldn\'t renew your session, so the note wasn\'t changed. Try again.';
+
+  @override
+  String get savedItemNoteCredentialStorage =>
+      'This device couldn\'t refresh your session, so the note wasn\'t changed. Try again.';
+
+  @override
+  String get savedItemNoteRateLimitedNoWait =>
+      'You\'re changing notes too quickly. Try again shortly.';
+
+  @override
+  String savedItemNoteRateLimitedWithWait(String wait) {
+    return 'You\'re changing notes too quickly. Try again in $wait.';
+  }
+
+  @override
+  String get savedItemNoteUnavailable =>
+      'Note changes are temporarily unavailable. Try again shortly.';
+
+  @override
+  String get savedItemNoteInvalid =>
+      'That note can\'t be saved. Check the text and try again.';
+
+  @override
+  String get savedItemNoteSaveFailed =>
+      'We couldn\'t save your note. Try again.';
+
+  @override
+  String get savedItemNoteDeleteFailed =>
+      'We couldn\'t delete your note. Try again.';
 
   @override
   String get savedItemDeleteAction => 'Delete this item';

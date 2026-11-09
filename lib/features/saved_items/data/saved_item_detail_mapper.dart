@@ -37,6 +37,11 @@ SavedItemSummary savedItemDetailFrom(
     // Preserve the image URL or null as received. SavedItemSummary derives
     // hasPreviewImage from this value, and the preview handles image loading.
     imageUrl: item.imageUrl,
+    note: item.note,
+    // Keep the wire amount as a string so its decimal precision survives until
+    // presentation formats it without floating-point arithmetic.
+    priceAmount: item.priceAmount,
+    priceCurrency: item.priceCurrency,
     savedTime: savedTimeFrom(item.createdAt, now),
     createdAt: DateTime.tryParse(item.createdAt),
   );

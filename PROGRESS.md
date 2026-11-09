@@ -7,13 +7,26 @@
 
 The app has its core saved-link experience in place, including authentication, collections, search, profile and account settings, Google Sign-In, and Android link sharing for device-local saves.
 
-Recent work includes **Inbox price and note display** — nullable `note`, `price_amount` and `price_currency` fields in the Inbox data flow, compact price formatting, a two-line note preview, and a read-only full-note sheet — and **macOS target support**: a macOS runner and Codemagic build workflow are in place, and the existing Windows browser-based Desktop OAuth implementation is shared by Windows and macOS. Static Flutter verification is complete; macOS build, runtime, Google Sign-In, and Keychain behavior have not been verified on a Mac.
+Recent work includes **Saved Item Detail URL actions, price, and note management** — a compact URL row with Android sharing and desktop copying, string-based price display with an interactive cross-check, and add/update/delete note flows through the existing feedback system — **Inbox price and note display** — nullable `note`, `price_amount` and `price_currency` fields in the Inbox data flow, compact price formatting, a two-line note preview, and a read-only full-note sheet — and **macOS target support**: a macOS runner and Codemagic build workflow are in place, and the existing Windows browser-based Desktop OAuth implementation is shared by Windows and macOS. Static Flutter verification is complete; macOS build, runtime, Google Sign-In, and Keychain behavior have not been verified on a Mac.
 
 The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
 
 **Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, manual Inbox enrichment polling verification, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
 
 ## Verification
+
+### Saved Item Detail URL actions, price, and notes (2026-11-09)
+
+- Read the sibling backend's `docs/swagger.yaml` directly for `GET /saved-items/{id}`, `PUT /saved-items/{id}/note`, and `DELETE /saved-items/{id}/note`.
+- `flutter pub add share_plus` — added `share_plus: ^13.3.1`; Windows and macOS plugin registrants were regenerated.
+- `flutter gen-l10n` — completed; the existing 2 Indonesian preference-warning messages still fall back to English.
+- `dart run build_runner build --delete-conflicting-outputs` — the installed build_runner no longer accepts that flag and ignored it; generation completed for the new note DTOs, Retrofit methods, Riverpod controller, and detail response fields. Unrelated provider hash-only changes from the same run were reverted.
+- `dart format` on all changed Dart files — completed.
+- `flutter analyze` — no issues found.
+- `flutter test test/core/error/api_failure_mapper_test.dart test/features/saved_items/data/saved_items_repository_test.dart test/features/saved_items/data/saved_item_detail_mapper_test.dart test/features/saved_items/application/note_edit_decision_test.dart test/features/saved_items/application/note_mutation_controller_test.dart test/features/saved_items/application/saved_item_url_actions_test.dart test/features/saved_items/application/saved_items_controller_test.dart` — 203 tests passed.
+- `flutter test test/features/saved_items/application/enrich_saved_item_controller_test.dart test/features/saved_items/application/collection_saved_items_controller_test.dart test/features/saved_items/application/delete_saved_item_controller_test.dart` — 74 tests passed.
+- `git diff --check` — no whitespace errors.
+- The full test suite was not run. No application launch, emulator, screenshot, golden, widget visual, or manual visual verification was performed; the UI and the native Sharesheet remain for the user to inspect.
 
 ### Inbox price and note display (2026-11-09)
 
@@ -90,6 +103,18 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - View link metadata and enrichment status, and refresh metadata.
 - Move and delete saved links.
 - Preview saved-link images, including pending and unavailable states.
+
+### Saved Item Detail price, URL actions, and notes
+
+- The shared Saved Item Detail response now carries nullable `note`, `price_amount` and `price_currency` values through the existing DTO, mapper, repository and presentation provider. The amount remains a string end to end.
+- The URL below the title is limited to two lines with ellipsis; the stored URL itself is unchanged. Copy always uses the complete original value.
+- Android exposes Share and Copy on the URL row. Windows, macOS and other non-Android targets expose Copy only. Android uses the native system Sharesheet; dismissing it is ordinary cancellation with no notice or automatic copy.
+- A share that cannot be opened falls back to copying the same URL. Copy, share-fallback success and copy failure use the app-wide feedback host with localized copy.
+- A valid price appears below the URL actions and before the collection/enrichment metadata, reusing `price_label.dart`. Missing, malformed or unsupported pairs hide the section entirely.
+- The price caveat shows two complete localized sentences; only “Check the original page” / “Cek halaman asli” is an accessible underlined link, and it invokes the existing Open Original Page action.
+- The note section shows a two-line preview with a note icon, or a compact “Add a personal note” affordance when none exists. Both open one shared editor bottom sheet with the full existing note prepopulated.
+- The editor accepts up to 5,000 characters with a localized counter and one Save action. Save chooses between no request, `PUT /saved-items/{id}/note`, and a confirmed `DELETE /saved-items/{id}/note` when an existing note is cleared.
+- Note writes submit the entered text unchanged (emptiness is checked with `trim`). Confirmed mutations patch the loaded detail, Inbox and collection rows in place without a follow-up read, and publish success or failure through the existing feedback system. Duplicate submissions are blocked while a request is in flight.
 
 ### Inbox price and note display
 
@@ -216,8 +241,10 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - Polling eligibility compares the server's `created_at` with the device clock. A large clock offset can end the window early or, beyond the 60-second window, mark a newly saved item ineligible; this bound avoids polling indefinitely.
 - Enrichment polling runs only while the Inbox is visible and the app is in the foreground. There is no background synchronization while the app is closed or another destination is active.
 - Search results are limited by the server.
-- Inbox price display supports IDR and USD. Other currency codes are hidden rather than shown without a supported format.
-- Price and note display is implemented only for the Inbox listing. Collection listings, Search and Saved Item Detail do not map or show these fields yet.
+- Price display in Inbox and Saved Item Detail supports IDR and USD. Other currency codes are hidden rather than shown without a supported format.
+- Inbox price and note display was implemented first; Saved Item Detail now shows both and note management. Collection listings and Search still do not display price or note.
+- The native Android Sharesheet, its dismissal result, and the clipboard fallback have not been verified on a device. Desktop and other non-Android targets expose Copy only.
+- The note editor's 5,000-character limit and counter are enforced in the client; the server rejection path is mapped but has not been exercised against the live backend.
 - Physical-device verification has not yet been completed.
 - Android link sharing still needs verification in cases such as the app being closed, the user being signed out, or the device being offline.
 - If a local-link submission is interrupted, its outcome may be uncertain. Retrying an operation with an uncertain outcome can create a duplicate.

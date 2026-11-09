@@ -865,6 +865,18 @@ abstract class AppLocalizations {
   /// **'We couldn\'t open this link. Try again.'**
   String get linkLaunchFailed;
 
+  /// Feedback after the saved URL was copied.
+  ///
+  /// In en, this message translates to:
+  /// **'URL copied'**
+  String get urlCopied;
+
+  /// Feedback when the saved URL could not be copied.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t copy the URL. Try again.'**
+  String get urlCopyFailed;
+
   /// A manual refresh failed.
   ///
   /// In en, this message translates to:
@@ -1356,6 +1368,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open the original page'**
   String get savedItemOpenAction;
+
+  /// Icon action that copies the complete saved URL.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy URL'**
+  String get savedItemCopyUrl;
+
+  /// Icon action that opens the Android system share sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Share URL'**
+  String get savedItemShareUrl;
+
+  /// First sentence of the price caveat below a displayed price.
+  ///
+  /// In en, this message translates to:
+  /// **'Price may have changed.'**
+  String get savedItemPriceMayHaveChanged;
+
+  /// Interactive second sentence that opens the original saved page.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the original page.'**
+  String get savedItemPriceCheckOriginalPage;
+
+  /// Compact affordance shown when the saved item has no note.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a personal note'**
+  String get savedItemAddNote;
+
+  /// Primary action in the note editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get savedItemNoteSaveAction;
+
+  /// Placeholder in the empty note editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your note…'**
+  String get savedItemNotePlaceholder;
+
+  /// Note editor character counter.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}/{max}'**
+  String savedItemNoteCharacterCount(int count, int max);
+
+  /// Confirmation title shown when an existing note is cleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this note?'**
+  String get savedItemNoteDeleteTitle;
+
+  /// Confirmation body for clearing a note; the item itself is kept.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes your note. The saved item stays.'**
+  String get savedItemNoteDeleteMessage;
+
+  /// Safe action in the note deletion confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep note'**
+  String get savedItemNoteKeepAction;
+
+  /// Destructive action that clears the note.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete note'**
+  String get savedItemNoteDeleteConfirmAction;
+
+  /// Feedback after a confirmed note save.
+  ///
+  /// In en, this message translates to:
+  /// **'Note saved.'**
+  String get savedItemNoteSaved;
+
+  /// Feedback after a confirmed note clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Note deleted.'**
+  String get savedItemNoteDeleted;
+
+  /// Feedback when a note save outcome could not be confirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t confirm whether your note was saved. Check the note before trying again.'**
+  String get savedItemNoteSaveUnconfirmed;
+
+  /// Feedback when a note clear outcome could not be confirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t confirm whether your note was deleted. Check the note before trying again.'**
+  String get savedItemNoteDeleteUnconfirmed;
+
+  /// Feedback when the session refuses a note change.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to change this note.'**
+  String get savedItemNoteAuthRequired;
+
+  /// Known not-changed note outcome after an ambiguous session refresh.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t renew your session, so the note wasn\'t changed. Try again.'**
+  String get savedItemNoteRefreshUncertain;
+
+  /// Known not-changed note outcome when local credential storage failed.
+  ///
+  /// In en, this message translates to:
+  /// **'This device couldn\'t refresh your session, so the note wasn\'t changed. Try again.'**
+  String get savedItemNoteCredentialStorage;
+
+  /// Note mutation rate limit with no Retry-After.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re changing notes too quickly. Try again shortly.'**
+  String get savedItemNoteRateLimitedNoWait;
+
+  /// Note mutation rate limit with a Retry-After wait.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re changing notes too quickly. Try again in {wait}.'**
+  String savedItemNoteRateLimitedWithWait(String wait);
+
+  /// Note changes are temporarily unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Note changes are temporarily unavailable. Try again shortly.'**
+  String get savedItemNoteUnavailable;
+
+  /// The submitted note was rejected as invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That note can\'t be saved. Check the text and try again.'**
+  String get savedItemNoteInvalid;
+
+  /// Known not-saved note outcome.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t save your note. Try again.'**
+  String get savedItemNoteSaveFailed;
+
+  /// Known not-cleared note outcome.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t delete your note. Try again.'**
+  String get savedItemNoteDeleteFailed;
 
   /// Action starting saved-item deletion.
   ///

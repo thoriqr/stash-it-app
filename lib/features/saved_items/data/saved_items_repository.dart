@@ -13,6 +13,7 @@ import 'collection_saved_items_mapper.dart';
 import 'datasources/saved_items_api.dart';
 import 'models/create_saved_item_request.dart';
 import 'models/move_to_collection_request.dart';
+import 'models/update_saved_item_note_request.dart';
 import 'move_to_collection_mapper.dart';
 import 'saved_item_deletion_mapper.dart';
 import 'saved_item_detail_mapper.dart';
@@ -222,6 +223,60 @@ class SavedItemsRepository {
       throw mapDecodeFailure(error);
     } on FormatException catch (error) {
       throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Adds or replaces one saved item's note and returns the stored text.
+  ///
+  /// [note] is sent exactly as supplied. The editor is responsible for refusing
+  /// an effectively empty value; this method does not trim or rewrite the text.
+  ///
+  /// The response reports the note as stored. If a successful response omits
+  /// that field, the caller may use the submitted value because the request was
+  /// already accepted.
+  ///
+  /// A missing item and one owned by another user both map to
+  /// [ApiFailureNotFound]. A `400` for an invalid note maps to
+  /// [ApiFailureValidation].
+  Future<String?> updateNote({
+    required String savedItemId,
+    required String note,
+  }) async {
+    try {
+      final response = await api.updateNote(
+        savedItemId,
+        UpdateSavedItemNoteRequest(note: note),
+      );
+      return response.data.note;
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError catch (error) {
+      // The write may have completed even though its reply cannot be read. The
+      // caller must treat this as an unconfirmed outcome, not a failure.
+      throw mapDecodeFailure(error);
+    } on FormatException catch (error) {
+      throw mapDecodeFailure(error);
+    }
+  }
+
+  /// Clears one saved item's note without deleting the item.
+  ///
+  /// A `200` is the confirmation; the response body carries no note value. A
+  /// successful status whose empty body cannot be decoded is still the delete's
+  /// completion, because there is no result field to apply.
+  ///
+  /// A missing item and one owned by another user both map to
+  /// [ApiFailureNotFound].
+  Future<void> deleteNote(String savedItemId) async {
+    try {
+      await api.deleteNote(savedItemId);
+    } on DioException catch (error) {
+      throw mapApiFailure(error);
+    } on TypeError {
+      // A 2xx response arrived, so the note was cleared. Its empty `data`
+      // object carries nothing that presentation needs.
+    } on FormatException {
+      // Same as above: the successful status is the confirmation.
     }
   }
 

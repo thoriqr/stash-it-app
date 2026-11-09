@@ -199,6 +199,7 @@ ApiFailure mapApiFailure(DioException error) {
     case ApiErrorCode.invalidUrl:
     case ApiErrorCode.invalidSearchQuery:
     case ApiErrorCode.invalidCollectionName:
+    case ApiErrorCode.invalidNote:
       return ApiFailureValidation(body.fields);
 
     // These codes indicate a malformed request rather than a user-correctable
