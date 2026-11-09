@@ -1165,6 +1165,12 @@ abstract class AppLocalizations {
   /// **'Save URL'**
   String get inboxSaveAction;
 
+  /// Label for the saved item's note preview and the full-note sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your note'**
+  String get inboxYourNote;
+
   /// App bar title for the device-local Pending URLs screen.
   ///
   /// In en, this message translates to:

@@ -174,6 +174,7 @@
   "inboxIntakeHint": "Paste fills the field. Save URL sends it.",
   "inboxPaste": "Paste",
   "inboxSaveAction": "Save URL",
+  "inboxYourNote": "Your note",
   "pendingUrlsTitle": "SAVED ON THIS DEVICE",
   "pendingUrlsBackToInbox": "Back to Inbox",
   "pendingUrlsBackToSignIn": "Back to sign in",
@@ -1420,6 +1421,9 @@
   },
   "@inboxSaveAction": {
     "description": "Action that submits the URL field."
+  },
+  "@inboxYourNote": {
+    "description": "Label for the saved item's note preview and the full-note sheet."
   },
   "@pendingUrlsTitle": {
     "description": "App bar title for the device-local Pending URLs screen."

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
+import 'package:stash_it_app/features/saved_items/presentation/price_label.dart';
 import 'package:stash_it_app/features/saved_items/presentation/saved_time_label.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
 import 'saved_item_collection_chip.dart';
 import 'saved_item_enrichment_state.dart';
+import 'saved_item_note.dart';
 import 'saved_item_preview.dart';
 
 /// Displays one saved item as a compact inventory card.
@@ -131,6 +133,23 @@ class SavedItemRow extends StatelessWidget {
                           color: tokens.textTertiary,
                         ),
                       ),
+                      if (priceLabel(
+                            amount: item.priceAmount,
+                            currency: item.priceCurrency,
+                          )
+                          case final price?) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          price,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.meta.copyWith(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: tokens.textPrimary,
+                          ),
+                        ),
+                      ],
                       if (item.description case final description?) ...[
                         const SizedBox(height: 6),
                         Text(
@@ -150,6 +169,7 @@ class SavedItemRow extends StatelessWidget {
                         onRetry: onRetry,
                         showCollectionChip: showCollectionChip,
                       ),
+                      if (item.hasNote) SavedItemNotePreview(note: item.note!),
                     ],
                   ),
                 ),

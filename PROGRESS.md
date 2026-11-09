@@ -1,19 +1,28 @@
 # Stash-it Flutter — Project Progress
 
-> Last updated: 2026-11-06
+> Last updated: 2026-11-09
 > Scope: Flutter application (`stash-it-app`).
 
 ## Current Status
 
 The app has its core saved-link experience in place, including authentication, collections, search, profile and account settings, Google Sign-In, and Android link sharing for device-local saves.
 
-The latest milestone is **macOS target support**: a macOS runner and Codemagic build workflow are in place, and the existing Windows browser-based Desktop OAuth implementation is shared by Windows and macOS. Static Flutter verification is complete; macOS build, runtime, Google Sign-In, and Keychain behavior have not been verified on a Mac.
+Recent work includes **Inbox price and note display** — nullable `note`, `price_amount` and `price_currency` fields in the Inbox data flow, compact price formatting, a two-line note preview, and a read-only full-note sheet — and **macOS target support**: a macOS runner and Codemagic build workflow are in place, and the existing Windows browser-based Desktop OAuth implementation is shared by Windows and macOS. Static Flutter verification is complete; macOS build, runtime, Google Sign-In, and Keychain behavior have not been verified on a Mac.
 
 The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
 
 **Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, manual Inbox enrichment polling verification, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
 
 ## Verification
+
+### Inbox price and note display (2026-11-09)
+
+- `flutter gen-l10n` — completed; the existing 2 Indonesian preference-warning messages still fall back to English.
+- `dart run build_runner build --delete-conflicting-outputs` — the installed build_runner no longer accepts that flag and ignored it; generation completed. `listed_saved_item.freezed.dart` and `listed_saved_item.g.dart` were regenerated. Unrelated provider hash-only changes from the same run were reverted.
+- `dart format` on the changed Dart files — completed.
+- `flutter analyze` — no issues found.
+- `flutter test test/features/saved_items/data/saved_items_repository_test.dart test/features/saved_items/presentation/price_label_test.dart test/features/saved_items/application/saved_items_controller_test.dart` — 104 tests passed, including the new note/price decoding cases, missing-field handling, price formatting, and the existing Inbox controller behaviour.
+- No application launch, emulator, screenshot, golden, widget visual, or manual visual verification was performed. The UI remains for the user to inspect.
 
 ### Inbox enrichment synchronization (2026-11-06)
 
@@ -81,6 +90,16 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - View link metadata and enrichment status, and refresh metadata.
 - Move and delete saved links.
 - Preview saved-link images, including pending and unavailable states.
+
+### Inbox price and note display
+
+- The Inbox listing response and presentation model carry nullable `note`, `price_amount` and `price_currency` values. The amount remains a string end to end so decimal precision is preserved.
+- A price appears directly below the title and source line only when both fields are present and form a valid, supported pair. IDR amounts render with `Rp` and dot grouping (for example `Rp24.500.000`); USD amounts render with `US$` and comma grouping (for example `US$129.99`). Missing, empty, malformed amounts and unsupported currency codes hide the price section entirely.
+- Price formatting is string-based and never converts the amount to `double`.
+- A non-empty note renders below the collection/enrichment metadata as a compact two-line preview with a note icon and the localized “Your note” label. The preview uses an ellipsis beyond two lines.
+- Tapping the note preview opens a read-only bottom sheet with the complete note, preserving line breaks and scrolling long content. It uses the note already loaded in the Inbox: no request, refresh, detail-screen navigation, or edit/delete control is involved.
+- The note preview has its own tap target, so tapping it does not also open the saved-item detail screen.
+- The “Your note” label is localized in English and Indonesian. Collection listings, Search and the saved-item detail screen do not populate or display these fields.
 
 ### Inbox enrichment synchronization
 
@@ -197,6 +216,8 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - Polling eligibility compares the server's `created_at` with the device clock. A large clock offset can end the window early or, beyond the 60-second window, mark a newly saved item ineligible; this bound avoids polling indefinitely.
 - Enrichment polling runs only while the Inbox is visible and the app is in the foreground. There is no background synchronization while the app is closed or another destination is active.
 - Search results are limited by the server.
+- Inbox price display supports IDR and USD. Other currency codes are hidden rather than shown without a supported format.
+- Price and note display is implemented only for the Inbox listing. Collection listings, Search and Saved Item Detail do not map or show these fields yet.
 - Physical-device verification has not yet been completed.
 - Android link sharing still needs verification in cases such as the app being closed, the user being signed out, or the device being offline.
 - If a local-link submission is interrupted, its outcome may be uncertain. Retrying an operation with an uncertain outcome can create a duplicate.

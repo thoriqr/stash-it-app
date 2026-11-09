@@ -57,6 +57,47 @@ void main() {
       expect(page.nextCursor, isNull);
     });
 
+    test('decodes the note and price fields as text', () async {
+      adapter.on(
+        '/saved-items',
+        body: SavedItemsFixtures.page(
+          items: [
+            SavedItemsFixtures.item(
+              note: 'Compare with the previous model.',
+              priceAmount: '129.99',
+              priceCurrency: 'USD',
+            ),
+          ],
+        ),
+      );
+
+      final page = await repository.list();
+      final item = page.items.single;
+
+      expect(item.note, 'Compare with the previous model.');
+      expect(
+        item.priceAmount,
+        '129.99',
+        reason: 'the wire amount stays text so no decimal precision is lost',
+      );
+      expect(item.priceCurrency, 'USD');
+    });
+
+    test('treats missing note and price fields as null', () async {
+      final row = SavedItemsFixtures.item()
+        ..remove('note')
+        ..remove('price_amount')
+        ..remove('price_currency');
+      adapter.on('/saved-items', body: SavedItemsFixtures.page(items: [row]));
+
+      final page = await repository.list();
+      final item = page.items.single;
+
+      expect(item.note, isNull);
+      expect(item.priceAmount, isNull);
+      expect(item.priceCurrency, isNull);
+    });
+
     test('an empty page is an empty result, not an error', () async {
       adapter.on('/saved-items', body: SavedItemsFixtures.emptyPage());
 

@@ -863,6 +863,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get inboxSaveAction => 'Simpan URL';
 
   @override
+  String get inboxYourNote => 'Catatan Anda';
+
+  @override
   String get pendingUrlsTitle => 'DISIMPAN DI PERANGKAT INI';
 
   @override

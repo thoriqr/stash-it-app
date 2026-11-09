@@ -28,6 +28,9 @@ class SavedItemSummary {
     this.title,
     this.description,
     this.imageUrl,
+    this.note,
+    this.priceAmount,
+    this.priceCurrency,
     this.savedTime,
     this.createdAt,
   });
@@ -81,6 +84,30 @@ class SavedItemSummary {
     return value != null && value.isNotEmpty;
   }
 
+  /// The note the user attached to the saved item, or null when there is none.
+  ///
+  /// This is user-authored copy, not metadata extracted from the page. It is
+  /// preserved verbatim so the full-note viewer keeps its line breaks.
+  final String? note;
+
+  /// The price amount exactly as the API reported it.
+  ///
+  /// The API sends the numeric amount as JSON text. It remains a string here so
+  /// decimal precision is never lost to a floating-point conversion.
+  final String? priceAmount;
+
+  /// The ISO 4217 currency code the API reported with [priceAmount].
+  final String? priceCurrency;
+
+  /// Whether a non-empty note exists to preview.
+  ///
+  /// A note containing only whitespace carries no readable content and is
+  /// treated as absent.
+  bool get hasNote {
+    final value = note?.trim();
+    return value != null && value.isNotEmpty;
+  }
+
   /// The locale-independent elapsed time since the item was saved.
   ///
   /// Derived from the API's `created_at` value by the mapper. Presentation
@@ -118,6 +145,9 @@ class SavedItemSummary {
       title: title,
       description: description,
       imageUrl: imageUrl,
+      note: note,
+      priceAmount: priceAmount,
+      priceCurrency: priceCurrency,
       savedTime: savedTime,
       createdAt: createdAt,
     );
@@ -147,6 +177,9 @@ class SavedItemSummary {
       title: title,
       description: description,
       imageUrl: imageUrl,
+      note: note,
+      priceAmount: priceAmount,
+      priceCurrency: priceCurrency,
       savedTime: savedTime,
       createdAt: createdAt,
     );

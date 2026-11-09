@@ -33,6 +33,7 @@ abstract class SavedItemCollectionResponse with _$SavedItemCollectionResponse {
 /// {
 ///   "id": "...", "url": "...", "domain": "...", "platform": "youtube",
 ///   "title": "...", "description": "...", "image_url": "...",
+///   "note": "...", "price_amount": "24500000", "price_currency": "IDR",
 ///   "collection_id": "...", "enrichment_status": "completed",
 ///   "last_enriched_at": "...", "created_at": "...", "updated_at": "...",
 ///   "collection": { "id": "...", "name": "..." }
@@ -43,10 +44,15 @@ abstract class SavedItemCollectionResponse with _$SavedItemCollectionResponse {
 /// used by the presentation layer, so changes to the API response remain
 /// detectable.
 ///
-/// `title`, `description`, `image_url` and `last_enriched_at` are nullable.
-/// These fields may legitimately be null even when `enrichment_status` is
-/// `completed`. For example, a page may not expose a title without making
-/// enrichment unsuccessful.
+/// `title`, `description`, `image_url`, `note`, `price_amount`,
+/// `price_currency` and `last_enriched_at` are nullable. These fields may
+/// legitimately be null even when `enrichment_status` is `completed`. For
+/// example, a page may not expose a title without making enrichment
+/// unsuccessful.
+///
+/// `price_amount` remains a string because the backend sends the numeric
+/// amount as JSON text. Keeping the wire representation avoids losing decimal
+/// precision before presentation formats it.
 ///
 /// Fields with snake_case wire keys use [JsonKey] to ensure the generated
 /// decoder reads the correct JSON keys.
@@ -60,6 +66,9 @@ abstract class ListedSavedItemResponse with _$ListedSavedItemResponse {
     String? title,
     String? description,
     @JsonKey(name: 'image_url') String? imageUrl,
+    String? note,
+    @JsonKey(name: 'price_amount') String? priceAmount,
+    @JsonKey(name: 'price_currency') String? priceCurrency,
     @JsonKey(name: 'collection_id') required String collectionId,
     @JsonKey(name: 'enrichment_status') required String enrichmentStatus,
     @JsonKey(name: 'last_enriched_at') String? lastEnrichedAt,
