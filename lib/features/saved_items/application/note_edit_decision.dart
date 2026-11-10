@@ -11,6 +11,20 @@ enum NoteSaveDecision {
   delete,
 }
 
+/// Whether the editor should offer its dedicated delete shortcut.
+///
+/// Only the persisted note captured when the editor opened counts. Text the
+/// user has typed into a new-note editor is deliberately not considered.
+bool noteDeleteAvailable(String? persistedNote) =>
+    persistedNote != null && persistedNote.trim().isNotEmpty;
+
+/// The text the editor restores after a cancelled deletion.
+///
+/// The editor keeps the snapshot it captured when it opened, so restoring is
+/// immediate and does not require a refetch. The value is returned exactly,
+/// including multiline content and literal characters.
+String restoredNoteText(String? persistedNote) => persistedNote ?? '';
+
 /// Decides between leaving the note alone, saving it, and deleting it.
 ///
 /// Emptiness is detected with `trim`, because the backend rejects a
@@ -21,7 +35,7 @@ NoteSaveDecision noteSaveDecision({
   required String? initialNote,
   required String enteredText,
 }) {
-  final hasExistingNote = initialNote != null && initialNote.trim().isNotEmpty;
+  final hasExistingNote = noteDeleteAvailable(initialNote);
 
   if (enteredText.trim().isEmpty) {
     return hasExistingNote ? NoteSaveDecision.delete : NoteSaveDecision.none;

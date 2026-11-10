@@ -1012,9 +1012,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get savedItemPriceMayHaveChanged => 'Harga mungkin sudah berubah.';
 
   @override
-  String get savedItemPriceCheckOriginalPage => 'Cek halaman asli.';
-
-  @override
   String get savedItemAddNote => 'Tambahkan catatan pribadi';
 
   @override

@@ -6,6 +6,26 @@ import 'package:stash_it_app/features/saved_items/application/note_edit_decision
 /// Emptiness is decided with `trim`; the submitted text is compared exactly so
 /// the client never rewrites valid user input.
 void main() {
+  group('noteDeleteAvailable', () {
+    test('only a persisted, non-blank note enables the shortcut', () {
+      expect(noteDeleteAvailable(null), isFalse);
+      expect(noteDeleteAvailable(''), isFalse);
+      expect(noteDeleteAvailable('  \n '), isFalse);
+      expect(noteDeleteAvailable('A saved note'), isTrue);
+    });
+  });
+
+  group('restoredNoteText', () {
+    test('restores the snapshot exactly, including line breaks', () {
+      const saved = 'First line\nSecond line  \nThird line';
+      expect(restoredNoteText(saved), saved);
+    });
+
+    test('a missing note restores an empty editor', () {
+      expect(restoredNoteText(null), '');
+    });
+  });
+
   group('noteSaveDecision', () {
     test('no existing note and no text is a no-op', () {
       expect(

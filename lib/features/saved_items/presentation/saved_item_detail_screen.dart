@@ -24,6 +24,19 @@ import 'widgets/saved_item_detail_note.dart';
 import 'widgets/saved_item_enrichment_state.dart';
 import 'widgets/saved_item_preview.dart';
 
+/// The detail hero uses a bounded landscape frame.
+///
+/// The previous fixed 110 px height became an ultra-wide strip at desktop
+/// content width and cropped most of the image. A 16:9 frame keeps the hero
+/// proportionate on mobile and desktop without changing the listing preview.
+const double _detailImageAspectRatio = 16 / 9;
+
+/// The desktop hero never grows wider than this, so it stays 640×360 at 16:9.
+///
+/// Windows and macOS share [usesDesktopLayout], so both use this same cap and
+/// the centering applied below.
+const double _detailImageDesktopMaxWidth = 640;
+
 /// Displays one saved item using fresh data from `GET /saved-items/{id}`.
 ///
 /// This is a top-level route outside the shell, not a separate navigation
@@ -301,12 +314,28 @@ class _DetailBody extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Reuses the row preview's rendering rules for pending, unavailable
-          // and loaded images.
-          SavedItemPreview(
-            imageUrl: item.imageUrl,
-            enrichmentStatus: item.enrichmentStatus,
-            width: double.infinity,
-            height: 110,
+          // and loaded images, but gives the detail a deliberate 16:9 hero
+          // instead of a fixed shallow height.
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final available = constraints.maxWidth;
+              final width =
+                  usesDesktopLayout && available > _detailImageDesktopMaxWidth
+                  ? _detailImageDesktopMaxWidth
+                  : available;
+              final preview = SavedItemPreview(
+                imageUrl: item.imageUrl,
+                enrichmentStatus: item.enrichmentStatus,
+                width: width,
+                height: width / _detailImageAspectRatio,
+              );
+
+              // Windows and macOS share usesDesktopLayout. Android keeps the
+              // existing full-content-width presentation.
+              return usesDesktopLayout
+                  ? Align(alignment: Alignment.center, child: preview)
+                  : preview;
+            },
           ),
           const SizedBox(height: AppMetrics.space4),
           Text(
@@ -361,26 +390,24 @@ class _DetailBody extends StatelessWidget {
                 color: tokens.textPrimary,
               ),
             ),
-            if (onOpenUrl != null) ...[
-              const SizedBox(height: 2),
-              _PriceContext(onOpenUrl: onOpenUrl!),
-            ],
+            const SizedBox(height: 2),
+            Text(
+              l10n.savedItemPriceMayHaveChanged,
+              style: AppTypography.meta.copyWith(color: tokens.textTertiary),
+            ),
           ],
           const SizedBox(height: AppMetrics.space3),
-          Row(
+          // Completed items with metadata need no status message. Pending,
+          // failed and completed items without metadata show their
+          // corresponding status. Wrapping lets the full localized status move
+          // below the collection chip when the two do not fit on one line.
+          Wrap(
+            spacing: AppMetrics.space2,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Flexible(
-                child: SavedItemCollectionChip(
-                  name: item.collectionName,
-                  maxWidth: 220,
-                ),
-              ),
-              const SizedBox(width: AppMetrics.space2),
-              // Completed items with metadata need no status message.
-              // Pending, failed and completed items without metadata show
-              // their corresponding status. No spinner is shown here because
-              // this status does not represent an active request.
-              Expanded(child: SavedItemEnrichmentState(item: item)),
+              SavedItemCollectionChip(name: item.collectionName, maxWidth: 220),
+              SavedItemEnrichmentState(item: item, wrap: true),
             ],
           ),
           if (description != null) ...[
@@ -487,47 +514,6 @@ class _UrlAction extends StatelessWidget {
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
       onPressed: onPressed,
-    );
-  }
-}
-
-/// The small price caveat with an interactive link to the original page.
-///
-/// Both sentences are complete localized messages. The second sentence is the
-/// link, so the interactive area is exactly the copy the requirement names.
-class _PriceContext extends StatelessWidget {
-  const _PriceContext({required this.onOpenUrl});
-
-  final VoidCallback onOpenUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final tokens = AppTheme.tokensOf(context);
-    final style = AppTypography.meta.copyWith(color: tokens.textTertiary);
-
-    return Wrap(
-      spacing: 4,
-      runSpacing: 2,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        Text(l10n.savedItemPriceMayHaveChanged, style: style),
-        Semantics(
-          link: true,
-          child: InkWell(
-            borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
-            onTap: onOpenUrl,
-            child: Text(
-              l10n.savedItemPriceCheckOriginalPage,
-              style: style.copyWith(
-                color: tokens.accent,
-                decoration: TextDecoration.underline,
-                decorationColor: tokens.accent,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

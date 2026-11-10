@@ -1032,9 +1032,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get savedItemPriceMayHaveChanged => 'Price may have changed.';
 
   @override
-  String get savedItemPriceCheckOriginalPage => 'Check the original page.';
-
-  @override
   String get savedItemAddNote => 'Add a personal note';
 
   @override

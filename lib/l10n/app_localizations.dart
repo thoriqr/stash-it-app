@@ -1381,17 +1381,11 @@ abstract class AppLocalizations {
   /// **'Share URL'**
   String get savedItemShareUrl;
 
-  /// First sentence of the price caveat below a displayed price.
+  /// Informational caveat below a displayed price.
   ///
   /// In en, this message translates to:
   /// **'Price may have changed.'**
   String get savedItemPriceMayHaveChanged;
-
-  /// Interactive second sentence that opens the original saved page.
-  ///
-  /// In en, this message translates to:
-  /// **'Check the original page.'**
-  String get savedItemPriceCheckOriginalPage;
 
   /// Compact affordance shown when the saved item has no note.
   ///

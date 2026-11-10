@@ -107,8 +107,8 @@ class SavedItemDetailNote extends StatelessWidget {
 /// Opens the one read-and-edit surface for this item's note.
 ///
 /// The existing note is prepopulated exactly as stored, including line breaks.
-/// The same sheet is used for adding and editing; it has one Save action and no
-/// permanent delete control.
+/// The same sheet is used for adding and editing. It has one Save action and,
+/// only when a persisted note already exists, a dedicated Delete shortcut.
 Future<void> showSavedItemNoteEditor(
   BuildContext context, {
   required SavedItemSummary item,
@@ -161,6 +161,12 @@ class _SavedItemNoteEditorSheetState
     super.dispose();
   }
 
+  /// The snapshot of the note that was persisted when this editor opened.
+  ///
+  /// This is deliberately not the live draft: the shortcut is available only
+  /// for an existing server note, never because the user typed into a new one.
+  bool get _hasPersistedNote => noteDeleteAvailable(_initialNote);
+
   Future<void> _save() async {
     if (ref.read(noteMutationProvider)) return;
 
@@ -185,6 +191,17 @@ class _SavedItemNoteEditorSheetState
     }
   }
 
+  /// The header shortcut for deleting the note that is already persisted.
+  Future<void> _deleteExistingNote() async {
+    if (ref.read(noteMutationProvider) || !_hasPersistedNote) return;
+    await _confirmDelete();
+  }
+
+  /// Confirms and, if accepted, performs the one note deletion.
+  ///
+  /// Keeping the note restores the persisted snapshot in the open editor. This
+  /// matters most for clear-all-and-Save, where the draft is empty, and keeps
+  /// both deletion entry points consistent.
   Future<void> _confirmDelete() async {
     final l10n = AppLocalizations.of(context);
     final confirmed = await showAppConfirmDialog(
@@ -196,13 +213,31 @@ class _SavedItemNoteEditorSheetState
       destructive: true,
     );
 
-    if (confirmed != true || !mounted) return;
+    if (!mounted) return;
+
+    if (confirmed != true) {
+      _restoreInitialNote();
+      return;
+    }
 
     final outcome = await ref
         .read(noteMutationProvider.notifier)
         .delete(widget.item);
     if (!mounted) return;
     if (outcome.closesEditor) Navigator.of(context).pop();
+  }
+
+  /// Restores the persisted snapshot without closing or reopening the editor.
+  ///
+  /// Assigning the controller value does not fire `onChanged`, so the explicit
+  /// rebuild also updates the character counter.
+  void _restoreInitialNote() {
+    final restored = restoredNoteText(_initialNote);
+    _controller.value = TextEditingValue(
+      text: restored,
+      selection: TextSelection.collapsed(offset: restored.length),
+    );
+    setState(() {});
   }
 
   @override
@@ -245,12 +280,30 @@ class _SavedItemNoteEditorSheetState
                         color: tokens.textTertiary,
                       ),
                       const SizedBox(width: AppMetrics.space2),
-                      Text(
-                        l10n.inboxYourNote,
-                        style: AppTypography.screenHeading.copyWith(
-                          color: tokens.textPrimary,
+                      Expanded(
+                        child: Text(
+                          l10n.inboxYourNote,
+                          style: AppTypography.screenHeading.copyWith(
+                            color: tokens.textPrimary,
+                          ),
                         ),
                       ),
+                      // A shortcut only. The existing clear-all-and-Save path
+                      // remains available for the same persisted note.
+                      if (_hasPersistedNote)
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          iconSize: AppMetrics.iconSize,
+                          color: tokens.danger,
+                          tooltip: l10n.savedItemNoteDeleteConfirmAction,
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
+                          ),
+                          onPressed: busy ? null : _deleteExistingNote,
+                        ),
                     ],
                   ),
                   const SizedBox(height: AppMetrics.space5),

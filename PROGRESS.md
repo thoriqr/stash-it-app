@@ -1,19 +1,38 @@
 # Stash-it Flutter — Project Progress
 
-> Last updated: 2026-11-09
+> Last updated: 2026-11-10
 > Scope: Flutter application (`stash-it-app`).
 
 ## Current Status
 
 The app has its core saved-link experience in place, including authentication, collections, search, profile and account settings, Google Sign-In, and Android link sharing for device-local saves.
 
-Recent work includes **Saved Item Detail URL actions, price, and note management** — a compact URL row with Android sharing and desktop copying, string-based price display with an interactive cross-check, and add/update/delete note flows through the existing feedback system — **Inbox price and note display** — nullable `note`, `price_amount` and `price_currency` fields in the Inbox data flow, compact price formatting, a two-line note preview, and a read-only full-note sheet — and **macOS target support**: a macOS runner and Codemagic build workflow are in place, and the existing Windows browser-based Desktop OAuth implementation is shared by Windows and macOS. Static Flutter verification is complete; macOS build, runtime, Google Sign-In, and Keychain behavior have not been verified on a Mac.
+Recent work includes **Saved Item Detail URL actions, price, and note management** — a compact URL row with Android sharing and desktop copying, string-based price display with a non-interactive caveat, and add/update/delete note flows through the existing feedback system — **Inbox price and note display** — nullable `note`, `price_amount` and `price_currency` fields in the Inbox data flow, compact price formatting, a two-line note preview, and a read-only full-note sheet — and **macOS target support**: a macOS runner and Codemagic build workflow are in place, and the existing Windows browser-based Desktop OAuth implementation is shared by Windows and macOS. Static Flutter verification is complete; macOS build, runtime, Google Sign-In, and Keychain behavior have not been verified on a Mac.
 
 The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
 
 **Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, manual Inbox enrichment polling verification, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
 
 ## Verification
+
+### Saved Item Detail desktop hero width (2026-11-10)
+
+- `dart format lib/features/saved_items/presentation/saved_item_detail_screen.dart` — completed; no formatting changes were needed.
+- `flutter analyze` — no issues found.
+- `git diff --check` — no whitespace errors.
+- No focused non-visual test was directly affected: there is no existing test for the detail hero sizing, and none was added because visual tests are out of scope.
+- build_runner and localization generation were not rerun; no annotations or ARB files changed.
+- The full test suite was not run. No application launch, emulator, screenshot, golden, widget visual, or manual visual verification was performed.
+
+### Saved Item Detail refinements (2026-11-10)
+
+- `flutter gen-l10n` — completed; the existing 2 Indonesian preference-warning messages still fall back to English.
+- `dart format` on the changed Dart files — completed.
+- `flutter analyze` — no issues found.
+- `flutter test test/features/saved_items/application/note_edit_decision_test.dart test/features/saved_items/application/note_mutation_controller_test.dart test/features/saved_items/presentation/price_label_test.dart` — 26 tests passed.
+- `git diff --check` — no whitespace errors.
+- No Riverpod, Freezed, Retrofit or JSON annotation changed, so build_runner was not rerun.
+- The full test suite was not run. No application launch, emulator, screenshot, golden, widget visual, or manual visual verification was performed.
 
 ### Saved Item Detail URL actions, price, and notes (2026-11-09)
 
@@ -111,9 +130,12 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - Android exposes Share and Copy on the URL row. Windows, macOS and other non-Android targets expose Copy only. Android uses the native system Sharesheet; dismissing it is ordinary cancellation with no notice or automatic copy.
 - A share that cannot be opened falls back to copying the same URL. Copy, share-fallback success and copy failure use the app-wide feedback host with localized copy.
 - A valid price appears below the URL actions and before the collection/enrichment metadata, reusing `price_label.dart`. Missing, malformed or unsupported pairs hide the section entirely.
-- The price caveat shows two complete localized sentences; only “Check the original page” / “Cek halaman asli” is an accessible underlined link, and it invokes the existing Open Original Page action.
+- A valid price is followed only by the short, non-interactive localized caveat (“Price may have changed.” / “Harga mungkin sudah berubah.”). The separate Open Original Page action remains in the Actions section.
 - The note section shows a two-line preview with a note icon, or a compact “Add a personal note” affordance when none exists. Both open one shared editor bottom sheet with the full existing note prepopulated.
 - The editor accepts up to 5,000 characters with a localized counter and one Save action. Save chooses between no request, `PUT /saved-items/{id}/note`, and a confirmed `DELETE /saved-items/{id}/note` when an existing note is cleared.
+- A persisted note also exposes a compact destructive Delete icon in the editor header. It uses the same confirmation and mutation as clear-all-and-Save; it is absent when opening a new, empty note. Cancelling the clear-all-and-Save confirmation restores the persisted note into the open editor immediately, including line breaks, and updates the counter without a request or refetch.
+- The enrichment-status line wraps in Saved Item Detail without the listing's one-line ellipsis. Detail uses a wrapping metadata row so the collection chip and status can occupy separate lines when needed; the Inbox listing keeps its existing single-line treatment.
+- The Detail hero image uses a responsive 16:9 frame. Android keeps the full available content width. Windows and macOS share the existing `usesDesktopLayout` condition, cap the hero at 640 logical pixels (360 high at 16:9), and center it horizontally when the content area is wider. Loading, pending and unavailable placeholders are unchanged, and the listing thumbnail is untouched.
 - Note writes submit the entered text unchanged (emptiness is checked with `trim`). Confirmed mutations patch the loaded detail, Inbox and collection rows in place without a follow-up read, and publish success or failure through the existing feedback system. Duplicate submissions are blocked while a request is in flight.
 
 ### Inbox price and note display
@@ -245,6 +267,8 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - Inbox price and note display was implemented first; Saved Item Detail now shows both and note management. Collection listings and Search still do not display price or note.
 - The native Android Sharesheet, its dismissal result, and the clipboard fallback have not been verified on a device. Desktop and other non-Android targets expose Copy only.
 - The note editor's 5,000-character limit and counter are enforced in the client; the server rejection path is mapped but has not been exercised against the live backend.
+- The dedicated note Delete shortcut and the Keep-note restoration are covered by the pure decision and mutation-controller tests, not by widget tests. Their exact in-sheet behavior remains a manual check.
+- The refined Windows 16:9 hero image, including the 640 px desktop cap and centering, and the wrapping enrichment status have not been visually verified. macOS shares the same desktop sizing path but has not been run or visually verified either. Manual inspection remains with the project owner.
 - Physical-device verification has not yet been completed.
 - Android link sharing still needs verification in cases such as the app being closed, the user being signed out, or the device being offline.
 - If a local-link submission is interrupted, its outcome may be uncertain. Retrying an operation with an uncertain outcome can create a duplicate.

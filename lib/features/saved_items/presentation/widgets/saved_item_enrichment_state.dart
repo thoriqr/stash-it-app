@@ -20,9 +20,19 @@ import 'package:stash_it_app/l10n/app_localizations.dart';
 /// and a static status line does not; it is the disabled control beside it that
 /// must avoid an in-flight label.
 class SavedItemEnrichmentState extends StatelessWidget {
-  const SavedItemEnrichmentState({required this.item, super.key});
+  const SavedItemEnrichmentState({
+    required this.item,
+    this.wrap = false,
+    super.key,
+  });
 
   final SavedItemSummary item;
+
+  /// Whether the status may use more than one line.
+  ///
+  /// The listing keeps its single-line ellipsis. The detail screen passes true
+  /// so a narrow column or a long localized message stays complete.
+  final bool wrap;
 
   @override
   Widget build(BuildContext context) {
@@ -33,19 +43,15 @@ class SavedItemEnrichmentState extends StatelessWidget {
 
     switch (item.enrichmentStatus) {
       case EnrichmentStatus.pending:
-        return Row(
-          children: [
-            _StatePip(color: tokens.accent, filled: false),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                l10n.savedItemEnrichmentReading,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: lineStyle.copyWith(color: tokens.accent),
-              ),
-            ),
-          ],
+        return _StatusLine(
+          pip: _StatePip(color: tokens.accent, filled: false),
+          wrap: wrap,
+          child: Text(
+            l10n.savedItemEnrichmentReading,
+            maxLines: _maxLines,
+            overflow: _overflow,
+            style: lineStyle.copyWith(color: tokens.accent),
+          ),
         );
 
       case EnrichmentStatus.completed:
@@ -54,27 +60,59 @@ class SavedItemEnrichmentState extends StatelessWidget {
         // Success with nothing to show. Deliberately not styled as a problem.
         return Text(
           l10n.savedItemEnrichmentNoDetails,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          maxLines: _maxLines,
+          overflow: _overflow,
           style: lineStyle,
         );
 
       case EnrichmentStatus.failed:
-        return Row(
-          children: [
-            _StatePip(color: tokens.danger, filled: true),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                l10n.savedItemEnrichmentFailed,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: lineStyle.copyWith(color: tokens.danger),
-              ),
-            ),
-          ],
+        return _StatusLine(
+          pip: _StatePip(color: tokens.danger, filled: true),
+          wrap: wrap,
+          child: Text(
+            l10n.savedItemEnrichmentFailed,
+            maxLines: _maxLines,
+            overflow: _overflow,
+            style: lineStyle.copyWith(color: tokens.danger),
+          ),
         );
     }
+  }
+
+  int? get _maxLines => wrap ? null : 1;
+
+  TextOverflow get _overflow =>
+      wrap ? TextOverflow.clip : TextOverflow.ellipsis;
+}
+
+/// A status pip followed by text that can either stay on one line or wrap.
+class _StatusLine extends StatelessWidget {
+  const _StatusLine({
+    required this.pip,
+    required this.wrap,
+    required this.child,
+  });
+
+  final Widget pip;
+  final bool wrap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: wrap
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.center,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(top: wrap ? 4 : 0),
+          child: pip,
+        ),
+        const SizedBox(width: 6),
+        Flexible(child: child),
+      ],
+    );
   }
 }
 

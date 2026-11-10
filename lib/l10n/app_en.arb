@@ -211,7 +211,6 @@
   "savedItemCopyUrl": "Copy URL",
   "savedItemShareUrl": "Share URL",
   "savedItemPriceMayHaveChanged": "Price may have changed.",
-  "savedItemPriceCheckOriginalPage": "Check the original page.",
   "savedItemAddNote": "Add a personal note",
   "savedItemNoteSaveAction": "Save",
   "savedItemNotePlaceholder": "Write your note…",
@@ -1586,10 +1585,7 @@
     "description": "Icon action that opens the Android system share sheet."
   },
   "@savedItemPriceMayHaveChanged": {
-    "description": "First sentence of the price caveat below a displayed price."
-  },
-  "@savedItemPriceCheckOriginalPage": {
-    "description": "Interactive second sentence that opens the original saved page."
+    "description": "Informational caveat below a displayed price."
   },
   "@savedItemAddNote": {
     "description": "Compact affordance shown when the saved item has no note."
