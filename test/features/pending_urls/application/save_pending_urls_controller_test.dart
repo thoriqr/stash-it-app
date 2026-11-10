@@ -128,6 +128,11 @@ void main() {
     await container.read(savePendingUrlsProvider.notifier).saveAll();
 
     expect(repository.createUrls, [urlC, urlB, urlA]);
+    expect(repository.createNotes, [
+      null,
+      null,
+      null,
+    ], reason: 'device-local pending URLs never carry a note');
     expect(maxInFlight, 1, reason: 'the run is sequential');
     expect((await store.readAll()).entries, isEmpty);
     expect(container.read(pendingUrlCountProvider), 0);

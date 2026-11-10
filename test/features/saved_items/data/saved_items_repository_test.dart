@@ -311,6 +311,44 @@ void main() {
       );
     });
 
+    test('includes the optional note and preserves multiline text', () async {
+      adapter.onMethod(
+        'POST',
+        '/saved-items',
+        status: 201,
+        body: SavedItemsFixtures.created(url: 'https://example.com/articles/1'),
+      );
+
+      const note = 'First line\nSecond line stays exactly as typed.  ';
+      await repository.create(
+        url: 'https://example.com/articles/1',
+        note: note,
+      );
+
+      final request = adapter.lastRequestTo('/saved-items')!;
+      expect(request.method, 'POST');
+      expect(adapter.countFor('/saved-items'), 1);
+      expect(request.body, {
+        'url': 'https://example.com/articles/1',
+        'note': note,
+      });
+    });
+
+    test('omits the note field when no note is supplied', () async {
+      adapter.onMethod(
+        'POST',
+        '/saved-items',
+        status: 201,
+        body: SavedItemsFixtures.created(url: 'https://example.com/articles/1'),
+      );
+
+      await repository.create(url: 'https://example.com/articles/1');
+
+      expect(adapter.lastRequestTo('/saved-items')!.body, {
+        'url': 'https://example.com/articles/1',
+      });
+    });
+
     test('a 201 without the documented fields is not a success', () async {
       // The body is the *only* thing that can confirm the create here, so a
       // shape the client cannot read is reported as unreadable rather than

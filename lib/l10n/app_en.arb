@@ -177,6 +177,10 @@
   "inboxPaste": "Paste",
   "inboxSaveAction": "Save URL",
   "inboxYourNote": "Your note",
+  "inboxNoteDoneAction": "Done",
+  "inboxSaveWithNoteTitle": "Save URL with this note?",
+  "inboxSaveWithNoteAction": "Save with note",
+  "inboxSaveWithoutNoteAction": "Save without note",
   "pendingUrlsTitle": "SAVED ON THIS DEVICE",
   "pendingUrlsBackToInbox": "Back to Inbox",
   "pendingUrlsBackToSignIn": "Back to sign in",
@@ -1456,6 +1460,18 @@
   },
   "@inboxYourNote": {
     "description": "Label for the saved item's note preview and the full-note sheet."
+  },
+  "@inboxNoteDoneAction": {
+    "description": "Primary action that applies the draft note and closes the composer."
+  },
+  "@inboxSaveWithNoteTitle": {
+    "description": "Confirmation title when Save URL is pressed with a note draft."
+  },
+  "@inboxSaveWithNoteAction": {
+    "description": "Primary confirmation action that includes the note in the save."
+  },
+  "@inboxSaveWithoutNoteAction": {
+    "description": "Secondary confirmation action that saves the URL without the note."
   },
   "@pendingUrlsTitle": {
     "description": "App bar title for the device-local Pending URLs screen."

@@ -1183,6 +1183,30 @@ abstract class AppLocalizations {
   /// **'Your note'**
   String get inboxYourNote;
 
+  /// Primary action that applies the draft note and closes the composer.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get inboxNoteDoneAction;
+
+  /// Confirmation title when Save URL is pressed with a note draft.
+  ///
+  /// In en, this message translates to:
+  /// **'Save URL with this note?'**
+  String get inboxSaveWithNoteTitle;
+
+  /// Primary confirmation action that includes the note in the save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save with note'**
+  String get inboxSaveWithNoteAction;
+
+  /// Secondary confirmation action that saves the URL without the note.
+  ///
+  /// In en, this message translates to:
+  /// **'Save without note'**
+  String get inboxSaveWithoutNoteAction;
+
   /// App bar title for the device-local Pending URLs screen.
   ///
   /// In en, this message translates to:

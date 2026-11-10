@@ -7,7 +7,7 @@
 
 The app has its core saved-link experience in place, including authentication, collections, search, profile and account settings, Google Sign-In, and Android link sharing for device-local saves.
 
-Recent work includes **Saved Item Detail URL actions, price, and note management** — a compact URL row with Android sharing and desktop copying, string-based price display with a non-interactive caveat, and add/update/delete note flows through the existing feedback system — **Inbox price and note display** — nullable `note`, `price_amount` and `price_currency` fields in the Inbox data flow, compact price formatting, a two-line note preview, and a read-only full-note sheet — and **macOS target support**: a macOS runner and Codemagic build workflow are in place, and the existing Windows browser-based Desktop OAuth implementation is shared by Windows and macOS. Static Flutter verification is complete; macOS build, runtime, Google Sign-In, and Keychain behavior have not been verified on a Mac.
+Recent work includes **manual Inbox note composition** — an optional draft note with a compact preview, a bottom-sheet composer, and an explicit save choice that sends the URL and note in one create request — **Saved Item Detail URL actions, price, and note management** — a compact URL row with Android sharing and desktop copying, string-based price display with a non-interactive caveat, and add/update/delete note flows through the existing feedback system — **Inbox price and note display** — nullable `note`, `price_amount` and `price_currency` fields in the Inbox data flow, compact price formatting, a two-line note preview, and a read-only full-note sheet — and **macOS target support**: a macOS runner and Codemagic build workflow are in place, and the existing Windows browser-based Desktop OAuth implementation is shared by Windows and macOS. Static Flutter verification is complete; macOS build, runtime, Google Sign-In, and Keychain behavior have not been verified on a Mac.
 
 The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
 
@@ -148,6 +148,14 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - The note preview has its own tap target, so tapping it does not also open the saved-item detail screen.
 - The “Your note” label is localized in English and Indonesian. Collection listings, Search and the saved-item detail screen do not populate or display these fields.
 
+### Manual Inbox note composition
+
+- The manual Save URL form offers a compact optional note entry below the URL field. Without a draft it shows “Add a personal note”; with one it shows a two-line “Your note” preview with ellipsis.
+- The note opens in a bottom-sheet composer with multiline text, preserved line breaks, a character counter and the documented maximum length. Done applies the local draft without contacting the server; applying empty or whitespace-only text returns the intake to the add affordance.
+- A meaningful draft adds an explicit Save URL confirmation with Save with note, Save without note, and Cancel. Saving with the note sends the URL and note together in the single create request; saving without it sends only the URL. Cancel sends nothing and keeps both inputs.
+- The draft stays local to the retained Inbox intake and survives switching destinations. A confirmed save clears it so the next save starts without a note; cancellation, refusal and unconfirmed outcomes keep it for correction. It is never persisted or shared with other features.
+- Android Quick Share and device-local Pending URL saves are unchanged and never include a note.
+
 ### Inbox enrichment synchronization
 
 - While the Inbox is visible and the app is in the foreground, a single coordinated polling loop keeps `pending` items synchronized with the server.
@@ -268,6 +276,7 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - The native Android Sharesheet, its dismissal result, and the clipboard fallback have not been verified on a device. Desktop and other non-Android targets expose Copy only.
 - The note editor's 5,000-character limit and counter are enforced in the client; the server rejection path is mapped but has not been exercised against the live backend.
 - The dedicated note Delete shortcut and the Keep-note restoration are covered by the pure decision and mutation-controller tests, not by widget tests. Their exact in-sheet behavior remains a manual check.
+- The manual Inbox note composer, its two-line preview and the save confirmation have not been visually verified; manual inspection remains with the project owner.
 - The refined Windows 16:9 hero image, including the 640 px desktop cap and centering, and the wrapping enrichment status have not been visually verified. macOS shares the same desktop sizing path but has not been run or visually verified either. Manual inspection remains with the project owner.
 - Physical-device verification has not yet been completed.
 - Android link sharing still needs verification in cases such as the app being closed, the user being signed out, or the device being offline.

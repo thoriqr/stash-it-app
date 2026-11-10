@@ -889,6 +889,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inboxYourNote => 'Your note';
 
   @override
+  String get inboxNoteDoneAction => 'Done';
+
+  @override
+  String get inboxSaveWithNoteTitle => 'Save URL with this note?';
+
+  @override
+  String get inboxSaveWithNoteAction => 'Save with note';
+
+  @override
+  String get inboxSaveWithoutNoteAction => 'Save without note';
+
+  @override
   String get pendingUrlsTitle => 'SAVED ON THIS DEVICE';
 
   @override

@@ -148,6 +148,9 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   /// The URLs passed to [create], in order.
   final List<String> createUrls = [];
 
+  /// The note passed to each [create], in order.
+  final List<String?> createNotes = [];
+
   /// The ids passed to [getById], in order.
   final List<String> detailIds = [];
 
@@ -176,9 +179,10 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   moveRequests = [];
 
   @override
-  Future<void> create({required String url}) async {
+  Future<void> create({required String url, String? note}) async {
     createCalls++;
     createUrls.add(url);
+    createNotes.add(note);
 
     final handler = onCreate;
     if (handler != null) return handler(url);

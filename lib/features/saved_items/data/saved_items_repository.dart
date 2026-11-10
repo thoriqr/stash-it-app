@@ -33,7 +33,11 @@ class SavedItemsRepository {
   /// default [DateTime.now] function.
   final DateTime Function() now;
 
-  /// Saves [url] and confirms that the server created the item.
+  /// Saves [url] and an optional [note], confirming the server created the
+  /// item.
+  ///
+  /// [note] is omitted from the request when null. Non-whitespace text is sent
+  /// exactly as supplied, including line breaks.
   ///
   /// Returns no value because the create response does not contain enough
   /// information to build a [SavedItemSummary]. The caller should re-read the
@@ -49,9 +53,9 @@ class SavedItemsRepository {
   /// - [ApiFailureUnreadableResponse]: the outcome is unestablished.
   /// - Other [ApiFailure] variants: the request is known not to have saved
   ///   the item.
-  Future<void> create({required String url}) async {
+  Future<void> create({required String url, String? note}) async {
     try {
-      await api.create(CreateSavedItemRequest(url: url));
+      await api.create(CreateSavedItemRequest(url: url, note: note));
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError catch (error) {

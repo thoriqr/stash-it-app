@@ -872,6 +872,18 @@ class AppLocalizationsId extends AppLocalizations {
   String get inboxYourNote => 'Catatan Anda';
 
   @override
+  String get inboxNoteDoneAction => 'Selesai';
+
+  @override
+  String get inboxSaveWithNoteTitle => 'Simpan URL dengan catatan ini?';
+
+  @override
+  String get inboxSaveWithNoteAction => 'Simpan dengan catatan';
+
+  @override
+  String get inboxSaveWithoutNoteAction => 'Simpan tanpa catatan';
+
+  @override
   String get pendingUrlsTitle => 'DISIMPAN DI PERANGKAT INI';
 
   @override

@@ -71,8 +71,11 @@ void main() {
       )
       .length;
 
-  Future<bool> submit(ProviderContainer container, String url) =>
-      container.read(saveUrlProvider.notifier).submit(url);
+  Future<bool> submit(
+    ProviderContainer container,
+    String url, {
+    String? note,
+  }) => container.read(saveUrlProvider.notifier).submit(url, note: note);
 
   AppFeedback? noticeOf(ProviderContainer container) =>
       container.read(feedbackProvider);
@@ -398,6 +401,51 @@ void main() {
         notice.resolve(english),
         'Saved.',
         reason: '[D26] it confirms the create and nothing beyond it',
+      );
+    });
+
+    test('includes an optional note in the same create request', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      const note = 'Line one\nLine two stays exactly as typed.  ';
+      scriptCreated(url: 'https://example.com/new');
+      scriptListing([SavedItemsFixtures.item(id: 'new')]);
+
+      expect(
+        await submit(container, 'https://example.com/new', note: note),
+        isTrue,
+      );
+
+      expect(savePosts(), 1, reason: 'one POST carries URL and note');
+      final request = adapter.requests.firstWhere(
+        (request) => request.method == 'POST',
+      );
+      expect(request.jsonField('url'), 'https://example.com/new');
+      expect(request.jsonField('note'), note);
+      expect(noticeOf(container)!.resolve(english), 'Saved.');
+    });
+
+    test('omits a whitespace-only note from the request', () async {
+      final container = await makeContainer();
+      addTearDown(container.dispose);
+
+      scriptCreated(url: 'https://example.com/new');
+      scriptListing([SavedItemsFixtures.item(id: 'new')]);
+
+      expect(
+        await submit(container, 'https://example.com/new', note: '  \n\t '),
+        isTrue,
+      );
+
+      expect(savePosts(), 1);
+      final request = adapter.requests.firstWhere(
+        (request) => request.method == 'POST',
+      );
+      expect(
+        (request.body as Map<String, dynamic>).containsKey('note'),
+        isFalse,
+        reason: 'a blank draft must behave exactly like no note',
       );
     });
 

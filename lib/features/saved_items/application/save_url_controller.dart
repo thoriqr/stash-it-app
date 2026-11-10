@@ -108,11 +108,13 @@ class SaveUrl extends _$SaveUrl {
   @override
   bool build() => false;
 
-  /// Saves [rawUrl] and returns whether the server confirmed the creation.
+  /// Saves [rawUrl] with an optional [note] and returns whether the server
+  /// confirmed the creation.
   ///
-  /// A `true` result allows the caller to clear the field. A `false` result
-  /// means the value should remain available for correction or another attempt.
-  /// Refusals are reported through the feedback channel rather than thrown.
+  /// A `true` result allows the caller to clear the field and its temporary
+  /// note draft. A `false` result means the value should remain available for
+  /// correction or another attempt. Refusals are reported through the feedback
+  /// channel rather than thrown.
   ///
   /// A submission made while another is in flight is ignored, not queued.
   /// This prevents multiple taps from creating duplicate items.
@@ -121,11 +123,16 @@ class SaveUrl extends _$SaveUrl {
   /// This local check rejects values that clearly cannot be URLs. Other
   /// constraints that the client cannot determine remain subject to server
   /// validation. A locally rejected value never reaches the repository.
-  Future<bool> submit(String rawUrl) async {
+  ///
+  /// A null or whitespace-only [note] is not sent. Meaningful note text is sent
+  /// exactly as supplied, including line breaks, in the same create request.
+  Future<bool> submit(String rawUrl, {String? note}) async {
     if (state) return false;
 
     final url = rawUrl.trim();
     if (url.isEmpty) return false;
+
+    final submittedNote = note == null || note.trim().isEmpty ? null : note;
 
     // Reject invalid URL shapes before setting the loading state or sending
     // a request.
@@ -137,7 +144,9 @@ class SaveUrl extends _$SaveUrl {
     state = true;
 
     try {
-      await ref.read(savedItemsRepositoryProvider).create(url: url);
+      await ref
+          .read(savedItemsRepositoryProvider)
+          .create(url: url, note: submittedNote);
 
       // The notifier outlives the screen. This check protects against a
       // container that has already been disposed.

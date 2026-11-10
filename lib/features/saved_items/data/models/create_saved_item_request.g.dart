@@ -8,8 +8,11 @@ part of 'create_saved_item_request.dart';
 
 _CreateSavedItemRequest _$CreateSavedItemRequestFromJson(
   Map<String, dynamic> json,
-) => _CreateSavedItemRequest(url: json['url'] as String);
+) => _CreateSavedItemRequest(
+  url: json['url'] as String,
+  note: json['note'] as String?,
+);
 
 Map<String, dynamic> _$CreateSavedItemRequestToJson(
   _CreateSavedItemRequest instance,
-) => <String, dynamic>{'url': instance.url};
+) => <String, dynamic>{'url': instance.url, 'note': ?instance.note};

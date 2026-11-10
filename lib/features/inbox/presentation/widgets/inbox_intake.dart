@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/features/inbox/presentation/inbox_note_draft.dart';
 import 'package:stash_it_app/features/saved_items/application/save_url_controller.dart';
+import 'package:stash_it_app/features/saved_items/domain/saved_item_url.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
+
+import 'inbox_note_composer_sheet.dart';
+import 'inbox_note_entry.dart';
+import 'save_with_note_dialog.dart';
 
 /// URL intake for the Inbox.
 ///
@@ -31,6 +37,12 @@ import 'package:stash_it_app/shared/widgets/app_field.dart';
 /// Both actions are disabled while a save is in progress. After a confirmed
 /// save, the field is cleared only if it still contains the submitted value,
 /// preserving any newer input.
+///
+/// An optional note draft lives in this widget's state, so it survives switching
+/// Inbox tabs while the shell keeps the branch mounted. It is not persisted and
+/// never reaches another intake. A meaningful draft triggers one confirmation
+/// before the single create request; the user can save with it, save without it,
+/// or cancel.
 class InboxIntake extends ConsumerStatefulWidget {
   const InboxIntake({super.key});
 
@@ -41,10 +53,31 @@ class InboxIntake extends ConsumerStatefulWidget {
 class _InboxIntakeState extends ConsumerState<InboxIntake> {
   final _controller = TextEditingController();
 
+  /// The current manual-intake note draft.
+  ///
+  /// Null or meaningful text only; whitespace-only composer output is
+  /// normalized to null when Done is pressed. It stays local to this retained
+  /// Inbox branch and is never persisted.
+  String? _noteDraft;
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  /// Opens the local composer and applies its result to the draft.
+  ///
+  /// A dismissed sheet returns null and leaves the existing draft untouched.
+  /// Done returns the entered text; whitespace-only text clears the draft.
+  Future<void> _editNote() async {
+    final result = await showInboxNoteComposer(
+      context,
+      initialNote: _noteDraft ?? '',
+    );
+    if (!mounted || result == null) return;
+
+    setState(() => _noteDraft = inboxNoteDraftText(result));
   }
 
   /// Submits the field's value and clears it only after a confirmed save.
@@ -53,18 +86,41 @@ class _InboxIntakeState extends ConsumerState<InboxIntake> {
   /// successful response from clearing different content entered while the
   /// request was in progress. The mounted check also prevents access to a
   /// disposed controller after navigation.
+  ///
+  /// When a meaningful note draft exists and the URL passes the same local
+  /// shape check the controller uses, the user chooses whether to include it.
+  /// The chosen payload is still submitted through one [SaveUrl.submit] call.
   Future<void> _save() async {
+    if (ref.read(saveUrlProvider)) return;
+
     final submitted = _controller.text;
-    final saved = await ref.read(saveUrlProvider.notifier).submit(submitted);
+    final draftNote = inboxNoteDraftText(_noteDraft);
+    var noteToSend = draftNote;
+
+    if (draftNote != null && isSubmittableUrl(submitted)) {
+      final decision = await showSaveWithNoteDialog(context, note: draftNote);
+      if (!mounted) return;
+      if (decision == SaveWithNoteDecision.cancel) return;
+      if (decision == SaveWithNoteDecision.saveWithoutNote) {
+        noteToSend = null;
+      }
+    }
+
+    final saved = await ref
+        .read(saveUrlProvider.notifier)
+        .submit(submitted, note: noteToSend);
 
     if (!mounted) return;
     if (!saved) return;
 
-    // Clear only if the field still contains the submitted value.
-    if (_controller.text != submitted) return;
+    setState(() {
+      // Preserve newer URL input, matching the existing clear rule.
+      if (_controller.text == submitted) _controller.clear();
 
-    _controller.clear();
-    setState(() {});
+      // A confirmed save clears the draft in both save-with and save-without
+      // paths, so the next independent intake always starts without a note.
+      _noteDraft = null;
+    });
   }
 
   /// Fills the field from the platform clipboard without submitting it.
@@ -160,6 +216,10 @@ class _InboxIntakeState extends ConsumerState<InboxIntake> {
             // while the submitted value is unresolved.
             onClear: hasValue && !isSaving ? _clear : null,
           ),
+          const SizedBox(height: AppMetrics.space2),
+          // Optional and compact: either the add affordance or a two-line
+          // preview of the current local draft.
+          InboxNoteEntry(note: _noteDraft, onTap: isSaving ? null : _editNote),
           const SizedBox(height: AppMetrics.space2),
           Row(
             children: [

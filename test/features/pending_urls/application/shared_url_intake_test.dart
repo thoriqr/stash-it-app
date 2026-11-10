@@ -30,7 +30,7 @@ class _ThrowingRepository extends SavedItemsRepository {
   _ThrowingRepository() : super(api: SavedItemsApi(Dio()));
 
   @override
-  Future<void> create({required String url}) async {
+  Future<void> create({required String url, String? note}) async {
     throw StateError('unexpected repository failure');
   }
 }
@@ -97,6 +97,12 @@ void main() {
 
       expect(outcome, ShareSaveOutcome.saved);
       expect((await store.readAll()).entries, isEmpty);
+      expect(
+        (adapter.lastRequestTo('/saved-items')!.body as Map<String, dynamic>)
+            .containsKey('note'),
+        isFalse,
+        reason: 'Quick Share never composes a note',
+      );
     });
 
     for (final (status, code) in [
