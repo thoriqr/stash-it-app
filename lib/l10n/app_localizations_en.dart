@@ -1711,11 +1711,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authSignIn => 'Sign in';
 
   @override
-  String get authSignInTitle => 'Sign in to Stash It';
+  String get authSignInTitle => 'Sign in to your account';
 
   @override
   String get authSignInDescription =>
-      'Use the email and password on your Stash It account.';
+      'Enter your email and password to continue.';
 
   @override
   String get authForgotPassword => 'Forgot password?';

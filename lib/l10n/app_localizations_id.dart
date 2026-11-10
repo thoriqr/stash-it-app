@@ -1697,11 +1697,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get authSignIn => 'Masuk';
 
   @override
-  String get authSignInTitle => 'Masuk ke Stash It';
+  String get authSignInTitle => 'Masuk ke akun Anda';
 
   @override
   String get authSignInDescription =>
-      'Gunakan email dan kata sandi akun Stash It Anda.';
+      'Masukkan email dan kata sandi untuk melanjutkan.';
 
   @override
   String get authForgotPassword => 'Lupa kata sandi?';

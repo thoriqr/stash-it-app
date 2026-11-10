@@ -2524,13 +2524,13 @@ abstract class AppLocalizations {
   /// Heading on the sign-in screen.
   ///
   /// In en, this message translates to:
-  /// **'Sign in to Stash It'**
+  /// **'Sign in to your account'**
   String get authSignInTitle;
 
   /// Description below the sign-in heading.
   ///
   /// In en, this message translates to:
-  /// **'Use the email and password on your Stash It account.'**
+  /// **'Enter your email and password to continue.'**
   String get authSignInDescription;
 
   /// Action opening the password-reset flow.

@@ -48,7 +48,7 @@ abstract final class AppMetrics {
   static const double iconSize = 18;
 
   /// Size of the brand mark beside the wordmark on authentication screens.
-  static const double brandMarkSize = 26;
+  static const double brandMarkSize = 36;
 
   // ---- control heights ----
 

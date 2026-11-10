@@ -212,6 +212,7 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 
 ### Authentication and account
 
+- The old simplified square brand mark was replaced with the approved Stash It pixel-art icon. Authentication screens share the icon and the existing `STASH-IT` wordmark through the shared `AuthBrandRow`.
 - Email registration, PIN verification, and registration recovery.
 - Google Sign-In, account linking, and social registration.
 - Password reset and recovery.

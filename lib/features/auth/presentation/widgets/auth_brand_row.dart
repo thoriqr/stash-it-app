@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 
-/// Displays the brand mark and wordmark on authentication screens.
+/// Displays the approved Stash It icon and wordmark on authentication screens.
 ///
-/// Shared by [AuthEntryScreen] and [SignInScreen] to keep their branding
-/// consistent.
+/// Shared by every Authentication screen to keep their branding consistent.
 class AuthBrandRow extends StatelessWidget {
   const AuthBrandRow({super.key});
 
@@ -14,26 +13,12 @@ class AuthBrandRow extends StatelessWidget {
 
     return Row(
       children: [
-        Container(
+        Image.asset(
+          'assets/branding/derived/stash-it-icon-final.png',
           width: AppMetrics.brandMarkSize,
           height: AppMetrics.brandMarkSize,
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: tokens.accent,
-              width: AppMetrics.borderWidthEmphasis,
-            ),
-            borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: tokens.accent,
-                borderRadius: BorderRadius.circular(1),
-              ),
-              child: const SizedBox.expand(),
-            ),
-          ),
+          fit: BoxFit.contain,
+          excludeFromSemantics: true,
         ),
         const SizedBox(width: AppMetrics.space2),
         // Written uppercase at the call site: Flutter has no text-transform.

@@ -41,6 +41,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  assets:
+    - assets/branding/derived/stash-it-icon-final.png
   fonts:
     # Display only: the wordmark, screen titles and small section labels.
     - family: Silkscreen
