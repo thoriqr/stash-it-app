@@ -7,7 +7,7 @@
 
 The app has its core saved-link experience in place, including authentication, collections, search, profile and account settings, Google Sign-In, and Android link sharing for device-local saves.
 
-Recent work includes **manual Inbox note composition** — an optional draft note with a compact preview, a bottom-sheet composer, and an explicit save choice that sends the URL and note in one create request — **Saved Item Detail URL actions, price, and note management** — a compact URL row with Android sharing and desktop copying, string-based price display with a non-interactive caveat, and add/update/delete note flows through the existing feedback system — **Inbox price and note display** — nullable `note`, `price_amount` and `price_currency` fields in the Inbox data flow, compact price formatting, a two-line note preview, and a read-only full-note sheet — and **macOS target support**: a macOS runner and Codemagic build workflow are in place, and the existing Windows browser-based Desktop OAuth implementation is shared by Windows and macOS. Static Flutter verification is complete; macOS build, runtime, Google Sign-In, and Keychain behavior have not been verified on a Mac.
+Recent work includes **application icons** — the approved Stash It pixel-art inventory icon now supplies the Android launcher and adaptive icons, the Windows native application icon, and the macOS AppIcon catalog — **manual Inbox note composition** — an optional draft note with a compact preview, a bottom-sheet composer, and an explicit save choice that sends the URL and note in one create request — **Saved Item Detail URL actions, price, and note management** — a compact URL row with Android sharing and desktop copying, string-based price display with a non-interactive caveat, and add/update/delete note flows through the existing feedback system — **Inbox price and note display** — nullable `note`, `price_amount` and `price_currency` fields in the Inbox data flow, compact price formatting, a two-line note preview, and a read-only full-note sheet — and **macOS target support**: a macOS runner and Codemagic build workflow are in place, and the existing Windows browser-based Desktop OAuth implementation is shared by Windows and macOS. Static Flutter verification is complete; macOS build, runtime, Google Sign-In, and Keychain behavior have not been verified on a Mac.
 
 The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
 
@@ -122,6 +122,14 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - View link metadata and enrichment status, and refresh metadata.
 - Move and delete saved links.
 - Preview saved-link images, including pending and unavailable states.
+
+### Application icons
+
+- The approved Stash It pixel-art inventory artwork remains the authoritative, unchanged master for the native application icons.
+- The outer charcoal padding and stepped sage-green frame were removed without redrawing the illustration. The chest, cards, chain-link symbol, bookmark, dark outlines, and original colors are preserved and enlarged.
+- The continuous deep-green interior background was sampled from the artwork and extended to fill the new square composition. Windows and macOS use this same borderless composition.
+- Android uses density-specific launcher icons plus an adaptive icon with a transparent foreground containing only the chest/cards illustration. The foreground is centered and kept inside the 66dp safe area, while the adaptive background uses the sampled deep-green color.
+- Application names, bundle identifiers, window behavior, and signing configuration remain unchanged.
 
 ### Saved Item Detail price, URL actions, and notes
 
@@ -277,6 +285,7 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - The note editor's 5,000-character limit and counter are enforced in the client; the server rejection path is mapped but has not been exercised against the live backend.
 - The dedicated note Delete shortcut and the Keep-note restoration are covered by the pure decision and mutation-controller tests, not by widget tests. Their exact in-sheet behavior remains a manual check.
 - The manual Inbox note composer, its two-line preview and the save confirmation have not been visually verified; manual inspection remains with the project owner.
+- The refined borderless Android and Windows launcher icon has not been visually verified; manual inspection remains with the project owner. The macOS assets use the same borderless composition but have not been built or visually verified on a Mac.
 - The refined Windows 16:9 hero image, including the 640 px desktop cap and centering, and the wrapping enrichment status have not been visually verified. macOS shares the same desktop sizing path but has not been run or visually verified either. Manual inspection remains with the project owner.
 - Physical-device verification has not yet been completed.
 - Android link sharing still needs verification in cases such as the app being closed, the user being signed out, or the device being offline.

@@ -1,0 +1,32 @@
+# Generated native application icons.
+#
+# The authoritative master is assets/branding/stash-it-icon.png. It is never
+# edited. The platform inputs are deterministic derivatives:
+#
+# - assets/branding/derived/stash-it-icon-final.png
+#   A 796x796 opaque, deep-green square containing the original chest/cards
+#   foreground at 1:1 scale, centered with a 49px margin. The outer charcoal
+#   padding and stepped sage frame were removed; the sampled deep-green
+#   interior (#19342C) fills the canvas.
+#
+# - assets/branding/derived/stash-it-icon-adaptive-foreground.png
+#   A 1080x1080 transparent foreground containing only the chest/cards
+#   illustration. It is centered and scaled so its bounding box fits within a
+#   640px diagonal inside Android's 66dp safe zone. Transparent pixels carry
+#   the deep-green RGB (#19342C) under zero alpha to avoid dark resize fringes.
+#
+# The adaptive background matches the sampled deep-green interior (#19342C).
+flutter_launcher_icons:
+  image_path: "assets/branding/derived/stash-it-icon-final.png"
+  android: true
+  min_sdk_android: 21
+  adaptive_icon_background: "#19342C"
+  adaptive_icon_foreground: "assets/branding/derived/stash-it-icon-adaptive-foreground.png"
+  adaptive_icon_foreground_inset: 0
+  windows:
+    generate: true
+    image_path: "assets/branding/derived/stash-it-icon-final.png"
+    icon_size: 256
+  macos:
+    generate: true
+    image_path: "assets/branding/derived/stash-it-icon-final.png"
