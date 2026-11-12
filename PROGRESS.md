@@ -15,6 +15,18 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 
 ## Verification
 
+### Android release startup fix — R8 and Kotlin JNI classes (2026-11-12)
+
+- Reproduced the Android release hang on the `Pixel_8` emulator: `MainActivity` started but never drew a first frame, so the native splash never left.
+- `adb logcat` showed `PlatformException` wrapping `java.lang.NoSuchMethodError` for `SharedPreferencesApiRegistrar.getAll(String, List, Continuation)`, thrown from `SharedPreferences.getInstance()` inside `bootstrap()` before `runApp`.
+- Dumped the release APK dex with `dexdump` and compared it against `shared_preferences_android` 2.5.1's expected JNI signature. Dart looks up `getAll(String, List, kotlin/coroutines/Continuation)`; the APK contained `getAll(String, List, La4/d)`, because R8 renamed the Kotlin coroutine classes that are resolved by name through JNI.
+- `adb logcat -c`, `adb install -r`, and a fresh `am start` reproduced the failure on the reinstalled APK, so the log was not stale output. The app was not fully uninstalled, so a clean-install path was not exercised.
+- `flutter pub upgrade shared_preferences_android` — 2.5.1 → 2.5.4. That release adds consumer R8 rules keeping the JNI-resolved Kotlin classes, and 2.5.4 also defers the main-thread preferences read. Only `pubspec.lock` changed; no direct dependency or SDK version changed.
+- Rebuilt the release APK with the same `--dart-define` values, installed it on the `Pixel_8` emulator, and force-stopped/relaunched. `am start -W` reported `Status: ok` with `LaunchState: COLD` in about one second, where the pre-fix build reported `Status: timeout` after ten seconds.
+- `adb logcat` for the cold start contained no `NoSuchMethodError`, `FATAL`, `AndroidRuntime`, or unhandled exception entries.
+- A screenshot of the running release build showed the authentication entry screen with the Stash It branding, confirming the first frame rendered.
+- `flutter analyze` and `flutter test` were not run after the dependency change, and the physical Android device was not re-tested.
+
 ### Saved Item Detail desktop hero width (2026-11-10)
 
 - `dart format lib/features/saved_items/presentation/saved_item_detail_screen.dart` — completed; no formatting changes were needed.
