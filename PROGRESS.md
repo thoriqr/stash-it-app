@@ -1,6 +1,6 @@
 # Stash-it Flutter — Project Progress
 
-> Last updated: 2026-11-10
+> Last updated: 2026-11-13
 > Scope: Flutter application (`stash-it-app`).
 
 ## Current Status
@@ -9,11 +9,23 @@ The app has its core saved-link experience in place, including authentication, c
 
 Recent work includes **application icons** — the approved Stash It pixel-art inventory icon now supplies the Android launcher and adaptive icons, the Windows native application icon, and the macOS AppIcon catalog — **manual Inbox note composition** — an optional draft note with a compact preview, a bottom-sheet composer, and an explicit save choice that sends the URL and note in one create request — **Saved Item Detail URL actions, price, and note management** — a compact URL row with Android sharing and desktop copying, string-based price display with a non-interactive caveat, and add/update/delete note flows through the existing feedback system — **Inbox price and note display** — nullable `note`, `price_amount` and `price_currency` fields in the Inbox data flow, compact price formatting, a two-line note preview, and a read-only full-note sheet — and **macOS target support**: a macOS runner and Codemagic build workflow are in place, and the existing Windows browser-based Desktop OAuth implementation is shared by Windows and macOS. Static Flutter verification is complete; macOS build, runtime, Google Sign-In, and Keychain behavior have not been verified on a Mac.
 
+Settings now has an About section with the installed app version and a Contact row. Contact opens a compact dialog with the developer's GitHub and Instagram links. Each link is optional, and the Contact row itself is hidden when no link is configured.
+
 The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
 
 **Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, manual Inbox enrichment polling verification, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
 
 ## Verification
+
+### Settings app version and developer contacts (2026-11-13)
+
+- `flutter pub add package_info_plus` — added `package_info_plus` 10.2.2 (and its platform interface); only `pubspec.yaml`, `pubspec.lock`, and the macOS plugin registrant changed.
+- `flutter gen-l10n` — completed; the existing 2 Indonesian preference-warning messages still fall back to English.
+- `dart format` on the changed Dart files — completed.
+- `flutter analyze` — no issues found.
+- `flutter test test/features/settings` — 19 tests passed. No Settings-screen widget test was added or run, because this is a presentation-only change.
+- No application launch, emulator, screenshot, widget visual, or manual visual verification was performed; visual review remains with the project owner.
+- No Android, Windows, or macOS build was run.
 
 ### Android release startup fix — R8 and Kotlin JNI classes (2026-11-12)
 
@@ -231,6 +243,13 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - Profile display-name updates and password management.
 - Persistent theme and language preferences.
 
+### Settings
+
+- The About section shows the installed app version.
+- The Contact row opens a dialog with links to the developer's GitHub and Instagram profiles.
+- The contact links open in the platform's browser or app.
+- Each contact link is optional, and the Contact row is hidden when both links are empty.
+
 ### Save links on this device
 
 - Share links to the app on Android without signing in.
@@ -273,6 +292,7 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - [ ] Verify Windows Google Sign-In end to end against a configured Desktop OAuth client.
 - [ ] Confirm the backend accepts the Desktop OAuth client ID as a valid Google ID-token audience.
 - [ ] Review the Windows desktop layout and interactions manually.
+- [ ] Review the new Settings About section visually.
 - [ ] Localize the remaining theme/language preference warnings.
 - [ ] Review Indonesian translations with a native speaker, including native share fallback wording.
 - [ ] Verify the app on a physical Android device.
@@ -300,6 +320,10 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - The manual Inbox note composer, its two-line preview and the save confirmation have not been visually verified; manual inspection remains with the project owner.
 - The refined borderless Android and Windows launcher icon has not been visually verified; manual inspection remains with the project owner. The macOS assets use the same borderless composition but have not been built or visually verified on a Mac.
 - The refined Windows 16:9 hero image, including the 640 px desktop cap and centering, and the wrapping enrichment status have not been visually verified. macOS shares the same desktop sizing path but has not been run or visually verified either. Manual inspection remains with the project owner.
+- The Settings version row is display-only. No backend update check, update prompt, or comparison logic exists yet.
+- Settings hides the build number. The full package information, including `buildNumber`, remains available through the existing provider for the planned update check.
+- The Contact dialog lists only the configured links, and the Contact row is hidden when both link values are empty.
+- The new Settings About section and Contact dialog have not been visually verified; manual inspection remains with the project owner.
 - Physical-device verification has not yet been completed.
 - Android link sharing still needs verification in cases such as the app being closed, the user being signed out, or the device being offline.
 - If a local-link submission is interrupted, its outcome may be uncertain. Retrying an operation with an uncertain outcome can create a duplicate.

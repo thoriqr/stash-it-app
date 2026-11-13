@@ -39,6 +39,24 @@ class AppLocalizationsId extends AppLocalizations {
   String get languageIndonesian => 'Bahasa Indonesia';
 
   @override
+  String get settingsAbout => 'TENTANG';
+
+  @override
+  String get settingsVersion => 'Versi';
+
+  @override
+  String get settingsContact => 'Kontak';
+
+  @override
+  String get settingsCloseAction => 'Tutup';
+
+  @override
+  String get settingsGithub => 'GitHub';
+
+  @override
+  String get settingsInstagram => 'Instagram';
+
+  @override
   String get navInbox => 'Inbox';
 
   @override

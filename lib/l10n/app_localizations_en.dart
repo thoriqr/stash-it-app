@@ -39,6 +39,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageIndonesian => 'Bahasa Indonesia';
 
   @override
+  String get settingsAbout => 'ABOUT';
+
+  @override
+  String get settingsVersion => 'Version';
+
+  @override
+  String get settingsContact => 'Contact';
+
+  @override
+  String get settingsCloseAction => 'Close';
+
+  @override
+  String get settingsGithub => 'GitHub';
+
+  @override
+  String get settingsInstagram => 'Instagram';
+
+  @override
   String get navInbox => 'Inbox';
 
   @override

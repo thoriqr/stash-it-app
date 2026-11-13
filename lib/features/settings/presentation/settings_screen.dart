@@ -3,12 +3,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:stash_it_app/app/config/developer_contact_config.dart';
+import 'package:stash_it_app/app/feedback/app_feedback.dart';
+import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
+import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/desktop_layout.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../application/language_preference_controller.dart';
+import '../application/package_info_provider.dart';
 import '../application/theme_mode_controller.dart';
 import '../domain/language_preference.dart';
 
@@ -133,11 +140,149 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             ),
+            _SectionLabelRow(label: l10n.settingsAbout, tokens: tokens),
+            Material(
+              color: tokens.surface,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: tokens.borderSubtle),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    FutureBuilder<PackageInfo>(
+                      future: ref.watch(packageInfoProvider),
+                      builder: (context, snapshot) {
+                        final version = snapshot.hasData
+                            ? snapshot.data!.version
+                            : (snapshot.hasError ? '—' : '…');
+                        return _SettingsValueRow(
+                          label: l10n.settingsVersion,
+                          value: version,
+                          tokens: tokens,
+                        );
+                      },
+                    ),
+                    if (DeveloperContactConfig.hasAnyContact) ...[
+                      _RowDivider(tokens: tokens),
+                      _SettingsLinkRow(
+                        label: l10n.settingsContact,
+                        tokens: tokens,
+                        trailingIcon: Icons.chevron_right,
+                        onTap: () => _showContactDialog(context, ref, tokens),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+}
+
+/// Opens a developer contact link in the platform's browser or app.
+///
+/// A refused launch is reported through the app-wide feedback host rather than
+/// leaving the tap without a response.
+Future<void> _openDeveloperLink(WidgetRef ref, String value) async {
+  final url = Uri.tryParse(value);
+  if (url == null || !url.hasAuthority) return;
+
+  bool accepted;
+  try {
+    accepted = await launchUrl(url, mode: LaunchMode.externalApplication);
+  } on Exception {
+    accepted = false;
+  }
+
+  if (!accepted) {
+    ref
+        .read(feedbackProvider.notifier)
+        .show(
+          AppFeedback.localized(
+            tone: FeedbackTone.danger,
+            message: (l10n) => l10n.linkLaunchFailed,
+          ),
+        );
+  }
+}
+
+/// Shows the developer's name and contact links in a compact dialog.
+Future<void> _showContactDialog(
+  BuildContext context,
+  WidgetRef ref,
+  AppTokens tokens,
+) {
+  final l10n = AppLocalizations.of(context);
+
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) => Dialog(
+      backgroundColor: tokens.surfaceRaised,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: AppMetrics.space4,
+        vertical: AppMetrics.space6,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.all(
+          Radius.circular(AppMetrics.radius3),
+        ),
+        side: BorderSide(color: tokens.border),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Padding(
+          padding: const EdgeInsets.all(AppMetrics.space5),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.settingsContact,
+                style: AppTypography.screenHeading.copyWith(
+                  color: tokens.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppMetrics.space3),
+              if (DeveloperContactConfig.githubUrl.isNotEmpty)
+                _SettingsLinkRow(
+                  label: l10n.settingsGithub,
+                  tokens: tokens,
+                  contentPadding: EdgeInsets.zero,
+                  onTap: () =>
+                      _openDeveloperLink(ref, DeveloperContactConfig.githubUrl),
+                ),
+              if (DeveloperContactConfig.githubUrl.isNotEmpty &&
+                  DeveloperContactConfig.instagramUrl.isNotEmpty)
+                _RowDivider(tokens: tokens),
+              if (DeveloperContactConfig.instagramUrl.isNotEmpty)
+                _SettingsLinkRow(
+                  label: l10n.settingsInstagram,
+                  tokens: tokens,
+                  contentPadding: EdgeInsets.zero,
+                  onTap: () => _openDeveloperLink(
+                    ref,
+                    DeveloperContactConfig.instagramUrl,
+                  ),
+                ),
+              const SizedBox(height: AppMetrics.space4),
+              AppButton(
+                label: l10n.settingsCloseAction,
+                variant: AppButtonVariant.secondary,
+                onPressed: () => Navigator.of(dialogContext).pop(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 const List<ThemeMode> _themeChoices = [
@@ -151,6 +296,72 @@ const List<LanguagePreference> _languageChoices = [
   LanguagePreference.english,
   LanguagePreference.indonesian,
 ];
+
+/// A read-only label and value row, used for the app version.
+class _SettingsValueRow extends StatelessWidget {
+  const _SettingsValueRow({
+    required this.label,
+    required this.value,
+    required this.tokens,
+  });
+
+  final String label;
+  final String value;
+  final AppTokens tokens;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppMetrics.space4),
+      title: Text(
+        label,
+        style: AppTypography.itemTitle.copyWith(color: tokens.textPrimary),
+      ),
+      trailing: Text(
+        value,
+        style: AppTypography.body.copyWith(color: tokens.textSecondary),
+      ),
+    );
+  }
+}
+
+/// A developer contact row that opens an external link.
+class _SettingsLinkRow extends StatelessWidget {
+  const _SettingsLinkRow({
+    required this.label,
+    required this.tokens,
+    required this.onTap,
+    this.trailingIcon = Icons.open_in_new,
+    this.contentPadding = const EdgeInsets.symmetric(
+      horizontal: AppMetrics.space4,
+    ),
+  });
+
+  final String label;
+  final AppTokens tokens;
+  final VoidCallback onTap;
+  final IconData trailingIcon;
+  final EdgeInsetsGeometry contentPadding;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      dense: true,
+      contentPadding: contentPadding,
+      title: Text(
+        label,
+        style: AppTypography.itemTitle.copyWith(color: tokens.textPrimary),
+      ),
+      trailing: Icon(
+        trailingIcon,
+        size: AppMetrics.iconSize,
+        color: tokens.textTertiary,
+      ),
+      onTap: onTap,
+    );
+  }
+}
 
 class _SettingsRadioOption<T> extends StatelessWidget {
   const _SettingsRadioOption({

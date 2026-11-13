@@ -158,6 +158,42 @@ abstract class AppLocalizations {
   /// **'Bahasa Indonesia'**
   String get languageIndonesian;
 
+  /// No description provided for @settingsAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'ABOUT'**
+  String get settingsAbout;
+
+  /// No description provided for @settingsVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get settingsVersion;
+
+  /// No description provided for @settingsContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get settingsContact;
+
+  /// No description provided for @settingsCloseAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get settingsCloseAction;
+
+  /// No description provided for @settingsGithub.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub'**
+  String get settingsGithub;
+
+  /// No description provided for @settingsInstagram.
+  ///
+  /// In en, this message translates to:
+  /// **'Instagram'**
+  String get settingsInstagram;
+
   /// Inbox destination label in the shell navigation bar.
   ///
   /// In en, this message translates to:
