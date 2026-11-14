@@ -102,6 +102,12 @@ class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
                     variant: AppButtonVariant.secondary,
                     onPressed: () => context.go(AppRoutes.signUp),
                   ),
+                  const SizedBox(height: AppMetrics.space2),
+                  AppButton(
+                    label: l10n.settingsTooltip,
+                    variant: AppButtonVariant.quiet,
+                    onPressed: () => context.push(AppRoutes.settings),
+                  ),
                   if (pendingCount > 0) ...[
                     const SizedBox(height: AppMetrics.space4),
                     PendingUrlsEntry(

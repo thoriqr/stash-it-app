@@ -42,7 +42,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAbout => 'ABOUT';
 
   @override
+  String get startupFailureTitle => 'Stash-it couldn\'t start';
+
+  @override
+  String get startupFailureBody => 'Please close the app and try again.';
+
+  @override
   String get settingsVersion => 'Version';
+
+  @override
+  String get settingsCheckForUpdates => 'Check for updates';
+
+  @override
+  String get settingsBackToAuth => 'Back to sign in';
 
   @override
   String get settingsContact => 'Contact';
@@ -55,6 +67,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsInstagram => 'Instagram';
+
+  @override
+  String get clientUpdateOptionalTitle => 'Update available';
+
+  @override
+  String get clientUpdateRequiredTitle => 'Update required';
+
+  @override
+  String get clientUpdateOptionalBody => 'A newer version is available.';
+
+  @override
+  String get clientUpdateRequiredBody =>
+      'This version is no longer supported. Update to continue.';
+
+  @override
+  String clientUpdateVersion(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get clientUpdateReleaseNotes => 'WHAT\'S NEW';
+
+  @override
+  String clientUpdateFileSize(String size) {
+    return 'Download size: $size';
+  }
+
+  @override
+  String get clientUpdateDownload => 'Download';
+
+  @override
+  String get clientUpdateLater => 'Later';
+
+  @override
+  String get clientUpdateExit => 'Exit';
+
+  @override
+  String get clientUpdateUpToDate => 'You\'re on the latest version.';
+
+  @override
+  String get clientUpdateCheckFailed =>
+      'Couldn\'t check for updates. Try again shortly.';
 
   @override
   String get navInbox => 'Inbox';

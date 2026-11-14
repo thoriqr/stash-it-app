@@ -187,7 +187,9 @@ void main() {
     );
   });
 
-  testWidgets('direct Settings entry falls back to the Inbox', (tester) async {
+  testWidgets('direct Settings entry falls back to sign-in when signed out', (
+    tester,
+  ) async {
     final router = await pumpApp(tester);
 
     router.go(AppRoutes.settings);
@@ -195,13 +197,12 @@ void main() {
 
     expect(currentPath(router), AppRoutes.settings);
     expect(find.byType(NavigationBar), findsNothing);
-    expect(find.byTooltip('Back to Inbox'), findsOneWidget);
+    expect(find.byTooltip('Back to sign in'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Back to Inbox'));
+    await tester.tap(find.byTooltip('Back to sign in'));
     await tester.pumpAndSettle();
 
-    expect(currentPath(router), AppRoutes.inbox);
-    expect(find.widgetWithText(AppBar, 'INBOX'), findsOneWidget);
-    expect(selectedDestinationIndex(tester), 0);
+    expect(currentPath(router), AppRoutes.auth);
+    expect(find.widgetWithText(AppBar, 'SETTINGS'), findsNothing);
   });
 }

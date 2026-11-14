@@ -164,11 +164,35 @@ abstract class AppLocalizations {
   /// **'ABOUT'**
   String get settingsAbout;
 
+  /// Title shown when the app cannot complete startup.
+  ///
+  /// In en, this message translates to:
+  /// **'Stash-it couldn\'t start'**
+  String get startupFailureTitle;
+
+  /// Plain guidance shown with the startup failure title.
+  ///
+  /// In en, this message translates to:
+  /// **'Please close the app and try again.'**
+  String get startupFailureBody;
+
   /// No description provided for @settingsVersion.
   ///
   /// In en, this message translates to:
   /// **'Version'**
   String get settingsVersion;
+
+  /// Settings row that checks the release endpoint immediately.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates'**
+  String get settingsCheckForUpdates;
+
+  /// Tooltip for the back button when Settings is opened without a session.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to sign in'**
+  String get settingsBackToAuth;
 
   /// No description provided for @settingsContact.
   ///
@@ -193,6 +217,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Instagram'**
   String get settingsInstagram;
+
+  /// Title of the dialog for an update that can be postponed.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available'**
+  String get clientUpdateOptionalTitle;
+
+  /// Title of the dialog for an update that must be installed.
+  ///
+  /// In en, this message translates to:
+  /// **'Update required'**
+  String get clientUpdateRequiredTitle;
+
+  /// Explanation shown for an optional update.
+  ///
+  /// In en, this message translates to:
+  /// **'A newer version is available.'**
+  String get clientUpdateOptionalBody;
+
+  /// Explanation shown for a required update.
+  ///
+  /// In en, this message translates to:
+  /// **'This version is no longer supported. Update to continue.'**
+  String get clientUpdateRequiredBody;
+
+  /// The available release version.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String clientUpdateVersion(String version);
+
+  /// Heading above the release notes text.
+  ///
+  /// In en, this message translates to:
+  /// **'WHAT\'S NEW'**
+  String get clientUpdateReleaseNotes;
+
+  /// The download size of the available release.
+  ///
+  /// In en, this message translates to:
+  /// **'Download size: {size}'**
+  String clientUpdateFileSize(String size);
+
+  /// Starts downloading the available release.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get clientUpdateDownload;
+
+  /// Postpones an optional update.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get clientUpdateLater;
+
+  /// Closes the app when a required update cannot be installed.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get clientUpdateExit;
+
+  /// Shown after a manual check finds no update.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re on the latest version.'**
+  String get clientUpdateUpToDate;
+
+  /// Shown after a manual check cannot reach the server.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t check for updates. Try again shortly.'**
+  String get clientUpdateCheckFailed;
 
   /// Inbox destination label in the shell navigation bar.
   ///

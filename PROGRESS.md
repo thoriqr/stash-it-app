@@ -1,6 +1,6 @@
 # Stash-it Flutter — Project Progress
 
-> Last updated: 2026-11-13
+> Last updated: 2026-11-14
 > Scope: Flutter application (`stash-it-app`).
 
 ## Current Status
@@ -9,13 +9,39 @@ The app has its core saved-link experience in place, including authentication, c
 
 Recent work includes **application icons** — the approved Stash It pixel-art inventory icon now supplies the Android launcher and adaptive icons, the Windows native application icon, and the macOS AppIcon catalog — **manual Inbox note composition** — an optional draft note with a compact preview, a bottom-sheet composer, and an explicit save choice that sends the URL and note in one create request — **Saved Item Detail URL actions, price, and note management** — a compact URL row with Android sharing and desktop copying, string-based price display with a non-interactive caveat, and add/update/delete note flows through the existing feedback system — **Inbox price and note display** — nullable `note`, `price_amount` and `price_currency` fields in the Inbox data flow, compact price formatting, a two-line note preview, and a read-only full-note sheet — and **macOS target support**: a macOS runner and Codemagic build workflow are in place, and the existing Windows browser-based Desktop OAuth implementation is shared by Windows and macOS. Static Flutter verification is complete; macOS build, runtime, Google Sign-In, and Keychain behavior have not been verified on a Mac.
 
-Settings now has an About section with the installed app version and a Contact row. Contact opens a compact dialog with the developer's GitHub and Instagram links. Each link is optional, and the Contact row itself is hidden when no link is configured.
+Settings now has an About section with the installed app version and a Contact row. Contact opens a compact dialog with the developer's GitHub and Instagram links. Each link is optional, and the Contact row itself is hidden when no link is configured. Settings can also be opened before sign-in, and its About section includes a manual Check for updates action.
+
+The app now checks for a newer client release at launch and when it returns to the foreground. An optional release shows a prompt that can be postponed; a required release blocks the app with download and exit actions. Any failure leaves the app fully usable.
+
+Startup is also guarded: if initialization cannot complete, the app shows a plain failure screen instead of opening the normal UI or leaving the native splash in place, and writes the details to the debug log.
 
 The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
 
-**Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, manual Inbox enrichment polling verification, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
+**Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, manual Inbox enrichment polling verification, visual review of the update prompts and signed-out Settings entry, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
 
 ## Verification
+
+### Startup failure handling (2026-11-14)
+
+- `flutter gen-l10n` — completed; the existing 2 Indonesian preference-warning messages still fall back to English.
+- `dart format` on the changed Dart files — completed.
+- `flutter analyze` — no issues found.
+- `flutter test test/app/startup_failure_test.dart` — 2 tests passed.
+- `flutter test` — 1038 tests passed.
+- No application launch, emulator, screenshot, golden, widget visual, or manual visual verification was performed. The bootstrap-failure path, the native splash replacement, and the failure screen remain for the project owner to verify on a device.
+
+### Client update check (2026-11-14)
+
+- Read the backend `docs/swagger.yaml` directly for `GET /client-releases/latest` and the `CheckAPIResponse`, `CheckResponse`, `MinSupportedReleaseResponse`, and `LatestReleaseResponse` schemas.
+- `dart run build_runner build --delete-conflicting-outputs` — the installed build_runner no longer accepts that flag and ignored it; generation completed for the new Retrofit API, Freezed DTOs, and Riverpod controller. Unrelated provider hash-only changes from the same run were reverted.
+- `flutter gen-l10n` — completed; the existing 2 Indonesian preference-warning messages still fall back to English.
+- `dart format` on the changed Dart files — completed.
+- `flutter analyze` — no issues found.
+- `flutter test test/features/client_update test/app/router test/widget_test.dart test/features/settings test/app/localization` — 98 tests passed.
+- `flutter test test/app/auth_redirect_widget_test.dart --plain-name "a signed-out user may open Settings"` — 1 test passed.
+- `flutter test test/app/auth_redirect_widget_test.dart` — 20 tests passed after correcting the stale sign-in heading constant (`Sign in to Stash It` → `Sign in to your account`, which is the copy already used by the app).
+- `flutter test` — 1036 tests passed.
+- No application launch, emulator, screenshot, golden, widget visual, or manual visual verification was performed; the dialogs, the Settings row, and the signed-out Settings entry remain for the project owner to review.
 
 ### Settings app version and developer contacts (2026-11-13)
 
@@ -139,6 +165,24 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - No single full-suite run was performed; broader regression remains with the project owner.
 
 ## Implemented
+
+### Startup failure handling
+
+- If the app cannot complete startup, it shows a plain failure screen instead of opening the normal app or leaving the native splash in place.
+- The screen follows the device language because the saved language preference may be what could not be read.
+- The screen contains no technical detail. The exception type, message, and stack trace are written to the debug log for diagnosis.
+- Flutter widget build errors before the first frame use the same plain fallback instead of the default error widget.
+- The headless Android share intake also logs bootstrap failures and continues to report the existing not-stored outcome.
+
+### Client update check
+
+- The app asks the server once at launch and again when it returns to the foreground whether this build should update. The server decides between no action, an optional update, and a required update; the client never compares version strings.
+- An optional update shows a dismissible prompt with the new version, release notes, and download size. Postponing keeps it out of later automatic prompts for that build, while a manual check still shows it.
+- A required update shows a blocking prompt whose only actions are download and exit.
+- Any check failure — an error status, timeout, transport failure, or unreadable response — leaves the app fully usable. Automatic checks fail silently; a manual check shows a short notice.
+- A release is actionable only when its download address uses HTTPS on the configured download host. Any other address is ignored, with no prompt and no download offered.
+- Settings is available before sign-in. Its About section includes Check for updates, and the installed version remains visible beside it.
+- The download button is present but does not download or install anything in this phase.
 
 ### Saved links
 
@@ -292,7 +336,9 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - [ ] Verify Windows Google Sign-In end to end against a configured Desktop OAuth client.
 - [ ] Confirm the backend accepts the Desktop OAuth client ID as a valid Google ID-token audience.
 - [ ] Review the Windows desktop layout and interactions manually.
-- [ ] Review the new Settings About section visually.
+- [ ] Review the new Settings About section, the Check for updates row, and the signed-out Settings entry visually.
+- [ ] Review the optional and required update prompts visually.
+- [ ] Review the startup failure screen visually and confirm the native splash is replaced when initialization fails.
 - [ ] Localize the remaining theme/language preference warnings.
 - [ ] Review Indonesian translations with a native speaker, including native share fallback wording.
 - [ ] Verify the app on a physical Android device.
@@ -320,8 +366,12 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - The manual Inbox note composer, its two-line preview and the save confirmation have not been visually verified; manual inspection remains with the project owner.
 - The refined borderless Android and Windows launcher icon has not been visually verified; manual inspection remains with the project owner. The macOS assets use the same borderless composition but have not been built or visually verified on a Mac.
 - The refined Windows 16:9 hero image, including the 640 px desktop cap and centering, and the wrapping enrichment status have not been visually verified. macOS shares the same desktop sizing path but has not been run or visually verified either. Manual inspection remains with the project owner.
-- The Settings version row is display-only. No backend update check, update prompt, or comparison logic exists yet.
-- Settings hides the build number. The full package information, including `buildNumber`, remains available through the existing provider for the planned update check.
+- Update checking is implemented, but downloading and installing are not. The download button is a placeholder; checksum verification, download progress, and handing the file to the platform installer belong to phase 2.
+- Settings hides the build number. The full package information, including `buildNumber`, remains available through the existing provider and is used by the update check.
+- The backend currently documents Android and Windows release platforms. macOS is sent as its operating system name too; until a macOS release exists, the endpoint rejects it and the check is silently ignored.
+- The required-update overlay blocks in-app input. On Android, the system Back action can still pop the route underneath it, but the overlay remains until download or exit is chosen.
+- The update prompts, the Check for updates row, and the signed-out Settings entry have not been visually verified; manual inspection remains with the project owner.
+- The startup failure screen has not been visually verified, and the bootstrap-failure path has not been reproduced on a device. The R8/JNI fix for the earlier `shared_preferences` startup hang remains unchanged.
 - The Contact dialog lists only the configured links, and the Contact row is hidden when both link values are empty.
 - The new Settings About section and Contact dialog have not been visually verified; manual inspection remains with the project owner.
 - Physical-device verification has not yet been completed.

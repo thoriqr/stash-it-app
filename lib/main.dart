@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stash_it_app/app/app.dart';
 import 'package:stash_it_app/app/bootstrap.dart';
+import 'package:stash_it_app/app/startup/startup_failure.dart';
 import 'package:stash_it_app/features/pending_urls/application/pending_urls_controller.dart';
 import 'package:stash_it_app/features/pending_urls/application/shared_url_intake.dart';
 import 'package:stash_it_app/features/pending_urls/presentation/share_intake_channel.dart';
@@ -10,13 +11,33 @@ import 'package:stash_it_app/features/pending_urls/presentation/share_intake_loc
 import 'package:stash_it_app/features/settings/domain/language_preference.dart';
 
 Future<void> main() async {
-  // Complete startup initialization before the first frame. Bootstrap
-  // initializes Flutter bindings and loads stored credentials so the router
-  // can select the correct initial screen without showing an incorrect
-  // destination first.
-  final overrides = await bootstrap();
+  WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(ProviderScope(overrides: overrides, child: const StashItApp()));
+  // A build error before or during the first frame must not leave the native
+  // splash in place. The user sees a plain message; the details go to the log.
+  ErrorWidget.builder = (details) {
+    logStartupFailure(
+      details.exception,
+      details.stack ?? StackTrace.current,
+      stage: 'widget',
+    );
+    return const StartupFailureView();
+  };
+
+  try {
+    // Complete startup initialization before the first frame. Bootstrap
+    // initializes Flutter bindings and loads stored credentials so the router
+    // can select the correct initial screen without showing an incorrect
+    // destination first.
+    final overrides = await bootstrap();
+
+    runApp(ProviderScope(overrides: overrides, child: const StashItApp()));
+  } catch (error, stackTrace) {
+    // Do not open the normal app when it cannot start. The failure screen is
+    // the whole application in that case.
+    logStartupFailure(error, stackTrace, stage: 'bootstrap');
+    runApp(const StartupFailureApp());
+  }
 }
 
 /// Headless entrypoint for Android's transparent share activity.
@@ -39,7 +60,8 @@ Future<void> shareIntakeMain() async {
     try {
       container ??= ProviderContainer(overrides: await bootstrap());
       return await container!.read(sharedUrlIntakeProvider).save(raw);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      logStartupFailure(error, stackTrace, stage: 'share-intake');
       return ShareSaveOutcome.notStored;
     }
   }

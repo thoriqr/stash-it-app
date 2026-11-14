@@ -80,3 +80,16 @@ perform only the requested operation and preserve the current session.
 - Do not modify `AGENTS.md` or agent configuration unless explicitly authorised.
 - Do not stage or commit changes, or rewrite Git history.
 - In the final report, state what changed and which checks were actually run.
+
+## Versioning and release labelling
+
+- Every feature or behaviour change that will be distributed must raise both the
+  version and the build number in `pubspec.yaml`.
+- The build number must always increase and must never be reused.
+- Before a release build, an annotated tag matching the commit being built must
+  exist. For example, `1.1.0+2` is tagged `client-v1.1.0-2`.
+- The tag must point at the commit that produced the binary, not at a dirty
+  working tree.
+- Do not commit, tag, or push without the repository owner's approval.
+- A tag is only a label; it does not trigger updates. Releases are published in
+  the backend session.

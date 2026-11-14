@@ -10,11 +10,27 @@
   "languageEnglish": "English",
   "languageIndonesian": "Bahasa Indonesia",
   "settingsAbout": "ABOUT",
+  "startupFailureTitle": "Stash-it couldn't start",
+  "startupFailureBody": "Please close the app and try again.",
   "settingsVersion": "Version",
+  "settingsCheckForUpdates": "Check for updates",
+  "settingsBackToAuth": "Back to sign in",
   "settingsContact": "Contact",
   "settingsCloseAction": "Close",
   "settingsGithub": "GitHub",
   "settingsInstagram": "Instagram",
+  "clientUpdateOptionalTitle": "Update available",
+  "clientUpdateRequiredTitle": "Update required",
+  "clientUpdateOptionalBody": "A newer version is available.",
+  "clientUpdateRequiredBody": "This version is no longer supported. Update to continue.",
+  "clientUpdateVersion": "Version {version}",
+  "clientUpdateReleaseNotes": "WHAT'S NEW",
+  "clientUpdateFileSize": "Download size: {size}",
+  "clientUpdateDownload": "Download",
+  "clientUpdateLater": "Later",
+  "clientUpdateExit": "Exit",
+  "clientUpdateUpToDate": "You're on the latest version.",
+  "clientUpdateCheckFailed": "Couldn't check for updates. Try again shortly.",
   "navInbox": "Inbox",
   "navCollections": "Collections",
   "navSearch": "Search",
@@ -625,6 +641,64 @@
   },
   "@settingsBackToInbox": {
     "description": "Tooltip for the back-to-Inbox button when Settings is entered directly."
+  },
+  "@settingsBackToAuth": {
+    "description": "Tooltip for the back button when Settings is opened without a session."
+  },
+  "@settingsCheckForUpdates": {
+    "description": "Settings row that checks the release endpoint immediately."
+  },
+  "@startupFailureTitle": {
+    "description": "Title shown when the app cannot complete startup."
+  },
+  "@startupFailureBody": {
+    "description": "Plain guidance shown with the startup failure title."
+  },
+  "@clientUpdateOptionalTitle": {
+    "description": "Title of the dialog for an update that can be postponed."
+  },
+  "@clientUpdateRequiredTitle": {
+    "description": "Title of the dialog for an update that must be installed."
+  },
+  "@clientUpdateOptionalBody": {
+    "description": "Explanation shown for an optional update."
+  },
+  "@clientUpdateRequiredBody": {
+    "description": "Explanation shown for a required update."
+  },
+  "@clientUpdateVersion": {
+    "description": "The available release version.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "@clientUpdateReleaseNotes": {
+    "description": "Heading above the release notes text."
+  },
+  "@clientUpdateFileSize": {
+    "description": "The download size of the available release.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "@clientUpdateDownload": {
+    "description": "Starts downloading the available release."
+  },
+  "@clientUpdateLater": {
+    "description": "Postpones an optional update."
+  },
+  "@clientUpdateExit": {
+    "description": "Closes the app when a required update cannot be installed."
+  },
+  "@clientUpdateUpToDate": {
+    "description": "Shown after a manual check finds no update."
+  },
+  "@clientUpdateCheckFailed": {
+    "description": "Shown after a manual check cannot reach the server."
   },
   "@settingsAppearance": {
     "description": "Appearance section heading in Settings."

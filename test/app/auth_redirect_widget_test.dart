@@ -23,7 +23,7 @@ void main() {
   const entryHeading = 'A place for things you find on the internet.';
 
   /// The sign-in form's heading.
-  const formHeading = 'Sign in to Stash It';
+  const formHeading = 'Sign in to your account';
 
   /// The registration form's heading.
   const signUpHeading = 'Create your account';
@@ -122,18 +122,17 @@ void main() {
     },
   );
 
-  testWidgets(
-    'a signed-out user reaching /settings is redirected to the auth entry screen',
-    (tester) async {
-      await pumpApp(
-        tester,
-        AuthStatus.signedOut,
-        initialLocation: AppRoutes.settings,
-      );
+  testWidgets('a signed-out user may open Settings', (tester) async {
+    await pumpApp(
+      tester,
+      AuthStatus.signedOut,
+      initialLocation: AppRoutes.settings,
+    );
 
-      expect(find.text(entryHeading), findsOneWidget);
-    },
-  );
+    expect(find.widgetWithText(AppBar, 'SETTINGS'), findsOneWidget);
+    expect(find.text(entryHeading), findsNothing);
+    expect(find.byType(NavigationBar), findsNothing);
+  });
 
   testWidgets(
     'a signed-out user reaching a saved-item detail is redirected to the auth entry screen',

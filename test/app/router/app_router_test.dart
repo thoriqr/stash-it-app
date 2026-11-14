@@ -13,7 +13,6 @@ void main() {
           AppRoutes.collections,
           AppRoutes.search,
           AppRoutes.profile,
-          AppRoutes.settings,
         ]) {
           expect(
             redirectFor(AuthStatus.signedOut, location),
@@ -39,6 +38,7 @@ void main() {
         ),
         AppRoutes.forgotPasswordFinalize,
         AppRoutes.savedOnDevice,
+        AppRoutes.settings,
       ]) {
         expect(
           redirectFor(AuthStatus.signedOut, location),

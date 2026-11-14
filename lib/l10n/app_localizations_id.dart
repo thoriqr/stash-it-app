@@ -42,7 +42,19 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsAbout => 'TENTANG';
 
   @override
+  String get startupFailureTitle => 'Stash-it tidak bisa dimulai';
+
+  @override
+  String get startupFailureBody => 'Tutup aplikasi, lalu coba lagi.';
+
+  @override
   String get settingsVersion => 'Versi';
+
+  @override
+  String get settingsCheckForUpdates => 'Periksa pembaruan';
+
+  @override
+  String get settingsBackToAuth => 'Kembali ke masuk';
 
   @override
   String get settingsContact => 'Kontak';
@@ -55,6 +67,48 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settingsInstagram => 'Instagram';
+
+  @override
+  String get clientUpdateOptionalTitle => 'Pembaruan tersedia';
+
+  @override
+  String get clientUpdateRequiredTitle => 'Pembaruan wajib';
+
+  @override
+  String get clientUpdateOptionalBody => 'Versi baru sudah tersedia.';
+
+  @override
+  String get clientUpdateRequiredBody =>
+      'Versi ini tidak lagi didukung. Perbarui untuk melanjutkan.';
+
+  @override
+  String clientUpdateVersion(String version) {
+    return 'Versi $version';
+  }
+
+  @override
+  String get clientUpdateReleaseNotes => 'YANG BARU';
+
+  @override
+  String clientUpdateFileSize(String size) {
+    return 'Ukuran unduhan: $size';
+  }
+
+  @override
+  String get clientUpdateDownload => 'Unduh';
+
+  @override
+  String get clientUpdateLater => 'Nanti';
+
+  @override
+  String get clientUpdateExit => 'Keluar';
+
+  @override
+  String get clientUpdateUpToDate => 'Aplikasi sudah versi terbaru.';
+
+  @override
+  String get clientUpdateCheckFailed =>
+      'Tidak bisa memeriksa pembaruan. Coba lagi sebentar lagi.';
 
   @override
   String get navInbox => 'Inbox';

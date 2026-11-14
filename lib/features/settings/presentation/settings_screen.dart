@@ -9,6 +9,8 @@ import 'package:stash_it_app/app/feedback/app_feedback.dart';
 import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/features/auth/application/auth_state.dart';
+import 'package:stash_it_app/features/client_update/application/client_update_controller.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/desktop_layout.dart';
@@ -38,6 +40,7 @@ class SettingsScreen extends ConsumerWidget {
     // to pop to. The fallback is shown only in that case; a Settings route pushed
     // from a destination keeps the ordinary back affordance.
     final canPop = Navigator.of(context).canPop();
+    final signedIn = ref.watch(authStateProvider).isSignedIn;
 
     return Scaffold(
       appBar: AppBar(
@@ -46,8 +49,11 @@ class SettingsScreen extends ConsumerWidget {
             ? null
             : IconButton(
                 icon: const Icon(Icons.arrow_back, size: AppMetrics.iconSize),
-                tooltip: l10n.settingsBackToInbox,
-                onPressed: () => context.go(AppRoutes.inbox),
+                tooltip: signedIn
+                    ? l10n.settingsBackToInbox
+                    : l10n.settingsBackToAuth,
+                onPressed: () =>
+                    context.go(signedIn ? AppRoutes.inbox : AppRoutes.auth),
               ),
       ),
       body: DesktopContentFrame(
@@ -163,6 +169,18 @@ class SettingsScreen extends ConsumerWidget {
                           tokens: tokens,
                         );
                       },
+                    ),
+                    _RowDivider(tokens: tokens),
+                    _SettingsLinkRow(
+                      label: l10n.settingsCheckForUpdates,
+                      tokens: tokens,
+                      trailingIcon: Icons.refresh,
+                      busy: ref.watch(clientUpdateProvider).checking,
+                      onTap: () => unawaited(
+                        ref
+                            .read(clientUpdateProvider.notifier)
+                            .check(automatic: false),
+                      ),
                     ),
                     if (DeveloperContactConfig.hasAnyContact) ...[
                       _RowDivider(tokens: tokens),
@@ -336,6 +354,7 @@ class _SettingsLinkRow extends StatelessWidget {
     this.contentPadding = const EdgeInsets.symmetric(
       horizontal: AppMetrics.space4,
     ),
+    this.busy = false,
   });
 
   final String label;
@@ -343,6 +362,9 @@ class _SettingsLinkRow extends StatelessWidget {
   final VoidCallback onTap;
   final IconData trailingIcon;
   final EdgeInsetsGeometry contentPadding;
+
+  /// Replaces the trailing icon with a progress indicator and blocks taps.
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
@@ -353,12 +375,21 @@ class _SettingsLinkRow extends StatelessWidget {
         label,
         style: AppTypography.itemTitle.copyWith(color: tokens.textPrimary),
       ),
-      trailing: Icon(
-        trailingIcon,
-        size: AppMetrics.iconSize,
-        color: tokens.textTertiary,
-      ),
-      onTap: onTap,
+      trailing: busy
+          ? SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: tokens.accent,
+              ),
+            )
+          : Icon(
+              trailingIcon,
+              size: AppMetrics.iconSize,
+              color: tokens.textTertiary,
+            ),
+      onTap: busy ? null : onTap,
     );
   }
 }

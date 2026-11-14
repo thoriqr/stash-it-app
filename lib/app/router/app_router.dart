@@ -95,7 +95,8 @@ String? redirectFor(AuthStatus auth, String location) {
         atForgotPassword ||
         atForgotPasswordVerify ||
         atForgotPasswordFinalize ||
-        location == AppRoutes.savedOnDevice) {
+        location == AppRoutes.savedOnDevice ||
+        location == AppRoutes.settings) {
       return null;
     }
     return AppRoutes.auth;

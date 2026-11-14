@@ -10,6 +10,8 @@ import 'package:stash_it_app/app/localization/locale_resolution.dart';
 import 'package:stash_it_app/app/router/app_router.dart';
 import 'package:stash_it_app/app/session/session_boundary.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
+import 'package:stash_it_app/features/client_update/application/client_update_controller.dart';
+import 'package:stash_it_app/features/client_update/presentation/client_update_host.dart';
 import 'package:stash_it_app/features/pending_urls/application/pending_urls_controller.dart';
 import 'package:stash_it_app/features/pending_urls/application/save_pending_urls_controller.dart';
 import 'package:stash_it_app/features/pending_urls/application/shared_url_intake.dart';
@@ -51,6 +53,14 @@ class _StashItAppState extends ConsumerState<StashItApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
+    // The update check is best effort and never blocks the first frame. It is
+    // scheduled after the first build because a provider cannot be modified
+    // during initState.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(ref.read(clientUpdateProvider.notifier).check(automatic: true));
+    });
+
     // Handles shares in the live UI engine. Reusing its session controller
     // keeps token renewal under the same serialized session flow.
     bindShareIntakeChannel(
@@ -75,6 +85,12 @@ class _StashItAppState extends ConsumerState<StashItApp>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Re-check after background activity so a release published meanwhile is
+      // seen. The controller ignores a required prompt already on screen.
+      unawaited(ref.read(clientUpdateProvider.notifier).check(automatic: true));
+    }
+
     if (state == AppLifecycleState.resumed &&
         !ref.read(savePendingUrlsProvider).isRunning) {
       // Refresh the local list after background activity, including shares
@@ -138,13 +154,15 @@ class _StashItAppState extends ConsumerState<StashItApp>
       //
       // FeedbackHost wraps SkeletonizerConfig so notices remain above routed
       // content, including authentication screens and the navigation bar.
-      builder: (context, child) => FeedbackHost(
-        child: SkeletonizerConfig(
-          data: appSkeletonizerConfig(
-            Theme.of(context).brightness,
-            reducedMotion: MediaQuery.disableAnimationsOf(context),
+      builder: (context, child) => ClientUpdateHost(
+        child: FeedbackHost(
+          child: SkeletonizerConfig(
+            data: appSkeletonizerConfig(
+              Theme.of(context).brightness,
+              reducedMotion: MediaQuery.disableAnimationsOf(context),
+            ),
+            child: child ?? const SizedBox.shrink(),
           ),
-          child: child ?? const SizedBox.shrink(),
         ),
       ),
       // Watch the provider so the router and its authentication refresh
