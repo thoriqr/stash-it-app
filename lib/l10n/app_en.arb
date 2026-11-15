@@ -31,6 +31,22 @@
   "clientUpdateExit": "Exit",
   "clientUpdateUpToDate": "You're on the latest version.",
   "clientUpdateCheckFailed": "Couldn't check for updates. Try again shortly.",
+  "clientUpdateDownloading": "Downloading…",
+  "clientUpdateDownloadProgress": "{received} of {total}",
+  "clientUpdateDownloadedBytes": "{size} downloaded",
+  "clientUpdateVerifying": "Verifying…",
+  "clientUpdateOpening": "Opening the downloaded file…",
+  "clientUpdateRetry": "Try again",
+  "clientUpdateOpenAgain": "Open again",
+  "clientUpdateInstallOpenedAndroid": "The installer was opened. Follow the prompts to finish.",
+  "clientUpdateInstallOpenedWindows": "The ZIP was opened. Extract it and run the app.",
+  "clientUpdateInstallUnsupported": "Updates are not supported on this device.",
+  "clientUpdateDownloadFailed": "The update couldn't be downloaded. Try again.",
+  "clientUpdateChecksumMismatch": "The downloaded file couldn't be verified. Try again.",
+  "clientUpdateChecksumMissing": "This release can't be verified. Try again later.",
+  "clientUpdateUnsafeDownload": "This update can't be downloaded safely.",
+  "clientUpdateInstallerFailed": "The installer couldn't be opened. Try again.",
+  "clientUpdateInstallPermission": "Allow Stash-it to install apps, then try again.",
   "navInbox": "Inbox",
   "navCollections": "Collections",
   "navSearch": "Search",
@@ -699,6 +715,67 @@
   },
   "@clientUpdateCheckFailed": {
     "description": "Shown after a manual check cannot reach the server."
+  },
+  "@clientUpdateDownloading": {
+    "description": "Status while the release artifact is downloading."
+  },
+  "@clientUpdateDownloadProgress": {
+    "description": "Received and total artifact size.",
+    "placeholders": {
+      "received": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@clientUpdateDownloadedBytes": {
+    "description": "Received artifact size when the total is unknown.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "@clientUpdateVerifying": {
+    "description": "Status while the downloaded artifact checksum is verified."
+  },
+  "@clientUpdateOpening": {
+    "description": "Status while the downloaded artifact is handed to the platform."
+  },
+  "@clientUpdateRetry": {
+    "description": "Retries a failed download or installer handoff."
+  },
+  "@clientUpdateOpenAgain": {
+    "description": "Reopens an already downloaded artifact."
+  },
+  "@clientUpdateInstallOpenedAndroid": {
+    "description": "The Android package installer was opened."
+  },
+  "@clientUpdateInstallOpenedWindows": {
+    "description": "The Windows ZIP was opened for manual extraction."
+  },
+  "@clientUpdateInstallUnsupported": {
+    "description": "This platform has no install handoff."
+  },
+  "@clientUpdateDownloadFailed": {
+    "description": "The artifact could not be downloaded."
+  },
+  "@clientUpdateChecksumMismatch": {
+    "description": "The downloaded artifact did not match its checksum."
+  },
+  "@clientUpdateChecksumMissing": {
+    "description": "The release did not include a usable checksum."
+  },
+  "@clientUpdateUnsafeDownload": {
+    "description": "The download URL failed the HTTPS host allowlist."
+  },
+  "@clientUpdateInstallerFailed": {
+    "description": "The platform could not open the downloaded artifact."
+  },
+  "@clientUpdateInstallPermission": {
+    "description": "Android needs the user to allow installs from this app."
   },
   "@settingsAppearance": {
     "description": "Appearance section heading in Settings."

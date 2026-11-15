@@ -114,16 +114,6 @@ class ClientUpdate extends _$ClientUpdate {
     );
   }
 
-  /// The download action for the current prompt.
-  ///
-  /// Downloading is not implemented yet; this is the single callback the
-  /// download flow will replace.
-  void requestDownload() {
-    final prompt = state.prompt;
-    if (prompt == null) return;
-    _log('download requested for build ${prompt.release.build}');
-  }
-
   void _apply(ClientUpdateCheckResult result, {required bool automatic}) {
     switch (result) {
       case ClientUpdateNone():

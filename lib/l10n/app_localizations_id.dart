@@ -111,6 +111,67 @@ class AppLocalizationsId extends AppLocalizations {
       'Tidak bisa memeriksa pembaruan. Coba lagi sebentar lagi.';
 
   @override
+  String get clientUpdateDownloading => 'Mengunduh…';
+
+  @override
+  String clientUpdateDownloadProgress(String received, String total) {
+    return '$received dari $total';
+  }
+
+  @override
+  String clientUpdateDownloadedBytes(String size) {
+    return '$size terunduh';
+  }
+
+  @override
+  String get clientUpdateVerifying => 'Memverifikasi…';
+
+  @override
+  String get clientUpdateOpening => 'Membuka file unduhan…';
+
+  @override
+  String get clientUpdateRetry => 'Coba lagi';
+
+  @override
+  String get clientUpdateOpenAgain => 'Buka lagi';
+
+  @override
+  String get clientUpdateInstallOpenedAndroid =>
+      'Installer sudah dibuka. Ikuti petunjuk untuk menyelesaikan.';
+
+  @override
+  String get clientUpdateInstallOpenedWindows =>
+      'ZIP sudah dibuka. Ekstrak lalu jalankan aplikasinya.';
+
+  @override
+  String get clientUpdateInstallUnsupported =>
+      'Pembaruan tidak didukung di perangkat ini.';
+
+  @override
+  String get clientUpdateDownloadFailed =>
+      'Pembaruan tidak bisa diunduh. Coba lagi.';
+
+  @override
+  String get clientUpdateChecksumMismatch =>
+      'File yang diunduh tidak bisa diverifikasi. Coba lagi.';
+
+  @override
+  String get clientUpdateChecksumMissing =>
+      'Rilis ini tidak bisa diverifikasi. Coba lagi nanti.';
+
+  @override
+  String get clientUpdateUnsafeDownload =>
+      'Pembaruan ini tidak bisa diunduh dengan aman.';
+
+  @override
+  String get clientUpdateInstallerFailed =>
+      'Installer tidak bisa dibuka. Coba lagi.';
+
+  @override
+  String get clientUpdateInstallPermission =>
+      'Izinkan Stash-it memasang aplikasi, lalu coba lagi.';
+
+  @override
   String get navInbox => 'Inbox';
 
   @override

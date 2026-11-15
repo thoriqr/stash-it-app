@@ -290,6 +290,102 @@ abstract class AppLocalizations {
   /// **'Couldn\'t check for updates. Try again shortly.'**
   String get clientUpdateCheckFailed;
 
+  /// Status while the release artifact is downloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading…'**
+  String get clientUpdateDownloading;
+
+  /// Received and total artifact size.
+  ///
+  /// In en, this message translates to:
+  /// **'{received} of {total}'**
+  String clientUpdateDownloadProgress(String received, String total);
+
+  /// Received artifact size when the total is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} downloaded'**
+  String clientUpdateDownloadedBytes(String size);
+
+  /// Status while the downloaded artifact checksum is verified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying…'**
+  String get clientUpdateVerifying;
+
+  /// Status while the downloaded artifact is handed to the platform.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening the downloaded file…'**
+  String get clientUpdateOpening;
+
+  /// Retries a failed download or installer handoff.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get clientUpdateRetry;
+
+  /// Reopens an already downloaded artifact.
+  ///
+  /// In en, this message translates to:
+  /// **'Open again'**
+  String get clientUpdateOpenAgain;
+
+  /// The Android package installer was opened.
+  ///
+  /// In en, this message translates to:
+  /// **'The installer was opened. Follow the prompts to finish.'**
+  String get clientUpdateInstallOpenedAndroid;
+
+  /// The Windows ZIP was opened for manual extraction.
+  ///
+  /// In en, this message translates to:
+  /// **'The ZIP was opened. Extract it and run the app.'**
+  String get clientUpdateInstallOpenedWindows;
+
+  /// This platform has no install handoff.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates are not supported on this device.'**
+  String get clientUpdateInstallUnsupported;
+
+  /// The artifact could not be downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'The update couldn\'t be downloaded. Try again.'**
+  String get clientUpdateDownloadFailed;
+
+  /// The downloaded artifact did not match its checksum.
+  ///
+  /// In en, this message translates to:
+  /// **'The downloaded file couldn\'t be verified. Try again.'**
+  String get clientUpdateChecksumMismatch;
+
+  /// The release did not include a usable checksum.
+  ///
+  /// In en, this message translates to:
+  /// **'This release can\'t be verified. Try again later.'**
+  String get clientUpdateChecksumMissing;
+
+  /// The download URL failed the HTTPS host allowlist.
+  ///
+  /// In en, this message translates to:
+  /// **'This update can\'t be downloaded safely.'**
+  String get clientUpdateUnsafeDownload;
+
+  /// The platform could not open the downloaded artifact.
+  ///
+  /// In en, this message translates to:
+  /// **'The installer couldn\'t be opened. Try again.'**
+  String get clientUpdateInstallerFailed;
+
+  /// Android needs the user to allow installs from this app.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Stash-it to install apps, then try again.'**
+  String get clientUpdateInstallPermission;
+
   /// Inbox destination label in the shell navigation bar.
   ///
   /// In en, this message translates to:

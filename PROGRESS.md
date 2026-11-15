@@ -1,6 +1,6 @@
 # Stash-it Flutter — Project Progress
 
-> Last updated: 2026-11-14
+> Last updated: 2026-11-15
 > Scope: Flutter application (`stash-it-app`).
 
 ## Current Status
@@ -11,15 +11,40 @@ Recent work includes **application icons** — the approved Stash It pixel-art i
 
 Settings now has an About section with the installed app version and a Contact row. Contact opens a compact dialog with the developer's GitHub and Instagram links. Each link is optional, and the Contact row itself is hidden when no link is configured. Settings can also be opened before sign-in, and its About section includes a manual Check for updates action.
 
-The app now checks for a newer client release at launch and when it returns to the foreground. An optional release shows a prompt that can be postponed; a required release blocks the app with download and exit actions. Any failure leaves the app fully usable.
+The app now checks for a newer client release at launch and when it returns to the foreground. An optional release shows a prompt that can be postponed; a required release blocks the app with download and exit actions. Any failure leaves the app fully usable. A release can be downloaded with progress, verified against its SHA-256 checksum, and handed to the Android installer or the Windows file handler for manual installation.
 
 Startup is also guarded: if initialization cannot complete, the app shows a plain failure screen instead of opening the normal UI or leaving the native splash in place, and writes the details to the debug log.
 
 The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
 
-**Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, manual Inbox enrichment polling verification, visual review of the update prompts and signed-out Settings entry, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
+**Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, manual Inbox enrichment polling verification, visual review of the update prompts and signed-out Settings entry, manual Android/Windows update download and install verification, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
 
 ## Verification
+
+### Android installer handoff fix (2026-11-15)
+
+- Root cause found in the native path: the download service wrote the artifact to `cacheDir/stash_it_updates`, while `MainActivity` and `update_file_paths.xml` used `cacheDir/updates`. The native check therefore returned `PlatformException(invalid_path, "The APK is not inside the update cache.", null)` for every handoff, and the Dart side collapsed it into the generic installer message.
+- Changed the download directory to `cacheDir/updates`, matching the manifest provider path and the Kotlin validation.
+- Kotlin now logs the resolved APK path, existence, size, updates directory, inside flag, provider URI, permission state, and intent failure under the `StashItInstaller` tag.
+- `canRequestPackageInstalls()` is checked on Android O and later. When it is false, the app opens the per-package Install unknown apps settings and returns `install_permission_required`; the dialog shows a specific permission message with Retry.
+- Dart now logs the actual `PlatformException` code/message/details and preserves them in `ReleaseInstallFailed`; the user-facing copy remains plain.
+- The FileProvider authority `${applicationId}.updates` matches the Kotlin authority in the source, and `update_file_paths.xml` exposes only `cache/updates`. The intent uses ACTION_VIEW, the APK MIME type, `FLAG_GRANT_READ_URI_PERMISSION`, `FLAG_ACTIVITY_NEW_TASK`, and `ClipData`.
+- `adb logcat -d` on the connected emulator contained no matching installer entries from the previous run; the old code did not log the swallowed PlatformException. The code path above identifies the exception the previous build produced.
+- `flutter analyze` — no issues found.
+- `flutter test test/features/client_update` — 64 tests passed.
+- `flutter test` — 1071 tests passed.
+- No build or run was performed. The merged-manifest provider entry and the device install flow remain manual checks after a rebuild.
+
+### Client update download and install handoff (2026-11-14)
+
+- `flutter pub get` — promoted `path_provider` 2.1.6 from a transitive dependency to a direct dependency; no new package version was added. `pubspec.yaml` is now `1.1.1+3`.
+- `dart run build_runner build --delete-conflicting-outputs` — the installed build_runner no longer accepts that flag and ignored it; generation completed for the new download controller. Unrelated provider hash-only changes from the same run were reverted.
+- `flutter gen-l10n` — completed; the existing 2 Indonesian preference-warning messages still fall back to English.
+- `dart format` on the changed Dart files — completed.
+- `flutter analyze` — no issues found.
+- `flutter test test/features/client_update` — 62 tests passed.
+- `flutter test` — 1069 tests passed.
+- No application launch, emulator, screenshot, golden, widget visual, Android build, Windows build, or manual install verification was performed. Installing the downloaded APK/ZIP remains for the project owner.
 
 ### Startup failure handling (2026-11-14)
 
@@ -182,7 +207,17 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - Any check failure — an error status, timeout, transport failure, or unreadable response — leaves the app fully usable. Automatic checks fail silently; a manual check shows a short notice.
 - A release is actionable only when its download address uses HTTPS on the configured download host. Any other address is ignored, with no prompt and no download offered.
 - Settings is available before sign-in. Its About section includes Check for updates, and the installed version remains visible beside it.
-- The download button is present but does not download or install anything in this phase.
+
+### Client update download and install handoff
+
+- The Download action saves the release artifact to app-managed temporary storage and shows download progress in the prompt.
+- The download host is checked again immediately before the request. Redirects are not followed, so a response cannot move the download to another host. The download client carries no API credentials.
+- The saved file's SHA-256 is compared with the release checksum. A mismatch, a missing checksum, a download failure, or a cancellation deletes the temporary file and never offers installation.
+- Android hands a verified APK to the system package installer; the user must approve the install. Windows opens the downloaded ZIP in Explorer or its default handler for manual extraction. No silent install is attempted.
+- Android reads the verified APK from `cacheDir/updates`, the same directory exposed by the FileProvider and checked natively. A denied unknown-apps permission opens the system settings for Stash-it and leaves the prompt on a specific Retry message.
+- Installer failures keep their platform code/message/details in the debug log; the user sees only plain copy.
+- An optional update can still be postponed; a required update stays blocking and offers retry or exit after a failure.
+- The download button, progress, retry, and handoff states are covered by logic and widget tests; the native installer path remains a manual device check.
 
 ### Saved links
 
@@ -338,6 +373,9 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - [ ] Review the Windows desktop layout and interactions manually.
 - [ ] Review the new Settings About section, the Check for updates row, and the signed-out Settings entry visually.
 - [ ] Review the optional and required update prompts visually.
+- [ ] Review download progress, retry, and install-handoff states visually.
+- [ ] Test the Android download, checksum rejection, installer handoff, and unknown-apps approval on a device.
+- [ ] Test the Windows ZIP download and Explorer/default-handler handoff manually.
 - [ ] Review the startup failure screen visually and confirm the native splash is replaced when initialization fails.
 - [ ] Localize the remaining theme/language preference warnings.
 - [ ] Review Indonesian translations with a native speaker, including native share fallback wording.
@@ -366,11 +404,14 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - The manual Inbox note composer, its two-line preview and the save confirmation have not been visually verified; manual inspection remains with the project owner.
 - The refined borderless Android and Windows launcher icon has not been visually verified; manual inspection remains with the project owner. The macOS assets use the same borderless composition but have not been built or visually verified on a Mac.
 - The refined Windows 16:9 hero image, including the 640 px desktop cap and centering, and the wrapping enrichment status have not been visually verified. macOS shares the same desktop sizing path but has not been run or visually verified either. Manual inspection remains with the project owner.
-- Update checking is implemented, but downloading and installing are not. The download button is a placeholder; checksum verification, download progress, and handing the file to the platform installer belong to phase 2.
+- Update download and install handoff have not been exercised on a device. Android requires the user to allow installing unknown apps; Windows opens the ZIP/Explorer for manual extraction.
+- The Android installer handoff uses a native MethodChannel, FileProvider, and `REQUEST_INSTALL_PACKAGES`. It is not covered by Flutter tests and needs manual verification on a device after the cache-directory fix.
+- `REQUEST_INSTALL_PACKAGES` is a restricted permission if the app is ever published on Google Play. The current distribution path is the backend/R2 release flow, not Play.
+- macOS has no install handoff; the release endpoint is silently ignored until a macOS release exists.
 - Settings hides the build number. The full package information, including `buildNumber`, remains available through the existing provider and is used by the update check.
 - The backend currently documents Android and Windows release platforms. macOS is sent as its operating system name too; until a macOS release exists, the endpoint rejects it and the check is silently ignored.
 - The required-update overlay blocks in-app input. On Android, the system Back action can still pop the route underneath it, but the overlay remains until download or exit is chosen.
-- The update prompts, the Check for updates row, and the signed-out Settings entry have not been visually verified; manual inspection remains with the project owner.
+- The update prompts, download progress, retry/handoff states, the Check for updates row, and the signed-out Settings entry have not been visually verified; manual inspection remains with the project owner.
 - The startup failure screen has not been visually verified, and the bootstrap-failure path has not been reproduced on a device. The R8/JNI fix for the earlier `shared_preferences` startup hang remains unchanged.
 - The Contact dialog lists only the configured links, and the Contact row is hidden when both link values are empty.
 - The new Settings About section and Contact dialog have not been visually verified; manual inspection remains with the project owner.

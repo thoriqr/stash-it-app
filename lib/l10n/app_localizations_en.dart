@@ -111,6 +111,67 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t check for updates. Try again shortly.';
 
   @override
+  String get clientUpdateDownloading => 'Downloading…';
+
+  @override
+  String clientUpdateDownloadProgress(String received, String total) {
+    return '$received of $total';
+  }
+
+  @override
+  String clientUpdateDownloadedBytes(String size) {
+    return '$size downloaded';
+  }
+
+  @override
+  String get clientUpdateVerifying => 'Verifying…';
+
+  @override
+  String get clientUpdateOpening => 'Opening the downloaded file…';
+
+  @override
+  String get clientUpdateRetry => 'Try again';
+
+  @override
+  String get clientUpdateOpenAgain => 'Open again';
+
+  @override
+  String get clientUpdateInstallOpenedAndroid =>
+      'The installer was opened. Follow the prompts to finish.';
+
+  @override
+  String get clientUpdateInstallOpenedWindows =>
+      'The ZIP was opened. Extract it and run the app.';
+
+  @override
+  String get clientUpdateInstallUnsupported =>
+      'Updates are not supported on this device.';
+
+  @override
+  String get clientUpdateDownloadFailed =>
+      'The update couldn\'t be downloaded. Try again.';
+
+  @override
+  String get clientUpdateChecksumMismatch =>
+      'The downloaded file couldn\'t be verified. Try again.';
+
+  @override
+  String get clientUpdateChecksumMissing =>
+      'This release can\'t be verified. Try again later.';
+
+  @override
+  String get clientUpdateUnsafeDownload =>
+      'This update can\'t be downloaded safely.';
+
+  @override
+  String get clientUpdateInstallerFailed =>
+      'The installer couldn\'t be opened. Try again.';
+
+  @override
+  String get clientUpdateInstallPermission =>
+      'Allow Stash-it to install apps, then try again.';
+
+  @override
   String get navInbox => 'Inbox';
 
   @override

@@ -56,7 +56,7 @@ final class ClientUpdateProvider
   }
 }
 
-String _$clientUpdateHash() => r'a4cb9913b9fb7152f69aae2a77a612425306a916';
+String _$clientUpdateHash() => r'6a2400071a5a420ea593b2d5064c3ddbe3dc4fa0';
 
 /// Reads the release policy at launch and on resume, and when the user asks.
 ///

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/client_update/domain/client_update_release.dart';
+import 'package:stash_it_app/features/client_update/domain/release_download.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 
@@ -22,21 +23,29 @@ String? formatReleaseSize(int? bytes) {
   return '$bytes B';
 }
 
-/// Presents a pending update.
+/// Presents a pending update, including download progress and handoff state.
 ///
-/// An optional update can be postponed. A required update offers only download
-/// and exit, and its barrier cannot be dismissed.
+/// An optional update can be postponed. A required update offers download and
+/// exit, and its barrier cannot be dismissed.
 class ClientUpdateDialog extends StatelessWidget {
   const ClientUpdateDialog({
     required this.prompt,
+    required this.download,
+    required this.platform,
     required this.onDownload,
+    required this.onRetry,
+    required this.onOpenAgain,
     required this.onLater,
     required this.onExit,
     super.key,
   });
 
   final ClientUpdatePrompt prompt;
+  final ClientUpdateDownloadState download;
+  final String platform;
   final VoidCallback onDownload;
+  final VoidCallback onRetry;
+  final VoidCallback onOpenAgain;
   final VoidCallback onLater;
   final VoidCallback onExit;
 
@@ -118,24 +127,174 @@ class ClientUpdateDialog extends StatelessWidget {
                   ),
                 ),
               ],
+              if (_statusFor(l10n, tokens) case final status?) ...[
+                const SizedBox(height: AppMetrics.space4),
+                status,
+              ],
               const SizedBox(height: AppMetrics.space5),
-              AppButton(
-                label: l10n.clientUpdateDownload,
-                variant: AppButtonVariant.primary,
-                onPressed: onDownload,
-              ),
-              const SizedBox(height: AppMetrics.space2),
-              AppButton(
-                label: required
-                    ? l10n.clientUpdateExit
-                    : l10n.clientUpdateLater,
-                variant: AppButtonVariant.secondary,
-                onPressed: required ? onExit : onLater,
-              ),
+              ..._actions(l10n, required: required),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget? _statusFor(AppLocalizations l10n, AppTokens tokens) {
+    switch (download.stage) {
+      case ClientUpdateDownloadStage.downloading:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            LinearProgressIndicator(
+              value: download.progress,
+              minHeight: 4,
+              backgroundColor: tokens.surfaceSunken,
+              color: tokens.accent,
+            ),
+            const SizedBox(height: AppMetrics.space2),
+            Text(
+              l10n.clientUpdateDownloading,
+              style: AppTypography.meta.copyWith(color: tokens.textSecondary),
+            ),
+            const SizedBox(height: AppMetrics.space1),
+            Text(
+              _downloadDetail(l10n),
+              style: AppTypography.meta.copyWith(color: tokens.textTertiary),
+            ),
+          ],
+        );
+
+      case ClientUpdateDownloadStage.verifying:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            LinearProgressIndicator(
+              minHeight: 4,
+              backgroundColor: tokens.surfaceSunken,
+              color: tokens.accent,
+            ),
+            const SizedBox(height: AppMetrics.space2),
+            Text(
+              l10n.clientUpdateVerifying,
+              style: AppTypography.meta.copyWith(color: tokens.textSecondary),
+            ),
+          ],
+        );
+
+      case ClientUpdateDownloadStage.opening:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            LinearProgressIndicator(
+              minHeight: 4,
+              backgroundColor: tokens.surfaceSunken,
+              color: tokens.accent,
+            ),
+            const SizedBox(height: AppMetrics.space2),
+            Text(
+              l10n.clientUpdateOpening,
+              style: AppTypography.meta.copyWith(color: tokens.textSecondary),
+            ),
+          ],
+        );
+
+      case ClientUpdateDownloadStage.failed:
+        return Text(
+          _errorCopy(l10n),
+          style: AppTypography.body.copyWith(color: tokens.danger),
+        );
+
+      case ClientUpdateDownloadStage.opened:
+        return Text(
+          platform == 'windows'
+              ? l10n.clientUpdateInstallOpenedWindows
+              : l10n.clientUpdateInstallOpenedAndroid,
+          style: AppTypography.body.copyWith(color: tokens.textSecondary),
+        );
+
+      case ClientUpdateDownloadStage.idle:
+        return null;
+    }
+  }
+
+  String _downloadDetail(AppLocalizations l10n) {
+    final received = _sizeLabel(download.receivedBytes);
+    final total = download.totalBytes;
+    if (total != null && total > 0) {
+      return l10n.clientUpdateDownloadProgress(received, _sizeLabel(total));
+    }
+    return l10n.clientUpdateDownloadedBytes(received);
+  }
+
+  String _sizeLabel(int bytes) {
+    return formatReleaseSize(bytes) ?? '$bytes B';
+  }
+
+  String _errorCopy(AppLocalizations l10n) {
+    return switch (download.error) {
+      ClientUpdateDownloadError.checksumMismatch =>
+        l10n.clientUpdateChecksumMismatch,
+      ClientUpdateDownloadError.checksumMissing =>
+        l10n.clientUpdateChecksumMissing,
+      ClientUpdateDownloadError.hostRejected => l10n.clientUpdateUnsafeDownload,
+      ClientUpdateDownloadError.unsupportedPlatform =>
+        l10n.clientUpdateInstallUnsupported,
+      ClientUpdateDownloadError.installerFailed =>
+        l10n.clientUpdateInstallerFailed,
+      ClientUpdateDownloadError.installPermission =>
+        l10n.clientUpdateInstallPermission,
+      ClientUpdateDownloadError.network ||
+      null => l10n.clientUpdateDownloadFailed,
+    };
+  }
+
+  List<Widget> _actions(AppLocalizations l10n, {required bool required}) {
+    final actions = <Widget>[];
+
+    switch (download.stage) {
+      case ClientUpdateDownloadStage.idle:
+        actions.add(_primary(l10n.clientUpdateDownload, onDownload));
+
+      case ClientUpdateDownloadStage.failed:
+        if (_canRetry) {
+          actions.add(_primary(l10n.clientUpdateRetry, onRetry));
+        }
+
+      case ClientUpdateDownloadStage.opened:
+        actions.add(_primary(l10n.clientUpdateOpenAgain, onOpenAgain));
+
+      case ClientUpdateDownloadStage.downloading:
+      case ClientUpdateDownloadStage.verifying:
+      case ClientUpdateDownloadStage.opening:
+        break;
+    }
+
+    if (actions.isNotEmpty) {
+      actions.add(const SizedBox(height: AppMetrics.space2));
+    }
+
+    actions.add(
+      AppButton(
+        label: required ? l10n.clientUpdateExit : l10n.clientUpdateLater,
+        variant: AppButtonVariant.secondary,
+        onPressed: required ? onExit : onLater,
+      ),
+    );
+
+    return actions;
+  }
+
+  bool get _canRetry {
+    return download.error != ClientUpdateDownloadError.unsupportedPlatform &&
+        download.error != ClientUpdateDownloadError.hostRejected;
+  }
+
+  Widget _primary(String label, VoidCallback onPressed) {
+    return AppButton(
+      label: label,
+      variant: AppButtonVariant.primary,
+      onPressed: onPressed,
     );
   }
 }
