@@ -11,8 +11,12 @@ import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 import 'package:stash_it_app/features/saved_items/application/save_url_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
+import 'package:stash_it_app/features/saved_items/data/client_metadata_fetcher.dart';
+import 'package:stash_it_app/features/saved_items/data/models/client_metadata.dart';
+import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 
+import '../../../support/fake_client_metadata_fetcher.dart';
 import '../../../support/fake_http.dart';
 import '../../../support/saved_items_fixtures.dart';
 
@@ -43,7 +47,10 @@ void main() {
   ///
   /// `retry: (_, _) => null` — Riverpod 3 retries a failed provider up to ten
   /// times with backoff, which would corrupt the request counts asserted here.
-  Future<ProviderContainer> makeContainer({bool withSession = false}) async {
+  Future<ProviderContainer> makeContainer({
+    bool withSession = false,
+    ClientMetadataFetcher? metadataFetcher,
+  }) async {
     final store = InMemorySecureStorage();
     if (withSession) await SecureCredentialStore(store).write(session);
 
@@ -51,6 +58,8 @@ void main() {
       overrides: [
         credentialStoreProvider.overrideWithValue(SecureCredentialStore(store)),
         restoredTokensProvider.overrideWithValue(withSession ? session : null),
+        if (metadataFetcher != null)
+          clientMetadataFetcherProvider.overrideWithValue(metadataFetcher),
       ],
       retry: (_, _) => null,
     );
@@ -602,6 +611,32 @@ void main() {
       expect(await submit(container, 'https://example.com/new'), isTrue);
       expect(savePosts(), 1);
       expect(noticeOf(container)!.resolve(english), 'Saved.');
+    });
+
+    test('an Instagram save sends the metadata read on the device', () async {
+      const instagramUrl = 'https://www.instagram.com/reel/abc/';
+      final fetcher = FakeClientMetadataFetcher(
+        const ClientMetadata(title: 'Reel', platform: 'Instagram'),
+      );
+      final container = await makeContainer(metadataFetcher: fetcher);
+      addTearDown(container.dispose);
+
+      scriptCreated(url: instagramUrl);
+      scriptListing([SavedItemsFixtures.item(id: 'new')]);
+
+      await container.read(savedItemsProvider.future);
+      expect(await submit(container, instagramUrl), isTrue);
+      await untilCalled(() => itemIds(container).contains('new'));
+
+      final request = adapter.requests.lastWhere(
+        (request) =>
+            request.method == 'POST' && request.path.contains('/saved-items'),
+      );
+      expect((request.body as Map<String, dynamic>)['metadata'], {
+        'title': 'Reel',
+        'platform': 'Instagram',
+      });
+      expect(fetcher.urls, [instagramUrl]);
     });
 
     test('a spent budget reports the wait the server sent', () async {

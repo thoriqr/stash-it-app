@@ -118,7 +118,7 @@ final class SaveUrlProvider extends $NotifierProvider<SaveUrl, bool> {
   }
 }
 
-String _$saveUrlHash() => r'01bea592b6c18f1c94880b912f7c8ec2bbe1cbda';
+String _$saveUrlHash() => r'dacd43fd04990627feeba17c87abfa0ae0fb9127';
 
 /// Handles one `POST /saved-items` request per explicit user action.
 ///

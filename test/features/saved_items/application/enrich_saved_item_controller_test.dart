@@ -18,6 +18,8 @@ import 'package:stash_it_app/features/saved_items/application/enrich_saved_item_
 import 'package:stash_it_app/features/saved_items/application/saved_item_detail_provider.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_state.dart';
+import 'package:stash_it_app/features/saved_items/data/client_metadata_fetcher.dart';
+import 'package:stash_it_app/features/saved_items/data/models/client_metadata.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/collection_saved_items_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_enrichment_result.dart';
@@ -26,6 +28,7 @@ import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart
 import 'package:stash_it_app/features/saved_items/domain/saved_time.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 
+import '../../../support/fake_client_metadata_fetcher.dart';
 import '../../../support/fake_collections_repository.dart';
 import '../../../support/fake_http.dart';
 import '../../../support/fake_saved_items_repository.dart';
@@ -46,6 +49,7 @@ void main() {
   SavedItemSummary summary({
     String id = itemId,
     String collectionId = collectionId,
+    String url = 'https://example.com/articles/crdts-explained',
     String? title = 'Understanding CRDTs',
     String? description = 'Conflict-free replicated data types converge.',
     String? imageUrl = 'https://example.com/og.png',
@@ -53,7 +57,7 @@ void main() {
   }) => SavedItemSummary(
     id: id,
     collectionId: collectionId,
-    url: 'https://example.com/articles/crdts-explained',
+    url: url,
     collectionName: 'Camera Gear',
     enrichmentStatus: status,
     title: title,
@@ -98,6 +102,7 @@ void main() {
     Future<CollectionSavedItemsPage> Function(String, String?)?
     onListInCollection,
     bool signedIn = false,
+    ClientMetadataFetcher? metadataFetcher,
   }) {
     final saved = FakeSavedItemsRepository(
       listPage:
@@ -127,6 +132,8 @@ void main() {
               ? const AuthTokens(accessToken: 'access', refreshToken: 'refresh')
               : null,
         ),
+        if (metadataFetcher != null)
+          clientMetadataFetcherProvider.overrideWithValue(metadataFetcher),
       ],
       retry: (_, _) => null,
     );
@@ -193,6 +200,71 @@ void main() {
       );
     });
 
+    test('an Instagram item sends the metadata read on the device', () async {
+      const instagramUrl = 'https://www.instagram.com/reel/abc/';
+      final fetcher = FakeClientMetadataFetcher(
+        const ClientMetadata(
+          title: 'Reel',
+          imageUrl: 'https://cdn.example.com/reel.jpg',
+          platform: 'Instagram',
+        ),
+      );
+      final harness = makeHarness(
+        enrichResults: [enriched()],
+        metadataFetcher: fetcher,
+      );
+      addTearDown(harness.container.dispose);
+
+      await harness.container
+          .read(enrichSavedItemProvider.notifier)
+          .enrich(summary(url: instagramUrl));
+
+      expect(fetcher.urls, [instagramUrl]);
+      expect(
+        harness.saved.enrichMetadata.single,
+        const ClientMetadata(
+          title: 'Reel',
+          imageUrl: 'https://cdn.example.com/reel.jpg',
+          platform: 'Instagram',
+        ),
+      );
+    });
+
+    test('an Instagram read failure sends empty metadata', () async {
+      const instagramUrl = 'https://instagram.com/reel/abc/';
+      final fetcher = FakeClientMetadataFetcher();
+      final harness = makeHarness(
+        enrichResults: [enriched()],
+        metadataFetcher: fetcher,
+      );
+      addTearDown(harness.container.dispose);
+
+      await harness.container
+          .read(enrichSavedItemProvider.notifier)
+          .enrich(summary(url: instagramUrl));
+
+      expect(fetcher.urls, [instagramUrl]);
+      expect(harness.saved.enrichMetadata.single, const ClientMetadata());
+    });
+
+    test('a server-enriched host sends no metadata', () async {
+      final fetcher = FakeClientMetadataFetcher(
+        const ClientMetadata(title: 'unused'),
+      );
+      final harness = makeHarness(
+        enrichResults: [enriched()],
+        metadataFetcher: fetcher,
+      );
+      addTearDown(harness.container.dispose);
+
+      await harness.container
+          .read(enrichSavedItemProvider.notifier)
+          .enrich(summary());
+
+      expect(fetcher.urls, isEmpty);
+      expect(harness.saved.enrichMetadata.single, isNull);
+    });
+
     test('a second tap while the first is in flight sends nothing', () async {
       final gate = Completer<SavedItemEnrichmentResult>();
       final harness = makeHarness(onEnrich: (_) => gate.future);
@@ -203,6 +275,10 @@ void main() {
       );
       final first = controller.enrich(summary());
       final second = controller.enrich(summary());
+
+      // The metadata decision for a server-enriched host completes on a
+      // microtask before the repository is called.
+      await pumpEventQueue();
 
       expect(
         harness.saved.enrichCalls,

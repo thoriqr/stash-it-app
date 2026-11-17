@@ -7,7 +7,9 @@ import 'package:stash_it_app/features/saved_items/application/collection_saved_i
 import 'package:stash_it_app/features/saved_items/application/saved_item_detail_provider.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_item_feedback.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
+import 'package:stash_it_app/features/saved_items/data/models/client_metadata.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
+import 'package:stash_it_app/features/saved_items/domain/client_enrichment_host.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_enrichment_result.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 
@@ -27,6 +29,12 @@ part 'enrich_saved_item_controller.g.dart';
 ///
 /// The endpoint returns the complete result of the attempt in its response.
 /// No polling or follow-up read is needed.
+///
+/// For a host whose enrichment the server leaves to the client, the page is
+/// read on this device first and the extracted metadata travels in the enrich
+/// request. A failed read sends an empty metadata object, which records the
+/// attempt as failed instead of leaving the item pending. Every other host
+/// omits the field and keeps server-side extraction.
 @Riverpod(keepAlive: true)
 class EnrichSavedItem extends _$EnrichSavedItem {
   @override
@@ -51,9 +59,10 @@ class EnrichSavedItem extends _$EnrichSavedItem {
     state = true;
 
     try {
+      final metadata = await _metadataFor(item.url);
       final result = await ref
           .read(savedItemsRepositoryProvider)
-          .enrich(item.id);
+          .enrich(item.id, metadata: metadata);
 
       if (!ref.mounted) return;
 
@@ -64,6 +73,25 @@ class EnrichSavedItem extends _$EnrichSavedItem {
       _handleFailure(item.id, failure);
     } finally {
       if (ref.mounted) state = false;
+    }
+  }
+
+  /// Reads page metadata for a host the server leaves to the client.
+  ///
+  /// Returns null for every other host. A client-enrichment host never returns
+  /// null: a failed read becomes an empty object, which records the attempt as
+  /// failed rather than leaving the item pending.
+  Future<ClientMetadata?> _metadataFor(String url) async {
+    final platform = clientEnrichmentPlatformForUrl(url);
+    if (platform == null) return null;
+
+    try {
+      return await ref
+              .read(clientMetadataFetcherProvider)
+              .fetch(url, platform: platform) ??
+          const ClientMetadata();
+    } catch (_) {
+      return const ClientMetadata();
     }
   }
 

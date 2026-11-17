@@ -22,8 +22,11 @@ part 'create_saved_item_response.g.dart';
 /// The client must not use this response to construct a `SavedItemSummary`.
 /// It should re-read the listing to obtain the item in its normal listing shape.
 ///
-/// A newly created item has an `enrichment_status` of `pending`. Enrichment
-/// has been queued but has not completed when this response is returned.
+/// A newly created item reports `pending` for an ordinary host: enrichment has
+/// been queued but has not run. For a host whose enrichment the server leaves
+/// to the client, the save itself is the attempt, so the value is `completed`
+/// when metadata was sent and `failed` when it was not. The client treats the
+/// value as a marker only; it does not gate metadata display on it.
 ///
 /// All four fields are required. A missing field makes the response unreadable
 /// to this client rather than allowing it to infer a value.

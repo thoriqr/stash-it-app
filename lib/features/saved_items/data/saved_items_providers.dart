@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/network/network_providers.dart';
+import 'client_metadata_fetcher.dart';
 import 'datasources/saved_items_api.dart';
 import 'saved_items_repository.dart';
 
@@ -26,3 +27,11 @@ final Provider<SavedItemsRepository> savedItemsRepositoryProvider =
     Provider<SavedItemsRepository>(
       (ref) => SavedItemsRepository(api: ref.watch(savedItemsApiProvider)),
     );
+
+/// Fetches page metadata on the device for a client-enrichment host.
+///
+/// A plain provider because the fetcher owns no Flutter state and is replaced
+/// in tests with a scripted result. It must never use `appDio`: the page
+/// request goes to a third party and must not carry the user's bearer token.
+final Provider<ClientMetadataFetcher> clientMetadataFetcherProvider =
+    Provider<ClientMetadataFetcher>((ref) => ClientMetadataFetcher());

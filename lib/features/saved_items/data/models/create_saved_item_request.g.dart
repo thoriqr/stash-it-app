@@ -11,8 +11,15 @@ _CreateSavedItemRequest _$CreateSavedItemRequestFromJson(
 ) => _CreateSavedItemRequest(
   url: json['url'] as String,
   note: json['note'] as String?,
+  metadata: json['metadata'] == null
+      ? null
+      : ClientMetadata.fromJson(json['metadata'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$CreateSavedItemRequestToJson(
   _CreateSavedItemRequest instance,
-) => <String, dynamic>{'url': instance.url, 'note': ?instance.note};
+) => <String, dynamic>{
+  'url': instance.url,
+  'note': ?instance.note,
+  'metadata': ?clientMetadataToJson(instance.metadata),
+};

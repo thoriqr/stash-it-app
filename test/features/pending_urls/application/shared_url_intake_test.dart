@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,10 +11,14 @@ import 'package:stash_it_app/features/auth/data/models/auth_tokens.dart';
 import 'package:stash_it_app/features/pending_urls/application/shared_url_intake.dart';
 import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
 import 'package:stash_it_app/features/pending_urls/domain/pending_url.dart';
+import 'package:stash_it_app/features/saved_items/data/client_metadata_fetcher.dart';
 import 'package:stash_it_app/features/saved_items/data/datasources/saved_items_api.dart';
+import 'package:stash_it_app/features/saved_items/data/models/client_metadata.dart';
+import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../support/fake_client_metadata_fetcher.dart';
 import '../../../support/fake_http.dart';
 import '../../../support/pending_urls.dart';
 import '../../../support/saved_items_fixtures.dart';
@@ -30,9 +36,26 @@ class _ThrowingRepository extends SavedItemsRepository {
   _ThrowingRepository() : super(api: SavedItemsApi(Dio()));
 
   @override
-  Future<void> create({required String url, String? note}) async {
+  Future<void> create({
+    required String url,
+    String? note,
+    ClientMetadata? metadata,
+  }) async {
     throw StateError('unexpected repository failure');
   }
+}
+
+class _HangingRepository extends SavedItemsRepository {
+  _HangingRepository() : super(api: SavedItemsApi(Dio()));
+
+  final Completer<void> release = Completer<void>();
+
+  @override
+  Future<void> create({
+    required String url,
+    String? note,
+    ClientMetadata? metadata,
+  }) => release.future;
 }
 
 void main() {
@@ -49,6 +72,7 @@ void main() {
   Future<ProviderContainer> makeContainer({
     required PendingUrlStore store,
     AuthTokens? session,
+    ClientMetadataFetcher? metadataFetcher,
   }) async {
     final credentials = SecureCredentialStore(backend);
     if (session != null) await credentials.write(session);
@@ -58,6 +82,8 @@ void main() {
         credentialStoreProvider.overrideWithValue(credentials),
         restoredTokensProvider.overrideWithValue(session),
         pendingUrlStoreProvider.overrideWithValue(store),
+        if (metadataFetcher != null)
+          clientMetadataFetcherProvider.overrideWithValue(metadataFetcher),
       ],
       retry: (_, _) => null,
     );
@@ -246,6 +272,97 @@ void main() {
       expect(outcome, ShareSaveOutcome.saved);
       expect(adapter.lastRequestTo('/saved-items')!.jsonField('url'), url);
     });
+
+    test(
+      'an Instagram save sends the metadata extracted on the device',
+      () async {
+        const instagramUrl = 'https://www.instagram.com/reel/abc/';
+        adapter.onMethod(
+          'POST',
+          '/saved-items',
+          status: 201,
+          body: SavedItemsFixtures.created(url: instagramUrl),
+        );
+        final store = await testPendingUrlStore();
+        final fetcher = FakeClientMetadataFetcher(
+          const ClientMetadata(
+            title: 'Reel title',
+            description: 'Reel description',
+            imageUrl: 'https://cdn.example.com/reel.jpg',
+            platform: 'Instagram',
+          ),
+        );
+        final container = await makeContainer(
+          store: store,
+          metadataFetcher: fetcher,
+        );
+
+        final outcome = await container
+            .read(sharedUrlIntakeProvider)
+            .save(instagramUrl);
+
+        expect(outcome, ShareSaveOutcome.saved);
+        expect(fetcher.urls, [instagramUrl]);
+        expect(
+          (adapter.lastRequestTo('/saved-items')!.body
+              as Map<String, dynamic>)['metadata'],
+          {
+            'title': 'Reel title',
+            'description': 'Reel description',
+            'image_url': 'https://cdn.example.com/reel.jpg',
+            'platform': 'Instagram',
+          },
+        );
+      },
+    );
+
+    test('an Instagram save with a failed read sends empty metadata', () async {
+      const instagramUrl = 'https://instagram.com/reel/abc/';
+      adapter.onMethod(
+        'POST',
+        '/saved-items',
+        status: 201,
+        body: SavedItemsFixtures.created(url: instagramUrl),
+      );
+      final store = await testPendingUrlStore();
+      final fetcher = FakeClientMetadataFetcher();
+      final container = await makeContainer(
+        store: store,
+        metadataFetcher: fetcher,
+      );
+
+      await container.read(sharedUrlIntakeProvider).save(instagramUrl);
+
+      expect(fetcher.urls, [instagramUrl]);
+      final body =
+          adapter.lastRequestTo('/saved-items')!.body as Map<String, dynamic>;
+      expect(body.containsKey('metadata'), isTrue);
+      expect(body['metadata'], isEmpty);
+    });
+
+    test('a non-Instagram save omits metadata', () async {
+      adapter.onMethod(
+        'POST',
+        '/saved-items',
+        status: 201,
+        body: SavedItemsFixtures.created(url: url),
+      );
+      final store = await testPendingUrlStore();
+      final fetcher = FakeClientMetadataFetcher(
+        const ClientMetadata(title: 'unused'),
+      );
+      final container = await makeContainer(
+        store: store,
+        metadataFetcher: fetcher,
+      );
+
+      await container.read(sharedUrlIntakeProvider).save(url);
+
+      expect(fetcher.urls, isEmpty);
+      final body =
+          adapter.lastRequestTo('/saved-items')!.body as Map<String, dynamic>;
+      expect(body.containsKey('metadata'), isFalse);
+    });
   });
 
   group('local behavior', () {
@@ -321,12 +438,55 @@ void main() {
         final intake = SharedUrlIntake(
           repository: _ThrowingRepository(),
           store: store,
+          metadataFetcher: FakeClientMetadataFetcher(),
         );
 
         final outcome = await intake.save(url);
 
         expect(outcome, ShareSaveOutcome.storedAfterUncertain);
         expect((await store.readAll()).entries.single.uncertain, isTrue);
+      },
+    );
+
+    test('the URL is kept while the request is still in flight', () async {
+      final store = await testPendingUrlStore();
+      final repository = _HangingRepository();
+      final intake = SharedUrlIntake(
+        repository: repository,
+        store: store,
+        metadataFetcher: FakeClientMetadataFetcher(),
+      );
+
+      final result = intake.save(url);
+      await pumpEventQueue();
+
+      final pending = (await store.readAll()).entries;
+      expect(pending, hasLength(1));
+      expect(pending.single.url, url);
+      expect(pending.single.uncertain, isTrue);
+
+      repository.release.complete();
+      expect(await result, ShareSaveOutcome.saved);
+      expect((await store.readAll()).entries, isEmpty);
+    });
+
+    test(
+      'a failed local pre-write does not block a confirmed remote save',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final preferences = await SharedPreferences.getInstance();
+        final store = _FailingStore(preferences);
+        adapter.onMethod(
+          'POST',
+          '/saved-items',
+          status: 201,
+          body: SavedItemsFixtures.created(url: url),
+        );
+        final container = await makeContainer(store: store);
+
+        final outcome = await container.read(sharedUrlIntakeProvider).save(url);
+
+        expect(outcome, ShareSaveOutcome.saved);
       },
     );
   });

@@ -36,6 +36,11 @@ part of 'save_pending_urls_controller.dart';
 /// existing `appDio` + `AuthInterceptor`, request/response DTOs, and typed
 /// [ApiFailure] mapping. No API client or batch endpoint is introduced.
 ///
+/// A pending URL on a host whose enrichment the server leaves to the client is
+/// read on this device first, and the extracted metadata travels in the create
+/// request. Without it the server would store the item as failed, because it
+/// never fetches those hosts and enqueues no worker.
+///
 /// ## What is kept
 ///
 /// An entry is removed only after a confirmed create, and only by its exact URL
@@ -82,6 +87,11 @@ final savePendingUrlsProvider = SavePendingUrlsProvider._();
 /// existing `appDio` + `AuthInterceptor`, request/response DTOs, and typed
 /// [ApiFailure] mapping. No API client or batch endpoint is introduced.
 ///
+/// A pending URL on a host whose enrichment the server leaves to the client is
+/// read on this device first, and the extracted metadata travels in the create
+/// request. Without it the server would store the item as failed, because it
+/// never fetches those hosts and enqueues no worker.
+///
 /// ## What is kept
 ///
 /// An entry is removed only after a confirmed create, and only by its exact URL
@@ -126,6 +136,11 @@ final class SavePendingUrlsProvider
   /// existing `appDio` + `AuthInterceptor`, request/response DTOs, and typed
   /// [ApiFailure] mapping. No API client or batch endpoint is introduced.
   ///
+  /// A pending URL on a host whose enrichment the server leaves to the client is
+  /// read on this device first, and the extracted metadata travels in the create
+  /// request. Without it the server would store the item as failed, because it
+  /// never fetches those hosts and enqueues no worker.
+  ///
   /// ## What is kept
   ///
   /// An entry is removed only after a confirmed create, and only by its exact URL
@@ -167,7 +182,7 @@ final class SavePendingUrlsProvider
   }
 }
 
-String _$savePendingUrlsHash() => r'5bc627d8980990974c5d7a021f0dc75444e35964';
+String _$savePendingUrlsHash() => r'3a782387d5723874ecf9dcca47e607b90b1b56ca';
 
 /// The explicit, user-initiated bulk save of the device-local URL list.
 ///
@@ -196,6 +211,11 @@ String _$savePendingUrlsHash() => r'5bc627d8980990974c5d7a021f0dc75444e35964';
 /// The repository is `SavedItemsRepository.create`, so this path shares the
 /// existing `appDio` + `AuthInterceptor`, request/response DTOs, and typed
 /// [ApiFailure] mapping. No API client or batch endpoint is introduced.
+///
+/// A pending URL on a host whose enrichment the server leaves to the client is
+/// read on this device first, and the extracted metadata travels in the create
+/// request. Without it the server would store the item as failed, because it
+/// never fetches those hosts and enqueues no worker.
 ///
 /// ## What is kept
 ///

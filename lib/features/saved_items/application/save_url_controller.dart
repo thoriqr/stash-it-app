@@ -6,7 +6,9 @@ import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/auth/application/auth_state.dart';
 import 'package:stash_it_app/features/saved_items/application/saved_items_controller.dart';
+import 'package:stash_it_app/features/saved_items/data/models/client_metadata.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
+import 'package:stash_it_app/features/saved_items/domain/client_enrichment_host.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_url.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 
@@ -126,6 +128,12 @@ class SaveUrl extends _$SaveUrl {
   ///
   /// A null or whitespace-only [note] is not sent. Meaningful note text is sent
   /// exactly as supplied, including line breaks, in the same create request.
+  ///
+  /// For a host whose enrichment the server leaves to the client, the page is
+  /// read on this device before the create and the extracted metadata travels
+  /// in that request. A failed read sends an empty metadata object so the
+  /// server records a failed attempt instead of leaving the item pending. Every
+  /// other host omits the field and keeps server-side enrichment.
   Future<bool> submit(String rawUrl, {String? note}) async {
     if (state) return false;
 
@@ -144,9 +152,11 @@ class SaveUrl extends _$SaveUrl {
     state = true;
 
     try {
+      final metadata = await _metadataFor(url);
+
       await ref
           .read(savedItemsRepositoryProvider)
-          .create(url: url, note: submittedNote);
+          .create(url: url, note: submittedNote, metadata: metadata);
 
       // The notifier outlives the screen. This check protects against a
       // container that has already been disposed.
@@ -172,6 +182,25 @@ class SaveUrl extends _$SaveUrl {
       return false;
     } finally {
       if (ref.mounted) state = false;
+    }
+  }
+
+  /// Reads page metadata for a host the server leaves to the client.
+  ///
+  /// Returns null for every other host. A client-enrichment host never returns
+  /// null: a failed read becomes an empty object, which the server records as a
+  /// failed attempt rather than leaving the item pending.
+  Future<ClientMetadata?> _metadataFor(String url) async {
+    final platform = clientEnrichmentPlatformForUrl(url);
+    if (platform == null) return null;
+
+    try {
+      return await ref
+              .read(clientMetadataFetcherProvider)
+              .fetch(url, platform: platform) ??
+          const ClientMetadata();
+    } catch (_) {
+      return const ClientMetadata();
     }
   }
 

@@ -856,7 +856,7 @@ void main() {
     const id = '01a0f359-093b-737a-963a-80f7ca6768ed';
     const path = '/saved-items/$id/enrich';
 
-    test('POSTs the id and sends no body or query', () async {
+    test('POSTs the id with an empty body for a server-enriched host', () async {
       adapter.onMethod('POST', path, body: SavedItemsFixtures.enriched(id: id));
 
       await repository.enrich(id);
@@ -871,8 +871,10 @@ void main() {
       );
       expect(
         request.body,
-        isNull,
-        reason: 'the page to fetch is the URL already stored on the server',
+        isEmpty,
+        reason:
+            'metadata is omitted for a host the server fetches itself, so the '
+            'body carries no fields',
       );
     });
 

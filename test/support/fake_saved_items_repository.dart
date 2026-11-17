@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/features/saved_items/data/datasources/saved_items_api.dart';
+import 'package:stash_it_app/features/saved_items/data/models/client_metadata.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_repository.dart';
 import 'package:stash_it_app/features/saved_items/domain/collection_saved_items_page.dart';
 import 'package:stash_it_app/features/saved_items/domain/move_to_collection_intent.dart';
@@ -151,6 +152,9 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   /// The note passed to each [create], in order.
   final List<String?> createNotes = [];
 
+  /// The metadata passed to each [create], in order.
+  final List<ClientMetadata?> createMetadata = [];
+
   /// The ids passed to [getById], in order.
   final List<String> detailIds = [];
 
@@ -159,6 +163,9 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
 
   /// The ids passed to [enrich], in order.
   final List<String> enrichIds = [];
+
+  /// The metadata passed to each [enrich], in order.
+  final List<ClientMetadata?> enrichMetadata = [];
 
   /// The note writes submitted, in order.
   final List<({String savedItemId, String note})> noteUpdates = [];
@@ -179,10 +186,15 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   moveRequests = [];
 
   @override
-  Future<void> create({required String url, String? note}) async {
+  Future<void> create({
+    required String url,
+    String? note,
+    ClientMetadata? metadata,
+  }) async {
     createCalls++;
     createUrls.add(url);
     createNotes.add(note);
+    createMetadata.add(metadata);
 
     final handler = onCreate;
     if (handler != null) return handler(url);
@@ -291,9 +303,13 @@ class FakeSavedItemsRepository extends SavedItemsRepository {
   }
 
   @override
-  Future<SavedItemEnrichmentResult> enrich(String id) async {
+  Future<SavedItemEnrichmentResult> enrich(
+    String id, {
+    ClientMetadata? metadata,
+  }) async {
     enrichCalls++;
     enrichIds.add(id);
+    enrichMetadata.add(metadata);
 
     final handler = onEnrich;
     if (handler != null) return handler(id);

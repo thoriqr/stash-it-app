@@ -22,6 +22,12 @@ part of 'enrich_saved_item_controller.dart';
 ///
 /// The endpoint returns the complete result of the attempt in its response.
 /// No polling or follow-up read is needed.
+///
+/// For a host whose enrichment the server leaves to the client, the page is
+/// read on this device first and the extracted metadata travels in the enrich
+/// request. A failed read sends an empty metadata object, which records the
+/// attempt as failed instead of leaving the item pending. Every other host
+/// omits the field and keeps server-side extraction.
 
 @ProviderFor(EnrichSavedItem)
 final enrichSavedItemProvider = EnrichSavedItemProvider._();
@@ -40,6 +46,12 @@ final enrichSavedItemProvider = EnrichSavedItemProvider._();
 ///
 /// The endpoint returns the complete result of the attempt in its response.
 /// No polling or follow-up read is needed.
+///
+/// For a host whose enrichment the server leaves to the client, the page is
+/// read on this device first and the extracted metadata travels in the enrich
+/// request. A failed read sends an empty metadata object, which records the
+/// attempt as failed instead of leaving the item pending. Every other host
+/// omits the field and keeps server-side extraction.
 final class EnrichSavedItemProvider
     extends $NotifierProvider<EnrichSavedItem, bool> {
   /// Handles one re-read request per explicit user action.
@@ -56,6 +68,12 @@ final class EnrichSavedItemProvider
   ///
   /// The endpoint returns the complete result of the attempt in its response.
   /// No polling or follow-up read is needed.
+  ///
+  /// For a host whose enrichment the server leaves to the client, the page is
+  /// read on this device first and the extracted metadata travels in the enrich
+  /// request. A failed read sends an empty metadata object, which records the
+  /// attempt as failed instead of leaving the item pending. Every other host
+  /// omits the field and keeps server-side extraction.
   EnrichSavedItemProvider._()
     : super(
         from: null,
@@ -83,7 +101,7 @@ final class EnrichSavedItemProvider
   }
 }
 
-String _$enrichSavedItemHash() => r'29801a2894e129b85940627db75481eb7d89aeaa';
+String _$enrichSavedItemHash() => r'1b16e52b059c8bb5ec8dc0305e299fcdb907074f';
 
 /// Handles one re-read request per explicit user action.
 ///
@@ -99,6 +117,12 @@ String _$enrichSavedItemHash() => r'29801a2894e129b85940627db75481eb7d89aeaa';
 ///
 /// The endpoint returns the complete result of the attempt in its response.
 /// No polling or follow-up read is needed.
+///
+/// For a host whose enrichment the server leaves to the client, the page is
+/// read on this device first and the extracted metadata travels in the enrich
+/// request. A failed read sends an empty metadata object, which records the
+/// attempt as failed instead of leaving the item pending. Every other host
+/// omits the field and keeps server-side extraction.
 
 abstract class _$EnrichSavedItem extends $Notifier<bool> {
   bool build();

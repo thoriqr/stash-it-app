@@ -1,6 +1,6 @@
 # Stash-it Flutter — Project Progress
 
-> Last updated: 2026-11-15
+> Last updated: 2026-11-18
 > Scope: Flutter application (`stash-it-app`).
 
 ## Current Status
@@ -13,6 +13,8 @@ Settings now has an About section with the installed app version and a Contact r
 
 The app now checks for a newer client release at launch and when it returns to the foreground. An optional release shows a prompt that can be postponed; a required release blocks the app with download and exit actions. Any failure leaves the app fully usable. A release can be downloaded with progress, verified against its SHA-256 checksum, and handed to the Android installer or the Windows file handler for manual installation.
 
+The app now reads page metadata on the device for hosts the server leaves to the client, currently Instagram. A save of such a link carries the extracted title, description, preview image and platform, so the save itself is the enrichment attempt and no worker is involved. A page that cannot be read is still saved with empty metadata and recorded as a failed attempt. Shared links, manual saves, the device-local bulk save and the explicit re-read all follow the same host rule; every other host keeps server-side enrichment.
+
 Startup is also guarded: if initialization cannot complete, the app shows a plain failure screen instead of opening the normal UI or leaving the native splash in place, and writes the details to the debug log.
 
 The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
@@ -20,6 +22,42 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 **Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, manual Inbox enrichment polling verification, visual review of the update prompts and signed-out Settings entry, manual Android/Windows update download and install verification, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
 
 ## Verification
+
+### Client metadata for Instagram saves (2026-11-18)
+
+- Read the uncommitted contract from the sibling Go repository's `docs/swagger.yaml`: `clientmetadata.Metadata` (title, description, image_url, platform; all optional), `saved_item.CreateSavedItemRequest.metadata`, and `enrichment.EnrichSavedItemRequest.metadata`.
+- Added `ClientMetadata` and `EnrichSavedItemRequest` models. An absent metadata object is omitted from the body; an empty object is sent deliberately for a failed client-side read.
+- Added `clientEnrichmentPlatformForUrl` for `instagram.com` and `www.instagram.com`, matching the server's `CLIENT_ENRICHMENT_HOSTS`. Every other host keeps server-side enrichment and sends no metadata.
+- Added `ClientMetadataFetcher`, a plain Dio client with no app interceptors, so the user's bearer token never reaches the page host. It sends a non-browser `StashIt/1.1.2` user agent: Instagram serves a browser its JavaScript app shell, which has no Open Graph metadata, and serves a non-browser client the page with OG metadata.
+- It reads the canonical page first and parses only `og:title`, `og:description` and `og:image`. The `<title>` and Twitter-tag fallbacks were removed so the app shell cannot be mistaken for article metadata. Values are trimmed, HTML entities are decoded, and a relative image is resolved; an image that is not absolute http/https or exceeds 2048 is dropped.
+- When the canonical page redirects, is rate limited, or has no OG field, it reads `/{reel|p}/{shortcode}/embed/captioned/` and parses `edge_media_to_caption` (JSON-unescaped) plus `thumbnail_src` or `display_url`. The real embed payload is a JSON object inside a JavaScript string, so quotes and escapes arrive doubled; the parser removes that escaping level before reading the fields. The embed username is not used as an author. If no caption or image is found, the read fails. No oEmbed endpoint is used.
+- The title and description are sent as extracted, without client truncation; the server applies its own Instagram title handling and owns the field limits. A failed read sends `{}`, which the server records as a failed attempt for an allowlisted host. The client never sends `metadata` for a host the server fetches itself.
+- Share intake, manual save and the device-local bulk save all read metadata for an allowlisted host before the create; the share intake keeps its write-ahead entry before the read. The detail screen's explicit re-read sends fetched metadata for the same hosts. No path calls `/enrich` after a save.
+- The create response contract and parsing are unchanged. `enrichment_status` remains a marker; no display decision was added that depends on it.
+- `flutter analyze` — no issues found.
+- `flutter test` — 1099 tests passed.
+- `flutter build apk --debug --dart-define=API_BASE_URL=... --dart-define=GOOGLE_SERVER_CLIENT_ID=...` — succeeded.
+- `pubspec.yaml` remains `1.1.2+4`; this feature is part of the same unreleased working tree.
+- Live check from this machine against `https://www.instagram.com/reel/DfzezRYhSSn/`: the canonical page returned 200 with `og:title`, `og:description` and `og:image` using `StashIt/1.1.2`; the same URL with a Chrome mobile user agent returned 200 with none of them; the captioned embed returned a 781-character caption and an absolute image URL with no title. The extracted title kept the raw `Author on Instagram: "<caption>"` form.
+- Not verified: the backend accepting the new bodies and a release build. The parser, host rule, request shapes and failed-read behaviour are covered by unit and provider tests.
+
+### Android share intake fix (2026-11-18)
+
+- Root cause: `ShareActivity` used the two-argument `DartEntrypoint` constructor. In Flutter 3.47.7 that overload is `(pathToBundle, dartEntrypointFunctionName)`, verified against `flutter.jar`, so the headless engine received `"shareIntakeMain"` as the bundle path and `"package:stash_it_app/main.dart"` as the function name. The engine logged `Could not resolve main entrypoint function` and `Could not create root isolate`, so no Dart ran for a share that did not reach the live UI engine.
+- Because the headless engine never started, every such share waited for the 45-second watchdog before showing the generic failure. Pressing Back finished the activity and destroyed the engine, so the URL was neither saved remotely nor written to the device-local list. This is the reported intermittent share failure.
+- `ShareActivity` now uses the three-argument constructor `(bundle path, entrypoint library, entrypoint function)` with `FlutterInjector.instance().flutterLoader().findAppBundlePath()`.
+- The share activity window now sets `FLAG_NOT_TOUCHABLE | FLAG_NOT_FOCUSABLE`. Previously it was a transparent, full-screen, touchable window, so it blocked every touch on the device while a save was running.
+- `SharedUrlIntake` now writes the URL to the device-local list before the save request and removes it only after a confirmed save. An interrupted request therefore keeps the link instead of losing it. A known failure rewrites the entry as definite; an uncertain outcome leaves it marked uncertain. A failed pre-write does not block a remote save that still succeeds.
+- Verified on an Android 15 (SDK 35) x86_64 emulator with the app force-stopped and a stalled backend, so the headless path was exercised:
+  - the isolate starts and logs `The Dart VM service is listening`;
+  - a normal share completes and the activity finishes in about 5.7 seconds from a cold start (engine displayed at +3.4 seconds);
+  - `dumpsys input` reports `inputConfig=NOT_FOCUSABLE | NOT_TOUCHABLE` for the share window during a stalled request.
+- `flutter analyze` — no issues found.
+- `flutter test test/features/pending_urls/application/shared_url_intake_test.dart` — 20 tests passed.
+- `flutter test` — 1073 tests passed.
+- `flutter build apk --debug --dart-define=API_BASE_URL=... --dart-define=GOOGLE_SERVER_CLIENT_ID=...` — succeeded.
+- `pubspec.yaml` is now `1.1.2+4`; the entrypoint, window, and write-ahead changes share this unreleased version.
+- Not verified: a release build on a physical device. The watchdog still destroys the headless engine at 45 seconds, but the URL is written before the request, so that outcome now keeps the link instead of losing it.
 
 ### Android installer handoff fix (2026-11-15)
 
@@ -223,6 +261,7 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 
 - Save links to an account, view their details, and open the original links.
 - View link metadata and enrichment status, and refresh metadata.
+- Read page metadata on the device for Instagram links and send it with the save or the explicit re-read; every other host keeps server-side enrichment.
 - Move and delete saved links.
 - Preview saved-link images, including pending and unavailable states.
 
@@ -332,6 +371,8 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 ### Save links on this device
 
 - Share links to the app on Android without signing in.
+- Save a shared link through a headless Flutter engine while the app is not running.
+- Keep a shared link on the device before the save request, so an interrupted save does not lose it.
 - Keep shared links on the device for seven days.
 - Consolidate exact duplicate links.
 - Explicitly submit locally saved links to an account.
@@ -379,6 +420,8 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - [ ] Review the startup failure screen visually and confirm the native splash is replaced when initialization fails.
 - [ ] Localize the remaining theme/language preference warnings.
 - [ ] Review Indonesian translations with a native speaker, including native share fallback wording.
+- [ ] Verify the Android share intake fix on a physical device with a release build, including the app-closed headless path and the offline path.
+- [ ] Verify an Instagram save and an explicit re-read on a device against the backend, including a page that cannot be read.
 - [ ] Verify the app on a physical Android device.
 - [ ] Run the full test suite once after the test-suite reduction.
 
@@ -416,7 +459,11 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - The Contact dialog lists only the configured links, and the Contact row is hidden when both link values are empty.
 - The new Settings About section and Contact dialog have not been visually verified; manual inspection remains with the project owner.
 - Physical-device verification has not yet been completed.
-- Android link sharing still needs verification in cases such as the app being closed, the user being signed out, or the device being offline.
+- Android link sharing is verified on an emulator for the app-closed headless path. Physical-device release verification, the signed-out path, and the offline path remain open.
+- A shared link is written to the device-local list before the save request. If the entry cannot be removed after a confirmed save, for example because local storage fails, a stale list entry remains until it expires or is cleared.
+- Instagram metadata was verified against one public reel from this machine. A login-walled post, a post whose captioned embed is unavailable, and a page that returns no Open Graph metadata still produce an empty metadata object, and the server stores the item as failed.
+- The client-side read adds up to about 8 seconds per page, and an Instagram save can read both the canonical page and the captioned embed.
+- The metadata field names and limits follow the uncommitted backend contract read from the sibling Go repository. They must be re-checked when that contract is committed.
 - If a local-link submission is interrupted, its outcome may be uncertain. Retrying an operation with an uncertain outcome can create a duplicate.
 - A link rejected by the server may remain in the device-local list until it expires or the list is otherwise cleared.
 - Some operations started under a previous account may finish after the account changes. User-specific data must remain isolated across account changes.

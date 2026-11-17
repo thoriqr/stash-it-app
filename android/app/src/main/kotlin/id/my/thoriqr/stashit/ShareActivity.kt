@@ -5,7 +5,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.WindowManager
 import android.widget.Toast
+import io.flutter.FlutterInjector
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.plugin.common.MethodChannel
@@ -44,6 +46,14 @@ class ShareActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // The window is transparent and renders no content, so it must not
+        // receive input. Otherwise it covers the screen and blocks every touch
+        // until the save settles.
+        window.addFlags(
+            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+        )
 
         // A recreated activity must not process the same share a second time.
         if (savedInstanceState != null) {
@@ -194,9 +204,14 @@ class ShareActivity : Activity() {
         }
 
         engine.dartExecutor.executeDartEntrypoint(
+            // The three-argument overload is (bundle path, entrypoint library,
+            // entrypoint function). The two-argument overload is (bundle path,
+            // function name), which leaves the library unset and the entrypoint
+            // unresolved.
             DartExecutor.DartEntrypoint(
-                "shareIntakeMain",
+                FlutterInjector.instance().flutterLoader().findAppBundlePath(),
                 "package:stash_it_app/main.dart",
+                "shareIntakeMain",
             ),
         )
     }

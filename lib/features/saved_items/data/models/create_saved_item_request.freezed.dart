@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CreateSavedItemRequest {
 
- String get url;@JsonKey(includeIfNull: false) String? get note;
+ String get url;@JsonKey(includeIfNull: false) String? get note;@JsonKey(includeIfNull: false, toJson: clientMetadataToJson) ClientMetadata? get metadata;
 /// Create a copy of CreateSavedItemRequest
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,20 +30,20 @@ $CreateSavedItemRequestCopyWith<CreateSavedItemRequest> get copyWith => _$Create
 @override
 bool operator ==(Object other) {
   final _this = this as CreateSavedItemRequest;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CreateSavedItemRequest&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.note, _this.note) || other.note == _this.note));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CreateSavedItemRequest&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.note, _this.note) || other.note == _this.note)&&(identical(other.metadata, _this.metadata) || other.metadata == _this.metadata));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as CreateSavedItemRequest;
-  return Object.hash(runtimeType,_this.url,_this.note);
+  return Object.hash(runtimeType,_this.url,_this.note,_this.metadata);
 }
 
 @override
 String toString() {
   final _this = this as CreateSavedItemRequest;
-  return 'CreateSavedItemRequest(url: ${_this.url}, note: ${_this.note})';
+  return 'CreateSavedItemRequest(url: ${_this.url}, note: ${_this.note}, metadata: ${_this.metadata})';
 }
 
 
@@ -54,11 +54,11 @@ abstract mixin class $CreateSavedItemRequestCopyWith<$Res>  {
   factory $CreateSavedItemRequestCopyWith(CreateSavedItemRequest value, $Res Function(CreateSavedItemRequest) _then) = _$CreateSavedItemRequestCopyWithImpl;
 @useResult
 $Res call({
- String url,@JsonKey(includeIfNull: false) String? note
+ String url,@JsonKey(includeIfNull: false) String? note,@JsonKey(includeIfNull: false, toJson: clientMetadataToJson) ClientMetadata? metadata
 });
 
 
-
+$ClientMetadataCopyWith<$Res>? get metadata;
 
 }
 /// @nodoc
@@ -71,14 +71,27 @@ class _$CreateSavedItemRequestCopyWithImpl<$Res>
 
 /// Create a copy of CreateSavedItemRequest
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? url = null,Object? note = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? url = null,Object? note = freezed,Object? metadata = freezed,}) {
   return _then(CreateSavedItemRequest(
 url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,note: freezed == note ? _self.note : note // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
+as ClientMetadata?,
   ));
 }
+/// Create a copy of CreateSavedItemRequest
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ClientMetadataCopyWith<$Res>? get metadata {
+    if (_self.metadata == null) {
+    return null;
+  }
 
+  return $ClientMetadataCopyWith<$Res>(_self.metadata!, (value) {
+    return _then(_self.copyWith(metadata: value));
+  });
+}
 }
 
 
@@ -160,10 +173,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String url, @JsonKey(includeIfNull: false)  String? note)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String url, @JsonKey(includeIfNull: false)  String? note, @JsonKey(includeIfNull: false, toJson: clientMetadataToJson)  ClientMetadata? metadata)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CreateSavedItemRequest() when $default != null:
-return $default(_that.url,_that.note);case _:
+return $default(_that.url,_that.note,_that.metadata);case _:
   return orElse();
 
 }
@@ -181,10 +194,10 @@ return $default(_that.url,_that.note);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String url, @JsonKey(includeIfNull: false)  String? note)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String url, @JsonKey(includeIfNull: false)  String? note, @JsonKey(includeIfNull: false, toJson: clientMetadataToJson)  ClientMetadata? metadata)  $default,) {final _that = this;
 switch (_that) {
 case _CreateSavedItemRequest():
-return $default(_that.url,_that.note);case _:
+return $default(_that.url,_that.note,_that.metadata);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -201,10 +214,10 @@ return $default(_that.url,_that.note);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String url, @JsonKey(includeIfNull: false)  String? note)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String url, @JsonKey(includeIfNull: false)  String? note, @JsonKey(includeIfNull: false, toJson: clientMetadataToJson)  ClientMetadata? metadata)?  $default,) {final _that = this;
 switch (_that) {
 case _CreateSavedItemRequest() when $default != null:
-return $default(_that.url,_that.note);case _:
+return $default(_that.url,_that.note,_that.metadata);case _:
   return null;
 
 }
@@ -216,11 +229,12 @@ return $default(_that.url,_that.note);case _:
 @JsonSerializable()
 
 class _CreateSavedItemRequest implements CreateSavedItemRequest {
-  const _CreateSavedItemRequest({required this.url, @JsonKey(includeIfNull: false) this.note});
+  const _CreateSavedItemRequest({required this.url, @JsonKey(includeIfNull: false) this.note, @JsonKey(includeIfNull: false, toJson: clientMetadataToJson) this.metadata});
   factory _CreateSavedItemRequest.fromJson(Map<String, dynamic> json) => _$CreateSavedItemRequestFromJson(json);
 
 @override final  String url;
 @override@JsonKey(includeIfNull: false) final  String? note;
+@override@JsonKey(includeIfNull: false, toJson: clientMetadataToJson) final  ClientMetadata? metadata;
 
 /// Create a copy of CreateSavedItemRequest
 /// with the given fields replaced by the non-null parameter values.
@@ -235,18 +249,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CreateSavedItemRequest&&(identical(other.url, url) || other.url == url)&&(identical(other.note, note) || other.note == note));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CreateSavedItemRequest&&(identical(other.url, url) || other.url == url)&&(identical(other.note, note) || other.note == note)&&(identical(other.metadata, metadata) || other.metadata == metadata));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,url,note);
+    return Object.hash(runtimeType,url,note,metadata);
 }
 
 @override
 String toString() {
-    return 'CreateSavedItemRequest(url: $url, note: $note)';
+    return 'CreateSavedItemRequest(url: $url, note: $note, metadata: $metadata)';
 }
 
 
@@ -257,11 +271,11 @@ abstract mixin class _$CreateSavedItemRequestCopyWith<$Res> implements $CreateSa
   factory _$CreateSavedItemRequestCopyWith(_CreateSavedItemRequest value, $Res Function(_CreateSavedItemRequest) _then) = __$CreateSavedItemRequestCopyWithImpl;
 @override @useResult
 $Res call({
- String url,@JsonKey(includeIfNull: false) String? note
+ String url,@JsonKey(includeIfNull: false) String? note,@JsonKey(includeIfNull: false, toJson: clientMetadataToJson) ClientMetadata? metadata
 });
 
 
-
+@override $ClientMetadataCopyWith<$Res>? get metadata;
 
 }
 /// @nodoc
@@ -274,15 +288,28 @@ class __$CreateSavedItemRequestCopyWithImpl<$Res>
 
 /// Create a copy of CreateSavedItemRequest
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? url = null,Object? note = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? url = null,Object? note = freezed,Object? metadata = freezed,}) {
   return _then(_CreateSavedItemRequest(
 url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,note: freezed == note ? _self.note : note // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
+as ClientMetadata?,
   ));
 }
 
+/// Create a copy of CreateSavedItemRequest
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ClientMetadataCopyWith<$Res>? get metadata {
+    if (_self.metadata == null) {
+    return null;
+  }
 
+  return $ClientMetadataCopyWith<$Res>(_self.metadata!, (value) {
+    return _then(_self.copyWith(metadata: value));
+  });
+}
 }
 
 // dart format on

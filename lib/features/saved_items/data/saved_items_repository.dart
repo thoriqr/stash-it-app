@@ -11,7 +11,9 @@ import '../domain/saved_item_page.dart';
 import '../domain/saved_item_summary.dart';
 import 'collection_saved_items_mapper.dart';
 import 'datasources/saved_items_api.dart';
+import 'models/client_metadata.dart';
 import 'models/create_saved_item_request.dart';
+import 'models/enrich_saved_item_request.dart';
 import 'models/move_to_collection_request.dart';
 import 'models/update_saved_item_note_request.dart';
 import 'move_to_collection_mapper.dart';
@@ -39,6 +41,12 @@ class SavedItemsRepository {
   /// [note] is omitted from the request when null. Non-whitespace text is sent
   /// exactly as supplied, including line breaks.
   ///
+  /// [metadata] is sent only when the caller extracted it for a host whose
+  /// enrichment the server leaves to the client. Omitting it keeps the
+  /// server's fetch-and-enqueue behaviour. An empty [ClientMetadata] is not
+  /// omitted: it records a failed attempt for such a host, so the caller must
+  /// pass null for every other host.
+  ///
   /// Returns no value because the create response does not contain enough
   /// information to build a [SavedItemSummary]. The caller should re-read the
   /// listing to obtain the complete item representation.
@@ -53,9 +61,15 @@ class SavedItemsRepository {
   /// - [ApiFailureUnreadableResponse]: the outcome is unestablished.
   /// - Other [ApiFailure] variants: the request is known not to have saved
   ///   the item.
-  Future<void> create({required String url, String? note}) async {
+  Future<void> create({
+    required String url,
+    String? note,
+    ClientMetadata? metadata,
+  }) async {
     try {
-      await api.create(CreateSavedItemRequest(url: url, note: note));
+      await api.create(
+        CreateSavedItemRequest(url: url, note: note, metadata: metadata),
+      );
     } on DioException catch (error) {
       throw mapApiFailure(error);
     } on TypeError catch (error) {
@@ -315,6 +329,11 @@ class SavedItemsRepository {
   /// Sends exactly one synchronous request. The endpoint completes the
   /// extraction attempt before responding; this method does not retry or poll.
   ///
+  /// [metadata] carries what the caller extracted for a host whose enrichment
+  /// the server leaves to the client. An empty [ClientMetadata] records a
+  /// failed attempt. Every other host must pass null so the server fetches the
+  /// page itself.
+  ///
   /// A `200` response does not necessarily mean extraction succeeded.
   /// `enrichment_status` reports the outcome: `completed` may still have a
   /// null title, while `failed` preserves metadata already stored on the item.
@@ -329,9 +348,15 @@ class SavedItemsRepository {
   /// Throws [ApiFailure] for every refusal. If a successful response cannot
   /// be decoded, [ApiFailureUnreadableResponse] is thrown: the attempt may
   /// have been recorded, but the client has no result to apply.
-  Future<SavedItemEnrichmentResult> enrich(String id) async {
+  Future<SavedItemEnrichmentResult> enrich(
+    String id, {
+    ClientMetadata? metadata,
+  }) async {
     try {
-      final response = await api.enrich(id);
+      final response = await api.enrich(
+        id,
+        EnrichSavedItemRequest(metadata: metadata),
+      );
       return savedItemEnrichmentFrom(response);
     } on DioException catch (error) {
       throw mapApiFailure(error);

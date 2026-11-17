@@ -6,6 +6,7 @@ import '../models/create_saved_item_request.dart';
 import '../models/create_saved_item_response.dart';
 import '../models/delete_saved_item_note_response.dart';
 import '../models/delete_saved_item_response.dart';
+import '../models/enrich_saved_item_request.dart';
 import '../models/enrich_saved_item_response.dart';
 import '../models/get_saved_item_response.dart';
 import '../models/list_saved_items_response.dart';
@@ -135,8 +136,11 @@ abstract class SavedItemsApi {
   /// `POST /saved-items/{id}/enrich` — re-reads the saved item's source page
   /// and records the extraction result.
   ///
-  /// The saved URL is read from the server. The item ID is the only input;
-  /// no request body or query parameters are needed.
+  /// The saved URL is read from the server. For a host the server fetches
+  /// itself, [EnrichSavedItemRequest.metadata] is omitted and this endpoint
+  /// behaves as before. For a host whose enrichment the server leaves to the
+  /// client, [EnrichSavedItemRequest.metadata] carries what the app extracted;
+  /// an empty object records the attempt as failed instead of pending.
   ///
   /// Authentication and rate-limit refusals occur before the re-read starts.
   /// A `401`, `429`, or `503` therefore means no enrichment attempt was made.
@@ -153,7 +157,10 @@ abstract class SavedItemsApi {
   /// without the sibling `collection`, because enrichment does not change
   /// collection membership. See [EnrichSavedItemResponse].
   @POST('/saved-items/{id}/enrich')
-  Future<EnrichSavedItemResponse> enrich(@Path('id') String id);
+  Future<EnrichSavedItemResponse> enrich(
+    @Path('id') String id,
+    @Body() EnrichSavedItemRequest request,
+  );
 
   /// `DELETE /saved-items/{id}` — permanently deletes one saved item.
   ///
