@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="share_save_failed">Stash-it couldn\'t finish saving that link.</string>
+    <string name="share_card_eyebrow">STASH-IT</string>
+    <string name="share_card_title">Save this link</string>
+    <string name="share_card_note_label">NOTE (OPTIONAL)</string>
+    <string name="share_card_note_hint">Add a note…</string>
+    <string name="share_card_save">Save</string>
+    <string name="share_card_cancel">Cancel</string>
+    <string name="share_card_saving">Saving…</string>
+    <string name="share_card_saved">Saved</string>
 </resources>

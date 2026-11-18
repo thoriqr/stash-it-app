@@ -56,10 +56,12 @@ Future<void> shareIntakeMain() async {
   ProviderContainer? container;
   const channel = MethodChannel(shareIntakeChannelName);
 
-  Future<ShareSaveOutcome> handle(String raw) async {
+  Future<ShareSaveOutcome> handle(String raw, {String? note}) async {
     try {
       container ??= ProviderContainer(overrides: await bootstrap());
-      return await container!.read(sharedUrlIntakeProvider).save(raw);
+      return await container!
+          .read(sharedUrlIntakeProvider)
+          .save(raw, note: note);
     } catch (error, stackTrace) {
       logStartupFailure(error, stackTrace, stage: 'share-intake');
       return ShareSaveOutcome.notStored;

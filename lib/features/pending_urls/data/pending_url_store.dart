@@ -134,12 +134,16 @@ class PendingUrlStore {
   ///
   /// The stored URL is the trimmed value the caller submitted. Comparison is
   /// exact: different paths or query strings are different entries. The new
-  /// timestamp is the top of the list, so a repeat share refreshes both its age
-  /// and its [uncertain] state.
+  /// timestamp is the top of the list, so a repeat share refreshes its age, its
+  /// [uncertain] state, and its [note].
   ///
   /// A write failure throws [PendingUrlStorageException] (or the underlying
   /// platform error) so the caller cannot claim the URL was kept.
-  Future<void> upsert({required String url, required bool uncertain}) async {
+  Future<void> upsert({
+    required String url,
+    required bool uncertain,
+    String? note,
+  }) async {
     final trimmed = url.trim();
     if (trimmed.isEmpty) {
       throw ArgumentError.value(url, 'url', 'must not be empty');
@@ -156,6 +160,7 @@ class PendingUrlStore {
               url: trimmed,
               addedAt: now().toUtc(),
               uncertain: uncertain,
+              note: _normalizeNote(note),
             ),
           );
 
@@ -200,7 +205,12 @@ class PendingUrlStore {
       if (entry.url == trimmed && !entry.uncertain) {
         changed = true;
         entries.add(
-          PendingUrl(url: entry.url, addedAt: entry.addedAt, uncertain: true),
+          PendingUrl(
+            url: entry.url,
+            addedAt: entry.addedAt,
+            uncertain: true,
+            note: entry.note,
+          ),
         );
       } else {
         entries.add(entry);
@@ -209,6 +219,51 @@ class PendingUrlStore {
 
     if (!changed) return;
     await writeEntries(entries);
+  }
+
+  /// Replaces the note on the entry whose URL is exactly [url].
+  ///
+  /// **Does not refresh [PendingUrl.addedAt] or change [PendingUrl.uncertain].**
+  /// Editing a local note is not a new share and does not affect the remote
+  /// outcome. A missing entry is a no-op; a failed write throws, as [upsert]
+  /// does, so the caller cannot claim the note was persisted.
+  ///
+  /// This is a device-local write. It sends no request and needs no session.
+  Future<void> updateNote(String url, String? note) async {
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) return;
+
+    final normalized = _normalizeNote(note);
+    final current = await readAll();
+    var changed = false;
+    final entries = <PendingUrl>[];
+    for (final entry in current.entries) {
+      if (entry.url == trimmed) {
+        if (entry.note != normalized) changed = true;
+        entries.add(
+          PendingUrl(
+            url: entry.url,
+            addedAt: entry.addedAt,
+            uncertain: entry.uncertain,
+            note: normalized,
+          ),
+        );
+      } else {
+        entries.add(entry);
+      }
+    }
+
+    if (!changed) return;
+    await writeEntries(entries);
+  }
+
+  /// Keeps [value] when it has readable content and stores null otherwise.
+  ///
+  /// The submitted text is preserved, including line breaks; only a
+  /// whitespace-only value is treated as absent.
+  String? _normalizeNote(String? value) {
+    final trimmed = value?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : value;
   }
 
   /// Writes [entries] as one JSON array, deleting the key when the list is empty.
@@ -229,6 +284,7 @@ class PendingUrlStore {
           'url': entry.url,
           'added_at': entry.addedAt.toUtc().toIso8601String(),
           'uncertain': entry.uncertain,
+          if (entry.note != null) 'note': entry.note,
         },
     ]);
 
@@ -267,6 +323,9 @@ class PendingUrlStore {
           url: trimmedUrl,
           addedAt: parsedAt.toUtc(),
           uncertain: item['uncertain'] == true,
+          note: _normalizeNote(
+            item['note'] is String ? item['note'] as String : null,
+          ),
         );
 
         final previous = byUrl[trimmedUrl];

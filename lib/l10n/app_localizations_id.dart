@@ -1066,6 +1066,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Kami tidak dapat membaca tautan yang disimpan di perangkat ini.';
 
   @override
+  String get pendingUrlsNoteSaveError =>
+      'Kami tidak dapat memperbarui catatan di perangkat ini.';
+
+  @override
   String get pendingUrlsRetry => 'Coba lagi';
 
   @override

@@ -6,15 +6,16 @@ import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
 import 'package:stash_it_app/shared/widgets/desktop_layout.dart';
 
-/// The backend's maximum note length, in characters.
-const int _inboxNoteMaxLength = 5000;
+/// The maximum note length, in characters.
+const int _noteMaxLength = 5000;
 
-/// Opens the temporary note composer for the manual URL intake.
+/// Opens a local draft note editor.
 ///
-/// Returns the entered text when Done is pressed, including an empty string
-/// when the user cleared the note. A null result means the sheet was dismissed
-/// without applying changes.
-Future<String?> showInboxNoteComposer(
+/// Used by the manual URL intake and by the device-local URL list. It sends no
+/// request and changes no saved item. Returns the entered text when Done is
+/// pressed, including an empty string when the user cleared it. A null result
+/// means the sheet was dismissed without applying changes.
+Future<String?> showNoteComposerSheet(
   BuildContext context, {
   required String initialNote,
 }) {
@@ -33,21 +34,21 @@ Future<String?> showInboxNoteComposer(
         top: Radius.circular(AppMetrics.radius2),
       ),
     ),
-    builder: (_) => InboxNoteComposerSheet(initialNote: initialNote),
+    builder: (_) => NoteComposerSheet(initialNote: initialNote),
   );
 }
 
-/// A local draft editor. It sends no request and changes no saved item.
-class InboxNoteComposerSheet extends StatefulWidget {
-  const InboxNoteComposerSheet({required this.initialNote, super.key});
+/// A local draft editor. It is independent of any request or saved item.
+class NoteComposerSheet extends StatefulWidget {
+  const NoteComposerSheet({required this.initialNote, super.key});
 
   final String initialNote;
 
   @override
-  State<InboxNoteComposerSheet> createState() => _InboxNoteComposerSheetState();
+  State<NoteComposerSheet> createState() => _NoteComposerSheetState();
 }
 
-class _InboxNoteComposerSheetState extends State<InboxNoteComposerSheet> {
+class _NoteComposerSheetState extends State<NoteComposerSheet> {
   late final TextEditingController _controller;
 
   @override
@@ -124,7 +125,7 @@ class _InboxNoteComposerSheetState extends State<InboxNoteComposerSheet> {
                   minLines: 4,
                   maxLines: 8,
                   inputFormatters: [
-                    LengthLimitingTextInputFormatter(_inboxNoteMaxLength),
+                    LengthLimitingTextInputFormatter(_noteMaxLength),
                   ],
                   onChanged: (_) => setState(() {}),
                   onClear: hasText ? _clear : null,
@@ -133,10 +134,7 @@ class _InboxNoteComposerSheetState extends State<InboxNoteComposerSheet> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: Text(
-                    l10n.savedItemNoteCharacterCount(
-                      count,
-                      _inboxNoteMaxLength,
-                    ),
+                    l10n.savedItemNoteCharacterCount(count, _noteMaxLength),
                     style: AppTypography.meta.copyWith(
                       color: tokens.textTertiary,
                     ),

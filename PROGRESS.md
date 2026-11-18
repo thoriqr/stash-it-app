@@ -11,7 +11,7 @@ Recent work includes **application icons** — the approved Stash It pixel-art i
 
 Settings now has an About section with the installed app version and a Contact row. Contact opens a compact dialog with the developer's GitHub and Instagram links. Each link is optional, and the Contact row itself is hidden when no link is configured. Settings can also be opened before sign-in, and its About section includes a manual Check for updates action.
 
-The app now checks for a newer client release at launch and when it returns to the foreground. An optional release shows a prompt that can be postponed; a required release blocks the app with download and exit actions. Any failure leaves the app fully usable. A release can be downloaded with progress, verified against its SHA-256 checksum, and handed to the Android installer or the Windows file handler for manual installation.
+The app now checks for a newer client release at launch and when it returns to the foreground. A release prompt opens a full-screen update screen with selectable release notes and pinned actions: an optional update can be postponed, while a required update cannot be dismissed and offers download and exit. Any failure leaves the app fully usable. A release can be downloaded with progress, verified against its SHA-256 checksum, and handed to the Android installer or the Windows file handler for manual installation.
 
 The app now reads page metadata on the device for hosts the server leaves to the client, currently Instagram. A save of such a link carries the extracted title, description, preview image and platform, so the save itself is the enrichment attempt and no worker is involved. A page that cannot be read is still saved with empty metadata and recorded as a failed attempt. Shared links, manual saves, the device-local bulk save and the explicit re-read all follow the same host rule; every other host keeps server-side enrichment.
 
@@ -19,15 +19,69 @@ Startup is also guarded: if initialization cannot complete, the app shows a plai
 
 The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
 
-**Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, manual Inbox enrichment polling verification, visual review of the update prompts and signed-out Settings entry, manual Android/Windows update download and install verification, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
+**Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, manual Inbox enrichment polling verification, visual review of the update screen and signed-out Settings entry, manual Android/Windows update download and install verification, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
 
 ## Verification
 
+### Client metadata platform removal (2026-11-18)
+
+- Re-read the backend contract in the sibling `stash-it-backend` working tree. `clientmetadata.Metadata` now carries only `title`, `description` and `image_url`; the platform is derived by the server from the URL host. The `/saved-items` and `/saved-items/{id}/enrich` descriptions state that the client must not send a platform field.
+- Removed `platform` from `ClientMetadata` and regenerated the Freezed/JSON outputs. Updated `ClientMetadataFetcher.fetch` and both HTML parsers to return only the extracted fields.
+- Replaced the platform-labelled host lookup with `isClientEnrichmentHost`. It still allowlists exactly `instagram.com` and `www.instagram.com`; every other host keeps server-side enrichment and sends no metadata.
+- Updated the manual save, explicit re-read, share intake, and device-local bulk save callers. A failed Instagram read still sends `{}`; a non-Instagram save still omits `metadata` entirely.
+- Updated the request examples and tests. The serialization test asserts a populated metadata map has no `platform` key, and the save/enrich request assertions compare the exact map without it.
+- `pubspec.yaml` remains `1.2.0+5`; this contract fix is included in the same unpushed release, so the commit and tag are amended rather than creating another published build number.
+- `dart format` on the changed Dart files — completed.
+- `flutter analyze` — no issues found.
+- `flutter test test/features/saved_items test/features/pending_urls --concurrency=1` — 498 tests passed.
+- `flutter test --concurrency=1` — 1115 tests passed.
+- `flutter build apk --debug` — succeeded (`build\app\outputs\flutter-apk\app-debug.apk`).
+- Not verified: a save against the running backend after the platform removal. The contract and request shapes are covered by unit and provider tests; no backend response parsing changed.
+
+### Client update screen (2026-11-18)
+
+- Replaced the update `Dialog` and `ModalBarrier` overlay with a root-level `/client-update` route and a full-screen `ClientUpdateScreen`. The old `client_update_dialog.dart` was removed; `formatReleaseSize` and `exitApplication` now live in the screen file.
+- Release notes are selectable and scroll in their own area. Download, retry, open-again, and Later/Exit stay pinned in a bottom action bar outside the scroll, so long notes never push the actions off-screen. The app bar carries the title and, for an optional update, a close action.
+- `ClientUpdateHost` now takes the mounted `GoRouter` and pushes `/client-update` when a prompt appears. It no longer renders a `Stack` overlay above the router, so the prompt is a real route rather than a barrier.
+- Required and optional prompts share the screen:
+  - an optional update can be closed with Later, the app-bar close, or the system back action; closing it dismisses the prompt so it is not reopened immediately;
+  - a required update uses `PopScope(canPop: false)`, has no close action, and offers Exit. The system back action cannot dismiss it.
+- `redirectFor` allows `/client-update` while signed in and signed out, so an update cannot be lost to an authentication redirect. The route is outside the navigation shell and returns to the previous route when dismissed.
+- `app.dart` now resolves one router instance and passes it to both `MaterialApp.router` and `ClientUpdateHost`, including when a test supplies a router.
+- `pubspec.yaml` is now `1.2.0+5`, which includes the native share card and the local pending-URL notes.
+- `dart format` on the changed Dart files — completed.
+- `flutter analyze` — no issues found.
+- `flutter test test/features/client_update --concurrency=1` — 65 tests passed, including the screen states, long release notes with pinned actions, routing, Later, and a required update surviving the system back action.
+- `flutter test --concurrency=1` — 1115 tests passed.
+- `flutter build apk --debug` — succeeded (`build\app\outputs\flutter-apk\app-debug.apk`).
+- Not verified: a visual run with a real optional and required release manifest on a device. The dev backend did not offer an update for this build during verification, and the screen layout has only been exercised by widget tests.
+
+### Native share card and local pending notes (2026-11-18)
+
+- `ShareActivity` is now a visible dialog-style card instead of an invisible window. It shows the shared link, an optional note, and Save/Cancel in its own task. It never opens `MainActivity` and no longer uses a Toast.
+- The card follows the app's design tokens: the light/dark palette values from `AppTokens`, a bordered 3dp card, Inter for UI text, JetBrains Mono for the URL, Silkscreen for the eyebrow and note label, and sentence-case buttons. The URL is capped at two lines.
+- Tap outside (`setFinishOnTouchOutside`), the Cancel button, and the system back action all dismiss the card. The card is focusable, so gesture navigation works.
+- The card sends `{text, note}` over `stash_it/share_intake`; the Dart handler still accepts a plain string for compatibility. `SharedUrlIntake.save` forwards a non-blank note to the create request; a blank note is omitted.
+- The save keeps the write-ahead: Dart writes the URL and the note to the device-local list before the request, so dismissing or failing after that point keeps both. A successful save removes the entry.
+- Pending URLs can now carry a local note. The list shows a two-line preview with an edit affordance, or an add affordance when empty; the shared note composer edits it locally, with no request and no session. A blank edit clears it. The note is sent with the create request only when the user saves the pending entry to an account.
+- `SavePendingUrls` passes the stored note to `POST /saved-items`. The note composer moved to `shared/widgets/note_composer_sheet.dart` so the Inbox and the pending list use one editor.
+- The live engine is preferred when the app is running; otherwise the headless engine starts on Save. The watchdog still bounds a stuck save at 45 seconds.
+- `flutter analyze` — no issues found.
+- `flutter test --concurrency=1` — 1114 tests passed. A parallel run hit a Flutter test-runner loading flake (`Cannot close sink while adding stream`) in a `client_update` file, unrelated to these changes.
+- `flutter build apk --debug --dart-define=API_BASE_URL=... --dart-define=GOOGLE_SERVER_CLIENT_ID=...` — succeeded.
+- Runtime verification on an Android 15 (SDK 35) emulator with the dev backend:
+  - the polished card shows `STASH-IT`, `Save this link`, the URL, `NOTE (OPTIONAL)`, `Add a note…`, `Cancel`, and `Save` in a floating dialog; `MainActivity` is not opened;
+  - Cancel and a tap outside dismiss the card without writing anything;
+  - Save without a note succeeds and closes the card; a note typed into the card is carried into the create request and the save succeeds;
+  - with the network disabled, the card shows `Save not confirmed. Kept on this device.`, and `pending_urls` stores the URL with `uncertain: true` and the note;
+  - the pending-note preview (two lines), edit flow, and add affordance are covered by widget tests; the app's Flutter semantics are not exposed to `uiautomator`, so the visual was checked manually.
+- This change is included in the unreleased `1.2.0+5` together with the client-update screen. It still needs a physical-device smoke test, a commit, and a tag before a release.
+
 ### Client metadata for Instagram saves (2026-11-18)
 
-- Read the uncommitted contract from the sibling Go repository's `docs/swagger.yaml`: `clientmetadata.Metadata` (title, description, image_url, platform; all optional), `saved_item.CreateSavedItemRequest.metadata`, and `enrichment.EnrichSavedItemRequest.metadata`.
+- Read the uncommitted contract from the sibling Go repository's `docs/swagger.yaml`: `clientmetadata.Metadata` (title, description, image_url, and at the time also platform; all optional), `saved_item.CreateSavedItemRequest.metadata`, and `enrichment.EnrichSavedItemRequest.metadata`. The platform field was later removed by the backend; see the platform-removal section above.
 - Added `ClientMetadata` and `EnrichSavedItemRequest` models. An absent metadata object is omitted from the body; an empty object is sent deliberately for a failed client-side read.
-- Added `clientEnrichmentPlatformForUrl` for `instagram.com` and `www.instagram.com`, matching the server's `CLIENT_ENRICHMENT_HOSTS`. Every other host keeps server-side enrichment and sends no metadata.
+- Added `isClientEnrichmentHost` for `instagram.com` and `www.instagram.com`, matching the server's `CLIENT_ENRICHMENT_HOSTS`. Every other host keeps server-side enrichment and sends no metadata.
 - Added `ClientMetadataFetcher`, a plain Dio client with no app interceptors, so the user's bearer token never reaches the page host. It sends a non-browser `StashIt/1.1.2` user agent: Instagram serves a browser its JavaScript app shell, which has no Open Graph metadata, and serves a non-browser client the page with OG metadata.
 - It reads the canonical page first and parses only `og:title`, `og:description` and `og:image`. The `<title>` and Twitter-tag fallbacks were removed so the app shell cannot be mistaken for article metadata. Values are trimmed, HTML entities are decoded, and a relative image is resolved; an image that is not absolute http/https or exceeds 2048 is dropped.
 - When the canonical page redirects, is rate limited, or has no OG field, it reads `/{reel|p}/{shortcode}/embed/captioned/` and parses `edge_media_to_caption` (JSON-unescaped) plus `thumbnail_src` or `display_url`. The real embed payload is a JSON object inside a JavaScript string, so quotes and escapes arrive doubled; the parser removes that escaping level before reading the fields. The embed username is not used as an author. If no caption or image is found, the read fails. No oEmbed endpoint is used.
@@ -373,6 +427,7 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - Share links to the app on Android without signing in.
 - Save a shared link through a headless Flutter engine while the app is not running.
 - Keep a shared link on the device before the save request, so an interrupted save does not lose it.
+- Keep and edit a local note with a device-local link; the note travels with the link when it is saved to an account.
 - Keep shared links on the device for seven days.
 - Consolidate exact duplicate links.
 - Explicitly submit locally saved links to an account.
@@ -413,7 +468,7 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - [ ] Confirm the backend accepts the Desktop OAuth client ID as a valid Google ID-token audience.
 - [ ] Review the Windows desktop layout and interactions manually.
 - [ ] Review the new Settings About section, the Check for updates row, and the signed-out Settings entry visually.
-- [ ] Review the optional and required update prompts visually.
+- [ ] Review the optional and required update screens visually, including long release notes and the pinned actions.
 - [ ] Review download progress, retry, and install-handoff states visually.
 - [ ] Test the Android download, checksum rejection, installer handoff, and unknown-apps approval on a device.
 - [ ] Test the Windows ZIP download and Explorer/default-handler handoff manually.
@@ -421,6 +476,8 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - [ ] Localize the remaining theme/language preference warnings.
 - [ ] Review Indonesian translations with a native speaker, including native share fallback wording.
 - [ ] Verify the Android share intake fix on a physical device with a release build, including the app-closed headless path and the offline path.
+- [ ] Verify the native share card and the pending-note editing on a physical device, including save, cancel, tap outside, note input, and an Instagram failure.
+- [ ] Verify the update screen on a device with real optional and required releases, including Later, the app-bar close, and the system back action.
 - [ ] Verify an Instagram save and an explicit re-read on a device against the backend, including a page that cannot be read.
 - [ ] Verify the app on a physical Android device.
 - [ ] Run the full test suite once after the test-suite reduction.
@@ -453,14 +510,18 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - macOS has no install handoff; the release endpoint is silently ignored until a macOS release exists.
 - Settings hides the build number. The full package information, including `buildNumber`, remains available through the existing provider and is used by the update check.
 - The backend currently documents Android and Windows release platforms. macOS is sent as its operating system name too; until a macOS release exists, the endpoint rejects it and the check is silently ignored.
-- The required-update overlay blocks in-app input. On Android, the system Back action can still pop the route underneath it, but the overlay remains until download or exit is chosen.
-- The update prompts, download progress, retry/handoff states, the Check for updates row, and the signed-out Settings entry have not been visually verified; manual inspection remains with the project owner.
+- The update screen is a route, so the system Back action no longer pops the route underneath it. A required update is non-dismissible; an optional update closes back to the previous screen.
+- An optional update opens as a full-screen prompt rather than a banner. It can be postponed once per build, and the previous route is restored on dismissal.
+- The update screen, download progress, retry/handoff states, the Check for updates row, and the signed-out Settings entry have not been visually verified; manual inspection remains with the project owner.
 - The startup failure screen has not been visually verified, and the bootstrap-failure path has not been reproduced on a device. The R8/JNI fix for the earlier `shared_preferences` startup hang remains unchanged.
 - The Contact dialog lists only the configured links, and the Contact row is hidden when both link values are empty.
 - The new Settings About section and Contact dialog have not been visually verified; manual inspection remains with the project owner.
 - Physical-device verification has not yet been completed.
 - Android link sharing is verified on an emulator for the app-closed headless path. Physical-device release verification, the signed-out path, and the offline path remain open.
 - A shared link is written to the device-local list before the save request. If the entry cannot be removed after a confirmed save, for example because local storage fails, a stale list entry remains until it expires or is cleared.
+- The native share card is Android-only. It now uses the app's palette and fonts, but still uses platform widgets. A future iOS share extension would need its own UI.
+- A pending note is local. It is sent only when the pending URL is saved to an account. The preview shows two lines; the full note is in the editor.
+- The native share card and the pending-note UI were verified on an emulator, not on a physical device.
 - Instagram metadata was verified against one public reel from this machine. A login-walled post, a post whose captioned embed is unavailable, and a page that returns no Open Graph metadata still produce an empty metadata object, and the server stores the item as failed.
 - The client-side read adds up to about 8 seconds per page, and an Instagram save can read both the canonical page and the captioned embed.
 - The metadata field names and limits follow the uncommitted backend contract read from the sibling Go repository. They must be re-checked when that contract is committed.

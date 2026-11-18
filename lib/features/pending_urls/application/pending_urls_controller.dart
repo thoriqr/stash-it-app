@@ -20,8 +20,8 @@ final AppFeedback _expiredFeedback = AppFeedback.localized(
 /// account provider and is not cleared by `SessionBoundary`: the entries belong
 /// to the installation, not to a signed-in user.
 ///
-/// The two mutations below are local reconciliation only. They never call the
-/// API, never require a session, and never change the list's ownership.
+/// The mutations below are local only. They never call the API, never require
+/// a session, and never change the list's ownership.
 @Riverpod(keepAlive: true)
 class PendingUrls extends _$PendingUrls {
   @override
@@ -56,6 +56,19 @@ class PendingUrls extends _$PendingUrls {
   Future<void> markSaveUncertain(String url) async {
     final store = ref.read(pendingUrlStoreProvider);
     await store.markUncertain(url);
+    final snapshot = await _readAndAnnounce(store);
+    if (!ref.mounted) return;
+    state = AsyncData(snapshot);
+  }
+
+  /// Replaces the note on [url] in the device-local list.
+  ///
+  /// This is a local edit: it sends no request, requires no session, and does
+  /// not change the entry's age or uncertainty. The note travels later, with
+  /// the create request, if the user saves this entry to an account.
+  Future<void> updateNote(String url, String? note) async {
+    final store = ref.read(pendingUrlStoreProvider);
+    await store.updateNote(url, note);
     final snapshot = await _readAndAnnounce(store);
     if (!ref.mounted) return;
     state = AsyncData(snapshot);

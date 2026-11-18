@@ -3,10 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:stash_it_app/features/client_update/domain/client_update_release.dart';
 import 'package:stash_it_app/features/client_update/domain/client_update_status.dart';
 import 'package:stash_it_app/features/client_update/domain/release_download.dart';
-import 'package:stash_it_app/features/client_update/presentation/client_update_dialog.dart';
+import 'package:stash_it_app/features/client_update/presentation/client_update_screen.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 
-ClientUpdatePrompt _prompt({bool required = false}) {
+ClientUpdatePrompt _prompt({
+  bool required = false,
+  String? notes = '- Fixed things',
+}) {
   return ClientUpdatePrompt(
     status: required
         ? ClientUpdateStatus.required
@@ -18,7 +21,7 @@ ClientUpdatePrompt _prompt({bool required = false}) {
         'https://downloads.stashit.thoriqr.my.id/android/stash-it-1.1.1-3.apk',
       ),
       sha256: List.filled(64, 'a').join(),
-      releaseNotes: '- Fixed things',
+      releaseNotes: notes,
       fileSizeBytes: 1000,
     ),
   );
@@ -28,22 +31,22 @@ Widget _app({
   required ClientUpdateDownloadState download,
   bool required = false,
   String platform = 'android',
+  String? notes = '- Fixed things',
 }) {
   return MaterialApp(
     locale: const Locale('en'),
     supportedLocales: const [Locale('en')],
     localizationsDelegates: AppLocalizations.localizationsDelegates,
-    home: Scaffold(
-      body: ClientUpdateDialog(
-        prompt: _prompt(required: required),
-        download: download,
-        platform: platform,
-        onDownload: () {},
-        onRetry: () {},
-        onOpenAgain: () {},
-        onLater: () {},
-        onExit: () {},
-      ),
+    home: ClientUpdateScreen(
+      prompt: _prompt(required: required, notes: notes),
+      download: download,
+      platform: platform,
+      onDownload: () {},
+      onRetry: () {},
+      onOpenAgain: () {},
+      onLater: required ? null : () {},
+      onBack: required ? null : () {},
+      onExit: () {},
     ),
   );
 }
@@ -203,6 +206,28 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Open again'), findsOneWidget);
+    expect(find.text('Later'), findsOneWidget);
+  });
+
+  testWidgets('long release notes scroll while the actions stay pinned', (
+    tester,
+  ) async {
+    final notes = List.generate(120, (index) => '- Note $index').join('\n');
+    await tester.pumpWidget(
+      _app(download: const ClientUpdateDownloadState(), notes: notes),
+    );
+    await tester.pump();
+
+    expect(find.byType(SelectableText), findsOneWidget);
+    expect(find.text('Download'), findsOneWidget);
+
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -600),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Download'), findsOneWidget);
     expect(find.text('Later'), findsOneWidget);
   });
 }

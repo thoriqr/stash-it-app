@@ -10,18 +10,18 @@ part 'client_metadata.g.dart';
 /// serializes as `{}`, which the server stores as a failed enrichment attempt
 /// for a client-enrichment host.
 ///
-/// The client trims whitespace and decodes HTML entities before building an
-/// instance. The title and description are sent as extracted, without
-/// truncation: the server applies its own Instagram title handling and owns the
-/// field limits. An image URL that is not an absolute http/https URL within the
-/// limit is dropped rather than sent.
+/// The server derives the platform from the URL host, so the client sends only
+/// the extracted fields. The client trims whitespace and decodes HTML entities
+/// before building an instance. The title and description are sent as
+/// extracted, without truncation: the server applies its own Instagram title
+/// handling and owns the field limits. An image URL that is not an absolute
+/// http/https URL within the limit is dropped rather than sent.
 @freezed
 abstract class ClientMetadata with _$ClientMetadata {
   const factory ClientMetadata({
     @JsonKey(includeIfNull: false) String? title,
     @JsonKey(includeIfNull: false) String? description,
     @JsonKey(name: 'image_url', includeIfNull: false) String? imageUrl,
-    @JsonKey(includeIfNull: false) String? platform,
   }) = _ClientMetadata;
 
   factory ClientMetadata.fromJson(Map<String, dynamic> json) =>

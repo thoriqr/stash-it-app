@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:stash_it_app/app/feedback/app_feedback.dart';
+import 'package:stash_it_app/app/feedback/feedback_controller.dart';
 import 'package:stash_it_app/app/feedback/feedback_host.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
@@ -13,6 +15,12 @@ import 'package:stash_it_app/features/pending_urls/presentation/pending_url_save
 import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/desktop_layout.dart';
+import 'package:stash_it_app/shared/widgets/note_composer_sheet.dart';
+
+final AppFeedback _noteSaveError = AppFeedback.localized(
+  tone: FeedbackTone.danger,
+  message: (l10n) => l10n.pendingUrlsNoteSaveError,
+);
 
 /// The device-local fallback list.
 ///
@@ -21,8 +29,10 @@ import 'package:stash_it_app/shared/widgets/desktop_layout.dart';
 /// entry screen before a user has ever registered. It never calls the API on
 /// open and never requires a session.
 ///
-/// The rows are inspect-only: there is no per-row retry, delete, edit, or
-/// collection assignment. The one write is the explicit bulk save action:
+/// Rows are inspect-only except for the device-local note, which can be added
+/// or edited without a request. There is no per-row retry, delete, or
+/// collection assignment. The one account write is the explicit bulk save
+/// action:
 /// signed out it points at sign-in, signed in it submits the local list
 /// sequentially through the existing `POST /saved-items` path. A confirmed
 /// entry is removed; a rejected or unconfirmed entry stays.
@@ -279,13 +289,13 @@ class _PendingUrlList extends StatelessWidget {
   }
 }
 
-class _PendingUrlRow extends StatelessWidget {
+class _PendingUrlRow extends ConsumerWidget {
   const _PendingUrlRow({required this.entry});
 
   final PendingUrl entry;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final tokens = AppTheme.tokensOf(context);
 
@@ -307,6 +317,8 @@ class _PendingUrlRow extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: AppMetrics.space2),
+          _PendingNote(note: entry.note, onTap: () => _editNote(context, ref)),
+          const SizedBox(height: AppMetrics.space2),
           Wrap(
             spacing: AppMetrics.space2,
             runSpacing: AppMetrics.space1,
@@ -324,6 +336,124 @@ class _PendingUrlRow extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  /// Edits the note locally. No request is made and no session is required.
+  Future<void> _editNote(BuildContext context, WidgetRef ref) async {
+    final result = await showNoteComposerSheet(
+      context,
+      initialNote: entry.note ?? '',
+    );
+    if (result == null) return;
+
+    try {
+      await ref
+          .read(pendingUrlsProvider.notifier)
+          .updateNote(entry.url, result);
+    } catch (_) {
+      if (!context.mounted) return;
+      ref.read(feedbackProvider.notifier).show(_noteSaveError);
+    }
+  }
+}
+
+/// The local note on one kept URL: a two-line preview, or an add affordance.
+///
+/// The whole surface opens the local editor. It never calls the API; the note
+/// is sent later only if the user saves this entry to an account.
+class _PendingNote extends StatelessWidget {
+  const _PendingNote({required this.note, required this.onTap});
+
+  final String? note;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final tokens = AppTheme.tokensOf(context);
+    final hasNote = note?.trim().isNotEmpty ?? false;
+
+    return Semantics(
+      button: true,
+      container: true,
+      label: hasNote ? l10n.inboxYourNote : l10n.savedItemAddNote,
+      child: Material(
+        color: tokens.surfaceInset,
+        borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
+        child: InkWell(
+          borderRadius: const BorderRadius.all(AppMetrics.controlRadius),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppMetrics.space2,
+              vertical: 7,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Icon(
+                    hasNote
+                        ? Icons.sticky_note_2_outlined
+                        : Icons.note_add_outlined,
+                    size: 14,
+                    color: tokens.textTertiary,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: hasNote
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.inboxYourNote,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.meta.copyWith(
+                                color: tokens.textTertiary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              note!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.body.copyWith(
+                                fontSize: 12.5,
+                                height: 1.4,
+                                color: tokens.textSecondary,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          l10n.savedItemAddNote,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.meta.copyWith(
+                            color: tokens.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+                const SizedBox(width: 6),
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Icon(
+                    Icons.edit_outlined,
+                    size: 14,
+                    color: tokens.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

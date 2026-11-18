@@ -12,7 +12,7 @@ part 'create_saved_item_request.g.dart';
 /// { "url": "https://example.com/articles/1", "note": "Read this later." }
 /// {
 ///   "url": "https://www.instagram.com/reel/...",
-///   "metadata": { "title": "...", "platform": "Instagram" }
+///   "metadata": { "title": "..." }
 /// }
 /// ```
 ///
@@ -21,11 +21,12 @@ part 'create_saved_item_request.g.dart';
 /// without a note keeps its existing shape.
 ///
 /// `metadata` is sent only for a host whose enrichment the server leaves to the
-/// client. For those hosts, sending it makes the save itself the enrichment
-/// attempt, so the item is stored completed or failed rather than pending.
-/// Omitting it for every other host keeps the server's fetch-and-enqueue
-/// behaviour unchanged. An empty metadata object is meaningful: it records a
-/// failed attempt for a client-enrichment host.
+/// client. It carries `title`, `description` and `image_url` only; the server
+/// derives the platform from the URL host. For those hosts, sending it makes
+/// the save itself the enrichment attempt, so the item is stored completed or
+/// failed rather than pending. Omitting it for every other host keeps the
+/// server's fetch-and-enqueue behaviour unchanged. An empty metadata object is
+/// meaningful: it records a failed attempt for a client-enrichment host.
 ///
 /// The server derives the domain, assigns the item to the caller's Unsorted
 /// collection, and leaves metadata for background enrichment when it fetches

@@ -65,10 +65,10 @@ class ClientMetadataFetcher {
   /// Returns metadata extracted from [url], or null when neither the canonical
   /// page nor its captioned embed yielded a usable field.
   ///
-  /// [platform] is the label the client associates with the host. It is only
-  /// included when at least one page field was extracted, so a failed read
-  /// still produces an empty object at the call site.
-  Future<ClientMetadata?> fetch(String url, {required String platform}) async {
+  /// The server derives the platform from the URL host, so only the extracted
+  /// fields are returned. A failed read still produces an empty object at the
+  /// call site.
+  Future<ClientMetadata?> fetch(String url) async {
     final pageUrl = Uri.tryParse(url.trim());
     if (pageUrl == null) return null;
 
@@ -77,40 +77,26 @@ class ClientMetadataFetcher {
       return null;
     }
 
-    final page = await _fetchAndParsePage(pageUrl, platform: platform);
+    final page = await _fetchAndParsePage(pageUrl);
     if (page != null) return page;
 
     final embedUrl = _embedUrlFor(pageUrl);
     if (embedUrl == null) return null;
-    return _fetchAndParseEmbed(embedUrl, platform: platform);
+    return _fetchAndParseEmbed(embedUrl);
   }
 
-  Future<ClientMetadata?> _fetchAndParsePage(
-    Uri pageUrl, {
-    required String platform,
-  }) async {
+  Future<ClientMetadata?> _fetchAndParsePage(Uri pageUrl) async {
     final body = await _fetchBody(pageUrl);
     if (body == null) return null;
 
-    return parseClientMetadataFromHtml(
-      body,
-      pageUrl: pageUrl,
-      platform: platform,
-    );
+    return parseClientMetadataFromHtml(body, pageUrl: pageUrl);
   }
 
-  Future<ClientMetadata?> _fetchAndParseEmbed(
-    Uri embedUrl, {
-    required String platform,
-  }) async {
+  Future<ClientMetadata?> _fetchAndParseEmbed(Uri embedUrl) async {
     final body = await _fetchBody(embedUrl);
     if (body == null) return null;
 
-    return parseClientMetadataFromEmbedHtml(
-      body,
-      pageUrl: embedUrl,
-      platform: platform,
-    );
+    return parseClientMetadataFromEmbedHtml(body, pageUrl: embedUrl);
   }
 
   Future<String?> _fetchBody(Uri url) async {
@@ -207,7 +193,6 @@ final RegExp _embedDisplayImage = RegExp(
 ClientMetadata? parseClientMetadataFromHtml(
   String html, {
   required Uri pageUrl,
-  required String platform,
 }) {
   final meta = _metaContents(_scoped(html));
 
@@ -221,7 +206,6 @@ ClientMetadata? parseClientMetadataFromHtml(
     title: title,
     description: description,
     imageUrl: imageUrl,
-    platform: _cleanText(platform),
   );
 }
 
@@ -230,14 +214,13 @@ ClientMetadata? parseClientMetadataFromHtml(
 /// The caption comes from `edge_media_to_caption`, unescaped as JSON, and the
 /// image from `thumbnail_src` or `display_url`. The embed's username is not
 /// used as an author: it can name a collaborator rather than the poster. The
-/// title is left null; a description, image, and platform are enough for the
-/// server to store the attempt as completed.
+/// title is left null; a description and image are enough for the server to
+/// store the attempt as completed.
 ///
 /// Returns null when neither a caption nor an image could be read.
 ClientMetadata? parseClientMetadataFromEmbedHtml(
   String html, {
   required Uri pageUrl,
-  required String platform,
 }) {
   final scoped = _scoped(html);
 
@@ -256,11 +239,7 @@ ClientMetadata? parseClientMetadataFromEmbedHtml(
 
   if (description == null && imageUrl == null) return null;
 
-  return ClientMetadata(
-    description: description,
-    imageUrl: imageUrl,
-    platform: _cleanText(platform),
-  );
+  return ClientMetadata(description: description, imageUrl: imageUrl);
 }
 
 String _scoped(String html) => html.length > _maxHtmlCharacters

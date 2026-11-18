@@ -87,6 +87,9 @@ String? extractSharedUrl(String raw) {
 ///
 /// Each shared URL gets one attempt. There is no automatic retry, timer,
 /// queue drain, or background synchronization.
+///
+/// An optional note from the native share card is sent with the remote create
+/// only. The device-local fallback stores the URL without it.
 class SharedUrlIntake {
   const SharedUrlIntake({
     required this.repository,
@@ -98,20 +101,26 @@ class SharedUrlIntake {
   final PendingUrlStore store;
   final ClientMetadataFetcher metadataFetcher;
 
-  Future<ShareSaveOutcome> save(String rawText) async {
+  Future<ShareSaveOutcome> save(String rawText, {String? note}) async {
     if (rawText.trim().isEmpty) return ShareSaveOutcome.ignored;
 
     final url = extractSharedUrl(rawText);
     if (url == null) return ShareSaveOutcome.invalid;
 
+    final submittedNote = note == null || note.trim().isEmpty ? null : note;
+
     // Keep the URL locally before contacting the page or the server. A request
     // that is interrupted by process death or the native watchdog then still
     // leaves the link on the device.
-    final written = await _write(url, uncertain: true);
+    final written = await _write(url, uncertain: true, note: submittedNote);
     final metadata = await _metadataFor(url);
 
     try {
-      await repository.create(url: url, metadata: metadata);
+      await repository.create(
+        url: url,
+        note: submittedNote,
+        metadata: metadata,
+      );
 
       // The server confirmed the save, so the local copy is no longer needed.
       // Cleanup is best-effort: a failed local delete must not change the
@@ -131,13 +140,17 @@ class SharedUrlIntake {
       if (uncertain) {
         return written
             ? ShareSaveOutcome.storedAfterUncertain
-            : _store(url, uncertain: true);
+            : _store(url, uncertain: true, note: submittedNote);
       }
 
       // A known failure must not leave the entry claiming an unknown outcome.
       // If that write fails, the uncertain entry written above still keeps the
       // URL safely on the device.
-      final downgraded = await _write(url, uncertain: false);
+      final downgraded = await _write(
+        url,
+        uncertain: false,
+        note: submittedNote,
+      );
       return downgraded || written
           ? ShareSaveOutcome.storedAfterFailure
           : ShareSaveOutcome.notStored;
@@ -145,7 +158,7 @@ class SharedUrlIntake {
       // Unexpected errors do not establish whether the remote save succeeded.
       return written
           ? ShareSaveOutcome.storedAfterUncertain
-          : _store(url, uncertain: true);
+          : _store(url, uncertain: true, note: submittedNote);
     }
   }
 
@@ -156,29 +169,35 @@ class SharedUrlIntake {
   /// empty object, which the server records as a failed attempt rather than
   /// leaving the item pending.
   Future<ClientMetadata?> _metadataFor(String url) async {
-    final platform = clientEnrichmentPlatformForUrl(url);
-    if (platform == null) return null;
+    if (!isClientEnrichmentHost(url)) return null;
 
     try {
-      return await metadataFetcher.fetch(url, platform: platform) ??
-          const ClientMetadata();
+      return await metadataFetcher.fetch(url) ?? const ClientMetadata();
     } catch (_) {
       return const ClientMetadata();
     }
   }
 
   /// Writes [url] and reports whether the store accepted it.
-  Future<bool> _write(String url, {required bool uncertain}) async {
+  Future<bool> _write(
+    String url, {
+    required bool uncertain,
+    String? note,
+  }) async {
     try {
-      await store.upsert(url: url, uncertain: uncertain);
+      await store.upsert(url: url, uncertain: uncertain, note: note);
       return true;
     } catch (_) {
       return false;
     }
   }
 
-  Future<ShareSaveOutcome> _store(String url, {required bool uncertain}) async {
-    if (!await _write(url, uncertain: uncertain)) {
+  Future<ShareSaveOutcome> _store(
+    String url, {
+    required bool uncertain,
+    String? note,
+  }) async {
+    if (!await _write(url, uncertain: uncertain, note: note)) {
       return ShareSaveOutcome.notStored;
     }
 

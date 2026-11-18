@@ -616,7 +616,7 @@ void main() {
     test('an Instagram save sends the metadata read on the device', () async {
       const instagramUrl = 'https://www.instagram.com/reel/abc/';
       final fetcher = FakeClientMetadataFetcher(
-        const ClientMetadata(title: 'Reel', platform: 'Instagram'),
+        const ClientMetadata(title: 'Reel'),
       );
       final container = await makeContainer(metadataFetcher: fetcher);
       addTearDown(container.dispose);
@@ -634,7 +634,6 @@ void main() {
       );
       expect((request.body as Map<String, dynamic>)['metadata'], {
         'title': 'Reel',
-        'platform': 'Instagram',
       });
       expect(fetcher.urls, [instagramUrl]);
     });

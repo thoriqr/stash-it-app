@@ -5,10 +5,10 @@ import 'package:stash_it_app/core/error/api_failure.dart';
 import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/inbox/presentation/widgets/inbox_intake.dart';
-import 'package:stash_it_app/features/inbox/presentation/widgets/inbox_note_composer_sheet.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_page.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
+import 'package:stash_it_app/shared/widgets/note_composer_sheet.dart';
 
 import '../../../support/fake_http.dart';
 import '../../../support/fake_saved_items_repository.dart';
@@ -58,7 +58,7 @@ void main() {
   }
 
   Finder composerField() => find.descendant(
-    of: find.byType(InboxNoteComposerSheet),
+    of: find.byType(NoteComposerSheet),
     matching: find.byType(TextField),
   );
 

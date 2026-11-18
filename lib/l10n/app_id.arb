@@ -93,6 +93,7 @@
   "pendingUrlsEmptyTitle": "Tidak ada yang disimpan di perangkat ini",
   "pendingUrlsEmptyBody": "Tautan yang penyimpanannya tidak selesai akan muncul di sini selama tujuh hari.",
   "pendingUrlsReadError": "Kami tidak dapat membaca tautan yang disimpan di perangkat ini.",
+  "pendingUrlsNoteSaveError": "Kami tidak dapat memperbarui catatan di perangkat ini.",
   "pendingUrlsRetry": "Coba lagi",
   "pendingUrlsKeptJustNow": "Baru saja disimpan",
   "pendingUrlsKeptMinutesAgo": "{count, plural, other{Disimpan {count} menit lalu}}",

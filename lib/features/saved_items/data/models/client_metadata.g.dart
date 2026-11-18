@@ -11,7 +11,6 @@ _ClientMetadata _$ClientMetadataFromJson(Map<String, dynamic> json) =>
       title: json['title'] as String?,
       description: json['description'] as String?,
       imageUrl: json['image_url'] as String?,
-      platform: json['platform'] as String?,
     );
 
 Map<String, dynamic> _$ClientMetadataToJson(_ClientMetadata instance) =>
@@ -19,5 +18,4 @@ Map<String, dynamic> _$ClientMetadataToJson(_ClientMetadata instance) =>
       'title': ?instance.title,
       'description': ?instance.description,
       'image_url': ?instance.imageUrl,
-      'platform': ?instance.platform,
     };

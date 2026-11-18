@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#19342C</color>
+    <color name="share_surface">#FFFFFF</color>
+    <color name="share_surface_inset">#EEF1F4</color>
+    <color name="share_border">#DBE1E7</color>
+    <color name="share_text_primary">#222A34</color>
+    <color name="share_text_secondary">#4A545F</color>
+    <color name="share_text_tertiary">#5F6975</color>
+    <color name="share_text_disabled">#A6AFBA</color>
+    <color name="share_accent">#4C6B5F</color>
+    <color name="share_accent_strong">#3F5B50</color>
+    <color name="share_accent_contrast">#FFFFFF</color>
+    <color name="share_success">#1D6E5E</color>
+    <color name="share_warning">#8A6A2F</color>
+    <color name="share_danger">#A8463A</color>
+    <color name="share_disabled_bg">#EFF2F5</color>
 </resources>

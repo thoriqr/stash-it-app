@@ -15,7 +15,7 @@ class FakeClientMetadataFetcher implements ClientMetadataFetcher {
   final Duration timeout = Duration.zero;
 
   @override
-  Future<ClientMetadata?> fetch(String url, {required String platform}) async {
+  Future<ClientMetadata?> fetch(String url) async {
     urls.add(url);
     return result;
   }

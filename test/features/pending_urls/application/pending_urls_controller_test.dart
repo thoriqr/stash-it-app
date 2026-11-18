@@ -172,6 +172,36 @@ void main() {
       },
     );
 
+    test(
+      'updateNote edits the note locally and keeps the entry unchanged',
+      () async {
+        final store = await testPendingUrlStore();
+        await store.upsert(url: url, uncertain: true);
+
+        final container = ProviderContainer(
+          overrides: [pendingUrlStoreProvider.overrideWithValue(store)],
+        );
+        addTearDown(container.dispose);
+        await container.read(pendingUrlsProvider.future);
+        final before = container
+            .read(pendingUrlsProvider)
+            .value!
+            .entries
+            .single;
+
+        await container
+            .read(pendingUrlsProvider.notifier)
+            .updateNote(url, 'Local note');
+
+        final after = container.read(pendingUrlsProvider).value!.entries.single;
+        expect(after.note, 'Local note');
+        expect(after.addedAt, before.addedAt);
+        expect(after.uncertain, isTrue);
+        expect(container.read(pendingUrlCountProvider), 1);
+        expect((await store.readAll()).entries.single.note, 'Local note');
+      },
+    );
+
     test('a prune during a mutation is announced once', () async {
       final created = DateTime.utc(2026, 10, 1, 12);
       var now = created;

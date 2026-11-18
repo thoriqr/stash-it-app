@@ -8,8 +8,8 @@ import 'package:stash_it_app/features/saved_items/domain/saved_item_url.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 import 'package:stash_it_app/shared/widgets/app_button.dart';
 import 'package:stash_it_app/shared/widgets/app_field.dart';
+import 'package:stash_it_app/shared/widgets/note_composer_sheet.dart';
 
-import 'inbox_note_composer_sheet.dart';
 import 'inbox_note_entry.dart';
 import 'save_with_note_dialog.dart';
 
@@ -71,7 +71,7 @@ class _InboxIntakeState extends ConsumerState<InboxIntake> {
   /// A dismissed sheet returns null and leaves the existing draft untouched.
   /// Done returns the entered text; whitespace-only text clears the draft.
   Future<void> _editNote() async {
-    final result = await showInboxNoteComposer(
+    final result = await showNoteComposerSheet(
       context,
       initialNote: _noteDraft ?? '',
     );

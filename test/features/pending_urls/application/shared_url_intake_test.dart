@@ -273,6 +273,63 @@ void main() {
       expect(adapter.lastRequestTo('/saved-items')!.jsonField('url'), url);
     });
 
+    test('a note from the share card travels with the create', () async {
+      adapter.onMethod(
+        'POST',
+        '/saved-items',
+        status: 201,
+        body: SavedItemsFixtures.created(url: url),
+      );
+      final store = await testPendingUrlStore();
+      final container = await makeContainer(store: store);
+
+      await container
+          .read(sharedUrlIntakeProvider)
+          .save(url, note: 'Watch later.');
+
+      final body =
+          adapter.lastRequestTo('/saved-items')!.body as Map<String, dynamic>;
+      expect(body['note'], 'Watch later.');
+      expect((await store.readAll()).entries, isEmpty);
+    });
+
+    test('a failed save keeps the note with the local URL', () async {
+      adapter.onMethod(
+        'POST',
+        '/saved-items',
+        status: 500,
+        body: errorBody(ApiErrorCode.internalServerError),
+      );
+      final store = await testPendingUrlStore();
+      final container = await makeContainer(store: store);
+
+      final outcome = await container
+          .read(sharedUrlIntakeProvider)
+          .save(url, note: 'Watch later.');
+
+      expect(outcome, ShareSaveOutcome.storedAfterFailure);
+      final entry = (await store.readAll()).entries.single;
+      expect(entry.url, url);
+      expect(entry.note, 'Watch later.');
+    });
+
+    test('a blank note is omitted from the create', () async {
+      adapter.onMethod(
+        'POST',
+        '/saved-items',
+        status: 201,
+        body: SavedItemsFixtures.created(url: url),
+      );
+      final store = await testPendingUrlStore();
+      final container = await makeContainer(store: store);
+
+      await container.read(sharedUrlIntakeProvider).save(url, note: '   ');
+
+      final body =
+          adapter.lastRequestTo('/saved-items')!.body as Map<String, dynamic>;
+      expect(body.containsKey('note'), isFalse);
+    });
+
     test(
       'an Instagram save sends the metadata extracted on the device',
       () async {
@@ -289,7 +346,6 @@ void main() {
             title: 'Reel title',
             description: 'Reel description',
             imageUrl: 'https://cdn.example.com/reel.jpg',
-            platform: 'Instagram',
           ),
         );
         final container = await makeContainer(
@@ -310,7 +366,6 @@ void main() {
             'title': 'Reel title',
             'description': 'Reel description',
             'image_url': 'https://cdn.example.com/reel.jpg',
-            'platform': 'Instagram',
           },
         );
       },
@@ -457,13 +512,14 @@ void main() {
         metadataFetcher: FakeClientMetadataFetcher(),
       );
 
-      final result = intake.save(url);
+      final result = intake.save(url, note: 'Draft note');
       await pumpEventQueue();
 
       final pending = (await store.readAll()).entries;
       expect(pending, hasLength(1));
       expect(pending.single.url, url);
       expect(pending.single.uncertain, isTrue);
+      expect(pending.single.note, 'Draft note');
 
       repository.release.complete();
       expect(await result, ShareSaveOutcome.saved);

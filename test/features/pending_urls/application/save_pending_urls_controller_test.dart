@@ -132,7 +132,7 @@ void main() {
       null,
       null,
       null,
-    ], reason: 'device-local pending URLs never carry a note');
+    ], reason: 'the seeded entries have no local note');
     expect(maxInFlight, 1, reason: 'the run is sequential');
     expect((await store.readAll()).entries, isEmpty);
     expect(container.read(pendingUrlCountProvider), 0);
@@ -140,6 +140,20 @@ void main() {
     expect(state.isRunning, isFalse);
     expect(state.lastSummary?.saved, 3);
     expect(state.lastSummary?.remaining, 0);
+  });
+
+  test('a local note is sent with the bulk create', () async {
+    final store = await testPendingUrlStore();
+    await store.upsert(url: urlA, uncertain: true, note: 'Local note');
+    final repository = FakeSavedItemsRepository(createResults: const [null]);
+    final container = await makeContainer(store: store, repository: repository);
+    await container.read(pendingUrlsProvider.future);
+
+    await container.read(savePendingUrlsProvider.notifier).saveAll();
+
+    expect(repository.createUrls, [urlA]);
+    expect(repository.createNotes, ['Local note']);
+    expect((await store.readAll()).entries, isEmpty);
   });
 
   test('a second call while running starts no second run', () async {

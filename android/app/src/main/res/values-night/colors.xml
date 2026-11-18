@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="share_surface">#1B1F23</color>
+    <color name="share_surface_inset">#1E2328</color>
+    <color name="share_border">#2C333A</color>
+    <color name="share_text_primary">#DAE0E5</color>
+    <color name="share_text_secondary">#A3ACB5</color>
+    <color name="share_text_tertiary">#848E99</color>
+    <color name="share_text_disabled">#5D6771</color>
+    <color name="share_accent">#74A88C</color>
+    <color name="share_accent_strong">#86BA9C</color>
+    <color name="share_accent_contrast">#10140F</color>
+    <color name="share_success">#56BFA4</color>
+    <color name="share_warning">#D9AE5F</color>
+    <color name="share_danger">#E08C7A</color>
+    <color name="share_disabled_bg">#1B1F23</color>
+</resources>

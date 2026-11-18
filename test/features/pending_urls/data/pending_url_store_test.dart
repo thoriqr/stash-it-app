@@ -183,6 +183,91 @@ void main() {
       expect(entry.containsKey('account_id'), isFalse);
     });
 
+    test('a note round-trips and is omitted when absent', () async {
+      final preferences = await prefsWith({});
+      final store = PendingUrlStore(preferences);
+
+      await store.upsert(url: url, uncertain: true, note: 'Read later');
+
+      expect((await store.readAll()).entries.single.note, 'Read later');
+      final decoded = jsonDecode(preferences.getString(key)!) as List;
+      expect((decoded.single as Map<String, dynamic>)['note'], 'Read later');
+
+      await store.updateNote(url, null);
+
+      expect((await store.readAll()).entries.single.note, isNull);
+      final cleared = jsonDecode(preferences.getString(key)!) as List;
+      expect(
+        (cleared.single as Map<String, dynamic>).containsKey('note'),
+        isFalse,
+      );
+    });
+
+    test('a whitespace-only note is stored as null', () async {
+      final preferences = await prefsWith({});
+      final store = PendingUrlStore(preferences);
+
+      await store.upsert(url: url, uncertain: true, note: '   \n ');
+
+      expect((await store.readAll()).entries.single.note, isNull);
+    });
+
+    test(
+      'updateNote preserves the timestamp, uncertainty, and other entries',
+      () async {
+        final preferences = await prefsWith({});
+        var now = DateTime.utc(2026, 10, 28, 12);
+        final store = PendingUrlStore(preferences, now: () => now);
+
+        await store.upsert(url: url, uncertain: true);
+        await store.upsert(
+          url: '$url?other=1',
+          uncertain: false,
+          note: 'Other',
+        );
+        final before = (await store.readAll()).entries.firstWhere(
+          (entry) => entry.url == url,
+        );
+
+        now = now.add(const Duration(hours: 2));
+        await store.updateNote(url, 'Edited note');
+
+        final entries = (await store.readAll()).entries;
+        final edited = entries.firstWhere((entry) => entry.url == url);
+        final other = entries.firstWhere(
+          (entry) => entry.url == '$url?other=1',
+        );
+        expect(edited.note, 'Edited note');
+        expect(edited.addedAt, before.addedAt);
+        expect(edited.uncertain, isTrue);
+        expect(other.note, 'Other');
+      },
+    );
+
+    test('updateNote is a no-op for an unknown entry', () async {
+      final preferences = await prefsWith({});
+      final store = PendingUrlStore(preferences);
+      await store.upsert(url: url, uncertain: false);
+
+      await store.updateNote('https://example.com/missing', 'x');
+
+      expect((await store.readAll()).entries.single.note, isNull);
+    });
+
+    test(
+      'a failed updateNote throws instead of claiming persistence',
+      () async {
+        final preferences = await prefsWith({});
+        await PendingUrlStore(preferences).upsert(url: url, uncertain: false);
+        final store = _FailingWriteStore(preferences);
+
+        await expectLater(
+          store.updateNote(url, 'x'),
+          throwsA(isA<PendingUrlStorageException>()),
+        );
+      },
+    );
+
     test('a failed write throws instead of claiming persistence', () async {
       final preferences = await prefsWith({});
       final store = _FailingWriteStore(preferences);

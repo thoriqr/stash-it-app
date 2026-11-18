@@ -9,7 +9,7 @@ void main() {
   final pageUrl = Uri.parse('https://www.instagram.com/reel/abc/');
 
   group('parseClientMetadataFromHtml', () {
-    test('extracts Open Graph fields and the platform', () {
+    test('extracts Open Graph fields', () {
       const html = '''
         <html><head>
         <meta property="og:title" content="Author on Instagram: &quot;Caption&quot;" />
@@ -18,16 +18,11 @@ void main() {
         </head></html>
       ''';
 
-      final metadata = parseClientMetadataFromHtml(
-        html,
-        pageUrl: pageUrl,
-        platform: 'Instagram',
-      );
+      final metadata = parseClientMetadataFromHtml(html, pageUrl: pageUrl);
 
       expect(metadata!.title, 'Author on Instagram: "Caption"');
       expect(metadata.description, 'Line one & two');
       expect(metadata.imageUrl, 'https://www.instagram.com/media/preview.jpg');
-      expect(metadata.platform, 'Instagram');
     });
 
     test(
@@ -37,7 +32,6 @@ void main() {
           '<html><head><title>Instagram</title></head>'
           '<body>app shell</body></html>',
           pageUrl: pageUrl,
-          platform: 'Instagram',
         );
 
         expect(metadata, isNull);
@@ -54,7 +48,6 @@ void main() {
         'content="Author on Instagram: &quot;$caption&quot;">'
         '<meta property="og:description" content="$longDescription">',
         pageUrl: pageUrl,
-        platform: 'Instagram',
       );
 
       expect(metadata!.title, longTitle);
@@ -66,7 +59,6 @@ void main() {
         '<meta property="og:title" content="   ">'
         '<meta property="og:description" content="">',
         pageUrl: pageUrl,
-        platform: 'Instagram',
       );
 
       expect(metadata, isNull);
@@ -76,7 +68,6 @@ void main() {
       final metadata = parseClientMetadataFromHtml(
         '<meta property="og:image" content="data:image/png;base64,AAAA">',
         pageUrl: pageUrl,
-        platform: 'Instagram',
       );
 
       expect(metadata, isNull);
@@ -85,10 +76,25 @@ void main() {
     test('serializes an empty metadata object as an empty map', () {
       expect(const ClientMetadata().toJson(), isEmpty);
     });
+
+    test('serializes metadata without a platform field', () {
+      final json = const ClientMetadata(
+        title: 'Reel',
+        description: 'Caption',
+        imageUrl: 'https://cdn.example.com/preview.jpg',
+      ).toJson();
+
+      expect(json, {
+        'title': 'Reel',
+        'description': 'Caption',
+        'image_url': 'https://cdn.example.com/preview.jpg',
+      });
+      expect(json.containsKey('platform'), isFalse);
+    });
   });
 
   group('parseClientMetadataFromEmbedHtml', () {
-    test('reads the caption, thumbnail, and platform', () {
+    test('reads the caption and thumbnail', () {
       const html = r'''
         <script type="application/json">{"shortcode_media":{
           "edge_media_to_caption":{"edges":[{"node":{"text":"Caption \u0026 more"}}]},
@@ -97,17 +103,12 @@ void main() {
         }}</script>
       ''';
 
-      final metadata = parseClientMetadataFromEmbedHtml(
-        html,
-        pageUrl: pageUrl,
-        platform: 'Instagram',
-      );
+      final metadata = parseClientMetadataFromEmbedHtml(html, pageUrl: pageUrl);
 
       expect(metadata, isNotNull);
       expect(metadata!.title, isNull);
       expect(metadata.description, 'Caption & more');
       expect(metadata.imageUrl, 'https://scontent.cdninstagram.com/thumb.jpg');
-      expect(metadata.platform, 'Instagram');
     });
 
     test('uses display_url when thumbnail_src is absent', () {
@@ -116,11 +117,7 @@ void main() {
         "display_url":"https:\/\/scontent.cdninstagram.com\/full.jpg"}</script>
       ''';
 
-      final metadata = parseClientMetadataFromEmbedHtml(
-        html,
-        pageUrl: pageUrl,
-        platform: 'Instagram',
-      );
+      final metadata = parseClientMetadataFromEmbedHtml(html, pageUrl: pageUrl);
 
       expect(metadata!.imageUrl, 'https://scontent.cdninstagram.com/full.jpg');
     });
@@ -132,11 +129,7 @@ void main() {
         <script>window.__additionalDataLoaded('...', "{\"shortcode_media\":{\"edge_media_to_caption\":{\"edges\":[{\"node\":{\"text\":\"Caption \\u0026 more\"}}]},\"thumbnail_src\":\"https:\\\/\\\/scontent.cdninstagram.com\\\/thumb.jpg\"}}");</script>
       ''';
 
-      final metadata = parseClientMetadataFromEmbedHtml(
-        html,
-        pageUrl: pageUrl,
-        platform: 'Instagram',
-      );
+      final metadata = parseClientMetadataFromEmbedHtml(html, pageUrl: pageUrl);
 
       expect(metadata!.description, 'Caption & more');
       expect(metadata.imageUrl, 'https://scontent.cdninstagram.com/thumb.jpg');
@@ -146,7 +139,6 @@ void main() {
       final metadata = parseClientMetadataFromEmbedHtml(
         '<html></html>',
         pageUrl: pageUrl,
-        platform: 'Instagram',
       );
 
       expect(metadata, isNull);
@@ -186,11 +178,9 @@ void main() {
 
       final metadata = await fetcher.fetch(
         'https://www.instagram.com/reel/abc/',
-        platform: 'Instagram',
       );
 
       expect(metadata!.title, 'Reel');
-      expect(metadata.platform, 'Instagram');
     });
 
     test('falls back to the captioned embed when the page has no Open Graph '
@@ -204,14 +194,12 @@ void main() {
 
       final metadata = await fetcher.fetch(
         'https://www.instagram.com/reel/abc/',
-        platform: 'Instagram',
       );
 
       expect(metadata, isNotNull);
       expect(metadata!.title, isNull);
       expect(metadata.description, 'Caption & more');
       expect(metadata.imageUrl, 'https://scontent.cdninstagram.com/thumb.jpg');
-      expect(metadata.platform, 'Instagram');
     });
 
     test('returns null when both the page and the embed fail', () async {
@@ -220,7 +208,6 @@ void main() {
 
       final metadata = await fetcher.fetch(
         'https://www.instagram.com/reel/abc/',
-        platform: 'Instagram',
       );
 
       expect(metadata, isNull);
@@ -233,10 +220,7 @@ void main() {
       );
       final fetcher = ClientMetadataFetcher(dio: dio);
 
-      await fetcher.fetch(
-        'https://www.instagram.com/reel/abc/',
-        platform: 'Instagram',
-      );
+      await fetcher.fetch('https://www.instagram.com/reel/abc/');
 
       final request = adapter.lastRequestTo('instagram.com')!;
       expect(request.headers.containsKey('Authorization'), isFalse);

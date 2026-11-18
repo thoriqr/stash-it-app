@@ -82,13 +82,10 @@ class EnrichSavedItem extends _$EnrichSavedItem {
   /// null: a failed read becomes an empty object, which records the attempt as
   /// failed rather than leaving the item pending.
   Future<ClientMetadata?> _metadataFor(String url) async {
-    final platform = clientEnrichmentPlatformForUrl(url);
-    if (platform == null) return null;
+    if (!isClientEnrichmentHost(url)) return null;
 
     try {
-      return await ref
-              .read(clientMetadataFetcherProvider)
-              .fetch(url, platform: platform) ??
+      return await ref.read(clientMetadataFetcherProvider).fetch(url) ??
           const ClientMetadata();
     } catch (_) {
       return const ClientMetadata();

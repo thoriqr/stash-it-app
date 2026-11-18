@@ -65,7 +65,7 @@ class _StashItAppState extends ConsumerState<StashItApp>
     // keeps token renewal under the same serialized session flow.
     bindShareIntakeChannel(
       _shareChannel,
-      (raw) => ref.read(sharedUrlIntakeProvider).save(raw),
+      (raw, {note}) => ref.read(sharedUrlIntakeProvider).save(raw, note: note),
       messageFor: (outcome) => shareOutcomeMessage(
         outcome,
         shareIntakeLocalizations(
@@ -128,6 +128,10 @@ class _StashItAppState extends ConsumerState<StashItApp>
         .watch(languagePreferenceControllerProvider)
         .locale;
 
+    // Use the same router instance for the app and the update host, including
+    // when a caller supplies one for a test.
+    final GoRouter router = widget.router ?? ref.watch(appRouterProvider);
+
     return MaterialApp.router(
       title: 'Stash-it',
       debugShowCheckedModeBanner: false,
@@ -155,6 +159,7 @@ class _StashItAppState extends ConsumerState<StashItApp>
       // FeedbackHost wraps SkeletonizerConfig so notices remain above routed
       // content, including authentication screens and the navigation bar.
       builder: (context, child) => ClientUpdateHost(
+        router: router,
         child: FeedbackHost(
           child: SkeletonizerConfig(
             data: appSkeletonizerConfig(
@@ -165,9 +170,9 @@ class _StashItAppState extends ConsumerState<StashItApp>
           ),
         ),
       ),
-      // Watch the provider so the router and its authentication refresh
-      // listener remain alive for the lifetime of the application.
-      routerConfig: widget.router ?? ref.watch(appRouterProvider),
+      // The router is watched above so its authentication refresh listener
+      // remains alive for the lifetime of the application.
+      routerConfig: router,
     );
   }
 }

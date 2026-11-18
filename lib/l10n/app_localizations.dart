@@ -1519,6 +1519,12 @@ abstract class AppLocalizations {
   /// **'We couldn\'t read the links saved on this device.'**
   String get pendingUrlsReadError;
 
+  /// Feedback when a device-local note cannot be written.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t update the note on this device.'**
+  String get pendingUrlsNoteSaveError;
+
   /// Retry action for a failed device-local URL read.
   ///
   /// In en, this message translates to:

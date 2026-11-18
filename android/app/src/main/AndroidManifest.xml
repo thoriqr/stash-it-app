@@ -59,9 +59,9 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- The invisible share target. It has no FlutterView and never shows
-             content. A separate task affinity and excludeFromRecents keep the
-             app's own task out of the foreground while the save runs. -->
+        <!-- The share card. A small dialog-style activity in its own task, so
+             the app's main UI is not opened. It shows the link, an optional
+             note, and Save/Cancel, then finishes itself. -->
         <activity
             android:name=".ShareActivity"
             android:exported="true"
@@ -69,7 +69,8 @@
             android:launchMode="singleTask"
             android:taskAffinity="id.my.thoriqr.stashit.share"
             android:excludeFromRecents="true"
-            android:theme="@style/ShareTheme"
+            android:theme="@style/ShareCardTheme"
+            android:windowSoftInputMode="adjustResize|stateAlwaysHidden"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode">
             <intent-filter>
                 <action android:name="android.intent.action.SEND"/>

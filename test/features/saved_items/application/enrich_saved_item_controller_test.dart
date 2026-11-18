@@ -206,7 +206,6 @@ void main() {
         const ClientMetadata(
           title: 'Reel',
           imageUrl: 'https://cdn.example.com/reel.jpg',
-          platform: 'Instagram',
         ),
       );
       final harness = makeHarness(
@@ -225,7 +224,6 @@ void main() {
         const ClientMetadata(
           title: 'Reel',
           imageUrl: 'https://cdn.example.com/reel.jpg',
-          platform: 'Instagram',
         ),
       );
     });

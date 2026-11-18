@@ -1082,6 +1082,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'We couldn\'t read the links saved on this device.';
 
   @override
+  String get pendingUrlsNoteSaveError =>
+      'We couldn\'t update the note on this device.';
+
+  @override
   String get pendingUrlsRetry => 'Retry';
 
   @override

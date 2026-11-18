@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="share_save_failed">Stash-it tidak dapat menyelesaikan penyimpanan tautan itu.</string>
+    <string name="share_card_eyebrow">STASH-IT</string>
+    <string name="share_card_title">Simpan tautan ini</string>
+    <string name="share_card_note_label">CATATAN (OPSIONAL)</string>
+    <string name="share_card_note_hint">Tulis catatan…</string>
+    <string name="share_card_save">Simpan</string>
+    <string name="share_card_cancel">Batal</string>
+    <string name="share_card_saving">Menyimpan…</string>
+    <string name="share_card_saved">Tersimpan</string>
 </resources>

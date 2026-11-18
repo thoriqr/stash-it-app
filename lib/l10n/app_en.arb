@@ -233,6 +233,7 @@
   "pendingUrlsEmptyTitle": "Nothing saved on this device",
   "pendingUrlsEmptyBody": "Links that didn't finish saving will appear here for seven days.",
   "pendingUrlsReadError": "We couldn't read the links saved on this device.",
+  "pendingUrlsNoteSaveError": "We couldn't update the note on this device.",
   "pendingUrlsRetry": "Retry",
   "pendingUrlsKeptJustNow": "Kept just now",
   "pendingUrlsKeptMinutesAgo": "{count, plural, =1{Kept 1 min ago} other{Kept {count} min ago}}",
@@ -1679,6 +1680,9 @@
   },
   "@pendingUrlsReadError": {
     "description": "Error copy when the device-local URL store cannot be read."
+  },
+  "@pendingUrlsNoteSaveError": {
+    "description": "Feedback when a device-local note cannot be written."
   },
   "@pendingUrlsRetry": {
     "description": "Retry action for a failed device-local URL read."

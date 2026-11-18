@@ -7,10 +7,10 @@ import 'package:stash_it_app/core/storage/secure_credential_store.dart';
 import 'package:stash_it_app/features/auth/application/session_controller.dart';
 import 'package:stash_it_app/features/collections/data/collections_providers.dart';
 import 'package:stash_it_app/features/collections/domain/collection_page.dart';
-import 'package:stash_it_app/features/inbox/presentation/widgets/inbox_note_composer_sheet.dart';
 import 'package:stash_it_app/features/pending_urls/data/pending_url_store.dart';
 import 'package:stash_it_app/features/saved_items/data/saved_items_providers.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_page.dart';
+import 'package:stash_it_app/shared/widgets/note_composer_sheet.dart';
 
 import '../support/fake_collections_repository.dart';
 import '../support/fake_http.dart';
@@ -58,7 +58,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final composerField = find.descendant(
-      of: find.byType(InboxNoteComposerSheet),
+      of: find.byType(NoteComposerSheet),
       matching: find.byType(TextField),
     );
     await tester.enterText(composerField, 'Draft kept across tabs');

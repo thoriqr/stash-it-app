@@ -189,6 +189,13 @@ abstract final class AppRoutes {
   /// to [profile].
   static const String password = '/profile/password';
 
+  /// Full-screen client update prompt and download surface.
+  ///
+  /// A root-level route outside the main navigation shell, opened by the update
+  /// host when the release check reports a prompt. It is reachable regardless
+  /// of authentication so an update can still be completed while signed out.
+  static const String clientUpdate = '/client-update';
+
   /// Detail screen for an individual saved item.
   ///
   /// A secondary route outside the main navigation shell, opened from an item

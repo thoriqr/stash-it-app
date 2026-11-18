@@ -9,6 +9,7 @@ class PendingUrl {
     required this.url,
     required this.addedAt,
     required this.uncertain,
+    this.note,
   });
 
   /// The exact trimmed URL submitted to `POST /saved-items`.
@@ -23,6 +24,13 @@ class PendingUrl {
   /// committed even though the client has no confirmation. False for a known
   /// failure, where the request demonstrably did not create the item.
   final bool uncertain;
+
+  /// The note the user wrote for this device-local entry, or null.
+  ///
+  /// **Local only.** It is kept beside the URL and edited without any request.
+  /// When the entry is later submitted to an account, the note is sent with
+  /// the same create request. A whitespace-only note is stored as null.
+  final String? note;
 }
 
 /// The store's current view, including how many expired entries were pruned.
