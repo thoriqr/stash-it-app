@@ -39,6 +39,9 @@ SavedItemSummary searchSavedItemFrom(
     // but the value is carried through untouched: `SavedItemSummary` derives
     // `hasPreviewImage` from it and the preview decides whether to load it.
     imageUrl: dto.imageUrl,
+    // The optional user-authored note. The shared row shows its preview and
+    // opens the read-only note sheet when it is present.
+    note: dto.note,
     savedTime: savedTimeFrom(dto.createdAt, now),
     createdAt: DateTime.tryParse(dto.createdAt),
   );

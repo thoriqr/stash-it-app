@@ -23,6 +23,38 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 
 ## Verification
 
+### Profile loading skeleton (2026-11-18)
+
+- The Profile destination's loading state no longer shows a spinner and "Loading profile…". The identity band, account section and linked-identities section now render their real layout over a mock `UserProfile` inside `Skeletonizer`, so the placeholder has the same shape as the loaded page.
+- The skeleton uses `ExcludeSemantics` and `IgnorePointer`: placeholder text is not announced and its rows cannot be tapped. The sign-out action is outside the skeleton, so it remains visible and usable while the profile is loading.
+- The loading branch handles an `AsyncLoading` that may still carry a previous account's profile by rendering the skeleton rather than that value; the loaded profile is still read only from `AsyncData`.
+- Added `test/features/profile/presentation/profile_screen_loading_test.dart`: holds the profile read open, asserts the skeleton is present, no spinner or loading label, the sign-out is outside the skeleton, and the real profile replaces it when the read completes.
+- `flutter analyze` — no issues found.
+- `flutter test test/features/profile/presentation/profile_screen_loading_test.dart --concurrency=1` — 1 test passed.
+- `flutter test --concurrency=1` — 1121 tests passed.
+- Included in the `1.3.0+6` release.
+
+### Notes in collection and search results (2026-11-18)
+
+- Re-read the backend contract: `GET /collections/{id}/saved-items` and the saved-item results of `GET /search` now include the optional user-authored `note` field, matching the Inbox listing.
+- Added `note` to `CollectionSavedItemResponse` and `SearchSavedItemResponse`, and mapped it into `SavedItemSummary` in both mappers.
+- No screen-specific code was needed: the shared `SavedItemRow` already renders `SavedItemNotePreview` when `hasNote` is true and opens the read-only note sheet on tap. Collection contents and Search now get the data that makes that preview appear.
+- Tests: the collection controller maps a note from the authenticated collection response; the Search mapper preserves a multiline note; the shared row test verifies that tapping "Your note" opens the sheet without opening the saved-item detail, and that a row without a note shows no preview.
+- `flutter analyze` — no issues found.
+- `flutter test test/features/saved_items/application/collection_saved_items_controller_test.dart test/features/search/data/search_mapper_test.dart test/features/saved_items/presentation/saved_item_row_note_test.dart --concurrency=1` — 39 tests passed.
+- `flutter test --concurrency=1` — 1120 tests passed.
+- Included in the `1.3.0+6` release.
+
+### Inbox polling for client-enriched saves (2026-11-18)
+
+- Root cause: `isSavedItemEnrichmentPollingEligible` accepted only `pending` items. Since the client metadata change, an Instagram save is stored as `completed` or `failed` by the save response, while the server still schedules the item's platform collection assignment separately. The poller therefore never started for those rows, and the Inbox stayed stale until pull-to-refresh.
+- The poller loop and its Inbox wiring are unchanged since the polling feature was added (`c0efc9d`); the regression is the new state transition, not the loop itself.
+- Changed the eligibility rule: a recently created item on a client-enrichment host remains eligible for the same 60-second window even when its enrichment status is already `completed` or `failed`. Pending items and every non-client host keep the previous behaviour.
+- Renamed the poller's `newPending` parameter and the Inbox's local flag to `newEligible`, since a newly loaded eligible item is no longer necessarily pending.
+- Tests: `flutter test test/features/saved_items/application/saved_items_enrichment_poller_test.dart` — 17 tests passed; `flutter test --concurrency=1` — 1116 tests passed. `flutter analyze` — no issues found. `flutter build apk --debug` — succeeded.
+- Limitation: the 60-second window still bounds polling. If the server takes longer to assign the platform collection, a pull-to-refresh remains the fallback.
+- Included in `1.3.0+6`; the `1.2.0+5` artifact does not contain this fix.
+
 ### Client metadata platform removal (2026-11-18)
 
 - Re-read the backend contract in the sibling `stash-it-backend` working tree. `clientmetadata.Metadata` now carries only `title`, `description` and `image_url`; the platform is derived by the server from the URL host. The `/saved-items` and `/saved-items/{id}/enrich` descriptions state that the client must not send a platform field.
@@ -493,11 +525,12 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - The resulting Google ID token on Windows and macOS is issued for the Desktop OAuth client. The backend must accept that client ID as an ID-token audience; no backend or API changes were made.
 - The Windows desktop UI has not yet been reviewed visually by the project owner.
 - Inbox polling only refreshes the newest page. An eligible pending item loaded further down the history keeps polling active but is only updated when it appears in the head response; polling never requests individual pages.
+- Client-enriched Instagram items are polled for their platform collection assignment for the same 60-second window. An assignment that takes longer still needs a pull-to-refresh.
 - Polling eligibility compares the server's `created_at` with the device clock. A large clock offset can end the window early or, beyond the 60-second window, mark a newly saved item ineligible; this bound avoids polling indefinitely.
 - Enrichment polling runs only while the Inbox is visible and the app is in the foreground. There is no background synchronization while the app is closed or another destination is active.
 - Search results are limited by the server.
 - Price display in Inbox and Saved Item Detail supports IDR and USD. Other currency codes are hidden rather than shown without a supported format.
-- Inbox price and note display was implemented first; Saved Item Detail now shows both and note management. Collection listings and Search still do not display price or note.
+- Inbox price and note display was implemented first; Saved Item Detail now shows both and note management. Collection listings and Search now show the optional note preview and open the read-only note sheet. Price is still not shown there.
 - The native Android Sharesheet, its dismissal result, and the clipboard fallback have not been verified on a device. Desktop and other non-Android targets expose Copy only.
 - The note editor's 5,000-character limit and counter are enforced in the client; the server rejection path is mapped but has not been exercised against the live backend.
 - The dedicated note Delete shortcut and the Keep-note restoration are covered by the pure decision and mutation-controller tests, not by widget tests. Their exact in-sheet behavior remains a manual check.

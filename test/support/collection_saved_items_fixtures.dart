@@ -9,7 +9,7 @@ import 'saved_items_fixtures.dart';
 class CollectionSavedItemsFixtures {
   const CollectionSavedItemsFixtures._();
 
-  /// One row: the twelve documented fields and **no nested `collection`**.
+  /// One row: the documented fields and **no nested `collection`**.
   static Map<String, dynamic> item({
     String id = 'item-1',
     String collectionId = 'collection-1',
@@ -19,6 +19,7 @@ class CollectionSavedItemsFixtures {
     String? title = 'Understanding CRDTs',
     String? description = 'Conflict-free replicated data types converge.',
     String? imageUrl = 'https://example.com/og.png',
+    String? note,
     String enrichmentStatus = 'completed',
     String? lastEnrichedAt = '2026-10-02T10:31:00Z',
     String createdAt = '2026-10-02T10:30:00Z',
@@ -32,6 +33,7 @@ class CollectionSavedItemsFixtures {
           title: title,
           description: description,
           imageUrl: imageUrl,
+          note: note,
           collectionId: collectionId,
           enrichmentStatus: enrichmentStatus,
           lastEnrichedAt: lastEnrichedAt,

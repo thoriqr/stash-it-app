@@ -149,6 +149,27 @@ void main() {
       expect(container.read(provider).hasError, isFalse);
     });
 
+    test('maps the optional note into the row', () async {
+      final container = await makeContainer();
+
+      adapter.onSequence(path, [
+        pageReply(
+          items: [
+            CollectionSavedItemsFixtures.item(
+              note: 'First line\nSecond line stays exactly as typed.',
+            ),
+          ],
+        ),
+      ]);
+
+      await container.read(provider.future);
+
+      expect(
+        stateOf(container).items.single.note,
+        'First line\nSecond line stays exactly as typed.',
+      );
+    });
+
     test('sends no cursor and no limit on the opening request', () async {
       await containerWith('Camera Gear');
 

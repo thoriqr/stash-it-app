@@ -25,6 +25,7 @@ _SearchSavedItemResponse _$SearchSavedItemResponseFromJson(
   url: json['url'] as String,
   domain: json['domain'] as String?,
   imageUrl: json['image_url'] as String?,
+  note: json['note'] as String?,
   enrichmentStatus: json['enrichment_status'] as String,
   collection: SearchSavedItemCollectionResponse.fromJson(
     json['collection'] as Map<String, dynamic>,
@@ -40,6 +41,7 @@ Map<String, dynamic> _$SearchSavedItemResponseToJson(
   'url': instance.url,
   'domain': instance.domain,
   'image_url': instance.imageUrl,
+  'note': instance.note,
   'enrichment_status': instance.enrichmentStatus,
   'collection': instance.collection,
   'created_at': instance.createdAt,

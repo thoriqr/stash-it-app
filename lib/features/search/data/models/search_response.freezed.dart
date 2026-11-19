@@ -289,7 +289,7 @@ as String,
 /// @nodoc
 mixin _$SearchSavedItemResponse {
 
- String get id; String? get title; String get url; String? get domain;@JsonKey(name: 'image_url') String? get imageUrl;@JsonKey(name: 'enrichment_status') String get enrichmentStatus; SearchSavedItemCollectionResponse get collection;@JsonKey(name: 'created_at') String get createdAt;
+ String get id; String? get title; String get url; String? get domain;@JsonKey(name: 'image_url') String? get imageUrl; String? get note;@JsonKey(name: 'enrichment_status') String get enrichmentStatus; SearchSavedItemCollectionResponse get collection;@JsonKey(name: 'created_at') String get createdAt;
 /// Create a copy of SearchSavedItemResponse
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -303,20 +303,20 @@ $SearchSavedItemResponseCopyWith<SearchSavedItemResponse> get copyWith => _$Sear
 @override
 bool operator ==(Object other) {
   final _this = this as SearchSavedItemResponse;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchSavedItemResponse&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.domain, _this.domain) || other.domain == _this.domain)&&(identical(other.imageUrl, _this.imageUrl) || other.imageUrl == _this.imageUrl)&&(identical(other.enrichmentStatus, _this.enrichmentStatus) || other.enrichmentStatus == _this.enrichmentStatus)&&(identical(other.collection, _this.collection) || other.collection == _this.collection)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchSavedItemResponse&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.domain, _this.domain) || other.domain == _this.domain)&&(identical(other.imageUrl, _this.imageUrl) || other.imageUrl == _this.imageUrl)&&(identical(other.note, _this.note) || other.note == _this.note)&&(identical(other.enrichmentStatus, _this.enrichmentStatus) || other.enrichmentStatus == _this.enrichmentStatus)&&(identical(other.collection, _this.collection) || other.collection == _this.collection)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as SearchSavedItemResponse;
-  return Object.hash(runtimeType,_this.id,_this.title,_this.url,_this.domain,_this.imageUrl,_this.enrichmentStatus,_this.collection,_this.createdAt);
+  return Object.hash(runtimeType,_this.id,_this.title,_this.url,_this.domain,_this.imageUrl,_this.note,_this.enrichmentStatus,_this.collection,_this.createdAt);
 }
 
 @override
 String toString() {
   final _this = this as SearchSavedItemResponse;
-  return 'SearchSavedItemResponse(id: ${_this.id}, title: ${_this.title}, url: ${_this.url}, domain: ${_this.domain}, imageUrl: ${_this.imageUrl}, enrichmentStatus: ${_this.enrichmentStatus}, collection: ${_this.collection}, createdAt: ${_this.createdAt})';
+  return 'SearchSavedItemResponse(id: ${_this.id}, title: ${_this.title}, url: ${_this.url}, domain: ${_this.domain}, imageUrl: ${_this.imageUrl}, note: ${_this.note}, enrichmentStatus: ${_this.enrichmentStatus}, collection: ${_this.collection}, createdAt: ${_this.createdAt})';
 }
 
 
@@ -327,7 +327,7 @@ abstract mixin class $SearchSavedItemResponseCopyWith<$Res>  {
   factory $SearchSavedItemResponseCopyWith(SearchSavedItemResponse value, $Res Function(SearchSavedItemResponse) _then) = _$SearchSavedItemResponseCopyWithImpl;
 @useResult
 $Res call({
- String id, String? title, String url, String? domain,@JsonKey(name: 'image_url') String? imageUrl,@JsonKey(name: 'enrichment_status') String enrichmentStatus, SearchSavedItemCollectionResponse collection,@JsonKey(name: 'created_at') String createdAt
+ String id, String? title, String url, String? domain,@JsonKey(name: 'image_url') String? imageUrl, String? note,@JsonKey(name: 'enrichment_status') String enrichmentStatus, SearchSavedItemCollectionResponse collection,@JsonKey(name: 'created_at') String createdAt
 });
 
 
@@ -344,13 +344,14 @@ class _$SearchSavedItemResponseCopyWithImpl<$Res>
 
 /// Create a copy of SearchSavedItemResponse
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = freezed,Object? url = null,Object? domain = freezed,Object? imageUrl = freezed,Object? enrichmentStatus = null,Object? collection = null,Object? createdAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = freezed,Object? url = null,Object? domain = freezed,Object? imageUrl = freezed,Object? note = freezed,Object? enrichmentStatus = null,Object? collection = null,Object? createdAt = null,}) {
   return _then(SearchSavedItemResponse(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,domain: freezed == domain ? _self.domain : domain // ignore: cast_nullable_to_non_nullable
 as String?,imageUrl: freezed == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
+as String?,note: freezed == note ? _self.note : note // ignore: cast_nullable_to_non_nullable
 as String?,enrichmentStatus: null == enrichmentStatus ? _self.enrichmentStatus : enrichmentStatus // ignore: cast_nullable_to_non_nullable
 as String,collection: null == collection ? _self.collection : collection // ignore: cast_nullable_to_non_nullable
 as SearchSavedItemCollectionResponse,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
@@ -448,10 +449,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? title,  String url,  String? domain, @JsonKey(name: 'image_url')  String? imageUrl, @JsonKey(name: 'enrichment_status')  String enrichmentStatus,  SearchSavedItemCollectionResponse collection, @JsonKey(name: 'created_at')  String createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? title,  String url,  String? domain, @JsonKey(name: 'image_url')  String? imageUrl,  String? note, @JsonKey(name: 'enrichment_status')  String enrichmentStatus,  SearchSavedItemCollectionResponse collection, @JsonKey(name: 'created_at')  String createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SearchSavedItemResponse() when $default != null:
-return $default(_that.id,_that.title,_that.url,_that.domain,_that.imageUrl,_that.enrichmentStatus,_that.collection,_that.createdAt);case _:
+return $default(_that.id,_that.title,_that.url,_that.domain,_that.imageUrl,_that.note,_that.enrichmentStatus,_that.collection,_that.createdAt);case _:
   return orElse();
 
 }
@@ -469,10 +470,10 @@ return $default(_that.id,_that.title,_that.url,_that.domain,_that.imageUrl,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? title,  String url,  String? domain, @JsonKey(name: 'image_url')  String? imageUrl, @JsonKey(name: 'enrichment_status')  String enrichmentStatus,  SearchSavedItemCollectionResponse collection, @JsonKey(name: 'created_at')  String createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? title,  String url,  String? domain, @JsonKey(name: 'image_url')  String? imageUrl,  String? note, @JsonKey(name: 'enrichment_status')  String enrichmentStatus,  SearchSavedItemCollectionResponse collection, @JsonKey(name: 'created_at')  String createdAt)  $default,) {final _that = this;
 switch (_that) {
 case _SearchSavedItemResponse():
-return $default(_that.id,_that.title,_that.url,_that.domain,_that.imageUrl,_that.enrichmentStatus,_that.collection,_that.createdAt);case _:
+return $default(_that.id,_that.title,_that.url,_that.domain,_that.imageUrl,_that.note,_that.enrichmentStatus,_that.collection,_that.createdAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -489,10 +490,10 @@ return $default(_that.id,_that.title,_that.url,_that.domain,_that.imageUrl,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? title,  String url,  String? domain, @JsonKey(name: 'image_url')  String? imageUrl, @JsonKey(name: 'enrichment_status')  String enrichmentStatus,  SearchSavedItemCollectionResponse collection, @JsonKey(name: 'created_at')  String createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? title,  String url,  String? domain, @JsonKey(name: 'image_url')  String? imageUrl,  String? note, @JsonKey(name: 'enrichment_status')  String enrichmentStatus,  SearchSavedItemCollectionResponse collection, @JsonKey(name: 'created_at')  String createdAt)?  $default,) {final _that = this;
 switch (_that) {
 case _SearchSavedItemResponse() when $default != null:
-return $default(_that.id,_that.title,_that.url,_that.domain,_that.imageUrl,_that.enrichmentStatus,_that.collection,_that.createdAt);case _:
+return $default(_that.id,_that.title,_that.url,_that.domain,_that.imageUrl,_that.note,_that.enrichmentStatus,_that.collection,_that.createdAt);case _:
   return null;
 
 }
@@ -504,7 +505,7 @@ return $default(_that.id,_that.title,_that.url,_that.domain,_that.imageUrl,_that
 @JsonSerializable()
 
 class _SearchSavedItemResponse implements SearchSavedItemResponse {
-  const _SearchSavedItemResponse({required this.id, this.title, required this.url, this.domain, @JsonKey(name: 'image_url') this.imageUrl, @JsonKey(name: 'enrichment_status') required this.enrichmentStatus, required this.collection, @JsonKey(name: 'created_at') required this.createdAt});
+  const _SearchSavedItemResponse({required this.id, this.title, required this.url, this.domain, @JsonKey(name: 'image_url') this.imageUrl, this.note, @JsonKey(name: 'enrichment_status') required this.enrichmentStatus, required this.collection, @JsonKey(name: 'created_at') required this.createdAt});
   factory _SearchSavedItemResponse.fromJson(Map<String, dynamic> json) => _$SearchSavedItemResponseFromJson(json);
 
 @override final  String id;
@@ -512,6 +513,7 @@ class _SearchSavedItemResponse implements SearchSavedItemResponse {
 @override final  String url;
 @override final  String? domain;
 @override@JsonKey(name: 'image_url') final  String? imageUrl;
+@override final  String? note;
 @override@JsonKey(name: 'enrichment_status') final  String enrichmentStatus;
 @override final  SearchSavedItemCollectionResponse collection;
 @override@JsonKey(name: 'created_at') final  String createdAt;
@@ -529,18 +531,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SearchSavedItemResponse&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.url, url) || other.url == url)&&(identical(other.domain, domain) || other.domain == domain)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.enrichmentStatus, enrichmentStatus) || other.enrichmentStatus == enrichmentStatus)&&(identical(other.collection, collection) || other.collection == collection)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SearchSavedItemResponse&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.url, url) || other.url == url)&&(identical(other.domain, domain) || other.domain == domain)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.note, note) || other.note == note)&&(identical(other.enrichmentStatus, enrichmentStatus) || other.enrichmentStatus == enrichmentStatus)&&(identical(other.collection, collection) || other.collection == collection)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,title,url,domain,imageUrl,enrichmentStatus,collection,createdAt);
+    return Object.hash(runtimeType,id,title,url,domain,imageUrl,note,enrichmentStatus,collection,createdAt);
 }
 
 @override
 String toString() {
-    return 'SearchSavedItemResponse(id: $id, title: $title, url: $url, domain: $domain, imageUrl: $imageUrl, enrichmentStatus: $enrichmentStatus, collection: $collection, createdAt: $createdAt)';
+    return 'SearchSavedItemResponse(id: $id, title: $title, url: $url, domain: $domain, imageUrl: $imageUrl, note: $note, enrichmentStatus: $enrichmentStatus, collection: $collection, createdAt: $createdAt)';
 }
 
 
@@ -551,7 +553,7 @@ abstract mixin class _$SearchSavedItemResponseCopyWith<$Res> implements $SearchS
   factory _$SearchSavedItemResponseCopyWith(_SearchSavedItemResponse value, $Res Function(_SearchSavedItemResponse) _then) = __$SearchSavedItemResponseCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String? title, String url, String? domain,@JsonKey(name: 'image_url') String? imageUrl,@JsonKey(name: 'enrichment_status') String enrichmentStatus, SearchSavedItemCollectionResponse collection,@JsonKey(name: 'created_at') String createdAt
+ String id, String? title, String url, String? domain,@JsonKey(name: 'image_url') String? imageUrl, String? note,@JsonKey(name: 'enrichment_status') String enrichmentStatus, SearchSavedItemCollectionResponse collection,@JsonKey(name: 'created_at') String createdAt
 });
 
 
@@ -568,13 +570,14 @@ class __$SearchSavedItemResponseCopyWithImpl<$Res>
 
 /// Create a copy of SearchSavedItemResponse
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = freezed,Object? url = null,Object? domain = freezed,Object? imageUrl = freezed,Object? enrichmentStatus = null,Object? collection = null,Object? createdAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = freezed,Object? url = null,Object? domain = freezed,Object? imageUrl = freezed,Object? note = freezed,Object? enrichmentStatus = null,Object? collection = null,Object? createdAt = null,}) {
   return _then(_SearchSavedItemResponse(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,domain: freezed == domain ? _self.domain : domain // ignore: cast_nullable_to_non_nullable
 as String?,imageUrl: freezed == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
+as String?,note: freezed == note ? _self.note : note // ignore: cast_nullable_to_non_nullable
 as String?,enrichmentStatus: null == enrichmentStatus ? _self.enrichmentStatus : enrichmentStatus // ignore: cast_nullable_to_non_nullable
 as String,collection: null == collection ? _self.collection : collection // ignore: cast_nullable_to_non_nullable
 as SearchSavedItemCollectionResponse,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable

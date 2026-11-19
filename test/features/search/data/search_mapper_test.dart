@@ -19,6 +19,7 @@ void main() {
     String url = 'https://example.com/articles/crdts-explained',
     String? domain = 'example.com',
     String? imageUrl = 'https://example.com/og.png',
+    String? note,
     String enrichmentStatus = 'completed',
     String collectionId = 'collection-1',
     String collectionName = 'Camera Gear',
@@ -29,6 +30,7 @@ void main() {
       url: url,
       domain: domain,
       imageUrl: imageUrl,
+      note: note,
       enrichmentStatus: enrichmentStatus,
       collectionId: collectionId,
       collectionName: collectionName,
@@ -57,6 +59,15 @@ void main() {
       // `/search` does not return a description at all. The shared row simply
       // renders no description line.
       expect(mapped.description, isNull);
+    });
+
+    test('maps the optional note and keeps its text intact', () {
+      final note = 'First line\nSecond line stays exactly as typed.  ';
+      final mapped = searchSavedItemFrom(item(note: note), now: now);
+
+      expect(mapped.note, note);
+      expect(mapped.hasNote, isTrue);
+      expect(searchSavedItemFrom(item(), now: now).note, isNull);
     });
 
     test('a missing title falls back to the URL, then the host', () {

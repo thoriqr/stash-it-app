@@ -33,10 +33,11 @@ abstract class ListedSavedItemsCollectionResponse
 /// used by the presentation layer, so changes to the API response remain
 /// detectable.
 ///
-/// `domain`, `platform`, `title`, `description`, `image_url` and
+/// `domain`, `platform`, `title`, `description`, `image_url`, `note` and
 /// `last_enriched_at` are nullable fields. In particular, a completed item may
 /// legitimately have a null `title`; this does not indicate an enrichment
-/// failure.
+/// failure. `note` is the optional user-authored plain text; it is null when
+/// the user has not set one.
 ///
 /// Each field whose wire key uses snake_case declares its corresponding
 /// [JsonKey] so the generated decoder reads the correct JSON key.
@@ -50,6 +51,7 @@ abstract class CollectionSavedItemResponse with _$CollectionSavedItemResponse {
     String? title,
     String? description,
     @JsonKey(name: 'image_url') String? imageUrl,
+    String? note,
     @JsonKey(name: 'collection_id') required String collectionId,
     @JsonKey(name: 'enrichment_status') required String enrichmentStatus,
     @JsonKey(name: 'last_enriched_at') String? lastEnrichedAt,

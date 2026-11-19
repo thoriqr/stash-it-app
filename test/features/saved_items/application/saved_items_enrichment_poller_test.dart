@@ -16,10 +16,11 @@ void main() {
     SavedItemSummary item({
       EnrichmentStatus status = EnrichmentStatus.pending,
       DateTime? createdAt,
+      String url = 'https://example.com/article',
     }) => SavedItemSummary(
       id: 'item',
       collectionId: 'collection',
-      url: 'https://example.com/article',
+      url: url,
       collectionName: 'Collection',
       enrichmentStatus: status,
       createdAt: createdAt,
@@ -71,6 +72,48 @@ void main() {
           isFalse,
         );
       }
+    });
+
+    test('a completed client-enriched item stays eligible for its collection '
+        'assignment', () {
+      for (final status in <EnrichmentStatus>[
+        EnrichmentStatus.completed,
+        EnrichmentStatus.failed,
+      ]) {
+        expect(
+          eligible(
+            item(
+              status: status,
+              createdAt: now.subtract(const Duration(seconds: 5)),
+              url: 'https://www.instagram.com/reel/abc/',
+            ),
+          ),
+          isTrue,
+        );
+      }
+
+      // The same status on a server-enriched host has nothing left to poll.
+      expect(
+        eligible(
+          item(
+            status: EnrichmentStatus.completed,
+            createdAt: now.subtract(const Duration(seconds: 5)),
+          ),
+        ),
+        isFalse,
+      );
+
+      // The bounded window still applies to the client-enriched item.
+      expect(
+        eligible(
+          item(
+            status: EnrichmentStatus.completed,
+            createdAt: now.subtract(const Duration(seconds: 70)),
+            url: 'https://instagram.com/p/abc/',
+          ),
+        ),
+        isFalse,
+      );
     });
 
     test('an item without a parseable creation time is not eligible', () {
@@ -255,7 +298,7 @@ void main() {
 
       expect(timers.pending.delay, const Duration(seconds: 3));
 
-      poller.update(newPending: true);
+      poller.update(newEligible: true);
 
       expect(timers.pending.delay, const Duration(milliseconds: 1500));
     });
@@ -270,7 +313,7 @@ void main() {
         await pumpEventQueue();
         expect(syncs, 1);
 
-        poller.update(newPending: true);
+        poller.update(newEligible: true);
         await pumpEventQueue();
 
         expect(syncs, 1);
@@ -290,7 +333,7 @@ void main() {
       expect(timers.pending.delay, const Duration(milliseconds: 1500));
 
       eligible = false;
-      poller.update(newPending: false);
+      poller.update(newEligible: false);
 
       expect(timers.hasPending, isFalse);
     });

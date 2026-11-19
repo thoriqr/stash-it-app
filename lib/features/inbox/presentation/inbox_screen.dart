@@ -158,9 +158,11 @@ class _InboxScreenState extends ConsumerState<InboxScreen>
 
   /// Re-evaluates polling after the listing changes.
   ///
-  /// A newly appearing eligible pending item restarts the interval progression,
-  /// so the first poll after a save is prompt even when a longer interval was
-  /// already scheduled.
+  /// A newly appearing eligible item restarts the interval progression, so the
+  /// first poll after a save is prompt even when a longer interval was already
+  /// scheduled. Client-enriched items are already settled at save but still
+  /// need their collection assignment observed; see
+  /// [isSavedItemEnrichmentPollingEligible].
   void _onSavedItemsChanged(
     AsyncValue<SavedItemsState>? previous,
     AsyncValue<SavedItemsState> next,
@@ -170,7 +172,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen>
       _ => null,
     };
     if (current == null) {
-      _enrichmentPoller.update(newPending: false);
+      _enrichmentPoller.update(newEligible: false);
       return;
     }
 
@@ -180,13 +182,13 @@ class _InboxScreenState extends ConsumerState<InboxScreen>
     };
 
     final now = DateTime.now();
-    final hasNewPending = current.items.any(
+    final hasNewEligible = current.items.any(
       (item) =>
           !previousIds.contains(item.id) &&
           isSavedItemEnrichmentPollingEligible(item, now),
     );
 
-    _enrichmentPoller.update(newPending: hasNewPending);
+    _enrichmentPoller.update(newEligible: hasNewEligible);
   }
 
   /// Requests the next page as the user approaches the end.

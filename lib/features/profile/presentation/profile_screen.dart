@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/core/error/api_failure.dart';
@@ -39,7 +40,8 @@ class ProfileScreen extends ConsumerWidget {
         _AccountSection(profile: value, tokens: tokens),
         _LinkedIdentitiesSection(profile: value, tokens: tokens),
       ],
-      _ => const <Widget>[],
+      AsyncLoading() => <Widget>[_ProfileSkeletonSections(tokens: tokens)],
+      AsyncError() => const <Widget>[],
     };
 
     return Scaffold(
@@ -98,7 +100,11 @@ class _ProfileHeader extends StatelessWidget {
           value: value,
           tokens: tokens,
         ),
-        AsyncLoading() => _HeaderLoading(tokens: tokens),
+        AsyncLoading() => ExcludeSemantics(
+          child: Skeletonizer(
+            child: _IdentitySummary(value: _profileSkeleton, tokens: tokens),
+          ),
+        ),
         AsyncError(:final error) => _HeaderError(
           error: error,
           tokens: tokens,
@@ -178,40 +184,50 @@ class _DateChip extends StatelessWidget {
   }
 }
 
-/// The compact loading treatment inside the identity band.
+/// The profile the loading skeleton is built from.
 ///
-/// The spinner and label form one content-sized block. It inherits the header's
-/// [AppMetrics.space4] horizontal inset, so it lines up with the loaded identity
-/// rather than introducing a second content grid. The 8 px gap matches the
-/// app's other spinner-label row; no placeholder account or identity rows.
-class _HeaderLoading extends StatelessWidget {
-  const _HeaderLoading({required this.tokens});
+/// **Not filler copy.** The skeleton renders the real profile layout over these
+/// values, so their lengths decide the shape of the bones. A display name,
+/// email, joined date and one linked identity exercise every line and row the
+/// loaded profile can show; an image or invented data would only make the
+/// placeholder look like a different screen.
+final UserProfile _profileSkeleton = UserProfile(
+  id: 'skeleton',
+  email: 'you@example.com',
+  displayName: 'Stash-it user',
+  hasPasswordCredential: true,
+  createdAt: DateTime.utc(2026, 1, 1),
+  identities: [
+    UserIdentity(provider: 'google', linkedAt: DateTime.utc(2026, 1, 1)),
+  ],
+);
+
+/// The account and linked-identity bands while the profile is loading.
+///
+/// The sign-out button lives outside this widget, so it stays real and usable
+/// while the rest of the page is a skeleton.
+class _ProfileSkeletonSections extends StatelessWidget {
+  const _ProfileSkeletonSections({required this.tokens});
 
   final AppTokens tokens;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: 16,
-          height: 16,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: tokens.accent,
+    return ExcludeSemantics(
+      child: IgnorePointer(
+        child: Skeletonizer(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _AccountSection(profile: _profileSkeleton, tokens: tokens),
+              _LinkedIdentitiesSection(
+                profile: _profileSkeleton,
+                tokens: tokens,
+              ),
+            ],
           ),
         ),
-        const SizedBox(width: AppMetrics.space2),
-        Flexible(
-          child: Text(
-            l10n.profileLoading,
-            style: AppTypography.body.copyWith(color: tokens.textSecondary),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

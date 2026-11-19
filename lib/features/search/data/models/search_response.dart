@@ -28,9 +28,10 @@ abstract class SearchSavedItemCollectionResponse
 /// description, platform, last enrichment time, update time, a top-level
 /// collection ID or a relevance score.
 ///
-/// `title`, `domain` and `image_url` are nullable. A null value is a valid
-/// response state; for example, a completed item may have no title. The client
-/// does not derive replacement values from the URL.
+/// `title`, `domain`, `image_url` and `note` are nullable. A null value is a
+/// valid response state; for example, a completed item may have no title, and
+/// `note` is null when the user has not set one. The client does not derive
+/// replacement values from the URL.
 ///
 /// Each field whose JSON key uses snake_case declares its wire name explicitly
 /// so the generated decoder reads the correct key.
@@ -42,6 +43,7 @@ abstract class SearchSavedItemResponse with _$SearchSavedItemResponse {
     required String url,
     String? domain,
     @JsonKey(name: 'image_url') String? imageUrl,
+    String? note,
     @JsonKey(name: 'enrichment_status') required String enrichmentStatus,
     required SearchSavedItemCollectionResponse collection,
     @JsonKey(name: 'created_at') required String createdAt,

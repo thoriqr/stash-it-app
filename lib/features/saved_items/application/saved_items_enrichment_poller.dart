@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:stash_it_app/features/saved_items/domain/client_enrichment_host.dart';
 import 'package:stash_it_app/features/saved_items/domain/saved_item_summary.dart';
 
 /// How long after creation an item remains eligible for enrichment polling.
@@ -32,9 +33,12 @@ Duration savedItemEnrichmentPollingDelay(int attempt) {
 
 /// Whether [item] should keep the Inbox polling at [now].
 ///
-/// Only a `pending` item is eligible. Enrichment is server-side and
-/// asynchronous, so a client that stopped polling must not infer that it
-/// failed; the status remains whatever the server last reported.
+/// A pending item is eligible while its enrichment is still server-side work.
+/// A client-enriched item is different: the save response already stores it as
+/// `completed` or `failed`, but the server still schedules the item's platform
+/// collection assignment separately. That later write has no status of its own,
+/// so a recently saved client-enriched item remains eligible for the same
+/// bounded window even after its enrichment status has settled.
 ///
 /// The age comes from the item's `created_at`, which is server time. A missing
 /// or unparseable timestamp cannot be aged, so it is not eligible. A timestamp
@@ -42,14 +46,19 @@ Duration savedItemEnrichmentPollingDelay(int attempt) {
 /// ahead than the whole window cannot be aged either and is not eligible, which
 /// bounds polling under clock skew instead of letting it run indefinitely.
 bool isSavedItemEnrichmentPollingEligible(SavedItemSummary item, DateTime now) {
-  if (item.enrichmentStatus != EnrichmentStatus.pending) return false;
-
   final createdAt = item.createdAt;
   if (createdAt == null) return false;
 
   final age = now.toUtc().difference(createdAt.toUtc());
   if (age < -savedItemEnrichmentPollingWindow) return false;
-  return age <= savedItemEnrichmentPollingWindow;
+  if (age > savedItemEnrichmentPollingWindow) return false;
+
+  if (item.enrichmentStatus == EnrichmentStatus.pending) return true;
+
+  // The server files a client-enriched item after the save response. Its
+  // enrichment status is already final, so the collection assignment is the
+  // only remaining change to observe.
+  return isClientEnrichmentHost(item.url);
 }
 
 /// A cancellable scheduled callback.
@@ -161,10 +170,10 @@ class SavedItemsEnrichmentPoller {
 
   /// Re-evaluates polling after a Saved Items state change.
   ///
-  /// [newPending] is true when the change introduced a newly loaded eligible
-  /// pending item, such as a confirmed save. That starts a fresh cycle at the
-  /// first interval instead of continuing at the current one.
-  void update({required bool newPending}) {
+  /// [newEligible] is true when the change introduced a newly loaded eligible
+  /// item, such as a confirmed save. That starts a fresh cycle at the first
+  /// interval instead of continuing at the current one.
+  void update({required bool newEligible}) {
     if (!_active || _disposed) return;
 
     if (!_hasEligibleItems()) {
@@ -173,11 +182,11 @@ class SavedItemsEnrichmentPoller {
     }
 
     if (_syncing) {
-      if (newPending) _resetAfterSync = true;
+      if (newEligible) _resetAfterSync = true;
       return;
     }
 
-    if (newPending) {
+    if (newEligible) {
       _attempt = 0;
       _cancelTimer();
       _scheduleNext();
