@@ -11,6 +11,7 @@ import 'package:stash_it_app/app/router/app_router.dart';
 import 'package:stash_it_app/app/session/session_boundary.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
 import 'package:stash_it_app/features/client_update/application/client_update_controller.dart';
+import 'package:stash_it_app/features/client_update/application/client_update_download_controller.dart';
 import 'package:stash_it_app/features/client_update/presentation/client_update_host.dart';
 import 'package:stash_it_app/features/pending_urls/application/pending_urls_controller.dart';
 import 'package:stash_it_app/features/pending_urls/application/save_pending_urls_controller.dart';
@@ -81,6 +82,20 @@ class _StashItAppState extends ConsumerState<StashItApp>
     _shareChannel.setMethodCallHandler(null);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  Future<bool> didPopRoute() async {
+    final handled = ref.read(clientUpdateProvider.notifier).handleSystemBack();
+    if (!handled) return false;
+
+    // An optional prompt was dismissed, so its download must not continue. A
+    // required prompt remains, so a back action must not cancel its download.
+    if (ref.read(clientUpdateProvider).prompt == null) {
+      ref.read(clientUpdateDownloadProvider.notifier).reset();
+    }
+
+    return true;
   }
 
   @override
@@ -159,7 +174,6 @@ class _StashItAppState extends ConsumerState<StashItApp>
       // FeedbackHost wraps SkeletonizerConfig so notices remain above routed
       // content, including authentication screens and the navigation bar.
       builder: (context, child) => ClientUpdateHost(
-        router: router,
         child: FeedbackHost(
           child: SkeletonizerConfig(
             data: appSkeletonizerConfig(

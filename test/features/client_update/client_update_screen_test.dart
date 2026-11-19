@@ -45,7 +45,6 @@ Widget _app({
       onRetry: () {},
       onOpenAgain: () {},
       onLater: required ? null : () {},
-      onBack: required ? null : () {},
       onExit: () {},
     ),
   );

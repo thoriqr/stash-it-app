@@ -1,15 +1,8 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/app/theme/app_theme.dart';
-import 'package:stash_it_app/features/client_update/application/client_update_controller.dart';
-import 'package:stash_it_app/features/client_update/application/client_update_download_controller.dart';
-import 'package:stash_it_app/features/client_update/data/client_update_providers.dart';
 import 'package:stash_it_app/features/client_update/domain/client_update_release.dart';
 import 'package:stash_it_app/features/client_update/domain/release_download.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
@@ -45,8 +38,9 @@ String? formatReleaseSize(int? bytes) {
 /// The full-screen update surface.
 ///
 /// The release notes scroll independently while the actions stay pinned at the
-/// bottom. A required update cannot be popped; an optional update can be
-/// closed from the app bar or the system back action.
+/// bottom. A required update offers Exit; an optional update can be closed from
+/// the app bar or with the system back action, which the app-level overlay
+/// handles outside the navigation stack.
 class ClientUpdateScreen extends StatelessWidget {
   const ClientUpdateScreen({
     required this.prompt,
@@ -57,7 +51,6 @@ class ClientUpdateScreen extends StatelessWidget {
     required this.onOpenAgain,
     required this.onExit,
     this.onLater,
-    this.onBack,
     super.key,
   });
 
@@ -72,11 +65,6 @@ class ClientUpdateScreen extends StatelessWidget {
   /// Closes an optional update. Null for a required update.
   final VoidCallback? onLater;
 
-  /// Runs after the system back action closed an optional update.
-  ///
-  /// The route has already been popped, so this only clears the prompt state.
-  final VoidCallback? onBack;
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -86,114 +74,108 @@ class ClientUpdateScreen extends StatelessWidget {
     final notes = release.releaseNotes;
     final size = formatReleaseSize(release.fileSizeBytes);
 
-    return PopScope(
-      canPop: !required,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop && !required) onBack?.call();
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: Text(
-            required
-                ? l10n.clientUpdateRequiredTitle
-                : l10n.clientUpdateOptionalTitle,
-          ),
-          actions: [
-            if (!required && onLater != null)
-              IconButton(
-                icon: const Icon(Icons.close, size: AppMetrics.iconSize),
-                tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-                onPressed: onLater,
-              ),
-          ],
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Text(
+          required
+              ? l10n.clientUpdateRequiredTitle
+              : l10n.clientUpdateOptionalTitle,
         ),
-        body: SafeArea(
-          top: false,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppMetrics.space4,
-                        AppMetrics.space4,
-                        AppMetrics.space4,
-                        AppMetrics.space4,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            required
-                                ? l10n.clientUpdateRequiredBody
-                                : l10n.clientUpdateOptionalBody,
-                            style: AppTypography.body.copyWith(
-                              color: tokens.textSecondary,
-                            ),
+        actions: [
+          if (!required && onLater != null)
+            IconButton(
+              icon: const Icon(Icons.close, size: AppMetrics.iconSize),
+              tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+              onPressed: onLater,
+            ),
+        ],
+      ),
+      body: SafeArea(
+        top: false,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppMetrics.space4,
+                      AppMetrics.space4,
+                      AppMetrics.space4,
+                      AppMetrics.space4,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          required
+                              ? l10n.clientUpdateRequiredBody
+                              : l10n.clientUpdateOptionalBody,
+                          style: AppTypography.body.copyWith(
+                            color: tokens.textSecondary,
                           ),
+                        ),
+                        const SizedBox(height: AppMetrics.space4),
+                        Text(
+                          l10n.clientUpdateVersion(release.version),
+                          style: AppTypography.itemTitle.copyWith(
+                            color: tokens.textPrimary,
+                          ),
+                        ),
+                        if (notes != null) ...[
                           const SizedBox(height: AppMetrics.space4),
                           Text(
-                            l10n.clientUpdateVersion(release.version),
-                            style: AppTypography.itemTitle.copyWith(
-                              color: tokens.textPrimary,
+                            l10n.clientUpdateReleaseNotes,
+                            style: AppTypography.sectionLabel.copyWith(
+                              color: tokens.textTertiary,
                             ),
                           ),
-                          if (notes != null) ...[
-                            const SizedBox(height: AppMetrics.space4),
-                            Text(
-                              l10n.clientUpdateReleaseNotes,
-                              style: AppTypography.sectionLabel.copyWith(
-                                color: tokens.textTertiary,
+                          const SizedBox(height: AppMetrics.space2),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(AppMetrics.space3),
+                            decoration: BoxDecoration(
+                              color: tokens.surfaceInset,
+                              border: Border.all(color: tokens.border),
+                              borderRadius: const BorderRadius.all(
+                                AppMetrics.controlRadius,
                               ),
                             ),
-                            const SizedBox(height: AppMetrics.space2),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(AppMetrics.space3),
-                              decoration: BoxDecoration(
-                                color: tokens.surfaceInset,
-                                border: Border.all(color: tokens.border),
-                                borderRadius: const BorderRadius.all(
-                                  AppMetrics.controlRadius,
-                                ),
-                              ),
-                              child: SelectableText(
-                                notes,
-                                style: AppTypography.body.copyWith(
-                                  color: tokens.textSecondary,
-                                ),
+                            child: SelectableText(
+                              notes,
+                              style: AppTypography.body.copyWith(
+                                color: tokens.textSecondary,
                               ),
                             ),
-                          ],
-                          if (size != null) ...[
-                            const SizedBox(height: AppMetrics.space3),
-                            Text(
-                              l10n.clientUpdateFileSize(size),
-                              style: AppTypography.meta.copyWith(
-                                color: tokens.textTertiary,
-                              ),
-                            ),
-                          ],
-                          if (_statusFor(l10n, tokens) case final status?) ...[
-                            const SizedBox(height: AppMetrics.space4),
-                            status,
-                          ],
+                          ),
                         ],
-                      ),
+                        if (size != null) ...[
+                          const SizedBox(height: AppMetrics.space3),
+                          Text(
+                            l10n.clientUpdateFileSize(size),
+                            style: AppTypography.meta.copyWith(
+                              color: tokens.textTertiary,
+                            ),
+                          ),
+                        ],
+                        if (_statusFor(l10n, tokens) case final status?) ...[
+                          const SizedBox(height: AppMetrics.space4),
+                          status,
+                        ],
+                      ],
                     ),
                   ),
-                  _ActionBar(
-                    primary: _primaryAction(l10n),
-                    secondaryLabel: required
-                        ? l10n.clientUpdateExit
-                        : l10n.clientUpdateLater,
-                    onSecondary: required ? onExit : onLater,
-                  ),
-                ],
-              ),
+                ),
+                _ActionBar(
+                  primary: _primaryAction(l10n),
+                  secondaryLabel: required
+                      ? l10n.clientUpdateExit
+                      : l10n.clientUpdateLater,
+                  onSecondary: required ? onExit : onLater,
+                ),
+              ],
             ),
           ),
         ),
@@ -389,86 +371,6 @@ class _ActionBar extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// The route that presents [ClientUpdateScreen] over the app.
-class ClientUpdateRoute extends ConsumerStatefulWidget {
-  const ClientUpdateRoute({super.key});
-
-  @override
-  ConsumerState<ClientUpdateRoute> createState() => _ClientUpdateRouteState();
-}
-
-class _ClientUpdateRouteState extends ConsumerState<ClientUpdateRoute> {
-  bool _closing = false;
-  ClientUpdatePrompt? _lastPrompt;
-
-  void _close() {
-    if (_closing || !mounted) return;
-    _closing = true;
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go(AppRoutes.initial);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final currentPrompt = ref.watch(clientUpdateProvider).prompt;
-    if (currentPrompt != null) _lastPrompt = currentPrompt;
-    // Keep rendering the release while the route pops, so clearing the prompt
-    // does not flash an empty page during the transition.
-    final prompt = currentPrompt ?? _lastPrompt;
-    final download = ref.watch(clientUpdateDownloadProvider);
-    final platform = ref.watch(clientPlatformProvider);
-
-    ref.listen<ClientUpdateState>(clientUpdateProvider, (previous, next) {
-      if (previous?.prompt?.release.build != next.prompt?.release.build) {
-        ref.read(clientUpdateDownloadProvider.notifier).reset();
-      }
-      if (next.prompt == null && !_closing) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _close();
-        });
-      }
-    });
-
-    if (prompt == null) return const SizedBox.shrink();
-
-    final required = prompt.isRequired;
-    final downloadController = ref.read(clientUpdateDownloadProvider.notifier);
-    final updateController = ref.read(clientUpdateProvider.notifier);
-
-    return ClientUpdateScreen(
-      prompt: prompt,
-      download: download,
-      platform: platform,
-      onDownload: () => unawaited(downloadController.start(prompt)),
-      onRetry: () => unawaited(downloadController.retry(prompt)),
-      onOpenAgain: () => unawaited(downloadController.openAgain()),
-      onLater: required
-          ? null
-          : () {
-              _close();
-              downloadController.reset();
-              updateController.dismiss();
-            },
-      onBack: required
-          ? null
-          : () {
-              // The route has already been popped. Only clear the prompt so it
-              // is not offered again on the next navigation.
-              _closing = true;
-              downloadController.reset();
-              updateController.dismiss();
-            },
-      onExit: () {
-        downloadController.reset();
-        exitApplication();
-      },
     );
   }
 }

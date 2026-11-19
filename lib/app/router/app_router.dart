@@ -14,7 +14,6 @@ import 'package:stash_it_app/features/auth/presentation/password_reset_request_s
 import 'package:stash_it_app/features/auth/presentation/pin_entry_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_in_screen.dart';
 import 'package:stash_it_app/features/auth/presentation/sign_up_screen.dart';
-import 'package:stash_it_app/features/client_update/presentation/client_update_screen.dart';
 import 'package:stash_it_app/features/collections/presentation/collections_screen.dart';
 import 'package:stash_it_app/features/inbox/presentation/inbox_screen.dart';
 import 'package:stash_it_app/features/pending_urls/presentation/pending_urls_screen.dart';
@@ -67,11 +66,6 @@ String? redirectFor(AuthStatus auth, String location) {
   // Wait until authentication state has been restored before making a
   // navigation decision.
   if (!auth.isResolved) return null;
-
-  // The update screen is opened by the update host and is independent of the
-  // authenticated session. Redirecting it would discard the prompt and return
-  // the user to the app without a chance to update.
-  if (location == AppRoutes.clientUpdate) return null;
 
   final atAuthEntry = location == AppRoutes.auth;
   final atSignIn = location == AppRoutes.signIn;
@@ -274,12 +268,6 @@ final List<RouteBase> _routes = [
   GoRoute(
     path: AppRoutes.savedOnDevice,
     builder: (context, state) => const PendingUrlsScreen(),
-  ),
-  // A required update must be able to cover any screen, so the update surface
-  // is a root-level route rather than part of the navigation shell.
-  GoRoute(
-    path: AppRoutes.clientUpdate,
-    builder: (context, state) => const ClientUpdateRoute(),
   ),
   StatefulShellRoute.indexedStack(
     builder: (context, state, navigationShell) =>

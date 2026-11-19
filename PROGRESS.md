@@ -23,6 +23,20 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 
 ## Verification
 
+### Client update overlay for auth and settings navigation (2026-11-20)
+
+- Symptom on a signed-out device: the update screen flashed and closed when signing in or opening Settings, and a stale update surface could trap the back button. Signed-in launch and a manual check from Settings were normal.
+- Root cause: the update surface was a pushed `/client-update` route. `ClientUpdateHost` could push it while auth/settings navigation was in flight, so the destination covered or replaced it. Its duplicate guard only checked the current top location, so an update route left underneath could be joined by a second one. `ClientUpdateRoute._close()` then called `context.pop()`, which popped the route above it instead of the update route and set `_closing`, leaving the old screen with inert Later/close actions. Back had to unwind the stale stack.
+- Fix: `ClientUpdateHost` now renders one full-screen `ClientUpdateScreen` in a `Stack` above the router. It is a widget overlay, not a route or dialog, so auth/settings navigation cannot cover or duplicate it.
+- The overlay owns a local `Overlay`. The host sits above the Navigator, so the close button's tooltip and the selectable release notes otherwise have no overlay ancestor. Without it, Flutter replaced the AppBar's action subtree with the app's global `StartupFailureView` error widget — the white band in the header. The host test now places the overlay in `MaterialApp.builder`, matching the app structure.
+- Removed the `/client-update` route, its redirect allowlist and `ClientUpdateRoute`. `ClientUpdateScreen` no longer uses `PopScope` or an `onBack` callback.
+- System back is consumed by `StashItApp.didPopRoute`: an optional prompt is dismissed and its download reset; a required prompt stays and back is swallowed. The route underneath is never popped.
+- Added `ClientUpdate.handleSystemBack()` with tests for optional dismissal, required retention, and the no-prompt case.
+- `flutter analyze` — no issues found.
+- `flutter test test/features/client_update test/app/router/app_router_test.dart --concurrency=1` — 77 tests passed.
+- `flutter test --concurrency=1` — 1124 tests passed.
+- Included in `1.3.1+7`; the `1.3.0+6` artifact does not contain this fix.
+
 ### Profile loading skeleton (2026-11-18)
 
 - The Profile destination's loading state no longer shows a spinner and "Loading profile…". The identity band, account section and linked-identities section now render their real layout over a mock `UserProfile` inside `Skeletonizer`, so the placeholder has the same shape as the loaded page.
@@ -72,6 +86,7 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 
 ### Client update screen (2026-11-18)
 
+- Superseded by the overlay fix above; the `/client-update` route described here was removed.
 - Replaced the update `Dialog` and `ModalBarrier` overlay with a root-level `/client-update` route and a full-screen `ClientUpdateScreen`. The old `client_update_dialog.dart` was removed; `formatReleaseSize` and `exitApplication` now live in the screen file.
 - Release notes are selectable and scroll in their own area. Download, retry, open-again, and Later/Exit stay pinned in a bottom action bar outside the scroll, so long notes never push the actions off-screen. The app bar carries the title and, for an optional update, a close action.
 - `ClientUpdateHost` now takes the mounted `GoRouter` and pushes `/client-update` when a prompt appears. It no longer renders a `Stack` overlay above the router, so the prompt is a real route rather than a barrier.
@@ -543,8 +558,8 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - macOS has no install handoff; the release endpoint is silently ignored until a macOS release exists.
 - Settings hides the build number. The full package information, including `buildNumber`, remains available through the existing provider and is used by the update check.
 - The backend currently documents Android and Windows release platforms. macOS is sent as its operating system name too; until a macOS release exists, the endpoint rejects it and the check is silently ignored.
-- The update screen is a route, so the system Back action no longer pops the route underneath it. A required update is non-dismissible; an optional update closes back to the previous screen.
-- An optional update opens as a full-screen prompt rather than a banner. It can be postponed once per build, and the previous route is restored on dismissal.
+- The update screen is a full-screen in-tree overlay, not a route. The app-level back handler dismisses an optional update and consumes back for a required one; it never pops the route underneath.
+- An optional update opens as a full-screen prompt rather than a banner. It can be postponed once per build, and the underlying screen is revealed on dismissal.
 - The update screen, download progress, retry/handoff states, the Check for updates row, and the signed-out Settings entry have not been visually verified; manual inspection remains with the project owner.
 - The startup failure screen has not been visually verified, and the bootstrap-failure path has not been reproduced on a device. The R8/JNI fix for the earlier `shared_preferences` startup hang remains unchanged.
 - The Contact dialog lists only the configured links, and the Contact row is hidden when both link values are empty.

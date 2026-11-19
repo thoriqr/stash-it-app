@@ -114,6 +114,19 @@ class ClientUpdate extends _$ClientUpdate {
     );
   }
 
+  /// Consumes a system back action while an update prompt is presented.
+  ///
+  /// Returns false when no prompt is shown. An optional prompt is dismissed;
+  /// a required prompt stays, but the back action is still consumed so the
+  /// route underneath the overlay is not popped.
+  bool handleSystemBack() {
+    final prompt = state.prompt;
+    if (prompt == null) return false;
+
+    if (!prompt.isRequired) dismiss();
+    return true;
+  }
+
   void _apply(ClientUpdateCheckResult result, {required bool automatic}) {
     switch (result) {
       case ClientUpdateNone():

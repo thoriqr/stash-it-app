@@ -243,5 +243,46 @@ void main() {
 
       expect(container.read(clientUpdateProvider).prompt, isNotNull);
     });
+
+    test(
+      'system back dismisses an optional prompt and consumes the action',
+      () async {
+        final (:container, :adapter) = _setup();
+        adapter.on('/client-releases/latest', body: _releaseBody());
+
+        final controller = container.read(clientUpdateProvider.notifier);
+        await controller.check(automatic: true);
+        expect(container.read(clientUpdateProvider).prompt, isNotNull);
+
+        expect(controller.handleSystemBack(), isTrue);
+        expect(container.read(clientUpdateProvider).prompt, isNull);
+      },
+    );
+
+    test(
+      'system back cannot dismiss a required prompt but is consumed',
+      () async {
+        final (:container, :adapter) = _setup();
+        adapter.on(
+          '/client-releases/latest',
+          body: _releaseBody(status: 'required'),
+        );
+
+        final controller = container.read(clientUpdateProvider.notifier);
+        await controller.check(automatic: true);
+
+        expect(controller.handleSystemBack(), isTrue);
+        expect(container.read(clientUpdateProvider).prompt, isNotNull);
+      },
+    );
+
+    test('system back is not consumed when no prompt is shown', () async {
+      final (:container, adapter: _) = _setup();
+
+      expect(
+        container.read(clientUpdateProvider.notifier).handleSystemBack(),
+        isFalse,
+      );
+    });
   });
 }

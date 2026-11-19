@@ -1,63 +1,91 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:stash_it_app/app/router/routes.dart';
 import 'package:stash_it_app/features/client_update/application/client_update_controller.dart';
-import 'package:stash_it_app/features/client_update/domain/client_update_release.dart';
+import 'package:stash_it_app/features/client_update/application/client_update_download_controller.dart';
+import 'package:stash_it_app/features/client_update/data/client_update_providers.dart';
+import 'package:stash_it_app/features/client_update/presentation/client_update_screen.dart';
 
-/// Opens the update screen when the release check reports a prompt.
+/// Presents the update screen above every route.
 ///
-/// The prompt is presented as a route instead of an overlay above the router.
-/// The route owns its back behavior: a required update cannot be popped, while
-/// an optional update can be closed and returns to the previous screen with
-/// its navigation state intact.
-class ClientUpdateHost extends ConsumerStatefulWidget {
-  const ClientUpdateHost({
-    required this.router,
-    required this.child,
-    super.key,
-  });
-
-  /// The router mounted by the application, so the prompt is pushed onto the
-  /// same navigation stack that renders the app.
-  final GoRouter router;
+/// A full-screen widget in the app builder, not a route or a dialog. The
+/// update surface therefore cannot be covered, duplicated or popped by the
+/// router while the user signs in or opens Settings. The app's back observer
+/// ([WidgetsBindingObserver.didPopRoute]) consumes the system back while this
+/// overlay is visible.
+///
+/// The overlay owns a local [Overlay] because it sits above the app's
+/// Navigator. Overlay-dependent widgets in the screen, such as the close
+/// button's tooltip and the selectable release notes, need one; without it
+/// Flutter replaces the affected header subtree with the app's error widget.
+class ClientUpdateHost extends ConsumerWidget {
+  const ClientUpdateHost({required this.child, super.key});
 
   final Widget child;
 
   @override
-  ConsumerState<ClientUpdateHost> createState() => _ClientUpdateHostState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prompt = ref.watch(clientUpdateProvider).prompt;
+
+    // A new or cleared prompt starts a fresh download state; an old artifact
+    // must never be shown against a different release.
+    ref.listen<ClientUpdateState>(clientUpdateProvider, (previous, next) {
+      if (previous?.prompt?.release.build != next.prompt?.release.build) {
+        ref.read(clientUpdateDownloadProvider.notifier).reset();
+      }
+    });
+
+    return Stack(
+      children: [
+        child,
+        if (prompt != null)
+          Positioned.fill(
+            child: Overlay(
+              initialEntries: [
+                OverlayEntry(
+                  opaque: true,
+                  builder: (_) => const _ClientUpdateOverlay(),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
 }
 
-class _ClientUpdateHostState extends ConsumerState<ClientUpdateHost> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _openIfNeeded(ref.read(clientUpdateProvider).prompt);
-    });
-  }
+class _ClientUpdateOverlay extends ConsumerWidget {
+  const _ClientUpdateOverlay();
 
   @override
-  Widget build(BuildContext context) {
-    ref.listen<ClientUpdateState>(clientUpdateProvider, (previous, next) {
-      _openIfNeeded(next.prompt);
-    });
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prompt = ref.watch(clientUpdateProvider).prompt;
+    if (prompt == null) return const SizedBox.shrink();
 
-    return widget.child;
+    final download = ref.watch(clientUpdateDownloadProvider);
+    final platform = ref.watch(clientPlatformProvider);
+    final required = prompt.isRequired;
+    final downloadController = ref.read(clientUpdateDownloadProvider.notifier);
+    final updateController = ref.read(clientUpdateProvider.notifier);
+
+    return ClientUpdateScreen(
+      prompt: prompt,
+      download: download,
+      platform: platform,
+      onDownload: () => unawaited(downloadController.start(prompt)),
+      onRetry: () => unawaited(downloadController.retry(prompt)),
+      onOpenAgain: () => unawaited(downloadController.openAgain()),
+      onLater: required
+          ? null
+          : () {
+              downloadController.reset();
+              updateController.dismiss();
+            },
+      onExit: () {
+        downloadController.reset();
+        exitApplication();
+      },
+    );
   }
-
-  void _openIfNeeded(ClientUpdatePrompt? prompt) {
-    if (prompt == null) return;
-
-    if (_currentPath == AppRoutes.clientUpdate) return;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _currentPath == AppRoutes.clientUpdate) return;
-      widget.router.push(AppRoutes.clientUpdate);
-    });
-  }
-
-  String get _currentPath =>
-      widget.router.routerDelegate.currentConfiguration.uri.path;
 }
