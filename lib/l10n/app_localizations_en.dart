@@ -69,6 +69,94 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsInstagram => 'Instagram';
 
   @override
+  String get settingsSendFeedback => 'Send feedback';
+
+  @override
+  String get userFeedbackTitle => 'Send feedback';
+
+  @override
+  String get userFeedbackIntro =>
+      'Tell us what happened or what would help. Reports are sent to the developer.';
+
+  @override
+  String get userFeedbackTypeLabel => 'Type';
+
+  @override
+  String get userFeedbackTypeBug => 'Bug';
+
+  @override
+  String get userFeedbackTypeIdea => 'Idea';
+
+  @override
+  String get userFeedbackTypeOther => 'Other';
+
+  @override
+  String get userFeedbackTypeRequired => 'Choose a type.';
+
+  @override
+  String get userFeedbackMessageLabel => 'Your feedback';
+
+  @override
+  String get userFeedbackMessageHint => 'Describe the problem or idea…';
+
+  @override
+  String get userFeedbackMessageRequired => 'Write your feedback first.';
+
+  @override
+  String get userFeedbackMessageTooLong =>
+      'Feedback can be at most 5,000 characters.';
+
+  @override
+  String userFeedbackCharacterCount(int count, int max) {
+    return '$count/$max';
+  }
+
+  @override
+  String get userFeedbackSubmit => 'Send feedback';
+
+  @override
+  String get userFeedbackSending => 'Sending…';
+
+  @override
+  String get userFeedbackSent => 'Feedback sent.';
+
+  @override
+  String userFeedbackRateLimitedWithWait(String wait) {
+    return 'You\'ve reached the feedback limit. Try again in $wait.';
+  }
+
+  @override
+  String get userFeedbackRateLimitedNoWait =>
+      'You\'ve reached the feedback limit. Try again later.';
+
+  @override
+  String get userFeedbackUnavailable =>
+      'Feedback is temporarily unavailable. Try again later.';
+
+  @override
+  String get userFeedbackValidation => 'Check your feedback and try again.';
+
+  @override
+  String get userFeedbackSubmitFailed =>
+      'We couldn\'t send your feedback. Try again.';
+
+  @override
+  String get userFeedbackUnconfirmed =>
+      'We couldn\'t confirm whether your feedback was sent. Trying again may create a duplicate.';
+
+  @override
+  String get userFeedbackDiscardTitle => 'Discard this feedback?';
+
+  @override
+  String get userFeedbackDiscardMessage => 'Your text will be lost.';
+
+  @override
+  String get userFeedbackKeepEditing => 'Keep editing';
+
+  @override
+  String get userFeedbackDiscard => 'Discard';
+
+  @override
   String get clientUpdateOptionalTitle => 'Update available';
 
   @override

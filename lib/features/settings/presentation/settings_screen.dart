@@ -182,6 +182,15 @@ class SettingsScreen extends ConsumerWidget {
                             .check(automatic: false),
                       ),
                     ),
+                    if (signedIn) ...[
+                      _RowDivider(tokens: tokens),
+                      _SettingsLinkRow(
+                        label: l10n.settingsSendFeedback,
+                        tokens: tokens,
+                        trailingIcon: Icons.chevron_right,
+                        onTap: () => context.push(AppRoutes.userFeedback),
+                      ),
+                    ],
                     if (DeveloperContactConfig.hasAnyContact) ...[
                       _RowDivider(tokens: tokens),
                       _SettingsLinkRow(

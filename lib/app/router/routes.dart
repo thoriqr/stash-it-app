@@ -83,6 +83,12 @@ abstract final class AppRoutes {
   /// Settings restores the destination that opened it.
   static const String settings = '/settings';
 
+  /// The authenticated user feedback form.
+  ///
+  /// A secondary route opened from Settings. The row that opens it is hidden
+  /// while signed out, and the route itself is not in the signed-out allowlist.
+  static const String userFeedback = '/settings/feedback';
+
   /// Landing screen for signed-out users.
   ///
   /// Outside the main navigation shell. Signed-out users can access this

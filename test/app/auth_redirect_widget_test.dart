@@ -132,6 +132,49 @@ void main() {
     expect(find.widgetWithText(AppBar, 'SETTINGS'), findsOneWidget);
     expect(find.text(entryHeading), findsNothing);
     expect(find.byType(NavigationBar), findsNothing);
+    expect(
+      find.text('Send feedback'),
+      findsNothing,
+      reason: 'feedback is an authenticated action and stays hidden',
+    );
+  });
+
+  testWidgets(
+    'a signed-out user reaching the feedback form is redirected to auth',
+    (tester) async {
+      await pumpApp(
+        tester,
+        AuthStatus.signedOut,
+        initialLocation: AppRoutes.userFeedback,
+      );
+
+      expect(find.text(entryHeading), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'Send feedback'), findsNothing);
+    },
+  );
+
+  testWidgets('a signed-in user sees the feedback row in Settings', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      AuthStatus.signedIn,
+      initialLocation: AppRoutes.settings,
+    );
+
+    expect(find.widgetWithText(AppBar, 'SETTINGS'), findsOneWidget);
+    expect(find.text('Send feedback'), findsOneWidget);
+  });
+
+  testWidgets('a signed-in user may open the feedback form', (tester) async {
+    await pumpApp(
+      tester,
+      AuthStatus.signedIn,
+      initialLocation: AppRoutes.userFeedback,
+    );
+
+    expect(find.widgetWithText(AppBar, 'Send feedback'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
   });
 
   testWidgets(

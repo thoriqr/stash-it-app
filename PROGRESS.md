@@ -11,6 +11,8 @@ Recent work includes **application icons** — the approved Stash It pixel-art i
 
 Settings now has an About section with the installed app version and a Contact row. Contact opens a compact dialog with the developer's GitHub and Instagram links. Each link is optional, and the Contact row itself is hidden when no link is configured. Settings can also be opened before sign-in, and its About section includes a manual Check for updates action.
 
+Settings also exposes a **Send feedback** row only while signed in. It opens a full-screen bug/idea/other form with a multiline message, a 5,000-rune limit, draft protection, and server-driven rate-limit handling. Signed-out Settings hides the row, and direct entry to `/settings/feedback` is redirected to auth. A successful report returns to Settings and uses the existing app feedback notice.
+
 The app now checks for a newer client release at launch and when it returns to the foreground. A release prompt opens a full-screen update screen with selectable release notes and pinned actions: an optional update can be postponed, while a required update cannot be dismissed and offers download and exit. Any failure leaves the app fully usable. A release can be downloaded with progress, verified against its SHA-256 checksum, and handed to the Android installer or the Windows file handler for manual installation.
 
 The app now reads page metadata on the device for hosts the server leaves to the client, currently Instagram. A save of such a link carries the extracted title, description, preview image and platform, so the save itself is the enrichment attempt and no worker is involved. A page that cannot be read is still saved with empty metadata and recorded as a failed attempt. Shared links, manual saves, the device-local bulk save and the explicit re-read all follow the same host rule; every other host keeps server-side enrichment.
@@ -19,9 +21,23 @@ Startup is also guarded: if initialization cannot complete, the app shows a plai
 
 The test suite has also been reduced from roughly 1,600 tests to about 890, focused on security, persistence, data integrity, and critical user flows.
 
-**Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, manual Inbox enrichment polling verification, visual review of the update screen and signed-out Settings entry, manual Android/Windows update download and install verification, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
+**Current focus:** First Codemagic macOS build, M1 runtime and Google Sign-In verification, macOS secure-storage verification, Windows desktop visual review, manual Inbox enrichment polling verification, visual review of the update screen and signed-out Settings entry, manual Android/Windows update download and install verification, manual user feedback submission on Android/Windows, localize the remaining theme/language preference warnings, and complete native-speaker/device review.
 
 ## Verification
+
+### Authenticated user feedback (2026-11-20)
+
+- Added `lib/features/user_feedback/` following the existing feature-first split: a typed `UserFeedbackType`, Freezed request/response models, a Retrofit `UserFeedbackApi`, repository failure mapping, a keep-alive controller, and the form screen.
+- Feedback is an authenticated action. Settings reads `authStateProvider` and shows the row only when its status is `signedIn`; signed-out Settings hides it, and `redirectFor` already sends a direct `/settings/feedback` entry to the auth entry screen.
+- The form sends `POST /feedback` over `appDio`, so `X-Platform` comes from the existing client-metadata interceptor and is not part of the body. `app_version` and `app_build` are read from `packageInfoProvider`; a failed lookup omits both optional fields rather than blocking the report.
+- The message is trimmed before the request and validated locally as non-empty and at most 5,000 runes. The type is required. A draft survives every failed submission.
+- A 429 is handled from `ApiFailureRateLimited`: the server's `Retry-After` is formatted with the existing retry copy, submit stays disabled until that wait ends, and a 429 without the header shows no invented countdown. A 503 maps to `ApiFailureServerUnavailable`, shows the unavailable copy, and keeps retry available. The two cases are distinguished by failure type, not status.
+- A 201 closes the screen and publishes the existing success notice. No history, quota count, or reply promise is shown.
+- Tests cover the request body (no platform; optional version/build), 201, 429 with and without `Retry-After`, 503, an unreadable 201, transport/server failures, controller success/failure/in-flight behavior, local validation, draft retention, retry enablement, success pop and notice, the signed-in Settings row, and signed-out hiding plus the direct-route redirect.
+- `dart format` on the changed Dart files — completed.
+- `flutter analyze` — no issues found.
+- `flutter test --concurrency=1` — 1,144 tests passed.
+- Not verified: on-device multiline keyboard behavior and a real `POST /feedback` against the running backend. No version bump, release tag, or publish was made in this task; `pubspec.yaml` remains `1.3.1+7`.
 
 ### Client update overlay for auth and settings navigation (2026-11-20)
 

@@ -19,6 +19,32 @@
   "settingsCloseAction": "Close",
   "settingsGithub": "GitHub",
   "settingsInstagram": "Instagram",
+  "settingsSendFeedback": "Send feedback",
+  "userFeedbackTitle": "Send feedback",
+  "userFeedbackIntro": "Tell us what happened or what would help. Reports are sent to the developer.",
+  "userFeedbackTypeLabel": "Type",
+  "userFeedbackTypeBug": "Bug",
+  "userFeedbackTypeIdea": "Idea",
+  "userFeedbackTypeOther": "Other",
+  "userFeedbackTypeRequired": "Choose a type.",
+  "userFeedbackMessageLabel": "Your feedback",
+  "userFeedbackMessageHint": "Describe the problem or idea…",
+  "userFeedbackMessageRequired": "Write your feedback first.",
+  "userFeedbackMessageTooLong": "Feedback can be at most 5,000 characters.",
+  "userFeedbackCharacterCount": "{count}/{max}",
+  "userFeedbackSubmit": "Send feedback",
+  "userFeedbackSending": "Sending…",
+  "userFeedbackSent": "Feedback sent.",
+  "userFeedbackRateLimitedWithWait": "You've reached the feedback limit. Try again in {wait}.",
+  "userFeedbackRateLimitedNoWait": "You've reached the feedback limit. Try again later.",
+  "userFeedbackUnavailable": "Feedback is temporarily unavailable. Try again later.",
+  "userFeedbackValidation": "Check your feedback and try again.",
+  "userFeedbackSubmitFailed": "We couldn't send your feedback. Try again.",
+  "userFeedbackUnconfirmed": "We couldn't confirm whether your feedback was sent. Trying again may create a duplicate.",
+  "userFeedbackDiscardTitle": "Discard this feedback?",
+  "userFeedbackDiscardMessage": "Your text will be lost.",
+  "userFeedbackKeepEditing": "Keep editing",
+  "userFeedbackDiscard": "Discard",
   "clientUpdateOptionalTitle": "Update available",
   "clientUpdateRequiredTitle": "Update required",
   "clientUpdateOptionalBody": "A newer version is available.",
@@ -3164,5 +3190,36 @@
   },
   "@authResetSubmitGeneric": {
     "description": "Fallback copy for a failed password reset."
+  },
+  "@userFeedbackCharacterCount": {
+    "description": "Feedback message counter.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "@userFeedbackRateLimitedWithWait": {
+    "description": "Feedback rate limit with a server-provided wait.",
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "@userFeedbackRateLimitedNoWait": {
+    "description": "Feedback rate limit without a server-provided wait."
+  },
+  "@userFeedbackUnavailable": {
+    "description": "Feedback is unavailable because rate limiting is unavailable."
+  },
+  "@userFeedbackDiscardTitle": {
+    "description": "Confirmation title before discarding a feedback draft."
+  },
+  "@userFeedbackDiscardMessage": {
+    "description": "Confirmation body before discarding a feedback draft."
   }
 }

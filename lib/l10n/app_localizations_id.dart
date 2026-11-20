@@ -69,6 +69,93 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsInstagram => 'Instagram';
 
   @override
+  String get settingsSendFeedback => 'Kirim masukan';
+
+  @override
+  String get userFeedbackTitle => 'Kirim masukan';
+
+  @override
+  String get userFeedbackIntro =>
+      'Ceritakan apa yang terjadi atau apa yang bisa membantu. Laporan dikirim ke developer.';
+
+  @override
+  String get userFeedbackTypeLabel => 'Jenis';
+
+  @override
+  String get userFeedbackTypeBug => 'Bug';
+
+  @override
+  String get userFeedbackTypeIdea => 'Ide';
+
+  @override
+  String get userFeedbackTypeOther => 'Lainnya';
+
+  @override
+  String get userFeedbackTypeRequired => 'Pilih jenis masukan.';
+
+  @override
+  String get userFeedbackMessageLabel => 'Masukan Anda';
+
+  @override
+  String get userFeedbackMessageHint => 'Jelaskan masalah atau idenya…';
+
+  @override
+  String get userFeedbackMessageRequired => 'Tulis masukan Anda dulu.';
+
+  @override
+  String get userFeedbackMessageTooLong => 'Masukan maksimal 5.000 karakter.';
+
+  @override
+  String userFeedbackCharacterCount(int count, int max) {
+    return '$count/$max';
+  }
+
+  @override
+  String get userFeedbackSubmit => 'Kirim masukan';
+
+  @override
+  String get userFeedbackSending => 'Mengirim…';
+
+  @override
+  String get userFeedbackSent => 'Masukan terkirim.';
+
+  @override
+  String userFeedbackRateLimitedWithWait(String wait) {
+    return 'Batas masukan tercapai. Coba lagi dalam $wait.';
+  }
+
+  @override
+  String get userFeedbackRateLimitedNoWait =>
+      'Batas masukan tercapai. Coba lagi nanti.';
+
+  @override
+  String get userFeedbackUnavailable =>
+      'Fitur masukan sedang tidak tersedia. Coba lagi nanti.';
+
+  @override
+  String get userFeedbackValidation => 'Periksa masukan Anda dan coba lagi.';
+
+  @override
+  String get userFeedbackSubmitFailed =>
+      'Kami tidak bisa mengirim masukan Anda. Coba lagi.';
+
+  @override
+  String get userFeedbackUnconfirmed =>
+      'Kami tidak bisa memastikan apakah masukan terkirim. Mencoba lagi bisa membuat laporan ganda.';
+
+  @override
+  String get userFeedbackDiscardTitle => 'Buang masukan ini?';
+
+  @override
+  String get userFeedbackDiscardMessage => 'Teks Anda akan hilang.';
+
+  @override
+  String get userFeedbackKeepEditing => 'Lanjut mengedit';
+
+  @override
+  String get userFeedbackDiscard => 'Buang';
+
+  @override
   String get clientUpdateOptionalTitle => 'Pembaruan tersedia';
 
   @override

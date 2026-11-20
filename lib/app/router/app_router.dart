@@ -23,6 +23,7 @@ import 'package:stash_it_app/features/saved_items/presentation/collection_saved_
 import 'package:stash_it_app/features/saved_items/presentation/saved_item_detail_screen.dart';
 import 'package:stash_it_app/features/search/presentation/search_screen.dart';
 import 'package:stash_it_app/features/settings/presentation/settings_screen.dart';
+import 'package:stash_it_app/features/user_feedback/presentation/user_feedback_screen.dart';
 import 'package:stash_it_app/l10n/app_localizations.dart';
 
 part 'app_router.g.dart';
@@ -229,6 +230,12 @@ final List<RouteBase> _routes = [
   GoRoute(
     path: AppRoutes.settings,
     builder: (context, state) => const SettingsScreen(),
+  ),
+  // Feedback requires an authenticated session. The Settings row is hidden
+  // while signed out, and the signed-out redirect sends direct entry to auth.
+  GoRoute(
+    path: AppRoutes.userFeedback,
+    builder: (context, state) => const UserFeedbackScreen(),
   ),
   // Saved-item details are pushed above the shell and return to the destination
   // that opened them.

@@ -218,6 +218,162 @@ abstract class AppLocalizations {
   /// **'Instagram'**
   String get settingsInstagram;
 
+  /// No description provided for @settingsSendFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Send feedback'**
+  String get settingsSendFeedback;
+
+  /// No description provided for @userFeedbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send feedback'**
+  String get userFeedbackTitle;
+
+  /// No description provided for @userFeedbackIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what happened or what would help. Reports are sent to the developer.'**
+  String get userFeedbackIntro;
+
+  /// No description provided for @userFeedbackTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get userFeedbackTypeLabel;
+
+  /// No description provided for @userFeedbackTypeBug.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug'**
+  String get userFeedbackTypeBug;
+
+  /// No description provided for @userFeedbackTypeIdea.
+  ///
+  /// In en, this message translates to:
+  /// **'Idea'**
+  String get userFeedbackTypeIdea;
+
+  /// No description provided for @userFeedbackTypeOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get userFeedbackTypeOther;
+
+  /// No description provided for @userFeedbackTypeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a type.'**
+  String get userFeedbackTypeRequired;
+
+  /// No description provided for @userFeedbackMessageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your feedback'**
+  String get userFeedbackMessageLabel;
+
+  /// No description provided for @userFeedbackMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the problem or idea…'**
+  String get userFeedbackMessageHint;
+
+  /// No description provided for @userFeedbackMessageRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your feedback first.'**
+  String get userFeedbackMessageRequired;
+
+  /// No description provided for @userFeedbackMessageTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback can be at most 5,000 characters.'**
+  String get userFeedbackMessageTooLong;
+
+  /// Feedback message counter.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}/{max}'**
+  String userFeedbackCharacterCount(int count, int max);
+
+  /// No description provided for @userFeedbackSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Send feedback'**
+  String get userFeedbackSubmit;
+
+  /// No description provided for @userFeedbackSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get userFeedbackSending;
+
+  /// No description provided for @userFeedbackSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback sent.'**
+  String get userFeedbackSent;
+
+  /// Feedback rate limit with a server-provided wait.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve reached the feedback limit. Try again in {wait}.'**
+  String userFeedbackRateLimitedWithWait(String wait);
+
+  /// Feedback rate limit without a server-provided wait.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve reached the feedback limit. Try again later.'**
+  String get userFeedbackRateLimitedNoWait;
+
+  /// Feedback is unavailable because rate limiting is unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback is temporarily unavailable. Try again later.'**
+  String get userFeedbackUnavailable;
+
+  /// No description provided for @userFeedbackValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your feedback and try again.'**
+  String get userFeedbackValidation;
+
+  /// No description provided for @userFeedbackSubmitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t send your feedback. Try again.'**
+  String get userFeedbackSubmitFailed;
+
+  /// No description provided for @userFeedbackUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t confirm whether your feedback was sent. Trying again may create a duplicate.'**
+  String get userFeedbackUnconfirmed;
+
+  /// Confirmation title before discarding a feedback draft.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard this feedback?'**
+  String get userFeedbackDiscardTitle;
+
+  /// Confirmation body before discarding a feedback draft.
+  ///
+  /// In en, this message translates to:
+  /// **'Your text will be lost.'**
+  String get userFeedbackDiscardMessage;
+
+  /// No description provided for @userFeedbackKeepEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get userFeedbackKeepEditing;
+
+  /// No description provided for @userFeedbackDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get userFeedbackDiscard;
+
   /// Title of the dialog for an update that can be postponed.
   ///
   /// In en, this message translates to:
