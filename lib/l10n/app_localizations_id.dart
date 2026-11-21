@@ -24,7 +24,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get themeDark => 'Gelap';
 
   @override
-  String get themeSystem => 'Sistem';
+  String get themeSystem => 'Bawaan sistem';
 
   @override
   String get settingsLanguage => 'BAHASA';

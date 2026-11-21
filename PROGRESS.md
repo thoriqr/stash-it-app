@@ -25,6 +25,21 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 
 ## Verification
 
+### Language System default and native share card preferences (2026-11-20)
+
+- Reproduced the Settings defect: with an English device locale, selecting Indonesian and then System default left the UI in Indonesian.
+- Root cause: the app passed `locale: null` for System default. Flutter's `LocalizationsResolver` keeps its previously resolved locale when `locale` returns to null and the supported-locale list is unchanged; it does not necessarily re-run the resolution callback.
+- Fix: `StashItApp` now always resolves a concrete supported locale (explicit preference or the device list) and passes it to `MaterialApp.locale`. It also rebuilds on `didChangeLocales`, so System default continues following the device when the device language changes while the app is running.
+- Added tests for switching Indonesian back to System default and for a device-locale change while on System default.
+- The native share card is a separate Android activity using Android resources. `values-in` and `values-night` are selected by the OS configuration, not by Flutter preferences, so the card previously stayed in the device language and night mode.
+- `ShareActivity.attachBaseContext` now reads the stable language and theme words from the preferences used by the app, then applies the locale or `uiMode` to the activity's configuration before inflating the XML. System or absent values leave the platform defaults. This makes the card follow the same explicit language and Light/Dark choice as Settings.
+- `dart format` on the changed Dart files — completed.
+- `flutter analyze` — no issues found.
+- `flutter test --concurrency=1` — 1,146 tests passed.
+- `flutter build apk --debug` — succeeded (`build\app\outputs\flutter-apk\app-debug.apk`).
+- Not verified on a device: the native card after switching language/theme, and the Settings switch on a physical Android build. The theme and language labels were aligned to `System default` / `Bawaan sistem`.
+- Included in `1.4.0+8`.
+
 ### Authenticated user feedback (2026-11-20)
 
 - Added `lib/features/user_feedback/` following the existing feature-first split: a typed `UserFeedbackType`, Freezed request/response models, a Retrofit `UserFeedbackApi`, repository failure mapping, a keep-alive controller, and the form screen.
@@ -37,7 +52,8 @@ The test suite has also been reduced from roughly 1,600 tests to about 890, focu
 - `dart format` on the changed Dart files — completed.
 - `flutter analyze` — no issues found.
 - `flutter test --concurrency=1` — 1,144 tests passed.
-- Not verified: on-device multiline keyboard behavior and a real `POST /feedback` against the running backend. No version bump, release tag, or publish was made in this task; `pubspec.yaml` remains `1.3.1+7`.
+- Not verified: on-device multiline keyboard behavior and a real `POST /feedback` against the running backend.
+- Included in `1.4.0+8`.
 
 ### Client update overlay for auth and settings navigation (2026-11-20)
 

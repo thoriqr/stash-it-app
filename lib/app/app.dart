@@ -118,6 +118,14 @@ class _StashItAppState extends ConsumerState<StashItApp>
     }
   }
 
+  @override
+  void didChangeLocales(List<Locale>? locales) {
+    // Only System default depends on the device locale. Rebuilding here keeps
+    // that choice current when the device language changes while the app runs.
+    if (!mounted) return;
+    setState(() {});
+  }
+
   void _afterShare(ShareSaveOutcome outcome) {
     if (!mounted) return;
     if (outcome.touchedStore) ref.invalidate(pendingUrlsProvider);
@@ -139,9 +147,19 @@ class _StashItAppState extends ConsumerState<StashItApp>
     // across all routes without recreating the router or losing navigation state.
     final themeMode = ref.watch(themeModeControllerProvider);
 
-    final languageLocale = ref
-        .watch(languagePreferenceControllerProvider)
-        .locale;
+    final language = ref.watch(languagePreferenceControllerProvider);
+
+    // Always resolve a concrete locale. Passing null back to MaterialApp for
+    // System default does not restore the device locale: Flutter's
+    // LocalizationsResolver keeps its previous resolved locale unless the
+    // supported-locale list changes. Resolving here also makes the first frame
+    // deterministic when the device locale list is empty.
+    final appLocale =
+        language.locale ??
+        resolveAppLocale(
+          WidgetsBinding.instance.platformDispatcher.locales,
+          supportedAppLocales,
+        );
 
     // Use the same router instance for the app and the update host, including
     // when a caller supplies one for a test.
@@ -153,21 +171,9 @@ class _StashItAppState extends ConsumerState<StashItApp>
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
-      locale: languageLocale,
+      locale: appLocale,
       supportedLocales: supportedAppLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      // An explicit language choice takes precedence over the device locale.
-      // Only System default follows the full ordered device locale list, rather
-      // than relying on the single platform locale supplied to the callback.
-      localeResolutionCallback: (locale, supported) {
-        if (languageLocale != null) {
-          return resolveAppLocale([languageLocale], supported);
-        }
-        return resolveAppLocale(
-          WidgetsBinding.instance.platformDispatcher.locales,
-          supported,
-        );
-      },
       // Place shared presentation above the router so every route uses the
       // same skeleton configuration and feedback host.
       //

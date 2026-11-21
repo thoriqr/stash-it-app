@@ -3,6 +3,7 @@ package id.my.thoriqr.stashit
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Typeface
 import android.os.Bundle
 import android.os.Handler
@@ -16,6 +17,7 @@ import io.flutter.FlutterInjector
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.plugin.common.MethodChannel
+import java.util.Locale
 
 /**
  * Visible Android share target.
@@ -59,6 +61,65 @@ class ShareActivity : Activity() {
     private var headlessReady = false
     private var pendingHeadlessText: String? = null
     private var pendingHeadlessNote: String? = null
+
+    /**
+     * Applies the in-app language and appearance to this native surface.
+     *
+     * The card is a separate Activity and otherwise follows the device locale
+     * and night mode. Its XML resources must therefore be given the same
+     * choices selected in Settings, not the platform defaults.
+     */
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(appConfiguredContext(newBase))
+    }
+
+    private fun appConfiguredContext(base: Context): Context {
+        // The Flutter preferences layer keeps its values in this legacy store
+        // with a `flutter.` key prefix. Both preference stores use stable words.
+        val preferences = base.getSharedPreferences(
+            FLUTTER_PREFERENCES,
+            Context.MODE_PRIVATE,
+        )
+        val language = preferences.getString(LANGUAGE_KEY, null)
+        val theme = preferences.getString(THEME_KEY, null)
+        if (language == null && theme == null) return base
+
+        val configuration = Configuration(base.resources.configuration)
+        var changed = false
+
+        val locale = when (language) {
+            "en" -> Locale.ENGLISH
+            "id" -> Locale("id")
+            else -> null
+        }
+        if (locale != null) {
+            configuration.setLocale(locale)
+            configuration.setLayoutDirection(locale)
+            changed = true
+        }
+
+        when (theme) {
+            "light" -> {
+                configuration.uiMode =
+                    (configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                        Configuration.UI_MODE_NIGHT_NO
+                changed = true
+            }
+
+            "dark" -> {
+                configuration.uiMode =
+                    (configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                        Configuration.UI_MODE_NIGHT_YES
+                changed = true
+            }
+        }
+
+        return if (changed) {
+            base.createConfigurationContext(configuration)
+        } else {
+            base
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -452,5 +513,11 @@ class ShareActivity : Activity() {
         const val CHANNEL = "stash_it/share_intake"
         const val PING_TIMEOUT_MS = 2_000L
         const val WATCHDOG_MS = 45_000L
+
+        // Keep these in step with ThemePreferenceStore and
+        // LanguagePreferenceStore; the values are deliberately stable words.
+        const val FLUTTER_PREFERENCES = "FlutterSharedPreferences"
+        const val THEME_KEY = "flutter.stash_it.settings.theme_mode"
+        const val LANGUAGE_KEY = "flutter.stash_it.settings.language"
     }
 }

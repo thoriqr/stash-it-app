@@ -4,7 +4,7 @@
   "settingsAppearance": "TAMPILAN",
   "themeLight": "Terang",
   "themeDark": "Gelap",
-  "themeSystem": "Sistem",
+  "themeSystem": "Bawaan sistem",
   "settingsLanguage": "BAHASA",
   "languageSystemDefault": "Bawaan sistem",
   "languageEnglish": "English",
@@ -693,13 +693,13 @@
     "description": "Dark theme option label."
   },
   "@themeSystem": {
-    "description": "System theme option label."
+    "description": "Theme option that follows the device appearance."
   },
   "@settingsLanguage": {
     "description": "Language section heading in Settings."
   },
   "@languageSystemDefault": {
-    "description": "System default language option. Endonym — same in every locale."
+    "description": "Language option that follows the device language. Localized, unlike the endonym language names."
   },
   "@languageEnglish": {
     "description": "English language option. Endonym — same in every locale (D21)."

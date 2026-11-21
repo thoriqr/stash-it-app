@@ -4,7 +4,7 @@
   "settingsAppearance": "APPEARANCE",
   "themeLight": "Light",
   "themeDark": "Dark",
-  "themeSystem": "System",
+  "themeSystem": "System default",
   "settingsLanguage": "LANGUAGE",
   "languageSystemDefault": "System default",
   "languageEnglish": "English",
@@ -814,13 +814,13 @@
     "description": "Dark theme option label."
   },
   "@themeSystem": {
-    "description": "System theme option label."
+    "description": "Theme option that follows the device appearance."
   },
   "@settingsLanguage": {
     "description": "Language section heading in Settings."
   },
   "@languageSystemDefault": {
-    "description": "System default language option. Endonym — same in every locale."
+    "description": "Language option that follows the device language. Localized, unlike the endonym language names."
   },
   "@languageEnglish": {
     "description": "English language option. Endonym — same in every locale (D21)."

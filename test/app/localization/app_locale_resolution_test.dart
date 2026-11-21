@@ -121,6 +121,39 @@ void main() {
     expect(find.text('Koleksi'), findsOneWidget);
   });
 
+  testWidgets('switching back to System returns to the device locale', (
+    tester,
+  ) async {
+    final container = await pumpApp(
+      tester,
+      deviceLocales: const [Locale('en')],
+      language: LanguagePreference.indonesian,
+    );
+    expect(activeLocale(tester), const Locale('id'));
+
+    await container
+        .read(languagePreferenceControllerProvider.notifier)
+        .select(LanguagePreference.system);
+    await tester.pumpAndSettle();
+
+    expect(activeLocale(tester), const Locale('en'));
+    expect(find.text('Collections'), findsOneWidget);
+    expect(find.text('Koleksi'), findsNothing);
+  });
+
+  testWidgets('System follows a device locale change while running', (
+    tester,
+  ) async {
+    await pumpApp(tester, deviceLocales: const [Locale('en')]);
+    expect(activeLocale(tester), const Locale('en'));
+
+    tester.platformDispatcher.localesTestValue = const [Locale('id')];
+    await tester.pumpAndSettle();
+
+    expect(activeLocale(tester), const Locale('id'));
+    expect(find.text('Koleksi'), findsOneWidget);
+  });
+
   testWidgets('System follows the first supported device locale', (
     tester,
   ) async {

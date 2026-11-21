@@ -128,10 +128,10 @@ abstract class AppLocalizations {
   /// **'Dark'**
   String get themeDark;
 
-  /// System theme option label.
+  /// Theme option that follows the device appearance.
   ///
   /// In en, this message translates to:
-  /// **'System'**
+  /// **'System default'**
   String get themeSystem;
 
   /// Language section heading in Settings.
@@ -140,7 +140,7 @@ abstract class AppLocalizations {
   /// **'LANGUAGE'**
   String get settingsLanguage;
 
-  /// System default language option. Endonym — same in every locale.
+  /// Language option that follows the device language. Localized, unlike the endonym language names.
   ///
   /// In en, this message translates to:
   /// **'System default'**
